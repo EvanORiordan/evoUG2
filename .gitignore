@@ -27,3 +27,11 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+
+
+
+#Files I want to ignore
+.idea
+evoUG2.iml
+
