@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * DG Algorithm.<br>
  */
-public class Algorithm1 extends Thread{
+public class Alg1 extends Thread{
 
     static int rows; // how many rows in the square grid.
     static int columns; // how many rows in the square grid.
@@ -34,6 +34,7 @@ public class Algorithm1 extends Thread{
     static boolean per_gen_data; // indicates whether "per gen data" will be stored.
     static String varying_parameter; // indicates which parameter to be varied in an experiment series.
     static boolean experiment_series; // indicate whether to run an experiment or an experiment series.
+
 
 
 
@@ -112,7 +113,11 @@ public class Algorithm1 extends Thread{
                 }
             }
 
-            if(!experiment_series){ // collect "per gen data" if this experiment is not part of a series.
+            /**
+             * Collect "per gen data" if this experiment is not part of a series
+             * and consists of a single run.
+            */
+            if(!experiment_series && runs == 1){
                 getStats();
                 writeSingleGenStats("per_gen_data.csv");
             }
@@ -125,15 +130,15 @@ public class Algorithm1 extends Thread{
         getStats(); // get stats at the end of the run
 
         if(!experiment_series){
-//            displayPopEWStatus(
-//                    Thread.currentThread().getStackTrace()[1].getClassName()
-//                            + "connections.csv");
-            displayPopStrategies(
+            writePopStrategies(
                     Thread.currentThread().getStackTrace()[1].getClassName()
                             + "strategies.csv");
-            writeSumConnections(
+            writeOwnConnections(
                     Thread.currentThread().getStackTrace()[1].getClassName()
-                            + "sumconnections.csv");
+                            + "ownconnections.csv");
+            writeAllConnections(
+                    Thread.currentThread().getStackTrace()[1].getClassName()
+                            + "allconnections.csv");
         }
     }
 
@@ -157,10 +162,10 @@ public class Algorithm1 extends Thread{
 
         // define initial parameter values.
         runs = 10;
-        Player.setRate_of_change(0.005);
+        Player.setRate_of_change(0.1);
         rows = 10;
-        gens = 1000;
-        evo_phase_rate = 20;
+        gens = 50;
+        evo_phase_rate = 2;
         Player.setNeighbourhoodType("VN"); // possible values: VN, M
 //        Player.setNeighbourhoodType("M");
 
@@ -182,6 +187,7 @@ public class Algorithm1 extends Thread{
             varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
 //            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
+//            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 
 
@@ -248,20 +254,6 @@ public class Algorithm1 extends Thread{
     }
 
 
-    /**
-     * Writes the p values of the pop into a csv file.
-     */
-    public void writePop(String filename) throws IOException {
-        FileWriter fw = new FileWriter(filename, false);
-        for(ArrayList<Player> row: grid){
-            for (Player player : row) {
-                fw.append(DF4.format(player.getP()) + ",");
-            }
-            fw.append("\n");
-        }
-        fw.close();
-    }
-
 
     /**
      * Displays experiment settings.
@@ -280,16 +272,17 @@ public class Algorithm1 extends Thread{
     /**
      * Writes the population to a .csv file in the form of a square grid of values in [0.0, 4.0].
      * Each value in the grid represents the sum of connections (edge weights) belonging to the
-     * player in that position.
+     * player in that position.<br>
      *
      * This value represents how trusting the player is of their neighbours. If a player x has a 0 on
      * this grid, x must have a higher p value than their neighbours and depending on the ROC, they
      * have had a greater value of p for some time. If x has a 4, x must have the lowest p value in
-     * their neighbourhood.
+     * their neighbourhood.<br>
      *
-     * @param filename
+     * This method also calculates the average sum of a player's own weights.
      */
-    public void displayPopEWStatus(String filename){
+    public void writeOwnConnections(String filename){
+        double avg_own_connections = 0;
         FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
@@ -300,7 +293,9 @@ public class Algorithm1 extends Thread{
                     // write connection sum.
                     double sum = 0.0;
                     for(int i=0;i<player.getEdge_weights().length;i++){
-                        sum+=player.getEdge_weights()[i];
+                        double addition = player.getEdge_weights()[i];
+                        sum+=addition;
+                        avg_own_connections+=addition;
                     }
                     fw.append(DF4.format(sum));
 
@@ -315,13 +310,21 @@ public class Algorithm1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
+
+
+        // print avg own connections
+        avg_own_connections /= N;
+        System.out.println("avg own connections="+DF4.format(avg_own_connections));
     }
 
 
     /**
      * Write sum of connections of a player and the weights associated with them.
+     *
+     * This method also calculates the average sum of a player's associated weights.
      */
-    public void writeSumConnections(String filename){
+    public void writeAllConnections(String filename){
+        double avg_all_connections = 0;
         FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
@@ -333,7 +336,9 @@ public class Algorithm1 extends Thread{
 
                     // calculate sum of own edge weights
                     for(int i=0;i<x.getEdge_weights().length;i++){
-                        sum+=x.getEdge_weights()[i];
+                        double addition = x.getEdge_weights()[i];
+                        sum+=addition;
+                        avg_all_connections+=addition;
                     }
 
                     /**
@@ -350,6 +355,7 @@ public class Algorithm1 extends Thread{
                                 if (x.getId() == y.getId()) {
                                     double addition = neighbour.getEdge_weights()[l];
                                     sum += addition;
+                                    avg_all_connections += addition;
                                     identified_x = true;
                                 }
                             }
@@ -369,15 +375,18 @@ public class Algorithm1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
+
+
+        // print avg all connections
+        avg_all_connections /= N;
+        System.out.println("avg all connections="+DF4.format(avg_all_connections));
     }
 
 
     /**
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
-     *
-     * @param filename
      */
-    public void displayPopStrategies(String filename){
+    public void writePopStrategies(String filename){
         FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
@@ -449,7 +458,6 @@ public class Algorithm1 extends Thread{
 
     /**
      * Calculates SD of the pop wrt p.
-     * @return double SD
      */
     public double calculateSD(){
         double SD = 0.0;
@@ -479,7 +487,7 @@ public class Algorithm1 extends Thread{
 
         // perform the experiment multiple times
         for(int i=0;i<runs;i++){
-            Algorithm1 run = new Algorithm1();
+            Alg1 run = new Alg1();
             run.start();
             mean_avg_p_of_experiment += run.avg_p;
             avg_p_values_of_experiment[i] = run.avg_p;
@@ -503,7 +511,7 @@ public class Algorithm1 extends Thread{
                 + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
         );
 
-        // write stats/results and settings to the .csv data file.
+        // write stats/results and settings to a .csv data file.
         try{
             FileWriter fw;
 
@@ -536,6 +544,9 @@ public class Algorithm1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
+
+
+
     }
 
 

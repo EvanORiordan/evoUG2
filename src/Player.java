@@ -30,12 +30,17 @@ public class Player {
     private double average_score; // average score of this player this gen
     private static DecimalFormat DF1 = new DecimalFormat("0.0"); // 1 decimal point DecimalFormat
     private static DecimalFormat DF4 = new DecimalFormat("0.0000"); // 4 decimal point DecimalFormat
-    private ArrayList<Player> players_left_to_play_this_gen; // tracks which players a player has left to play in a given gen.
-    private double[] edge_weights; // store edge weights belonging to the player.
-    private static double rate_of_change; // fixed amount by which edge weight is modified.
 
-    // edge weights of neighbours
-    private double[] associated_edge_weights; // neighbour edge weights associated with the player.
+    /**
+     * Stores edge weights belonging to the player.
+     * For each neighbour y of player x, e_xy denotes the edge from x to y.
+     * w_e_xy denotes the weight of e_xy probability of y dictating to x.
+     * w_e_xy lies within the interval [0,1].
+     * x controls w_e_xy i.e. the probability of x's neighbours getting to dictate to x.
+     */
+    private double[] edge_weights;
+
+    private static double rate_of_change; // fixed amount by which edge weight is modified.
 
 
 
@@ -288,10 +293,6 @@ public class Player {
 
     public static DecimalFormat getDF4(){
         return DF4;
-    }
-
-    public void setPlayers_left_to_play_this_gen(ArrayList<Player> al){
-        players_left_to_play_this_gen=al;
     }
 
     public double[] getEdge_weights(){
