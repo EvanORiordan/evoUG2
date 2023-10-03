@@ -35,6 +35,13 @@ public class Alg1 extends Thread{
     static String varying_parameter; // indicates which parameter to be varied in an experiment series.
     static boolean experiment_series; // indicate whether to run an experiment or an experiment series.
 
+    /**
+     * Prefix of filenames of data files of this program.
+     */
+    static String data_filename_prefix = "csv_data\\" +
+            Thread.currentThread().getStackTrace()[1].getClassName()
+    ;
+
 
 
 
@@ -115,11 +122,12 @@ public class Alg1 extends Thread{
 
             /**
              * Collect "per gen data" if this experiment is not part of a series
-             * and consists of a single run.
+             * (and consists of a single run?)
             */
-            if(!experiment_series && runs == 1){
+//            if(!experiment_series && runs == 1){
+            if(!experiment_series){
                 getStats();
-                writeSingleGenStats("per_gen_data.csv");
+                writeSingleGenStats(data_filename_prefix + "PerGenData.csv");
             }
 
             reset(); // reset certain player attributes.
@@ -130,15 +138,9 @@ public class Alg1 extends Thread{
         getStats(); // get stats at the end of the run
 
         if(!experiment_series){
-            writePopStrategies(
-                    Thread.currentThread().getStackTrace()[1].getClassName()
-                            + "strategies.csv");
-            writeOwnConnections(
-                    Thread.currentThread().getStackTrace()[1].getClassName()
-                            + "ownconnections.csv");
-            writeAllConnections(
-                    Thread.currentThread().getStackTrace()[1].getClassName()
-                            + "allconnections.csv");
+            writePopStrategies(data_filename_prefix + "Strategies.csv");
+            writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+            writeAllConnections(data_filename_prefix + "AllConnections.csv");
         }
     }
 
@@ -156,12 +158,17 @@ public class Alg1 extends Thread{
 
 
         // define name of .csv file for storing experiment data.
-        String data_filename = Thread.currentThread().getStackTrace()[1].getClassName() + "data.csv";
+//        String data_filename = "csv_data\\" +
+//                Thread.currentThread().getStackTrace()[1].getClassName() +
+//                "data.csv"
+//        ;
+
+
 
 
 
         // define initial parameter values.
-        runs = 10;
+        runs = 1;
         Player.setRate_of_change(0.1);
         rows = 10;
         gens = 50;
@@ -204,12 +211,14 @@ public class Alg1 extends Thread{
                     " experiments with settings: ");
 //
             per_gen_data = false; // for experiment series, there is little use for collecting per gen data.
-            experimentSeries(data_filename, variation, num_experiments); // run the experiment series.
+//            experimentSeries(data_filename, variation, num_experiments); // run the experiment series.
+            experimentSeries(variation, num_experiments); // run the experiment series.
         }
 
         else { // for carrying out a single experiment.
             per_gen_data = true; // collect per gen data. then you can visualise the experiment results.
-            experiment(data_filename, 0); // run an experiment
+//            experiment(data_filename, 0); // run an experiment
+            experiment(0); // run an experiment
         }
 
 
@@ -477,7 +486,8 @@ public class Alg1 extends Thread{
     /**
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
-    public static void experiment(String filename, int experiment_number){
+//    public static void experiment(String filename, int experiment_number){
+    public static void experiment(int experiment_number){
         displaySettings(); // display settings of experiment
 
         // stats to be tracked
@@ -514,7 +524,7 @@ public class Alg1 extends Thread{
         // write stats/results and settings to a .csv data file.
         try{
             FileWriter fw;
-
+            String filename = data_filename_prefix + "Data.csv";
             if(experiment_number == 0){
                 fw = new FileWriter(filename, false);
                 fw.append("experiment"
@@ -544,9 +554,6 @@ public class Alg1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
-
-
-
     }
 
 
@@ -554,11 +561,12 @@ public class Alg1 extends Thread{
      * Allows for the running of multiple experiments, i.e. the running of a series of
      * experiments, i.e. the running of an experiment series.
      */
-    public static void experimentSeries(String filename, double variation, int num_experiments){
+//    public static void experimentSeries(String filename, double variation, int num_experiments){
+    public static void experimentSeries(double variation, int num_experiments){
 
         // run the experiment series.
         for(int i=0;i<num_experiments;i++){
-            experiment(filename, i); // run the experiment and store its final data
+            experiment(i); // run the experiment and store its final data
 
             // change the value of the parameter
             if(varying_parameter.equals("ROC")){
@@ -590,7 +598,10 @@ public class Alg1 extends Thread{
 
         int row_count = 0;
         try {
-            BufferedReader br = new BufferedReader(new FileReader(filename));
+            BufferedReader br =
+                    new BufferedReader(
+                            new FileReader(
+                                    data_filename_prefix + "Data.csv"));
             String line = "";
             while((line = br.readLine()) != null){
                 String[] row_contents = line.split(",");
