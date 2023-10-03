@@ -42,7 +42,10 @@ public class Player {
 
     private static double rate_of_change; // fixed amount by which edge weight is modified.
 
-
+    /**
+     *
+     */
+    private int num_successful_interactions = 0;
 
 
     public Player(){} // empty constructor
@@ -164,6 +167,11 @@ public class Player {
             role2_games++;
         }
         average_score = score / games_played_this_gen;
+
+        // check if the interaction was successful i.e. if any payoff was received.
+        if(payoff != 0){
+            num_successful_interactions++;
+        }
     }
 
     // copy another player's strategy.
@@ -298,11 +306,21 @@ public class Player {
     public double[] getEdge_weights(){
         return edge_weights;
     }
+
     public static double getRate_of_change(){
         return rate_of_change;
     }
+
     public static void setRate_of_change(double d){
         rate_of_change=d;
+    }
+
+    public int getNum_successful_interactions(){
+        return num_successful_interactions;
+    }
+
+    public void setNum_successful_interactions(int i){
+        num_successful_interactions=i;
     }
 
 

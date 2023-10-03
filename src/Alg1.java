@@ -35,12 +35,18 @@ public class Alg1 extends Thread{
     static String varying_parameter; // indicates which parameter to be varied in an experiment series.
     static boolean experiment_series; // indicate whether to run an experiment or an experiment series.
 
-    /**
-     * Prefix of filenames of data files of this program.
-     */
+    // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
-            Thread.currentThread().getStackTrace()[1].getClassName()
-    ;
+            Thread.currentThread().getStackTrace()[1].getClassName();
+
+    // Prefix for filenames of interaction data files.
+    static String interaction_data_filename_prefix = "csv_data\\interactions_data\\" +
+            Thread.currentThread().getStackTrace()[1].getClassName();
+
+    // here, manually set the rate at which interaction data will be recorded
+    static int interaction_data_record_rate = 10;
+
+
 
 
 
@@ -121,23 +127,33 @@ public class Alg1 extends Thread{
             }
 
             /**
-             * Collect "per gen data" if this experiment is not part of a series
-             * (and consists of a single run?)
+             * Presumably, you would only collect this per-gen data if interested in the results
+             * (of this individual run) of this individual experiment.
             */
-//            if(!experiment_series && runs == 1){
-            if(!experiment_series){
+//            if(!experiment_series){
+            if(!experiment_series && runs == 1){
                 getStats();
-                writeSingleGenStats(data_filename_prefix + "PerGenData.csv");
+                writePerGenData(data_filename_prefix + "PerGenData.csv");
+
+                // write interaction data every once in a while
+                if(gen % interaction_data_record_rate == 0){
+                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+                }
             }
 
             reset(); // reset certain player attributes.
-
             gen++; // move on to the next generation
         }
 
         getStats(); // get stats at the end of the run
 
-        if(!experiment_series){
+
+        /**
+         * Presumably, you would only collect this data if interested in the results
+         * of this individual experiment.
+         */
+//        if(!experiment_series){
+        if(!experiment_series && runs == 1){
             writePopStrategies(data_filename_prefix + "Strategies.csv");
             writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
             writeAllConnections(data_filename_prefix + "AllConnections.csv");
@@ -171,10 +187,13 @@ public class Alg1 extends Thread{
         runs = 1;
         Player.setRate_of_change(0.1);
         rows = 10;
-        gens = 50;
-        evo_phase_rate = 2;
+        gens = 10000;
+        evo_phase_rate = 10;
         Player.setNeighbourhoodType("VN"); // possible values: VN, M
 //        Player.setNeighbourhoodType("M");
+
+
+
 
 
 
@@ -249,8 +268,7 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Player scores, games played in a generation and old p values are reset to accommodate for the
-     * upcoming generation.
+     * Some player values are reset in preparation for the upcoming generation.
      */
     public void reset(){
         for(ArrayList<Player> row: grid){
@@ -258,6 +276,9 @@ public class Alg1 extends Thread{
                 player.setScore(0);
                 player.setGamesPlayedThisGen(0);
                 player.setOld_p(player.getP());
+
+                // reset number of successful interactions this gen to zero
+                player.setNum_successful_interactions(0);
             }
         }
     }
@@ -328,9 +349,9 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Write sum of connections of a player and the weights associated with them.
+     * Write sum of connections of a player and the weights associated with them.<br>
      *
-     * This method also calculates the average sum of a player's associated weights.
+     * This method also calculates the average sum of a player's associated weights.<br>
      */
     public void writeAllConnections(String filename){
         double avg_all_connections = 0;
@@ -420,6 +441,34 @@ public class Alg1 extends Thread{
     }
 
 
+    /**
+     * Tracks how many successful interactions the players had (this gen).
+     */
+    public void writeInteractionData(String filename){
+        FileWriter fw;
+        try{
+            fw = new FileWriter(filename, false);
+            for(ArrayList<Player> row:grid){
+                for(int j=0;j<row.size();j++){
+                    Player x = row.get(j);
+
+                    // write number of successful interactions this gen.
+                    fw.append(Integer.toString(x.getNum_successful_interactions()));
+
+
+                    if(j+1<row.size()){
+                        fw.append(",");
+                    }
+                }
+                fw.append("\n");
+            }
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
 
 
 
@@ -433,7 +482,7 @@ public class Alg1 extends Thread{
      * Separate the data into columns: gen number, avg p and SD for that gen
      * Create a line chart with the data.
      */
-    public void writeSingleGenStats(String filename){
+    public void writePerGenData(String filename){
         FileWriter fw;
         double SD = calculateSD();
 
@@ -461,8 +510,8 @@ public class Alg1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
-
     }
+
 
 
     /**
