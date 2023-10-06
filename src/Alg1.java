@@ -157,6 +157,9 @@ public class Alg1 extends Thread{
             writePopStrategies(data_filename_prefix + "Strategies.csv");
             writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
             writeAllConnections(data_filename_prefix + "AllConnections.csv");
+            writeFairRelationships(data_filename_prefix + "FairRelationships.csv"
+                    , 0.05
+            );
         }
     }
 
@@ -173,26 +176,15 @@ public class Alg1 extends Thread{
         System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
 
 
-        // define name of .csv file for storing experiment data.
-//        String data_filename = "csv_data\\" +
-//                Thread.currentThread().getStackTrace()[1].getClassName() +
-//                "data.csv"
-//        ;
-
-
-
-
 
         // define initial parameter values.
         runs = 1;
-        Player.setRate_of_change(0.1);
+        Player.setRate_of_change(0.01);
         rows = 10;
-        gens = 10000;
-        evo_phase_rate = 10;
+        gens = 1000;
+        evo_phase_rate = 50;
         Player.setNeighbourhoodType("VN"); // possible values: VN, M
 //        Player.setNeighbourhoodType("M");
-
-
 
 
 
@@ -248,6 +240,181 @@ public class Alg1 extends Thread{
         long minutesElapsed = Duration.between(start, finish).toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
+
+
+
+
+    /**
+     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
+     */
+//    public static void experiment(String filename, int experiment_number){
+    public static void experiment(int experiment_number){
+        displaySettings(); // display settings of experiment
+
+        // stats to be tracked
+        double mean_avg_p_of_experiment = 0;
+        double[] avg_p_values_of_experiment = new double[runs];
+        double sd_avg_p_of_experiment = 0;
+
+        // perform the experiment multiple times
+        for(int i=0;i<runs;i++){
+            Alg1 run = new Alg1();
+            run.start();
+            mean_avg_p_of_experiment += run.avg_p;
+            avg_p_values_of_experiment[i] = run.avg_p;
+
+            // display the final avg p of the pop of the run that just concluded.
+            // this is a different print statement than the one in a similar position in DG18.java!
+            System.out.println("final avg p of run "+i+" of experiment "+experiment_number+
+                    ": "+run.avg_p);
+        }
+
+        // calculate stats
+        mean_avg_p_of_experiment /= runs;
+        for(int i=0;i<runs;i++){
+            sd_avg_p_of_experiment +=
+                    Math.pow(avg_p_values_of_experiment[i] - mean_avg_p_of_experiment, 2);
+        }
+        sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
+
+        // display stats in console
+        System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
+                + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
+        );
+
+        // write stats/results and settings to a .csv data file.
+        try{
+            FileWriter fw;
+            String filename = data_filename_prefix + "Data.csv";
+            if(experiment_number == 0){
+                fw = new FileWriter(filename, false);
+                fw.append("experiment"
+                        + ",mean avg p"
+                        + ",avg p SD"
+                        + ",runs"
+                        + ",gens"
+                        + ",neighbourhood"
+                        + ",N"
+                        + ",ROC"
+                        + ",EPR"
+                );
+            } else {
+                fw = new FileWriter(filename, true);
+            }
+            fw.append("\n" + experiment_number
+                    + "," + DF4.format(mean_avg_p_of_experiment)
+                    + "," + DF4.format(sd_avg_p_of_experiment)
+                    + "," + runs
+                    + "," + gens
+                    + "," + Player.getNeighbourhoodType()
+                    + "," + N
+                    + "," + Player.getRate_of_change()
+                    + "," + evo_phase_rate
+            );
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+    /**
+     * Allows for the running of multiple experiments, i.e. the running of a series of
+     * experiments, i.e. the running of an experiment series.
+     */
+//    public static void experimentSeries(String filename, double variation, int num_experiments){
+    public static void experimentSeries(double variation, int num_experiments){
+
+        // run the experiment series.
+        for(int i=0;i<num_experiments;i++){
+            experiment(i); // run the experiment and store its final data
+
+            // change the value of the parameter
+            if(varying_parameter.equals("ROC")){
+                Player.setRate_of_change(Player.getRate_of_change() + variation);
+            } else if(varying_parameter.equals("EPR")){
+                evo_phase_rate += variation;
+            } else if(varying_parameter.equals("gens")){
+                gens += variation;
+            } else if(varying_parameter.equals("rows_columns")){
+                rows += variation;
+                columns += variation;
+                N = rows * columns;
+            }
+        }
+
+
+        // display a summary of the experiment series on the console.
+        String summary = "";
+        ArrayList<String> experiment_number = new ArrayList<>();
+        ArrayList<Double> mean_avg_p = new ArrayList<>();
+        ArrayList<Double> avg_p_SD = new ArrayList<>();
+        ArrayList<Integer> gens = new ArrayList<>();
+        ArrayList<Integer> N = new ArrayList<>();
+        ArrayList<Double> ROC = new ArrayList<>();
+        ArrayList<Integer> EPR = new ArrayList<>();
+
+//        ArrayList<Integer> runs = new ArrayList<>();
+//        ArrayList<String> neighbourhood = new ArrayList<>();
+
+        int row_count = 0;
+        try {
+            BufferedReader br =
+                    new BufferedReader(
+                            new FileReader(
+                                    data_filename_prefix + "Data.csv"));
+            String line = "";
+            while((line = br.readLine()) != null){
+                String[] row_contents = line.split(",");
+                if(row_count != 0){
+                    experiment_number.add(row_contents[0]);
+                    mean_avg_p.add(Double.valueOf(row_contents[1]));
+                    avg_p_SD.add(Double.valueOf(row_contents[2]));
+
+//                    runs.add(Integer.valueOf(row_contents[3]));
+//                    neighbourhood.add(String.valueOf(row_contents[5]));
+
+                    if(varying_parameter.equals("gens")){
+                        gens.add(Integer.valueOf(row_contents[4]));
+                    } else if(varying_parameter.equals("rows_columns")){
+                        N.add(Integer.valueOf(row_contents[6]));
+                    } else if(varying_parameter.equals("ROC")){
+                        ROC.add(Double.valueOf(row_contents[7]));
+                    } else if(varying_parameter.equals("EPR")){
+                        EPR.add(Integer.valueOf(row_contents[8]));
+                    }
+                }
+                row_count++;
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+
+        for(int i=0;i<row_count-1;i++){
+            summary += "experiment="+experiment_number.get(i)
+                    + "\tmean avg p="+DF4.format(mean_avg_p.get(i))
+                    + "\tavg p SD="+DF4.format(avg_p_SD.get(i))
+            ;
+
+            if(varying_parameter.equals("gens")){
+                summary += "\tgens=" + gens.get(i);
+            } else if(varying_parameter.equals("rows_columns")){
+                summary += "\tN=" + N.get(i);
+            } else if(varying_parameter.equals("ROC")){
+                summary += "\tROC=" + DF4.format(ROC.get(i));
+            } else if(varying_parameter.equals("EPR")){
+                summary += "\tEPR=" + EPR.get(i);
+            }
+            summary += "\n";
+        }
+        System.out.println(summary);
+    }
+
+
+
 
 
     /**
@@ -493,11 +660,11 @@ public class Alg1 extends Thread{
                 fw.append("gen"
                         + ",avg p"
                         + ",p SD"
-                        + ",gens="+gens
-                        + ",neighbourhood="+Player.getNeighbourhoodType()
-                        + ",N="+N
-                        + ",ROC="+Player.getRate_of_change()
-                        + ",EPR="+evo_phase_rate
+                        + ",gens"
+                        + ",neighbourhood"
+                        + ",N"
+                        + ",ROC"
+                        + ",EPR"
                         + "\n"
                 );
                 fw.close();
@@ -505,7 +672,15 @@ public class Alg1 extends Thread{
 
             // add the data to the .csv file.
             fw = new FileWriter(filename, true); // append set to true means append mode.
-            fw.append(gen + "," + DF4.format(avg_p) + "," + DF4.format(SD) + "\n");
+            fw.append(gen
+                    + "," + DF4.format(avg_p)
+                    + "," + DF4.format(SD)
+                    + "," + gens
+                    + "," + Player.getNeighbourhoodType()
+                    + "," + N
+                    + "," + Player.getRate_of_change()
+                    + "," + evo_phase_rate
+                    + "\n");
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -530,171 +705,31 @@ public class Alg1 extends Thread{
     }
 
 
-
-
     /**
-     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
+     * Writes the number of "fair" relationships per node.
      */
-//    public static void experiment(String filename, int experiment_number){
-    public static void experiment(int experiment_number){
-        displaySettings(); // display settings of experiment
-
-        // stats to be tracked
-        double mean_avg_p_of_experiment = 0;
-        double[] avg_p_values_of_experiment = new double[runs];
-        double sd_avg_p_of_experiment = 0;
-
-        // perform the experiment multiple times
-        for(int i=0;i<runs;i++){
-            Alg1 run = new Alg1();
-            run.start();
-            mean_avg_p_of_experiment += run.avg_p;
-            avg_p_values_of_experiment[i] = run.avg_p;
-
-            // display the final avg p of the pop of the run that just concluded.
-            // this is a different print statement than the one in a similar position in DG18.java!
-            System.out.println("final avg p of run "+i+" of experiment "+experiment_number+
-                    ": "+run.avg_p);
-        }
-
-        // calculate stats
-        mean_avg_p_of_experiment /= runs;
-        for(int i=0;i<runs;i++){
-            sd_avg_p_of_experiment +=
-                    Math.pow(avg_p_values_of_experiment[i] - mean_avg_p_of_experiment, 2);
-        }
-        sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
-
-        // display stats in console
-        System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
-                + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
-        );
-
-        // write stats/results and settings to a .csv data file.
+    public void writeFairRelationships(String filename, double fairness_interval){
+        FileWriter fw;
         try{
-            FileWriter fw;
-            String filename = data_filename_prefix + "Data.csv";
-            if(experiment_number == 0){
-                fw = new FileWriter(filename, false);
-                fw.append("experiment"
-                        + ",mean avg p"
-                        + ",avg p SD"
-                        + ",runs"
-                        + ",gens"
-                        + ",neighbourhood"
-                        + ",N"
-                        + ",ROC"
-                        + ",EPR"
-                );
-            } else {
-                fw = new FileWriter(filename, true);
-            }
-            fw.append("\n" + experiment_number
-                    + "," + DF4.format(mean_avg_p_of_experiment)
-                    + "," + DF4.format(sd_avg_p_of_experiment)
-                    + "," + runs
-                    + "," + gens
-                    + "," + Player.getNeighbourhoodType()
-                    + "," + N
-                    + "," + Player.getRate_of_change()
-                    + "," + evo_phase_rate
-            );
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-    }
+            fw = new FileWriter(filename, false);
+            for(ArrayList<Player> row:grid){
+                for(int j=0;j<row.size();j++){
+                    Player x = row.get(j);
 
+                    // write number of fair relationships of x this gen.
+                    x.identifyFairRelationships(fairness_interval);
+                    fw.append(Integer.toString(x.getNum_fair_relationships()));
 
-    /**
-     * Allows for the running of multiple experiments, i.e. the running of a series of
-     * experiments, i.e. the running of an experiment series.
-     */
-//    public static void experimentSeries(String filename, double variation, int num_experiments){
-    public static void experimentSeries(double variation, int num_experiments){
-
-        // run the experiment series.
-        for(int i=0;i<num_experiments;i++){
-            experiment(i); // run the experiment and store its final data
-
-            // change the value of the parameter
-            if(varying_parameter.equals("ROC")){
-                Player.setRate_of_change(Player.getRate_of_change() + variation);
-            } else if(varying_parameter.equals("EPR")){
-                evo_phase_rate += variation;
-            } else if(varying_parameter.equals("gens")){
-                gens += variation;
-            } else if(varying_parameter.equals("rows_columns")){
-                rows += variation;
-                columns += variation;
-                N = rows * columns;
-            }
-        }
-
-
-        // display a summary of the experiment series on the console.
-        String summary = "";
-        ArrayList<String> experiment_number = new ArrayList<>();
-        ArrayList<Double> mean_avg_p = new ArrayList<>();
-        ArrayList<Double> avg_p_SD = new ArrayList<>();
-        ArrayList<Integer> gens = new ArrayList<>();
-        ArrayList<Integer> N = new ArrayList<>();
-        ArrayList<Double> ROC = new ArrayList<>();
-        ArrayList<Integer> EPR = new ArrayList<>();
-
-//        ArrayList<Integer> runs = new ArrayList<>();
-//        ArrayList<String> neighbourhood = new ArrayList<>();
-
-        int row_count = 0;
-        try {
-            BufferedReader br =
-                    new BufferedReader(
-                            new FileReader(
-                                    data_filename_prefix + "Data.csv"));
-            String line = "";
-            while((line = br.readLine()) != null){
-                String[] row_contents = line.split(",");
-                if(row_count != 0){
-                    experiment_number.add(row_contents[0]);
-                    mean_avg_p.add(Double.valueOf(row_contents[1]));
-                    avg_p_SD.add(Double.valueOf(row_contents[2]));
-
-//                    runs.add(Integer.valueOf(row_contents[3]));
-//                    neighbourhood.add(String.valueOf(row_contents[5]));
-
-                    if(varying_parameter.equals("gens")){
-                        gens.add(Integer.valueOf(row_contents[4]));
-                    } else if(varying_parameter.equals("rows_columns")){
-                        N.add(Integer.valueOf(row_contents[6]));
-                    } else if(varying_parameter.equals("ROC")){
-                        ROC.add(Double.valueOf(row_contents[7]));
-                    } else if(varying_parameter.equals("EPR")){
-                        EPR.add(Integer.valueOf(row_contents[8]));
+                    if(j+1<row.size()){
+                        fw.append(",");
                     }
                 }
-                row_count++;
+                fw.append("\n");
             }
-        } catch(IOException e){
+            fw.close();
+        }catch(IOException e){
             e.printStackTrace();
         }
-
-        for(int i=0;i<row_count-1;i++){
-            summary += "experiment="+experiment_number.get(i)
-                    + "\tmean avg p="+DF4.format(mean_avg_p.get(i))
-                    + "\tavg p SD="+DF4.format(avg_p_SD.get(i))
-            ;
-
-            if(varying_parameter.equals("gens")){
-                summary += "\tgens=" + gens.get(i);
-            } else if(varying_parameter.equals("rows_columns")){
-                summary += "\tN=" + N.get(i);
-            } else if(varying_parameter.equals("ROC")){
-                summary += "\tROC=" + DF4.format(ROC.get(i));
-            } else if(varying_parameter.equals("EPR")){
-                summary += "\tEPR=" + EPR.get(i);
-            }
-            summary += "\n";
-        }
-        System.out.println(summary);
     }
+
 }

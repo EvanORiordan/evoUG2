@@ -42,13 +42,16 @@ public class Player {
 
     private static double rate_of_change; // fixed amount by which edge weight is modified.
 
-    /**
-     *
-     */
+    // Tracks how many successful interactions the player had within some timeframe e.g. within a gen.
     private int num_successful_interactions = 0;
 
+    // Tracks how many fair relationships the player has with their neighbours.
+    private int num_fair_relationships = 0;
 
-    public Player(){} // empty constructor
+
+
+
+
 
 
 
@@ -265,6 +268,48 @@ public class Player {
     }
 
 
+    /**
+     *  Identifies if the player and the given neighbour have a fair relationship under the given
+     *  fairness_interval.
+     *
+     *  A fair relationship here is loosely defined as one where the p values of the two players
+     *  are within the fairness interval from each other. The "fairness interval" indicates how
+     *  much leeway is being given.<br>
+     *
+     *  Nodes x and y have a fair relationship if p_y lies within [p_x - fairness_interval, p_y +
+     *  fairness_interval].
+     *
+     *  E.g. p_1=0.4, p_2=0.37 and fairness_interval=0.05 is a fair relationship because p_2 lies within
+     *  the interval [p_1 - fairness_interval, p_1 + fairness_interval] = [0.4 - 0.05, 0.4 + 0.05] =
+     *  [0.35, 0.45] so here node 1 and 2 have a fair relationship.<br>
+     *
+     *  E.g. With p_3=0.2, p_4=0.05 and fairness_interval=0.1, node 3 and 4 do not have a fair
+     *  relationship.<br>
+     */
+    public boolean identifyFairRelationship(Player neighbour, double fairness_interval){
+        double p_y = neighbour.getP();
+        double lower_bound = p - fairness_interval;
+        double upper_bound = p + fairness_interval;
+        if(lower_bound <= p_y && upper_bound >= p_y){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Identifies the number of fair relationships the player has with their neighbours.
+     */
+    public void identifyFairRelationships(double fairness_interval){
+        for(Player neighbour: neighbourhood){
+            if(identifyFairRelationship(neighbour, fairness_interval)){
+                num_fair_relationships++;
+            }
+        }
+    }
+
+
+
     public static double getPrize(){
         return prize;
     }
@@ -322,6 +367,19 @@ public class Player {
     public void setNum_successful_interactions(int i){
         num_successful_interactions=i;
     }
+
+    public int getNum_fair_relationships(){
+        return num_fair_relationships;
+    }
+
+    public void setNum_fair_relationships(int i){
+        num_fair_relationships=i;
+    }
+
+
+
+
+
 
 
 
