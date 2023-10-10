@@ -45,9 +45,8 @@ public class Player {
     // Tracks how many successful interactions the player had within some timeframe e.g. within a gen.
     private int num_successful_interactions = 0;
 
-    // Tracks how many fair relationships the player has with their neighbours.
-    private int num_fair_relationships = 0;
-
+    // States the fairness interval to be allowed when determining fair relationships
+    private static double fairness_interval;
 
 
 
@@ -202,9 +201,12 @@ public class Player {
 
 
     /**
-     * Method for assigning the position of a player on a 2D space and finding the neighbours when a
-     * player resides on a 2D space.<br>
-     * Possible neighbourhood_type values: VN, M.
+     * Method for assigning a position of the player x on a 2D space and finding x's neighbours in
+     * the space.<br>
+     *
+     * Possible neighbourhood_type values: VN, M.<br>
+     *
+     * Neighbourhood order (with VN): up, down, left, right.<br>
      */
     public void findNeighbours2D(ArrayList<ArrayList<Player>> grid, int row_position, int column_position){
         neighbourhood = new ArrayList<>();
@@ -286,7 +288,7 @@ public class Player {
      *  E.g. With p_3=0.2, p_4=0.05 and fairness_interval=0.1, node 3 and 4 do not have a fair
      *  relationship.<br>
      */
-    public boolean identifyFairRelationship(Player neighbour, double fairness_interval){
+    public boolean identifyFairRelationship(Player neighbour){
         double p_y = neighbour.getP();
         double lower_bound = p - fairness_interval;
         double upper_bound = p + fairness_interval;
@@ -297,16 +299,7 @@ public class Player {
         }
     }
 
-    /**
-     * Identifies the number of fair relationships the player has with their neighbours.
-     */
-    public void identifyFairRelationships(double fairness_interval){
-        for(Player neighbour: neighbourhood){
-            if(identifyFairRelationship(neighbour, fairness_interval)){
-                num_fair_relationships++;
-            }
-        }
-    }
+
 
 
 
@@ -368,20 +361,20 @@ public class Player {
         num_successful_interactions=i;
     }
 
-    public int getNum_fair_relationships(){
+
+    /**
+     * Identifies the number of fair relationships the player has with their neighbours with
+     * respect to the given fairness interval.
+     */
+    public int getNumFairRelationships(){
+        int num_fair_relationships = 0;
+        for(Player neighbour: neighbourhood){
+            if(identifyFairRelationship(neighbour)){
+                num_fair_relationships++;
+            }
+        }
         return num_fair_relationships;
     }
-
-    public void setNum_fair_relationships(int i){
-        num_fair_relationships=i;
-    }
-
-
-
-
-
-
-
 
 
 
@@ -422,5 +415,67 @@ public class Player {
         description += " R1G="+role1_games;
         description += " R2G="+role2_games;
         return description;
+    }
+
+
+    /**
+     * Finds the index of the player x in the neighbourhood of a neighbour.
+     *
+     * @return index
+     */
+    public int findXInNeighboursNeighbourhood(Player neighbour){
+        int index = 0; // by default, assign index to 0.
+        for (int l = 0; l < neighbour.neighbourhood.size(); l++) {
+            Player y = neighbour.neighbourhood.get(l);
+            if (ID == y.getId()) {
+                index = l;
+            }
+        }
+        return index;
+    }
+
+
+    public static double getFairnessInterval(){
+        return fairness_interval;
+    }
+
+    public static void setFairnessInterval(double d){
+        fairness_interval=d;
+    }
+
+
+
+    // method for calculating sum of own connections of the player
+    public double calculateOwnConnections(){
+        double sum = 0.0;
+        for(int i=0;i<edge_weights.length;i++){
+            sum += edge_weights[i];
+        }
+        return sum;
+    }
+
+
+
+    // method for calculating sum of all associated connections of the player
+    public double calculateAllConnections(){
+        double sum = calculateOwnConnections();
+
+        /**
+         * How to find weights of neighbour edges associated with player x:
+         * Loop through x's neighbourhood;
+         * For each neighbour y of x, find x's index within y's neighbourhood;
+         * Use the index to find the weight of the edge from y to x;
+         * Add the weight to the sum.
+         */
+        for(int k=0;k<neighbourhood.size();k++) {
+            Player y = neighbourhood.get(k);
+//            double addition = y.getEdge_weights()[findXInNeighboursNeighbourhood(y)];
+//            sum += addition;
+//            avg_all_connections += addition;
+
+            sum += y.edge_weights[findXInNeighboursNeighbourhood(y)];
+        }
+
+        return sum;
     }
 }

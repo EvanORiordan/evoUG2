@@ -31,7 +31,6 @@ public class Alg1 extends Thread{
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     int gen = 0; // indicates which generation is currently running.
-    static boolean per_gen_data; // indicates whether "per gen data" will be stored.
     static String varying_parameter; // indicates which parameter to be varied in an experiment series.
     static boolean experiment_series; // indicate whether to run an experiment or an experiment series.
 
@@ -45,6 +44,13 @@ public class Alg1 extends Thread{
 
     // here, manually set the rate at which interaction data will be recorded
     static int interaction_data_record_rate = 10;
+
+    static int data_gen;
+
+    // Prefix for filenames of player data files.
+    static String player_data_filename_prefix = "csv_data\\player_data\\" +
+            Thread.currentThread().getStackTrace()[1].getClassName();
+
 
 
 
@@ -92,45 +98,22 @@ public class Alg1 extends Thread{
 
 
             /**
-             * Selection and Evolutionary phase:
+             * Selection and evolution occur every evo_phase_rate gens.<br>
              *
-             * Selection method: weighted roulette wheel.
-             * Evolution method: copy parent's strategy.
-             *
-             * This whole phase occurs every evo_phase_rate gens.
+             * Each player in the grid partakes in selection and evolution.<br>
              */
             if((gen + 1) % evo_phase_rate == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
-                        ArrayList<Player> neighbourhood = player.getNeighbourhood();
-                        double[] imitation_scores = new double[neighbourhood.size()];
-                        double total_imitation_score = 0;
-                        double player_avg_score = player.getAverage_score();
-                        for (int i = 0; i < neighbourhood.size(); i++) {
-                            imitation_scores[i] =
-                                    Math.exp(neighbourhood.get(i).getAverage_score() - player_avg_score);
-                            total_imitation_score += imitation_scores[i];
-                        }
-                        total_imitation_score += 1.0;
-                        double imitation_score_tally = 0;
-                        double random_double_to_beat = ThreadLocalRandom.current().nextDouble();
-                        for (int j = 0; j < neighbourhood.size(); j++) {
-                            imitation_score_tally += imitation_scores[j];
-                            double percentage = imitation_score_tally / total_imitation_score;
-                            if (random_double_to_beat < percentage) {
-                                player.copyStrategy(neighbourhood.get(j));
-                                break;
-                            }
-                        }
+                        weightedRouletteWheelSelection(player);
                     }
                 }
             }
 
             /**
-             * Presumably, you would only collect this per-gen data if interested in the results
-             * (of this individual run) of this individual experiment.
+             * Only collect this data if interested in the results (of this individual
+             * run) of this individual experiment.
             */
-//            if(!experiment_series){
             if(!experiment_series && runs == 1){
                 getStats();
                 writePerGenData(data_filename_prefix + "PerGenData.csv");
@@ -139,6 +122,20 @@ public class Alg1 extends Thread{
                 if(gen % interaction_data_record_rate == 0){
                     writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
                 }
+
+
+                if(gen==data_gen){
+                    System.out.println("Taking data screenshot at gen "+data_gen+"...");
+                    writePopStrategies(data_filename_prefix + "Strategies.csv");
+                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
+
+                    Player x = grid.get(1).get(1);
+                    writeDetailedPlayer(
+                            player_data_filename_prefix + "Player" + x.getId() + ".csv"
+                            , x);
+                }
             }
 
             reset(); // reset certain player attributes.
@@ -146,21 +143,6 @@ public class Alg1 extends Thread{
         }
 
         getStats(); // get stats at the end of the run
-
-
-        /**
-         * Presumably, you would only collect this data if interested in the results
-         * of this individual experiment.
-         */
-//        if(!experiment_series){
-        if(!experiment_series && runs == 1){
-            writePopStrategies(data_filename_prefix + "Strategies.csv");
-            writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-            writeAllConnections(data_filename_prefix + "AllConnections.csv");
-            writeFairRelationships(data_filename_prefix + "FairRelationships.csv"
-                    , 0.05
-            );
-        }
     }
 
 
@@ -179,12 +161,24 @@ public class Alg1 extends Thread{
 
         // define initial parameter values.
         runs = 1;
-        Player.setRate_of_change(0.01);
+        Player.setRate_of_change(0.05);
         rows = 10;
-        gens = 1000;
-        evo_phase_rate = 50;
+        gens = 5000;
+        evo_phase_rate = 2;
         Player.setNeighbourhoodType("VN"); // possible values: VN, M
 //        Player.setNeighbourhoodType("M");
+
+
+
+        // after which gen of the experiment do you wish to collect at?
+//         data_gen = gens; // collect data at end of run
+        data_gen = 50;
+
+
+        // set the fairness interval
+        Player.setFairnessInterval(0.05);
+
+
 
 
 
@@ -194,7 +188,7 @@ public class Alg1 extends Thread{
         N = rows * columns;
 
 
-        // define whether an experiment or an experiment series will be conducted.
+        // indicate whether an experiment or an experiment series should be conducted.
 //        experiment_series = true;
         experiment_series = false;
 
@@ -220,17 +214,19 @@ public class Alg1 extends Thread{
             // display which parameter is being modified and by how much per experiment.
             System.out.println("Varying "+varying_parameter+" by "+variation+" between "+num_experiments+
                     " experiments with settings: ");
-//
-            per_gen_data = false; // for experiment series, there is little use for collecting per gen data.
+
 //            experimentSeries(data_filename, variation, num_experiments); // run the experiment series.
             experimentSeries(variation, num_experiments); // run the experiment series.
         }
 
+
+
+
         else { // for carrying out a single experiment.
-            per_gen_data = true; // collect per gen data. then you can visualise the experiment results.
-//            experiment(data_filename, 0); // run an experiment
-            experiment(0); // run an experiment
+            experiment(0);
         }
+
+
 
 
         // marks the end of the program's runtime
@@ -485,15 +481,19 @@ public class Alg1 extends Thread{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
                 for(int j=0;j<row.size();j++){
-                    Player player = row.get(j);
+                    Player x = row.get(j);
 
-                    // write connection sum.
-                    double sum = 0.0;
-                    for(int i=0;i<player.getEdge_weights().length;i++){
-                        double addition = player.getEdge_weights()[i];
-                        sum+=addition;
-                        avg_own_connections+=addition;
-                    }
+//                    double sum = 0.0;
+//                    for(int i=0;i<player.getEdge_weights().length;i++){
+//                        double addition = player.getEdge_weights()[i];
+//                        sum+=addition;
+//                        avg_own_connections+=addition;
+//                    }
+
+                    double sum = x.calculateOwnConnections();
+                    avg_own_connections += sum;
+
+
                     fw.append(DF4.format(sum));
 
 
@@ -529,35 +529,53 @@ public class Alg1 extends Thread{
                 for(int j=0;j<row.size();j++){
                     Player x = row.get(j);
 
-                    double sum = 0.0;
+//                    double sum = 0.0;
+//
+//                    // calculate sum of own edge weights
+//                    for(int i=0;i<x.getEdge_weights().length;i++){
+//                        double addition = x.getEdge_weights()[i];
+//                        sum+=addition;
+//                        avg_all_connections+=addition;
+//                    }
 
-                    // calculate sum of own edge weights
-                    for(int i=0;i<x.getEdge_weights().length;i++){
-                        double addition = x.getEdge_weights()[i];
-                        sum+=addition;
-                        avg_all_connections+=addition;
-                    }
 
-                    /**
-                     * Calculate sum of neighbours edge weights associated with player x.
-                     * This code block is able to identify the position of x in their neighbour's
-                     * neighbourhood.
-                    */
-                    boolean identified_x = false;
-                    do {
-                        for (int k = 0; k < x.getNeighbourhood().size(); k++) {
-                            Player neighbour = x.getNeighbourhood().get(k);
-                            for (int l = 0; l < neighbour.getNeighbourhood().size(); l++) {
-                                Player y = neighbour.getNeighbourhood().get(l);
-                                if (x.getId() == y.getId()) {
-                                    double addition = neighbour.getEdge_weights()[l];
-                                    sum += addition;
-                                    avg_all_connections += addition;
-                                    identified_x = true;
-                                }
-                            }
-                        }
-                    } while(!identified_x);
+//                    double sum = x.calculateOwnConnections();
+//                    avg_all_connections += sum;
+
+
+
+//                    boolean identified_x = false;
+//                    do {
+//                        for (int k = 0; k < x.getNeighbourhood().size(); k++) {
+//                            Player neighbour = x.getNeighbourhood().get(k);
+//                            for (int l = 0; l < neighbour.getNeighbourhood().size(); l++) {
+//                                Player y = neighbour.getNeighbourhood().get(l);
+//                                if (x.getId() == y.getId()) {
+//                                    double addition = neighbour.getEdge_weights()[l];
+//                                    sum += addition;
+//                                    avg_all_connections += addition;
+//                                    identified_x = true;
+//                                }
+//                            }
+//                        }
+//                    } while(!identified_x);
+
+
+//                    for (int k = 0; k < x.getNeighbourhood().size(); k++) {
+//                            Player y = x.getNeighbourhood().get(k);
+//                            double addition = y.getEdge_weights()[x.findXInNeighboursNeighbourhood(y)];
+//                            sum += addition;
+//                            avg_all_connections += addition;
+//                    }
+
+
+
+
+
+
+                    double sum = x.calculateAllConnections();
+                    avg_all_connections += sum;
+
 
 
                     fw.append(DF4.format(sum));
@@ -708,7 +726,7 @@ public class Alg1 extends Thread{
     /**
      * Writes the number of "fair" relationships per node.
      */
-    public void writeFairRelationships(String filename, double fairness_interval){
+    public void writeFairRelationships(String filename){
         FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
@@ -717,8 +735,7 @@ public class Alg1 extends Thread{
                     Player x = row.get(j);
 
                     // write number of fair relationships of x this gen.
-                    x.identifyFairRelationships(fairness_interval);
-                    fw.append(Integer.toString(x.getNum_fair_relationships()));
+                    fw.append(Integer.toString(x.getNumFairRelationships()));
 
                     if(j+1<row.size()){
                         fw.append(",");
@@ -730,6 +747,106 @@ public class Alg1 extends Thread{
         }catch(IOException e){
             e.printStackTrace();
         }
+    }
+
+
+    /**
+     * Writes a detailed account of player x to a .csv file.
+     *
+     * @param filename
+     * @param x
+     */
+    public void writeDetailedPlayer(String filename, Player x){
+        FileWriter fw;
+        try{
+            fw = new FileWriter(filename, false);
+
+            // neighbours of x
+            Player up = x.getNeighbourhood().get(0);
+            Player down = x.getNeighbourhood().get(0);
+            Player left = x.getNeighbourhood().get(0);
+            Player right = x.getNeighbourhood().get(0);
+
+            // weights of edges pointing from neighbours to x
+            double neighbour_ew_up = up.getEdge_weights()[x.findXInNeighboursNeighbourhood(up)]; // ew of neighbour above x
+            double neighbour_ew_down = down.getEdge_weights()[x.findXInNeighboursNeighbourhood(down)]; // ew of neighbour below x
+            double neighbour_ew_left = left.getEdge_weights()[x.findXInNeighboursNeighbourhood(left)]; // ew of neighbour to x's left
+            double neighbour_ew_right = right.getEdge_weights()[x.findXInNeighboursNeighbourhood(right)]; // ew of neighbour to x's right
+
+            // weights of edges from x to x's neighbours
+            double ew_up = x.getEdge_weights()[0];
+            double ew_down = x.getEdge_weights()[1];
+            double ew_left = x.getEdge_weights()[2];
+            double ew_right = x.getEdge_weights()[3];
+
+            // general statistics relating to x
+            double strategy = x.getP();
+            int num_fair_relationships = x.getNumFairRelationships();
+            double own_connections = x.calculateOwnConnections();
+            double all_connections = x.calculateAllConnections();
+
+//            DF4.format()
+            // write data in the form of a 4x4 grid
+            fw.append(","+DF4.format(ew_up)+","+DF4.format(neighbour_ew_up)+"\n"
+                    +DF4.format(neighbour_ew_left)+","+DF4.format(strategy)+","+DF4.format(num_fair_relationships)+","+DF4.format(ew_right)+"\n"
+                    +DF4.format(ew_left)+","+DF4.format(own_connections)+","+DF4.format(all_connections)+","+DF4.format(neighbour_ew_right)+"\n"
+                    +","+DF4.format(neighbour_ew_down)+","+DF4.format(ew_down)+"\n"
+            );
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * Selection method where the player x compares their score with their neighbours'. The
+     * greater the difference in score, the neighbour's probability of being selected as x's
+     * parent is exponentially affected. If x selects x as parent, no evolution occurs.<br>
+     *
+     * After parent has been selected, evolution takes place.<br>
+     *
+     * @param x
+     */
+    public void weightedRouletteWheelSelection(Player x){
+        ArrayList<Player> neighbourhood = x.getNeighbourhood();
+        double[] imitation_scores = new double[neighbourhood.size()];
+        double total_imitation_score = 0;
+        double player_avg_score = x.getAverage_score();
+        for (int i = 0; i < neighbourhood.size(); i++) {
+            imitation_scores[i] =
+                    Math.exp(neighbourhood.get(i).getAverage_score() - player_avg_score);
+            total_imitation_score += imitation_scores[i];
+        }
+        total_imitation_score += 1.0;
+        double imitation_score_tally = 0;
+        double random_double_to_beat = ThreadLocalRandom.current().nextDouble();
+        for (int j = 0; j < neighbourhood.size(); j++) {
+            imitation_score_tally += imitation_scores[j];
+            double percentage = imitation_score_tally / total_imitation_score;
+            if (random_double_to_beat < percentage) {
+
+
+//                            player.copyStrategy(neighbourhood.get(j));
+                copyEvolution(x, neighbourhood.get(j));
+
+
+                break;
+            }
+        }
+
+
+    }
+
+
+    /**
+     * Evolution method where evolver wholly copies parent's strategy.
+     *
+     * @param evolver
+     * @param parent
+     */
+    public void copyEvolution(Player evolver, Player parent){
+        evolver.copyStrategy(parent);
     }
 
 }
