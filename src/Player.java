@@ -48,7 +48,8 @@ public class Player {
     // States the fairness interval to be allowed when determining fair relationships
     private static double fairness_interval;
 
-
+    // the amount of noise that may affect evolution
+    static double evolution_noise;
 
 
 
@@ -315,9 +316,6 @@ public class Player {
         return neighbourhood;
     }
 
-    public double getAverage_score(){
-        return average_score;
-    }
 
     public double getOld_p(){
         return old_p;
@@ -478,4 +476,48 @@ public class Player {
 
         return sum;
     }
+
+
+
+
+    /**
+     * Evolution method where child wholly copies parent's strategy.
+     * @param parent
+     */
+    public void copyEvolution(Player parent){
+        copyStrategy(parent);
+    }
+
+
+
+
+
+
+    public static double getEvolutionNoise(){
+        return evolution_noise;
+    }
+    public static void setEvolutionNoise(double d){
+        evolution_noise = d;
+    }
+
+    /**
+     * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
+     * new strategy lies within interval centred around parent's strategy.<br>
+     * @param parent
+     */
+    public void imitationEvolution(Player parent){
+        setP(ThreadLocalRandom.current().nextDouble(
+                p - evolution_noise, p + evolution_noise));
+    }
+
+
+
+    public double getAverageScore(){
+        return average_score;
+    }
+    public void setAverageScore(double d){
+        average_score=d;
+    }
+
+
 }

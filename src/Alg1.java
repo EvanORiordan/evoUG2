@@ -57,6 +57,9 @@ public class Alg1 extends Thread{
 
 
 
+
+
+
     /**
      * Method for starting a run of an experiment.
      * This is the core algorithm at the heart of the program.
@@ -105,7 +108,14 @@ public class Alg1 extends Thread{
             if((gen + 1) % evo_phase_rate == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
-                        weightedRouletteWheelSelection(player);
+
+                        // select parent
+//                        Player parent = weightedRouletteWheelSelection(player);
+                        Player parent = bestSelection(player);
+
+                        // evolve child
+                        player.copyEvolution(parent);
+//                        player.imitationEvolution(parent);
                     }
                 }
             }
@@ -148,6 +158,8 @@ public class Alg1 extends Thread{
 
 
 
+
+
     // main method for executing the program/algorithm
     public static void main(String[] args) {
 
@@ -160,23 +172,23 @@ public class Alg1 extends Thread{
 
 
         // define initial parameter values.
-        runs = 1;
+        runs = 10000;
         Player.setRate_of_change(0.05);
         rows = 10;
         gens = 5000;
-        evo_phase_rate = 2;
-        Player.setNeighbourhoodType("VN"); // possible values: VN, M
-//        Player.setNeighbourhoodType("M");
+        evo_phase_rate = 5;
+        Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
+//        Player.setNeighbourhoodType("M"); // moore neighbourhood
 
 
 
         // after which gen of the experiment do you wish to collect at?
-//         data_gen = gens; // collect data at end of run
-        data_gen = 50;
+         data_gen = gens; // collect data at end of run
+//        data_gen = 50;
 
+        Player.setFairnessInterval(0.05); // set the fairness interval
 
-        // set the fairness interval
-        Player.setFairnessInterval(0.05);
+        Player.setEvolutionNoise(0.1); // set the evolution noise
 
 
 
@@ -188,12 +200,10 @@ public class Alg1 extends Thread{
         N = rows * columns;
 
 
-        // indicate whether an experiment or an experiment series should be conducted.
-//        experiment_series = true;
-        experiment_series = false;
+//        experiment_series = true; // to run a single experiment
+        experiment_series = false; // to run an experiment series
 
-
-        if(experiment_series){ // for carrying out an experiment series
+        if(experiment_series){
 
             // define the parameter to be varied across the experiment series.
             varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
@@ -202,28 +212,21 @@ public class Alg1 extends Thread{
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 
-
             // define the amount by which the parameter will vary between subsequent experiments.
             // note: the double type here also works for varying integer type params such as gens.
             double variation = 0.05;
 
-
             int num_experiments = 8; // define number of experiments to occur here
-
 
             // display which parameter is being modified and by how much per experiment.
             System.out.println("Varying "+varying_parameter+" by "+variation+" between "+num_experiments+
                     " experiments with settings: ");
 
-//            experimentSeries(data_filename, variation, num_experiments); // run the experiment series.
-            experimentSeries(variation, num_experiments); // run the experiment series.
+            experimentSeries(variation, num_experiments); // run an experiment series
         }
 
-
-
-
-        else { // for carrying out a single experiment.
-            experiment(0);
+        else {
+            experiment(0); // run a single experiment
         }
 
 
@@ -236,6 +239,8 @@ public class Alg1 extends Thread{
         long minutesElapsed = Duration.between(start, finish).toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
+
+
 
 
 
@@ -312,6 +317,8 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
     }
+
+
 
 
 
@@ -458,6 +465,15 @@ public class Alg1 extends Thread{
                 + ", N="+N
                 + ", ROC="+DF4.format(Player.getRate_of_change())
                 + ", EPR="+evo_phase_rate
+
+                // state the selection method used.
+                + ", WRW selection"
+
+                // state the evolution method used.
+//                + ", copy evolution"
+
+                + ", imitation evolution with noise="+Player.getEvolutionNoise()
+
                 +": ");
     }
 
@@ -799,23 +815,31 @@ public class Alg1 extends Thread{
     }
 
 
+
+
+
     /**
-     * Selection method where the player x compares their score with their neighbours'. The
-     * greater the difference in score, the neighbour's probability of being selected as x's
-     * parent is exponentially affected. If x selects x as parent, no evolution occurs.<br>
-     *
+     * Selection method where the child compares their score with their neighbours'. The
+     * greater the difference in score, the neighbour's probability of being selected as child's
+     * parent is exponentially affected. If child selects itself as parent, no evolution occurs.<br>
      * After parent has been selected, evolution takes place.<br>
-     *
-     * @param x
+     * @param child
      */
-    public void weightedRouletteWheelSelection(Player x){
-        ArrayList<Player> neighbourhood = x.getNeighbourhood();
+    public Player weightedRouletteWheelSelection(Player child){
+
+        /**
+         * If a parent does not yet been selected, the child selects itself as parent by default.
+         * Therefore, the child will not undergo any evolutionary change.
+         */
+        Player parent = child;
+
+        ArrayList<Player> neighbourhood = child.getNeighbourhood();
         double[] imitation_scores = new double[neighbourhood.size()];
         double total_imitation_score = 0;
-        double player_avg_score = x.getAverage_score();
+        double player_avg_score = child.getAverageScore();
         for (int i = 0; i < neighbourhood.size(); i++) {
             imitation_scores[i] =
-                    Math.exp(neighbourhood.get(i).getAverage_score() - player_avg_score);
+                    Math.exp(neighbourhood.get(i).getAverageScore() - player_avg_score);
             total_imitation_score += imitation_scores[i];
         }
         total_imitation_score += 1.0;
@@ -825,28 +849,48 @@ public class Alg1 extends Thread{
             imitation_score_tally += imitation_scores[j];
             double percentage = imitation_score_tally / total_imitation_score;
             if (random_double_to_beat < percentage) {
-
-
-//                            player.copyStrategy(neighbourhood.get(j));
-                copyEvolution(x, neighbourhood.get(j));
-
-
-                break;
+                parent = neighbourhood.get(j);
             }
         }
 
-
+        return parent;
     }
 
 
     /**
-     * Evolution method where evolver wholly copies parent's strategy.
-     *
-     * @param evolver
-     * @param parent
+     * Selection method where child selects the highest scoring neighbour this gen as parent if
+     * that neighbour scored higher than the child.<br>
+     * @param child
      */
-    public void copyEvolution(Player evolver, Player parent){
-        evolver.copyStrategy(parent);
+    public Player bestSelection(Player child) {
+        Player parent;
+        int index = 0;
+        ArrayList<Player> neighbourhood = child.getNeighbourhood();
+        for(int i=1;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            Player best = neighbourhood.get(index);
+            double neighbour_score = neighbour.getAverageScore();
+            double best_score = best.getAverageScore();
+            if(neighbour_score > best_score){
+                index = i;
+            }
+        }
+        parent = neighbourhood.get(index);
+        if(parent.getScore() <= child.getScore()){
+            parent = child;
+        }
+
+        return parent;
     }
+
+
+
+
+
+
+
+
+
+
 
 }
