@@ -45,12 +45,12 @@ public class Player {
     // Tracks how many successful interactions the player had within some timeframe e.g. within a gen.
     private int num_successful_interactions = 0;
 
-    // States the fairness interval to be allowed when determining fair relationships
-    private static double fairness_interval;
+    private static double fairness_interval; // the leeway given when determining fair relationships
+    private static double imitation_noise; // the amount of noise that may affect imitation evolution
+    private static double approach_noise; // states by how much a player can change via approach evolution
+    private static String selection_method; // indicates the selection method to be used
+    private static String evolution_method; // indicates the evolution method to be used
 
-    static double evolution_noise; // the amount of noise that may affect imitation evolution
-
-    static double approach_limit; // states by how much a player can change via approach evolution
 
 
 
@@ -481,6 +481,22 @@ public class Player {
 
 
 
+
+    public static String getSelectionMethod(){
+        return selection_method;
+    }
+    public static void setSelectionMethod(String s){
+        selection_method=s;
+    }
+    public static String getEvolutionMethod(){
+        return evolution_method;
+    }
+    public static void setEvolutionMethod(String s){
+        evolution_method=s;
+    }
+
+
+
     /**
      * Evolution method where child wholly copies parent's strategy.<br>
      * Evolution does not take place if the parent and the child are the same player.
@@ -495,11 +511,11 @@ public class Player {
 
 
 
-    public static double getEvolutionNoise(){
-        return evolution_noise;
+    public static double getImitationNoise(){
+        return imitation_noise;
     }
-    public static void setEvolutionNoise(double d){
-        evolution_noise = d;
+    public static void setImitationNoise(double d){
+        imitation_noise = d;
     }
 
     /**
@@ -509,15 +525,12 @@ public class Player {
      * @param parent
      */
     public void imitationEvolution(Player parent){
-        int parent_id = parent.getId();
-        if(parent_id != id){
-            double parent_old_p = parent.getOld_p();
+        if(parent.id != id){
             double new_p = ThreadLocalRandom.current().nextDouble(
-                    parent_old_p - evolution_noise, + parent_old_p + evolution_noise);
+                    parent.old_p - imitation_noise, + parent.old_p + imitation_noise);
             setP(new_p);
         }
     }
-
 
 
     public double getAverageScore(){
@@ -529,15 +542,29 @@ public class Player {
 
 
 
-
+    /**
+     * Evolution method where child's strategy gets closer to, i.e. approaches, parent's strategy.
+     * The amount by which the child's strategy approaches the parent's is a randomly generated
+     * double between 0.0 and the approach limit.<br>
+     * Evolution does not take place if the parent and the child are the same player.<br>
+     * @param parent
+     */
     public void approachEvolution(Player parent){
-        int parent_id = parent.getId();
-        if(parent_id != id){
-//            double new_p = ThreadLocalRandom.current().nextDouble(
-//                    parent_old_p - evolution_noise, + parent_old_p + evolution_noise);
-//            setP(new_p);
+        if(parent.id != id){
+            double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
+            if(parent.old_p < p){ // if parent's p is lower, reduce p; else, increase p
+                approach *= -1;
+            }
+            double new_p = p + approach;
+            setP(new_p);
         }
     }
 
+    public static double getApproachNoise(){
+        return approach_noise;
+    }
+    public static void setApproachNoise(double d){
+        approach_noise=d;
+    }
 
 }

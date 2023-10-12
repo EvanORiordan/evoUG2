@@ -109,13 +109,23 @@ public class Alg1 extends Thread{
                     for (Player player : row) {
 
                         // select parent
-//                        Player parent = weightedRouletteWheelSelection(player);
-                        Player parent = bestSelection(player);
+                        Player parent = null;
+                        String selection_method = Player.getSelectionMethod();
+                        if(selection_method.equals("WRW")){
+                            parent = weightedRouletteWheelSelection(player);
+                        } else if(selection_method.equals("best")){
+                            parent = bestSelection(player);
+                        }
 
                         // evolve child
-//                        player.copyEvolution(parent);
-//                        player.imitationEvolution(parent);
-                        player.approachEvolution(parent);
+                        String evolution_method = Player.getEvolutionMethod();
+                        if(evolution_method.equals("copy")){
+                            player.copyEvolution(parent);
+                        } else if(evolution_method.equals("imitation")){
+                            player.imitationEvolution(parent);
+                        } else if(evolution_method.equals("approach")){
+                            player.approachEvolution(parent);
+                        }
 
                     }
                 }
@@ -187,11 +197,29 @@ public class Alg1 extends Thread{
          data_gen = gens; // collect data at end of run
 //        data_gen = 50;
 
+
         Player.setFairnessInterval(0.05); // set the fairness interval
 
-        Player.setEvolutionNoise(0.1); // set the evolution noise
 
-        Player.setApproachLimit(0.1); // set the approach limit
+        Player.setImitationNoise(0.1); // set the imitation noise
+
+
+        Player.setApproachNoise(0.1); // set the approach noise
+
+
+        // select a selection method
+        Player.setSelectionMethod("WRW"); // weighted roulette wheel
+//        Player.setSelectionMethod("best");
+
+        // select an evolution method
+//        Player.setEvolutionMethod("copy");
+//        Player.setEvolutionMethod("imitation");
+        Player.setEvolutionMethod("approach");
+
+
+
+
+
 
 
 
@@ -460,22 +488,35 @@ public class Alg1 extends Thread{
      * Displays experiment settings.
      */
     public static void displaySettings(){
-        System.out.println("runs="+runs
+        String s = "";
+        s += "runs="+runs
                 + ", gens="+gens
                 + ", neighbourhood="+Player.getNeighbourhoodType()
                 + ", N="+N
                 + ", ROC="+DF4.format(Player.getRate_of_change())
                 + ", EPR="+evo_phase_rate
+        ;
 
-                // state the selection method used.
-                + ", WRW selection"
+        // state the selection method used
+        String selection_method = Player.getSelectionMethod();
+        if(selection_method.equals("WRW")){
+            s += ", WRW selection";
+        }else if(selection_method.equals("best")){
+            s += ", best selection";
+        }
 
-                // state the evolution method used.
-//                + ", copy evolution"
+        // state the evolution method used
+        String evolution_method = Player.getEvolutionMethod();
+        if(evolution_method.equals("copy")){
+            s += ", copy evolution";
+        } else if(evolution_method.equals("imitation")){
+            s += ", imitation evolution with noise="+Player.getImitationNoise();
+        } else if(evolution_method.equals("approach")){
+            s += ", approach evolution with noise="+Player.getApproachNoise();
+        }
 
-                + ", imitation evolution with noise="+Player.getEvolutionNoise()
-
-                +": ");
+        s += ":";
+        System.out.println(s);
     }
 
 
