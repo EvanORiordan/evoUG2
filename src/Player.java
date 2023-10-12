@@ -13,8 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Player {
 
-    private static int count = 0; // class-wide attribute that helps assign player ID
-    private int ID; // each player has a unique ID
+    private static int count = 0; // class-wide attribute that helps assign player id
+    private int id; // each player has a unique id
     private double score; // amount of reward player has received from playing; i.e. this player's fitness
     private double p; // proposal value; real num within [0,1]
     private double q; // acceptance threshold value; real num within [0,1]
@@ -48,8 +48,9 @@ public class Player {
     // States the fairness interval to be allowed when determining fair relationships
     private static double fairness_interval;
 
-    // the amount of noise that may affect evolution
-    static double evolution_noise;
+    static double evolution_noise; // the amount of noise that may affect imitation evolution
+
+    static double approach_limit; // states by how much a player can change via approach evolution
 
 
 
@@ -60,7 +61,7 @@ public class Player {
      * if DG, make sure to pass 0.0 double as q argument.
      */
     public Player(double p, double q){
-        ID=count++; // assign this player's ID
+        id=count++; // assign this player's id
         this.p=p; // assign p value
         this.q=q; // assign q value
         old_p=p;
@@ -100,7 +101,7 @@ public class Player {
             double edge_weight = 0.0;
             for(int j=0;j<neighbour.neighbourhood.size();j++){ // find the edge weight.
                 Player neighbours_neighbour = neighbour.getNeighbourhood().get(j);
-                if(neighbours_neighbour.getId() == ID){
+                if(neighbours_neighbour.getId() == id){
                     edge_weight = neighbour.getEdge_weights()[j];
                     break;
                 }
@@ -177,14 +178,9 @@ public class Player {
         }
     }
 
-    // copy another player's strategy.
-    public void copyStrategy(Player model){
-        setP(model.old_p);
-        setQ(model.old_q);
-    }
 
     public int getId(){
-        return ID;
+        return id;
     }
 
     public static String getNeighbourhoodType(){
@@ -378,40 +374,45 @@ public class Player {
 
     @Override
     public String toString(){
-        // comment out a variable if you don't want it to appear in the player description when debugging
+        // comment a line out if you don't want it to appear in the player description when debugging
         String description = "";
-        description += "ID="+ID;
+        description += "id="+id;
         description += " p="+DF4.format(p);
-//        description += " oldp="+DF4.format(old_p);
+        description += " oldp="+DF4.format(old_p);
         if(q != 0){
             description += " q="+DF4.format(q);
         }
         description += " score="+DF4.format(score);
         description += " avgscore="+DF4.format(average_score);
+
+        // document neighbourhood
         if(neighbourhood.size() != 0){
             description += " neighbours=[";
             for(int i=0;i<neighbourhood.size();i++){
                 description += neighbourhood.get(i).getId();
-                if((i+1) < neighbourhood.size()){ // are there more neighbours?
+                if((i+1) < neighbourhood.size()){ // check to see if there are any neighbours left
                     description +=", ";
                 }
             }
             description +="]";
         }
+
+        // document EWs
         if(edge_weights.length != 0){
             description += " EW=[";
             for(int i=0;i<edge_weights.length;i++){
                 description += DF4.format(edge_weights[i]);
-                if((i+1) < neighbourhood.size()){ // are there more neighbours?
+                if((i+1) < neighbourhood.size()){ // check to see if there are any neighbours left
                     description +=", ";
                 }
             }
             description +="]";
         }
+
         description += " GPTG="+ games_played_this_gen;
-        description += " GPIT="+games_played_in_total;
-        description += " R1G="+role1_games;
-        description += " R2G="+role2_games;
+//        description += " GPIT="+games_played_in_total;
+//        description += " R1G="+role1_games;
+//        description += " R2G="+role2_games;
         return description;
     }
 
@@ -425,7 +426,7 @@ public class Player {
         int index = 0; // by default, assign index to 0.
         for (int l = 0; l < neighbour.neighbourhood.size(); l++) {
             Player y = neighbour.neighbourhood.get(l);
-            if (ID == y.getId()) {
+            if (id == y.getId()) {
                 index = l;
             }
         }
@@ -481,15 +482,16 @@ public class Player {
 
 
     /**
-     * Evolution method where child wholly copies parent's strategy.
+     * Evolution method where child wholly copies parent's strategy.<br>
+     * Evolution does not take place if the parent and the child are the same player.
      * @param parent
      */
     public void copyEvolution(Player parent){
-        copyStrategy(parent);
+        int parent_id = parent.getId();
+        if(parent_id != id){
+            setP(parent.old_p);
+        }
     }
-
-
-
 
 
 
@@ -503,11 +505,17 @@ public class Player {
     /**
      * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
      * new strategy lies within interval centred around parent's strategy.<br>
+     * Evolution does not take place if the parent and the child are the same player.<br>
      * @param parent
      */
     public void imitationEvolution(Player parent){
-        setP(ThreadLocalRandom.current().nextDouble(
-                p - evolution_noise, p + evolution_noise));
+        int parent_id = parent.getId();
+        if(parent_id != id){
+            double parent_old_p = parent.getOld_p();
+            double new_p = ThreadLocalRandom.current().nextDouble(
+                    parent_old_p - evolution_noise, + parent_old_p + evolution_noise);
+            setP(new_p);
+        }
     }
 
 
@@ -517,6 +525,18 @@ public class Player {
     }
     public void setAverageScore(double d){
         average_score=d;
+    }
+
+
+
+
+    public void approachEvolution(Player parent){
+        int parent_id = parent.getId();
+        if(parent_id != id){
+//            double new_p = ThreadLocalRandom.current().nextDouble(
+//                    parent_old_p - evolution_noise, + parent_old_p + evolution_noise);
+//            setP(new_p);
+        }
     }
 
 

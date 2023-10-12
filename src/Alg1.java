@@ -101,9 +101,8 @@ public class Alg1 extends Thread{
 
 
             /**
-             * Selection and evolution occur every evo_phase_rate gens.<br>
-             *
-             * Each player in the grid partakes in selection and evolution.<br>
+             * Selection and evolution occur every evo_phase_rate gens.
+             * Each player in the grid tries to evolve.
              */
             if((gen + 1) % evo_phase_rate == 0) {
                 for (ArrayList<Player> row : grid) {
@@ -114,8 +113,10 @@ public class Alg1 extends Thread{
                         Player parent = bestSelection(player);
 
                         // evolve child
-                        player.copyEvolution(parent);
+//                        player.copyEvolution(parent);
 //                        player.imitationEvolution(parent);
+                        player.approachEvolution(parent);
+
                     }
                 }
             }
@@ -190,7 +191,7 @@ public class Alg1 extends Thread{
 
         Player.setEvolutionNoise(0.1); // set the evolution noise
 
-
+        Player.setApproachLimit(0.1); // set the approach limit
 
 
 
@@ -860,23 +861,27 @@ public class Alg1 extends Thread{
     /**
      * Selection method where child selects the highest scoring neighbour this gen as parent if
      * that neighbour scored higher than the child.<br>
+     * Should the score comparison be between avg scores or just scores?<br>
      * @param child
      */
     public Player bestSelection(Player child) {
         Player parent;
         int index = 0;
         ArrayList<Player> neighbourhood = child.getNeighbourhood();
+        double best_avg_score;
         for(int i=1;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             Player best = neighbourhood.get(index);
-            double neighbour_score = neighbour.getAverageScore();
-            double best_score = best.getAverageScore();
-            if(neighbour_score > best_score){
+            double neighbour_avg_score = neighbour.getAverageScore();
+            best_avg_score = best.getAverageScore();
+            if(neighbour_avg_score > best_avg_score){
                 index = i;
             }
         }
         parent = neighbourhood.get(index);
-        if(parent.getScore() <= child.getScore()){
+        best_avg_score = parent.getAverageScore();
+        double child_avg_score = child.getAverageScore();
+        if(best_avg_score <= child_avg_score){
             parent = child;
         }
 
