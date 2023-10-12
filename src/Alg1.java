@@ -183,7 +183,7 @@ public class Alg1 extends Thread{
 
 
         // define initial parameter values.
-        runs = 10000;
+        runs = 1;
         Player.setRate_of_change(0.05);
         rows = 10;
         gens = 5000;
@@ -194,8 +194,8 @@ public class Alg1 extends Thread{
 
 
         // after which gen of the experiment do you wish to collect at?
-         data_gen = gens; // collect data at end of run
-//        data_gen = 50;
+//         data_gen = gens; // collect data at end of run
+        data_gen = 50;
 
 
         Player.setFairnessInterval(0.05); // set the fairness interval
