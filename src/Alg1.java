@@ -31,8 +31,15 @@ public class Alg1 extends Thread{
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     int gen = 0; // indicates which generation is currently running.
+
+    /**
+     * Indicate whether to run an experiment or an experiment series.<br>
+     * A series should be used when you want to vary a parameter of the algorithm between experiments.
+     * Otherwise, a single experiment should suffice.
+     */
+    static boolean experiment_series;
+
     static String varying_parameter; // indicates which parameter to be varied in an experiment series.
-    static boolean experiment_series; // indicate whether to run an experiment or an experiment series.
 
     // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
@@ -83,7 +90,7 @@ public class Alg1 extends Thread{
 
 
         // players begin playing the game
-        while(gen != gens) {
+        while(gen != gens) { // algorithm stops once this condition is reached
             // playing phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
@@ -147,7 +154,7 @@ public class Alg1 extends Thread{
 
                 if(gen==data_gen){
                     System.out.println("Taking data screenshot at gen "+data_gen+"...");
-                    writePopStrategies(data_filename_prefix + "Strategies.csv");
+                    writeStrategies(data_filename_prefix + "Strategies.csv");
                     writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
                     writeAllConnections(data_filename_prefix + "AllConnections.csv");
                     writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
@@ -183,19 +190,13 @@ public class Alg1 extends Thread{
 
 
         // define initial parameter values.
-        runs = 1;
-        Player.setRate_of_change(0.05);
+        runs = 100;
+        Player.setRate_of_change(0.02);
         rows = 10;
-        gens = 5000;
+        gens = 100000;
         evo_phase_rate = 5;
         Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
 //        Player.setNeighbourhoodType("M"); // moore neighbourhood
-
-
-
-        // after which gen of the experiment do you wish to collect at?
-//         data_gen = gens; // collect data at end of run
-        data_gen = 50;
 
 
         Player.setFairnessInterval(0.05); // set the fairness interval
@@ -204,7 +205,15 @@ public class Alg1 extends Thread{
         Player.setImitationNoise(0.1); // set the imitation noise
 
 
-        Player.setApproachNoise(0.1); // set the approach noise
+        Player.setApproachNoise(0.02); // set the approach noise
+
+
+
+        // after which gen of the experiment do you wish to collect at?
+         data_gen = gens - 1; // collect data at end of final gen of run
+//        data_gen = 50;
+
+
 
 
         // select a selection method
@@ -229,23 +238,24 @@ public class Alg1 extends Thread{
         N = rows * columns;
 
 
-//        experiment_series = true; // to run a single experiment
-        experiment_series = false; // to run an experiment series
+        experiment_series = true; // to run a single experiment
+//        experiment_series = false; // to run an experiment series
 
         if(experiment_series){
 
             // define the parameter to be varied across the experiment series.
-            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
+//            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
 //            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
+            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
             // define the amount by which the parameter will vary between subsequent experiments.
             // note: the double type here also works for varying integer type params such as gens.
-            double variation = 0.05;
+            double variation = 0.02;
 
-            int num_experiments = 8; // define number of experiments to occur here
+            int num_experiments = 10; // define number of experiments to occur here
 
             // display which parameter is being modified and by how much per experiment.
             System.out.println("Varying "+varying_parameter+" by "+variation+" between "+num_experiments+
@@ -312,7 +322,7 @@ public class Alg1 extends Thread{
                 + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
         );
 
-        // write stats/results and settings to a .csv data file.
+        // write results and settings to a .csv data file.
         try{
             FileWriter fw;
             String filename = data_filename_prefix + "Data.csv";
@@ -327,6 +337,8 @@ public class Alg1 extends Thread{
                         + ",N"
                         + ",ROC"
                         + ",EPR"
+                        + ",selection" // include heading for selection method
+                        + ",evolution" // include heading for evolution method
                 );
             } else {
                 fw = new FileWriter(filename, true);
@@ -341,6 +353,25 @@ public class Alg1 extends Thread{
                     + "," + Player.getRate_of_change()
                     + "," + evo_phase_rate
             );
+
+            // write selection method
+            String selection_method = Player.getSelectionMethod();
+            if(selection_method.equals("WRW")){
+                fw.append(",WRW");
+            } else if(selection_method.equals("best")){
+                fw.append(",best");
+            }
+
+            // write evolution method
+            String evolution_method = Player.getEvolutionMethod();
+            if(evolution_method.equals("copy")){
+                fw.append(",copy");
+            } else if(evolution_method.equals("imitation")){
+                fw.append(",imitation noise="+DF4.format(Player.getImitationNoise()));
+            } else if(evolution_method.equals("approach")){
+                fw.append(",approach noise="+DF4.format(Player.getApproachNoise()));
+            }
+
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -357,14 +388,13 @@ public class Alg1 extends Thread{
      * Allows for the running of multiple experiments, i.e. the running of a series of
      * experiments, i.e. the running of an experiment series.
      */
-//    public static void experimentSeries(String filename, double variation, int num_experiments){
     public static void experimentSeries(double variation, int num_experiments){
 
         // run the experiment series.
         for(int i=0;i<num_experiments;i++){
             experiment(i); // run the experiment and store its final data
 
-            // change the value of the parameter
+            // change the value of the assigned varying parameter
             if(varying_parameter.equals("ROC")){
                 Player.setRate_of_change(Player.getRate_of_change() + variation);
             } else if(varying_parameter.equals("EPR")){
@@ -375,6 +405,10 @@ public class Alg1 extends Thread{
                 rows += variation;
                 columns += variation;
                 N = rows * columns;
+            } else if(varying_parameter.equals("imitation_noise")){
+                Player.setImitationNoise(Player.getImitationNoise() + variation);
+            } else if(varying_parameter.equals("approach_noise")){
+                Player.setApproachNoise(Player.getApproachNoise() + variation);
             }
         }
 
@@ -388,9 +422,12 @@ public class Alg1 extends Thread{
         ArrayList<Integer> N = new ArrayList<>();
         ArrayList<Double> ROC = new ArrayList<>();
         ArrayList<Integer> EPR = new ArrayList<>();
-
 //        ArrayList<Integer> runs = new ArrayList<>();
 //        ArrayList<String> neighbourhood = new ArrayList<>();
+        ArrayList<String> imitation_noise = new ArrayList<>();
+        ArrayList<String> approach_noise = new ArrayList<>();
+
+
 
         int row_count = 0;
         try {
@@ -417,6 +454,10 @@ public class Alg1 extends Thread{
                         ROC.add(Double.valueOf(row_contents[7]));
                     } else if(varying_parameter.equals("EPR")){
                         EPR.add(Integer.valueOf(row_contents[8]));
+                    } else if(varying_parameter.equals("imitation_noise")){
+                        imitation_noise.add(row_contents[9]);
+                    } else if(varying_parameter.equals("approach_noise")){
+                        approach_noise.add(row_contents[10]);
                     }
                 }
                 row_count++;
@@ -439,7 +480,14 @@ public class Alg1 extends Thread{
                 summary += "\tROC=" + DF4.format(ROC.get(i));
             } else if(varying_parameter.equals("EPR")){
                 summary += "\tEPR=" + EPR.get(i);
+            } else if(varying_parameter.equals("imitation_noise")){
+                summary += "\t" + imitation_noise.get(i);
+            } else if(varying_parameter.equals("approach_noise")){
+                summary += "\t" + approach_noise.get(i);
             }
+
+
+
             summary += "\n";
         }
         System.out.println(summary);
@@ -489,6 +537,13 @@ public class Alg1 extends Thread{
      */
     public static void displaySettings(){
         String s = "";
+
+        if(experiment_series){
+            s += "Experiment series with settings: ";
+        } else {
+            s += "Experiment with settings: ";
+        }
+
         s += "runs="+runs
                 + ", gens="+gens
                 + ", neighbourhood="+Player.getNeighbourhoodType()
@@ -659,7 +714,7 @@ public class Alg1 extends Thread{
     /**
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
      */
-    public void writePopStrategies(String filename){
+    public void writeStrategies(String filename){
         FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
