@@ -215,7 +215,7 @@ public class Alg1 extends Thread{
         Player.setImitationNoise(0.1); // set the imitation noise
 
 
-        Player.setApproachNoise(0.02); // set the approach noise
+        Player.setApproachNoise(0.2); // set the approach noise
 
 
 
@@ -262,8 +262,8 @@ public class Alg1 extends Thread{
             varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
 
-            variation = 0.02; // assign variation
-            num_experiments = 20; // assign number of experiments
+            variation = 0.2; // assign variation
+            num_experiments = 5; // assign number of experiments
 
 
 //            experimentSeries(variation, num_experiments); // run an experiment series
