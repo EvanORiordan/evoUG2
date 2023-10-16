@@ -39,7 +39,17 @@ public class Alg1 extends Thread{
      */
     static boolean experiment_series;
 
-    static String varying_parameter; // indicates which parameter to be varied in an experiment series.
+    /**
+     * varying_parameter indicates which parameter will be varied in an experiment series.<br>
+     *
+     * variation indicates by how much the parameter will vary between subsequent experiments in the
+     * series. the double type here also works for varying integer type params such as gens.<br>
+     *
+     * num_experiments indicates the number of experiments to occur in the series.<br>
+     */
+    static String varying_parameter;
+    static double variation;
+    static int num_experiments;
 
     // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
@@ -243,7 +253,7 @@ public class Alg1 extends Thread{
 
         if(experiment_series){
 
-            // define the parameter to be varied across the experiment series.
+            // assign varying parameter
 //            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
 //            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
@@ -251,17 +261,13 @@ public class Alg1 extends Thread{
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
             varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
-            // define the amount by which the parameter will vary between subsequent experiments.
-            // note: the double type here also works for varying integer type params such as gens.
-            double variation = 0.02;
 
-            int num_experiments = 10; // define number of experiments to occur here
+            variation = 0.02; // assign variation
+            num_experiments = 20; // assign number of experiments
 
-            // display which parameter is being modified and by how much per experiment.
-            System.out.println("Varying "+varying_parameter+" by "+variation+" between "+num_experiments+
-                    " experiments with settings: ");
 
-            experimentSeries(variation, num_experiments); // run an experiment series
+//            experimentSeries(variation, num_experiments); // run an experiment series
+            experimentSeries(variation); // run an experiment series
         }
 
         else {
@@ -287,7 +293,6 @@ public class Alg1 extends Thread{
     /**
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
-//    public static void experiment(String filename, int experiment_number){
     public static void experiment(int experiment_number){
         displaySettings(); // display settings of experiment
 
@@ -388,7 +393,8 @@ public class Alg1 extends Thread{
      * Allows for the running of multiple experiments, i.e. the running of a series of
      * experiments, i.e. the running of an experiment series.
      */
-    public static void experimentSeries(double variation, int num_experiments){
+//    public static void experimentSeries(double variation, int num_experiments){
+    public static void experimentSeries(double variation){
 
         // run the experiment series.
         for(int i=0;i<num_experiments;i++){
@@ -539,10 +545,13 @@ public class Alg1 extends Thread{
         String s = "";
 
         if(experiment_series){
-            s += "Experiment series with settings: ";
+            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
+                    num_experiments+" experiments with settings: ";
         } else {
             s += "Experiment with settings: ";
         }
+
+        s+="\n";
 
         s += "runs="+runs
                 + ", gens="+gens
