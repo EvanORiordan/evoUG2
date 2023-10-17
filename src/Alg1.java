@@ -60,7 +60,7 @@ public class Alg1 extends Thread{
             Thread.currentThread().getStackTrace()[1].getClassName();
 
     // here, manually set the rate at which interaction data will be recorded
-    static int interaction_data_record_rate = 10;
+    static int interaction_data_record_rate;
 
     static int data_gen;
 
@@ -163,7 +163,7 @@ public class Alg1 extends Thread{
 
 
                 if(gen==data_gen){
-                    System.out.println("Taking data screenshot at gen "+data_gen+"...");
+                    System.out.println("Recording detailed data for gen "+data_gen+"...");
                     writeStrategies(data_filename_prefix + "Strategies.csv");
                     writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
                     writeAllConnections(data_filename_prefix + "AllConnections.csv");
@@ -200,29 +200,16 @@ public class Alg1 extends Thread{
 
 
         // define initial parameter values.
-        runs = 100;
-        Player.setRate_of_change(0.02);
-        rows = 10;
-        gens = 100000;
-        evo_phase_rate = 5;
+        runs = 1000;
+        Player.setRate_of_change(0.2);
+        rows = 30;
+        gens = 10000;
+        evo_phase_rate = 1;
         Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
 //        Player.setNeighbourhoodType("M"); // moore neighbourhood
-
-
         Player.setFairnessInterval(0.05); // set the fairness interval
-
-
         Player.setImitationNoise(0.1); // set the imitation noise
-
-
-        Player.setApproachNoise(0.2); // set the approach noise
-
-
-
-        // after which gen of the experiment do you wish to collect at?
-         data_gen = gens - 1; // collect data at end of final gen of run
-//        data_gen = 50;
-
+        Player.setApproachNoise(0.1); // set the approach noise
 
 
 
@@ -231,12 +218,20 @@ public class Alg1 extends Thread{
 //        Player.setSelectionMethod("best");
 
         // select an evolution method
-//        Player.setEvolutionMethod("copy");
+        Player.setEvolutionMethod("copy");
 //        Player.setEvolutionMethod("imitation");
-        Player.setEvolutionMethod("approach");
+//        Player.setEvolutionMethod("approach");
 
 
 
+        // after which gen of the experiment do you wish to collect at?
+        data_gen = gens - 1; // collect data at end of final gen of run
+//        data_gen = 50;
+
+
+        // define how often interaction data is recorded
+        interaction_data_record_rate = gens - 1; // collect data at end of final gen of run
+//        interaction_data_record_rate = 10;
 
 
 
@@ -255,19 +250,18 @@ public class Alg1 extends Thread{
 
             // assign varying parameter
 //            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
-//            varying_parameter = "EPR"; // vary the evolutionary phase rate.
+            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
-            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
+//            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
 
-            variation = 0.2; // assign variation
-            num_experiments = 5; // assign number of experiments
+            variation = 1; // assign variation
+            num_experiments = 8; // assign number of experiments
 
 
-//            experimentSeries(variation, num_experiments); // run an experiment series
-            experimentSeries(variation); // run an experiment series
+            experimentSeries(); // run an experiment series
         }
 
         else {
@@ -393,8 +387,7 @@ public class Alg1 extends Thread{
      * Allows for the running of multiple experiments, i.e. the running of a series of
      * experiments, i.e. the running of an experiment series.
      */
-//    public static void experimentSeries(double variation, int num_experiments){
-    public static void experimentSeries(double variation){
+    public static void experimentSeries(){
 
         // run the experiment series.
         for(int i=0;i<num_experiments;i++){
@@ -956,6 +949,7 @@ public class Alg1 extends Thread{
             double percentage = imitation_score_tally / total_imitation_score;
             if (random_double_to_beat < percentage) {
                 parent = neighbourhood.get(j);
+                break;
             }
         }
 

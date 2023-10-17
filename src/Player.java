@@ -503,8 +503,7 @@ public class Player {
      * @param parent
      */
     public void copyEvolution(Player parent){
-        int parent_id = parent.getId();
-        if(parent_id != id){
+        if(parent.id != id){
             setP(parent.old_p);
         }
     }
