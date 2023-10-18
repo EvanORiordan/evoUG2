@@ -46,10 +46,15 @@ public class Alg1 extends Thread{
      * series. the double type here also works for varying integer type params such as gens.<br>
      *
      * num_experiments indicates the number of experiments to occur in the series.<br>
+     *
+     * experiment_number tracks which experiment is taking place at any given time during a series.
      */
     static String varying_parameter;
     static double variation;
     static int num_experiments;
+    static int experiment_number = 0;
+
+
 
     // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
@@ -200,17 +205,16 @@ public class Alg1 extends Thread{
 
 
         // define initial parameter values.
-        runs = 1000;
-        Player.setRate_of_change(0.2);
-        rows = 30;
+        runs = 100;
+        Player.setRate_of_change(0.02);
+        rows = 10;
         gens = 10000;
-        evo_phase_rate = 1;
+        evo_phase_rate = 5;
         Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
 //        Player.setNeighbourhoodType("M"); // moore neighbourhood
         Player.setFairnessInterval(0.05); // set the fairness interval
         Player.setImitationNoise(0.1); // set the imitation noise
-        Player.setApproachNoise(0.1); // set the approach noise
-
+        Player.setApproachNoise(0.2); // set the approach noise
 
 
         // select a selection method
@@ -218,9 +222,9 @@ public class Alg1 extends Thread{
 //        Player.setSelectionMethod("best");
 
         // select an evolution method
-        Player.setEvolutionMethod("copy");
+//        Player.setEvolutionMethod("copy");
 //        Player.setEvolutionMethod("imitation");
-//        Player.setEvolutionMethod("approach");
+        Player.setEvolutionMethod("approach");
 
 
 
@@ -249,23 +253,23 @@ public class Alg1 extends Thread{
         if(experiment_series){
 
             // assign varying parameter
-//            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
-            varying_parameter = "EPR"; // vary the evolutionary phase rate.
+            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
+//            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
 
-            variation = 1; // assign variation
-            num_experiments = 8; // assign number of experiments
+            variation = -0.001; // assign variation
+            num_experiments = 20; // assign number of experiments
 
 
             experimentSeries(); // run an experiment series
         }
 
         else {
-            experiment(0); // run a single experiment
+            experiment(); // run a single experiment
         }
 
 
@@ -287,7 +291,7 @@ public class Alg1 extends Thread{
     /**
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
-    public static void experiment(int experiment_number){
+    public static void experiment(){
         displaySettings(); // display settings of experiment
 
         // stats to be tracked
@@ -375,6 +379,8 @@ public class Alg1 extends Thread{
         } catch(IOException e){
             e.printStackTrace();
         }
+
+        experiment_number++; // indicates that we are moving onto the next experiment in series
     }
 
 
@@ -391,7 +397,7 @@ public class Alg1 extends Thread{
 
         // run the experiment series.
         for(int i=0;i<num_experiments;i++){
-            experiment(i); // run the experiment and store its final data
+            experiment(); // run the experiment and store its final data
 
             // change the value of the assigned varying parameter
             if(varying_parameter.equals("ROC")){
@@ -537,7 +543,7 @@ public class Alg1 extends Thread{
     public static void displaySettings(){
         String s = "";
 
-        if(experiment_series){
+        if(experiment_series && experiment_number == 0){ // if at start of series
             s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
                     num_experiments+" experiments with settings: ";
         } else {
