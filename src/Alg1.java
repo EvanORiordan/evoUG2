@@ -206,25 +206,29 @@ public class Alg1 extends Thread{
 
         // define initial parameter values.
         runs = 100;
-        Player.setRate_of_change(0.02);
+        Player.setRate_of_change(0.01);
         rows = 20;
         gens = 10000;
-        evo_phase_rate = 5;
+        evo_phase_rate = 1;
         Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
 //        Player.setNeighbourhoodType("M"); // moore neighbourhood
         Player.setFairnessInterval(0.05); // set the fairness interval
-        Player.setImitationNoise(0.1); // set the imitation noise
-        Player.setApproachNoise(0.1); // set the approach noise
+        Player.setImitationNoise(0.05); // set the imitation noise
+        Player.setApproachNoise(0.05); // set the approach noise
+
+
 
 
         // select a selection method
-//        Player.setSelectionMethod("WRW"); // weighted roulette wheel
-        Player.setSelectionMethod("best");
+        Player.setSelectionMethod("WRW"); // weighted roulette wheel
+//        Player.setSelectionMethod("best");
 
         // select an evolution method
 //        Player.setEvolutionMethod("copy");
-//        Player.setEvolutionMethod("imitation");
-        Player.setEvolutionMethod("approach");
+        Player.setEvolutionMethod("imitation");
+//        Player.setEvolutionMethod("approach");
+
+
 
 
 
@@ -247,21 +251,21 @@ public class Alg1 extends Thread{
         N = rows * columns;
 
 
-//        experiment_series = true; // to run a single experiment
-        experiment_series = false; // to run an experiment series
+        experiment_series = true; // to run a single experiment
+//        experiment_series = false; // to run an experiment series
 
         if(experiment_series){
 
             // assign varying parameter
 //            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
-//            varying_parameter = "EPR"; // vary the evolutionary phase rate.
+            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
-            varying_parameter = "rows_columns"; // vary the number of rows and columns.
+//            varying_parameter = "rows_columns"; // vary the number of rows and columns.
+//            varying_parameter = "imitation_noise"; // vary amount of imitation noise affecting evolution
 //            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
-
-            variation = 5; // assign variation
-            num_experiments = 8; // assign number of experiments
+            variation = 1; // assign variation
+            num_experiments = 22; // assign number of experiments
 
 
             experimentSeries(); // run an experiment series
@@ -459,7 +463,7 @@ public class Alg1 extends Thread{
                     } else if(varying_parameter.equals("EPR")){
                         EPR.add(Integer.valueOf(row_contents[8]));
                     } else if(varying_parameter.equals("imitation_noise")){
-                        imitation_noise.add(row_contents[9]);
+                        imitation_noise.add(row_contents[10]);
                     } else if(varying_parameter.equals("approach_noise")){
                         approach_noise.add(row_contents[10]);
                     }
