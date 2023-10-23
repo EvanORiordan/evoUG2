@@ -280,7 +280,7 @@ public class Player {
         return rate_of_change;
     }
 
-    public static void setRate_of_change(double d){
+    public static void setRateOfChange(double d){
         rate_of_change=d;
     }
 
@@ -428,6 +428,8 @@ public class Player {
      * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
      * new strategy lies within interval centred around parent's strategy.<br>
      * Evolution does not take place if the parent and the child are the same player.<br>
+     * The lower the noise, the more accurate the imitations will generally be.<br>
+     * If noise is set to 0, the result of the evolution is identical to copy evolution.<br>
      */
     public void imitationEvolution(Player parent){
         if(parent.id != id){
@@ -449,6 +451,7 @@ public class Player {
      * The amount by which the child's strategy approaches the parent's is a randomly generated
      * double between 0.0 and the approach limit.<br>
      * Evolution does not take place if the parent and the child are the same player.<br>
+     * The greater the noise, the greater the approach is.<br>
      */
     public void approachEvolution(Player parent){
         if(parent.id != id){
