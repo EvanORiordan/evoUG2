@@ -14,22 +14,17 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Player {
 
     private static int count = 0; // class-wide attribute that helps assign player id
-    private int id; // each player has a unique id
+    private final int id; // each player has a unique id
     private double score; // amount of reward player has received from playing; i.e. this player's fitness
     private double p; // proposal value; real num within [0,1]
     private double q; // acceptance threshold value; real num within [0,1]
-    private int games_played_in_total; // keep track of the total number of games this player has played
     private static String neighbourhood_type; // neighbourhood type of this player
     private ArrayList<Player> neighbourhood; // this player's neighbourhood
-    private int games_played_this_gen;
     private static double prize; // the prize amount being split in an interaction
     private double old_p; // the p value held at the beginning of the gen; will be copied by imitators
-    private double old_q; // the q value held at the beginning of the gen; will be copied by imitators
-    private int role1_games; // how many games this player has played as role1
-    private int role2_games; // how many games this player has played as role2
     private double average_score; // average score of this player this gen
-    private static DecimalFormat DF1 = new DecimalFormat("0.0"); // 1 decimal point DecimalFormat
-    private static DecimalFormat DF4 = new DecimalFormat("0.0000"); // 4 decimal point DecimalFormat
+    private static final DecimalFormat DF1 = new DecimalFormat("0.0");
+    private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
 
     /**
      * Stores edge weights belonging to the player.
@@ -42,8 +37,17 @@ public class Player {
 
     private static double rate_of_change; // fixed amount by which edge weight is modified.
 
-    // Tracks how many successful interactions the player had within some timeframe e.g. within a gen.
-    private int num_successful_interactions = 0;
+    /**
+     * NI: how many interactions the player had (within some timeframe e.g. within a gen).<br>
+     * NSI: how many successful interactions the player had. A successful interaction is defined as an
+     * interaction where payoff was received.<br>
+     * NSD: how many successful interaction the player had as dictator.<br>
+     * NSR: how many successful interaction the player had as recipient.<br>
+     */
+    private int num_interactions = 0;               // NI
+    private int num_successful_interactions = 0;    // NSI
+    private int num_successful_dictations;          // NSD
+    private int num_successful_receptions;          // NSR
 
     private static double fairness_interval; // the leeway given when determining fair relationships
     private static double imitation_noise; // the amount of noise that may affect imitation evolution
@@ -54,11 +58,9 @@ public class Player {
 
 
 
-
-
     /**
-     * constructor for instantiating a player.
-     * if DG, make sure to pass 0.0 double as q argument.
+     * Constructor method for instantiating a Player object.<br>
+     * Since this is the DG, make sure to pass 0.0 to q.
      */
     public Player(double p, double q){
         id=count++; // assign this player's id
@@ -69,59 +71,36 @@ public class Player {
 
 
     /**
-     * method for playing the UG.
-     * receives a Player argument to play with.
-     * if DG, the offer is always accepted since the responder/recipient/role2 player has q=0.0.
-     *
-     */
-    public void playUG(Player responder) {
-        if(p >= responder.q){ // accept offer
-            updateStats(prize*(1-p), true);
-            responder.updateStats(prize*p, false);
-        } else { // reject offer
-            updateStats(0, true);
-            responder.updateStats(0, false);
-        }
-    }
-
-
-
-
-    /**
-     * Play the game with respect to space and edge weights.<br>
-     * For each neighbour in your neighbourhood, propose to them if the weight of their edge
-     * to you, which represents their likelihood of receiving from you, is greater than a
+     * Play the UG with respect to space and edge weights.<br>
+     * For each neighbour y in x's neighbourhood, x proposes/dictates to them if the weight of y's
+     * edge to x, which represents y's likelihood of receiving from x, is greater than a
      * randomly generated double between 0 and 1.<br>
-     * If the game is DG, you can mentally replace the word "propose" with "dictate".
      */
     public void playEWSpatialUG(){
-        for(int i=0;i<neighbourhood.size();i++){
+        for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
             Player neighbour = neighbourhood.get(i);
-            double random_double = ThreadLocalRandom.current().nextDouble();
-            double edge_weight = 0.0;
-            for(int j=0;j<neighbour.neighbourhood.size();j++){ // find the edge weight.
-                Player neighbours_neighbour = neighbour.getNeighbourhood().get(j);
-                if(neighbours_neighbour.getId() == id){
-                    edge_weight = neighbour.getEdge_weights()[j];
+            for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
+                Player neighbours_neighbour = neighbour.neighbourhood.get(j);
+                if(neighbours_neighbour.id == id){ // find EW of y associated with x
+                    double edge_weight = neighbour.edge_weights[j];
+                    double random_double = ThreadLocalRandom.current().nextDouble();
+                    if(edge_weight > random_double){ // x has EW% probability of success
+                        if(p >= neighbour.q){ // accept offer
+                            updateStats(prize * (1 - p), true);
+                            neighbour.updateStats(prize * p, false);
+                        } else { // reject offer
+                            updateStats(0, true);
+                            neighbour.updateStats(0, false);
+                        }
+                    }
                     break;
                 }
             }
-            if(edge_weight > random_double){
-                playUG(neighbour);
-            }
-//            else {
-//                System.out.println("(place BP here) EW too low");
-//            }
         }
     }
 
 
 
-
-
-    public double getScore(){
-        return score;
-    }
 
     public void setScore(double score){
         this.score=score;
@@ -141,41 +120,24 @@ public class Player {
         }
     }
 
-    public double getQ(){
-        return q;
-    }
-
-    // recall that q must lie within the range [0,1]
-    public void setQ(double q){
-        this.q=q;
-        if(this.q>1){
-            this.q=1;
-        } else if(this.q<0){
-            this.q=0;
-        }
-    }
 
     /**
-     * Update the status of this player after playing, including score and average score.
-     * The average score calculation is usual for seeing what score a player accrued over
-     * the gen.<br>
-     * 6/3/23: I have changed this to dividing by games_played_this_gen to games_played_in_total.
+     * Update the status of the player after having played, including score and average score.<br>
      */
-    public void updateStats(double payoff, boolean role1){
+    public void updateStats(double payoff, boolean dictator){
         score+=payoff;
-        games_played_in_total++;
-        games_played_this_gen++;
-        if(role1){
-            role1_games++;
-        } else{
-            role2_games++;
-        }
-        average_score = score / games_played_this_gen;
-
-        // check if the interaction was successful i.e. if any payoff was received.
-        if(payoff != 0){
+        num_interactions++;
+        if(payoff != 0){ // check if the interaction was successful i.e. if any payoff was received.
             num_successful_interactions++;
+            if(dictator){
+                num_successful_dictations++;
+            } else{
+                num_successful_receptions++;
+            }
         }
+
+//        average_score = score / num_interactions;
+        average_score = score / num_successful_interactions;
     }
 
 
@@ -191,9 +153,6 @@ public class Player {
         neighbourhood_type=s;
     }
 
-    public void setGamesPlayedThisGen(int games_played_this_gen){
-        this.games_played_this_gen = games_played_this_gen;
-    }
 
 
 
@@ -236,7 +195,6 @@ public class Player {
         edge_weights = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
             edge_weights[i] = 1.0; // initialise edge weight at 1.0
-//            associated_edge_weights[i] = 1.0;
         }
     }
 
@@ -269,14 +227,14 @@ public class Player {
 
     /**
      *  Identifies if the player and the given neighbour have a fair relationship under the given
-     *  fairness_interval.
+     *  fairness_interval.<br>
      *
      *  A fair relationship here is loosely defined as one where the p values of the two players
      *  are within the fairness interval from each other. The "fairness interval" indicates how
      *  much leeway is being given.<br>
      *
      *  Nodes x and y have a fair relationship if p_y lies within [p_x - fairness_interval, p_y +
-     *  fairness_interval].
+     *  fairness_interval].<br>
      *
      *  E.g. p_1=0.4, p_2=0.37 and fairness_interval=0.05 is a fair relationship because p_2 lies within
      *  the interval [p_1 - fairness_interval, p_1 + fairness_interval] = [0.4 - 0.05, 0.4 + 0.05] =
@@ -289,20 +247,12 @@ public class Player {
         double p_y = neighbour.getP();
         double lower_bound = p - fairness_interval;
         double upper_bound = p + fairness_interval;
-        if(lower_bound <= p_y && upper_bound >= p_y){
-            return true;
-        } else {
-            return false;
-        }
+
+        return lower_bound <= p_y && upper_bound >= p_y;
     }
 
 
 
-
-
-    public static double getPrize(){
-        return prize;
-    }
 
     public static void setPrize(double d){
         prize=d;
@@ -312,21 +262,8 @@ public class Player {
         return neighbourhood;
     }
 
-
-    public double getOld_p(){
-        return old_p;
-    }
-
-    public void setOld_p(double old_p){
+    public void setOldP(double old_p){
         this.old_p=old_p;
-    }
-
-    public double getOld_q(){
-        return old_q;
-    }
-
-    public void setOld_q(double old_q){
-        this.old_q=old_q;
     }
 
     public static DecimalFormat getDF1() { return DF1; }
@@ -351,9 +288,6 @@ public class Player {
         return num_successful_interactions;
     }
 
-    public void setNum_successful_interactions(int i){
-        num_successful_interactions=i;
-    }
 
 
     /**
@@ -373,46 +307,27 @@ public class Player {
 
 
     @Override
-    public String toString(){
-        // comment a line out if you don't want it to appear in the player description when debugging
+    public String toString(){ // document details relating to the player
         String description = "";
         description += "id="+id;
-        description += " p="+DF4.format(p);
-        description += " oldp="+DF4.format(old_p);
-        if(q != 0){
-            description += " q="+DF4.format(q);
-        }
-        description += " score="+DF4.format(score);
-        description += " avgscore="+DF4.format(average_score);
+        description += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
+        description += " score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
 
-        // document neighbourhood
-        if(neighbourhood.size() != 0){
-            description += " neighbours=[";
-            for(int i=0;i<neighbourhood.size();i++){
-                description += neighbourhood.get(i).getId();
-                if((i+1) < neighbourhood.size()){ // check to see if there are any neighbours left
-                    description +=", ";
-                }
+        // document neighbourhood and EWs
+        description += " neighbourhood=[";
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            description += neighbour.id + " (" + DF4.format(edge_weights[i]) + ")";
+            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
+                description +=", ";
             }
-            description +="]";
         }
+        description +="]";
 
-        // document EWs
-        if(edge_weights.length != 0){
-            description += " EW=[";
-            for(int i=0;i<edge_weights.length;i++){
-                description += DF4.format(edge_weights[i]);
-                if((i+1) < neighbourhood.size()){ // check to see if there are any neighbours left
-                    description +=", ";
-                }
-            }
-            description +="]";
-        }
-
-        description += " GPTG="+ games_played_this_gen;
-//        description += " GPIT="+games_played_in_total;
-//        description += " R1G="+role1_games;
-//        description += " R2G="+role2_games;
+        description += " NI="+ num_interactions;
+        description += " NSI="+ num_successful_interactions;
+        description += " NSD="+ num_successful_dictations;
+        description += " NSR="+ num_successful_receptions;
         return description;
     }
 
@@ -434,9 +349,6 @@ public class Player {
     }
 
 
-    public static double getFairnessInterval(){
-        return fairness_interval;
-    }
 
     public static void setFairnessInterval(double d){
         fairness_interval=d;
@@ -468,10 +380,6 @@ public class Player {
          */
         for(int k=0;k<neighbourhood.size();k++) {
             Player y = neighbourhood.get(k);
-//            double addition = y.getEdge_weights()[findXInNeighboursNeighbourhood(y)];
-//            sum += addition;
-//            avg_all_connections += addition;
-
             sum += y.edge_weights[findXInNeighboursNeighbourhood(y)];
         }
 
@@ -499,8 +407,7 @@ public class Player {
 
     /**
      * Evolution method where child wholly copies parent's strategy.<br>
-     * Evolution does not take place if the parent and the child are the same player.
-     * @param parent
+     * Evolution does not take place if the parent and the child are the same player.<br>
      */
     public void copyEvolution(Player parent){
         if(parent.id != id){
@@ -521,12 +428,11 @@ public class Player {
      * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
      * new strategy lies within interval centred around parent's strategy.<br>
      * Evolution does not take place if the parent and the child are the same player.<br>
-     * @param parent
      */
     public void imitationEvolution(Player parent){
         if(parent.id != id){
             double new_p = ThreadLocalRandom.current().nextDouble(
-                    parent.old_p - imitation_noise, + parent.old_p + imitation_noise);
+                    parent.old_p - imitation_noise, parent.old_p + imitation_noise);
             setP(new_p);
         }
     }
@@ -534,9 +440,6 @@ public class Player {
 
     public double getAverageScore(){
         return average_score;
-    }
-    public void setAverageScore(double d){
-        average_score=d;
     }
 
 
@@ -546,7 +449,6 @@ public class Player {
      * The amount by which the child's strategy approaches the parent's is a randomly generated
      * double between 0.0 and the approach limit.<br>
      * Evolution does not take place if the parent and the child are the same player.<br>
-     * @param parent
      */
     public void approachEvolution(Player parent){
         if(parent.id != id){
@@ -566,4 +468,20 @@ public class Player {
         approach_noise=d;
     }
 
+
+
+
+
+    public void setNumInteractions(int i){
+        num_interactions=i;
+    }
+    public void setNumSuccessfulInteractions(int i){
+        num_successful_interactions=i;
+    }
+    public void setNumSuccessfulDictations(int i){
+        num_successful_dictations=i;
+    }
+    public void setNumSuccessfulReceptions(int i){
+        num_successful_receptions=i;
+    }
 }

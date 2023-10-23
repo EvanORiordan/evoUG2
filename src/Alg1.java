@@ -73,7 +73,8 @@ public class Alg1 extends Thread{
     static String player_data_filename_prefix = "csv_data\\player_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-
+    // add scanner to receive input. then receive input for experiment or series, which varying param,
+    // what is the variation amount, etc.
 
 
 
@@ -141,12 +142,10 @@ public class Alg1 extends Thread{
 
                         // evolve child
                         String evolution_method = Player.getEvolutionMethod();
-                        if(evolution_method.equals("copy")){
-                            player.copyEvolution(parent);
-                        } else if(evolution_method.equals("imitation")){
-                            player.imitationEvolution(parent);
-                        } else if(evolution_method.equals("approach")){
-                            player.approachEvolution(parent);
+                        switch (evolution_method) {
+                            case "copy" -> player.copyEvolution(parent);
+                            case "imitation" -> player.imitationEvolution(parent);
+                            case "approach" -> player.approachEvolution(parent);
                         }
 
                     }
@@ -206,10 +205,10 @@ public class Alg1 extends Thread{
 
         // define initial parameter values.
         runs = 100;
-        Player.setRate_of_change(0.01);
+        Player.setRate_of_change(0.02);
         rows = 20;
         gens = 10000;
-        evo_phase_rate = 1;
+        evo_phase_rate = 5;
         Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
 //        Player.setNeighbourhoodType("M"); // moore neighbourhood
         Player.setFairnessInterval(0.05); // set the fairness interval
@@ -251,21 +250,21 @@ public class Alg1 extends Thread{
         N = rows * columns;
 
 
-        experiment_series = true; // to run a single experiment
-//        experiment_series = false; // to run an experiment series
+//        experiment_series = true; // to run a single experiment
+        experiment_series = false; // to run an experiment series
 
         if(experiment_series){
 
             // assign varying parameter
 //            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
-            varying_parameter = "EPR"; // vary the evolutionary phase rate.
+//            varying_parameter = "EPR"; // vary the evolutionary phase rate.
 //            varying_parameter = "gens"; // vary the number of generations.
-//            varying_parameter = "rows_columns"; // vary the number of rows and columns.
+            varying_parameter = "rows_columns"; // vary the number of rows and columns.
 //            varying_parameter = "imitation_noise"; // vary amount of imitation noise affecting evolution
 //            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
 
-            variation = 1; // assign variation
-            num_experiments = 22; // assign number of experiments
+            variation = 4; // assign variation
+            num_experiments = 6; // assign number of experiments
 
 
             experimentSeries(); // run an experiment series
@@ -370,12 +369,10 @@ public class Alg1 extends Thread{
 
             // write evolution method
             String evolution_method = Player.getEvolutionMethod();
-            if(evolution_method.equals("copy")){
-                fw.append(",copy");
-            } else if(evolution_method.equals("imitation")){
-                fw.append(",imitation noise="+DF4.format(Player.getImitationNoise()));
-            } else if(evolution_method.equals("approach")){
-                fw.append(",approach noise="+DF4.format(Player.getApproachNoise()));
+            switch (evolution_method) {
+                case "copy" -> fw.append(",copy");
+                case "imitation" -> fw.append(",imitation noise=" + DF4.format(Player.getImitationNoise()));
+                case "approach" -> fw.append(",approach noise=" + DF4.format(Player.getApproachNoise()));
             }
 
             fw.close();
@@ -403,20 +400,17 @@ public class Alg1 extends Thread{
             experiment(); // run the experiment and store its final data
 
             // change the value of the assigned varying parameter
-            if(varying_parameter.equals("ROC")){
-                Player.setRate_of_change(Player.getRate_of_change() + variation);
-            } else if(varying_parameter.equals("EPR")){
-                evo_phase_rate += variation;
-            } else if(varying_parameter.equals("gens")){
-                gens += variation;
-            } else if(varying_parameter.equals("rows_columns")){
-                rows += variation;
-                columns += variation;
-                N = rows * columns;
-            } else if(varying_parameter.equals("imitation_noise")){
-                Player.setImitationNoise(Player.getImitationNoise() + variation);
-            } else if(varying_parameter.equals("approach_noise")){
-                Player.setApproachNoise(Player.getApproachNoise() + variation);
+            switch (varying_parameter) {
+                case "ROC" -> Player.setRate_of_change(Player.getRate_of_change() + variation);
+                case "EPR" -> evo_phase_rate += (int) variation;
+                case "gens" -> gens += (int) variation;
+                case "rows_columns" -> {
+                    rows += (int) variation;
+                    columns += (int) variation;
+                    N = rows * columns;
+                }
+                case "imitation_noise" -> Player.setImitationNoise(Player.getImitationNoise() + variation);
+                case "approach_noise" -> Player.setApproachNoise(Player.getApproachNoise() + variation);
             }
         }
 
@@ -443,7 +437,7 @@ public class Alg1 extends Thread{
                     new BufferedReader(
                             new FileReader(
                                     data_filename_prefix + "Data.csv"));
-            String line = "";
+            String line;
             while((line = br.readLine()) != null){
                 String[] row_contents = line.split(",");
                 if(row_count != 0){
@@ -454,18 +448,13 @@ public class Alg1 extends Thread{
 //                    runs.add(Integer.valueOf(row_contents[3]));
 //                    neighbourhood.add(String.valueOf(row_contents[5]));
 
-                    if(varying_parameter.equals("gens")){
-                        gens.add(Integer.valueOf(row_contents[4]));
-                    } else if(varying_parameter.equals("rows_columns")){
-                        N.add(Integer.valueOf(row_contents[6]));
-                    } else if(varying_parameter.equals("ROC")){
-                        ROC.add(Double.valueOf(row_contents[7]));
-                    } else if(varying_parameter.equals("EPR")){
-                        EPR.add(Integer.valueOf(row_contents[8]));
-                    } else if(varying_parameter.equals("imitation_noise")){
-                        imitation_noise.add(row_contents[10]);
-                    } else if(varying_parameter.equals("approach_noise")){
-                        approach_noise.add(row_contents[10]);
+                    switch (varying_parameter) {
+                        case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
+                        case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
+                        case "ROC" -> ROC.add(Double.valueOf(row_contents[7]));
+                        case "EPR" -> EPR.add(Integer.valueOf(row_contents[8]));
+                        case "imitation_noise" -> imitation_noise.add(row_contents[10]);
+                        case "approach_noise" -> approach_noise.add(row_contents[10]);
                     }
                 }
                 row_count++;
@@ -480,18 +469,13 @@ public class Alg1 extends Thread{
                     + "\tavg p SD="+DF4.format(avg_p_SD.get(i))
             ;
 
-            if(varying_parameter.equals("gens")){
-                summary += "\tgens=" + gens.get(i);
-            } else if(varying_parameter.equals("rows_columns")){
-                summary += "\tN=" + N.get(i);
-            } else if(varying_parameter.equals("ROC")){
-                summary += "\tROC=" + DF4.format(ROC.get(i));
-            } else if(varying_parameter.equals("EPR")){
-                summary += "\tEPR=" + EPR.get(i);
-            } else if(varying_parameter.equals("imitation_noise")){
-                summary += "\t" + imitation_noise.get(i);
-            } else if(varying_parameter.equals("approach_noise")){
-                summary += "\t" + approach_noise.get(i);
+            switch (varying_parameter) {
+                case "gens" -> summary += "\tgens=" + gens.get(i);
+                case "rows_columns" -> summary += "\tN=" + N.get(i);
+                case "ROC" -> summary += "\tROC=" + DF4.format(ROC.get(i));
+                case "EPR" -> summary += "\tEPR=" + EPR.get(i);
+                case "imitation_noise" -> summary += "\t" + imitation_noise.get(i);
+                case "approach_noise" -> summary += "\t" + approach_noise.get(i);
             }
 
 
@@ -506,10 +490,9 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Calculate the average value of p across the population at the current gen.
-     *
+     * Calculate the average value of p across the population at the current gen.<br>
      * The most important avg p is that of the final gen. That particular value is what is being
-     * used to calculate the avg p of the experiment as a whole.
+     * used to calculate the avg p of the experiment as a whole.<br>
      */
     public void getStats(){
         avg_p = 0.0;
@@ -529,11 +512,11 @@ public class Alg1 extends Thread{
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 player.setScore(0);
-                player.setGamesPlayedThisGen(0);
-                player.setOld_p(player.getP());
-
-                // reset number of successful interactions this gen to zero
-                player.setNum_successful_interactions(0);
+                player.setOldP(player.getP());
+                player.setNumInteractions(0);
+                player.setNumSuccessfulInteractions(0);
+                player.setNumSuccessfulDictations(0);
+                player.setNumSuccessfulReceptions(0);
             }
         }
     }
@@ -573,12 +556,10 @@ public class Alg1 extends Thread{
 
         // state the evolution method used
         String evolution_method = Player.getEvolutionMethod();
-        if(evolution_method.equals("copy")){
-            s += ", copy evolution";
-        } else if(evolution_method.equals("imitation")){
-            s += ", imitation evolution with noise="+Player.getImitationNoise();
-        } else if(evolution_method.equals("approach")){
-            s += ", approach evolution with noise="+Player.getApproachNoise();
+        switch (evolution_method) {
+            case "copy" -> s += ", copy evolution";
+            case "imitation" -> s += ", imitation evolution with noise=" + Player.getImitationNoise();
+            case "approach" -> s += ", approach evolution with noise=" + Player.getApproachNoise();
         }
 
         s += ":";
@@ -606,21 +587,9 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row:grid){
                 for(int j=0;j<row.size();j++){
                     Player x = row.get(j);
-
-//                    double sum = 0.0;
-//                    for(int i=0;i<player.getEdge_weights().length;i++){
-//                        double addition = player.getEdge_weights()[i];
-//                        sum+=addition;
-//                        avg_own_connections+=addition;
-//                    }
-
                     double sum = x.calculateOwnConnections();
                     avg_own_connections += sum;
-
-
                     fw.append(DF4.format(sum));
-
-
                     if(j+1<row.size()){
                         fw.append(",");
                     }
@@ -652,58 +621,9 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row:grid){
                 for(int j=0;j<row.size();j++){
                     Player x = row.get(j);
-
-//                    double sum = 0.0;
-//
-//                    // calculate sum of own edge weights
-//                    for(int i=0;i<x.getEdge_weights().length;i++){
-//                        double addition = x.getEdge_weights()[i];
-//                        sum+=addition;
-//                        avg_all_connections+=addition;
-//                    }
-
-
-//                    double sum = x.calculateOwnConnections();
-//                    avg_all_connections += sum;
-
-
-
-//                    boolean identified_x = false;
-//                    do {
-//                        for (int k = 0; k < x.getNeighbourhood().size(); k++) {
-//                            Player neighbour = x.getNeighbourhood().get(k);
-//                            for (int l = 0; l < neighbour.getNeighbourhood().size(); l++) {
-//                                Player y = neighbour.getNeighbourhood().get(l);
-//                                if (x.getId() == y.getId()) {
-//                                    double addition = neighbour.getEdge_weights()[l];
-//                                    sum += addition;
-//                                    avg_all_connections += addition;
-//                                    identified_x = true;
-//                                }
-//                            }
-//                        }
-//                    } while(!identified_x);
-
-
-//                    for (int k = 0; k < x.getNeighbourhood().size(); k++) {
-//                            Player y = x.getNeighbourhood().get(k);
-//                            double addition = y.getEdge_weights()[x.findXInNeighboursNeighbourhood(y)];
-//                            sum += addition;
-//                            avg_all_connections += addition;
-//                    }
-
-
-
-
-
-
                     double sum = x.calculateAllConnections();
                     avg_all_connections += sum;
-
-
-
                     fw.append(DF4.format(sum));
-
                     if(j+1<row.size()){
                         fw.append(",");
                     }
@@ -783,13 +703,12 @@ public class Alg1 extends Thread{
 
     /**
      * Allows for the visualisation of the avg p of a run with respect to gens, with gens on x-axis
-     * and avg p on y-axis. Now also collects standard deviation (SD) data.
-     *
-     * Steps:
-     * Export the data of a single run to a .csv file
-     * Import the .csv data into an Excel sheet
-     * Separate the data into columns: gen number, avg p and SD for that gen
-     * Create a line chart with the data.
+     * and avg p on y-axis. Now also collects standard deviation (SD) data.<br>
+     * <br>Steps:<br>
+     * Export the data of a single run to a .csv file<br>
+     * Import the .csv data into an Excel sheet<br>
+     * Separate the data into columns: gen number, avg p and SD for that gen<br>
+     * Create a line chart with the data.<br>
      */
     public void writePerGenData(String filename){
         FileWriter fw;
@@ -876,9 +795,6 @@ public class Alg1 extends Thread{
 
     /**
      * Writes a detailed account of player x to a .csv file.
-     *
-     * @param filename
-     * @param x
      */
     public void writeDetailedPlayer(String filename, Player x){
         FileWriter fw;
@@ -931,7 +847,6 @@ public class Alg1 extends Thread{
      * greater the difference in score, the neighbour's probability of being selected as child's
      * parent is exponentially affected. If child selects itself as parent, no evolution occurs.<br>
      * After parent has been selected, evolution takes place.<br>
-     * @param child
      */
     public Player weightedRouletteWheelSelection(Player child){
 
@@ -970,7 +885,6 @@ public class Alg1 extends Thread{
      * Selection method where child selects the highest scoring neighbour this gen as parent if
      * that neighbour scored higher than the child.<br>
      * Should the score comparison be between avg scores or just scores?<br>
-     * @param child
      */
     public Player bestSelection(Player child) {
         Player parent;
