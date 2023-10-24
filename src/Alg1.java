@@ -132,10 +132,10 @@ public class Alg1 extends Thread{
                         // select parent
                         Player parent = null;
                         String selection_method = Player.getSelectionMethod();
-                        if(selection_method.equals("WRW")){
-                            parent = weightedRouletteWheelSelection(player);
-                        } else if(selection_method.equals("best")){
-                            parent = bestSelection(player);
+                        switch(selection_method){
+                            case "WRW" -> parent = player.weightedRouletteWheelSelection();
+                            case "best" -> parent = player.bestSelection();
+                            case "rand" -> parent = player.randSelection();
                         }
 
                         // evolve child
@@ -144,6 +144,7 @@ public class Alg1 extends Thread{
                             case "copy" -> player.copyEvolution(parent);
                             case "imitation" -> player.imitationEvolution(parent);
                             case "approach" -> player.approachEvolution(parent);
+                            case "rand" -> player.randEvolution(parent);
                         }
 
                     }
@@ -193,14 +194,6 @@ public class Alg1 extends Thread{
     // main method for executing the program/algorithm
     public static void main(String[] args) {
 
-        // marks the beginning of the program's runtime
-        Instant start = Instant.now();
-        System.out.println("Executing "+Thread.currentThread().getStackTrace()[1].getClassName()+"."
-                +Thread.currentThread().getStackTrace()[1].getMethodName()+"()...");
-        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
-
-
-
         // Scanner object for receiving input
         Scanner scanner = new Scanner(System.in);
 
@@ -233,18 +226,22 @@ public class Alg1 extends Thread{
             }
         }
 
-        System.out.println("selection method? (WRW, best)");
+        System.out.println("selection method? (WRW, best, rand)");
         Player.setSelectionMethod(scanner.next());
         String selection_method = Player.getSelectionMethod();
         switch (selection_method) {
             case "WRW", "best" -> {}
+            case "rand" -> {
+                System.out.println("intensity of selection (w)? (double)");
+                Player.setW(scanner.nextDouble());
+            }
             default -> {
                 System.out.println("ERROR: invalid selection method");
                 return; // terminate the program
             }
         }
 
-        System.out.println("evolution method? (copy, imitation, approach)");
+        System.out.println("evolution method? (copy, imitation, approach, rand)");
         Player.setEvolutionMethod(scanner.next());
         String evolution_method = Player.getEvolutionMethod();
         switch (evolution_method) {
@@ -256,6 +253,10 @@ public class Alg1 extends Thread{
             case "approach" -> {
                 System.out.println("approach noise? (double)");
                 Player.setApproachNoise(scanner.nextDouble());
+            }
+            case "rand" -> {
+                System.out.println("mutation rate (u)? (double)");
+                Player.setU(scanner.nextDouble());
             }
             default -> {
                 System.out.println("ERROR: invalid evolution method");
@@ -271,60 +272,12 @@ public class Alg1 extends Thread{
 
 
 
-
-        // define initial parameter values.
-//        runs = 100;
-//        Player.setRate_of_change(0.02);
-//        rows = 20;
-//        gens = 10000;
-//        evo_phase_rate = 5;
-//        Player.setNeighbourhoodType("VN"); // von neumann neighbourhood
-////        Player.setNeighbourhoodType("M"); // moore neighbourhood
-//        Player.setFairnessInterval(0.05); // set the fairness interval
-//        Player.setImitationNoise(0.05); // set the imitation noise
-//        Player.setApproachNoise(0.05); // set the approach noise
-
-
-        // select a selection method
-//        Player.setSelectionMethod("WRW"); // weighted roulette wheel
-//        Player.setSelectionMethod("best");
-
-        // select an evolution method
-//        Player.setEvolutionMethod("copy");
-//        Player.setEvolutionMethod("imitation");
-//        Player.setEvolutionMethod("approach");
-
-
-
-
-
-        // after which gen of the experiment do you wish to collect at?
-//        data_gen = gens - 1; // collect data at end of final gen of run
-//        data_gen = 50;
-
-
-        // define how often interaction data is recorded
-//        interaction_data_record_rate = gens - 1; // collect data at end of final gen of run
-//        interaction_data_record_rate = 10;
-
-
-
-
-
-
         Player.setPrize(1.0);
-//        columns = rows;
         N = rows * columns;
 
-
-//        experiment_series = true; // to run a single experiment
-//        experiment_series = false; // to run an experiment series
-
-        if(experiment_series){
-
-
-            System.out.println("varying parameter? (gens, rows_columns, EPR, ROC, " +
-                    "imitation_noise, approach_noise)");
+        if(experiment_series){ // user configures series parameters
+            System.out.println("varying parameter? (runs, gens, rows_columns, EPR, ROC, " +
+                    "imitation_noise, approach_noise, w, u)");
             varying_parameter = scanner.next();
 
             System.out.println("variation amount?");
@@ -332,40 +285,31 @@ public class Alg1 extends Thread{
 
             System.out.println("number of experiments? (int)");
             num_experiments = scanner.nextInt();
-
-
-            // assign varying parameter
-//            varying_parameter = "ROC"; // vary the edge weight rate of change per EWL phase.
-//            varying_parameter = "EPR"; // vary the evolutionary phase rate.
-//            varying_parameter = "gens"; // vary the number of generations.
-//            varying_parameter = "rows_columns"; // vary the number of rows and columns.
-//            varying_parameter = "imitation_noise"; // vary amount of imitation noise affecting evolution
-//            varying_parameter = "approach_noise"; // vary amount of approach noise affecting evolution
-
-//            variation = 4; // assign variation
-//            num_experiments = 6; // assign number of experiments
-
-
-            experimentSeries(); // run an experiment series
         }
-
-        else {
-
+        else { // user configures experiment parameters
             System.out.println("data gen? (int)");
             data_gen = scanner.nextInt();
 
             System.out.println("interaction data record rate? (int)");
             interaction_data_record_rate = scanner.nextInt();
-
-
-
-            experiment(); // run a single experiment
         }
 
 
 
 
-        // marks the end of the program's runtime
+        // mark the beginning of the algorithm's runtime
+        Instant start = Instant.now();
+        System.out.println("Executing "+Thread.currentThread().getStackTrace()[1].getClassName()+"."
+                +Thread.currentThread().getStackTrace()[1].getMethodName()+"()...");
+        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
+
+        if(experiment_series){
+            experimentSeries(); // run an experiment series
+        } else {
+            experiment(); // run a single experiment
+        }
+
+        // mark the end of the algorithm's runtime
         System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
         Instant finish = Instant.now();
         long secondsElapsed = Duration.between(start, finish).toSeconds();
@@ -454,6 +398,11 @@ public class Alg1 extends Thread{
             } else if(selection_method.equals("best")){
                 fw.append(",best");
             }
+            switch(selection_method){
+                case "WRW" -> fw.append(",WRW");
+                case "best" -> fw.append(",best");
+                case "rand" -> fw.append(",rand");
+            }
 
             // write evolution method
             String evolution_method = Player.getEvolutionMethod();
@@ -461,6 +410,11 @@ public class Alg1 extends Thread{
                 case "copy" -> fw.append(",copy");
                 case "imitation" -> fw.append(",imitation noise=" + DF4.format(Player.getImitationNoise()));
                 case "approach" -> fw.append(",approach noise=" + DF4.format(Player.getApproachNoise()));
+                case "rand" -> fw.append(
+                        ",rand(" +
+                        "w="+DF4.format(Player.getW()) +
+                        " u="+DF4.format(Player.getU()) + ")"
+                );
             }
 
             fw.close();
@@ -489,6 +443,7 @@ public class Alg1 extends Thread{
 
             // change the value of the assigned varying parameter
             switch (varying_parameter) {
+                case "runs" -> runs += (int) variation;
                 case "ROC" -> Player.setRateOfChange(Player.getRate_of_change() + variation);
                 case "EPR" -> evo_phase_rate += (int) variation;
                 case "gens" -> gens += (int) variation;
@@ -499,6 +454,8 @@ public class Alg1 extends Thread{
                 }
                 case "imitation_noise" -> Player.setImitationNoise(Player.getImitationNoise() + variation);
                 case "approach_noise" -> Player.setApproachNoise(Player.getApproachNoise() + variation);
+                case "w" -> Player.setW(Player.getW() + variation);
+                case "u" -> Player.setW(Player.getU() + variation);
             }
         }
 
@@ -512,10 +469,12 @@ public class Alg1 extends Thread{
         ArrayList<Integer> N = new ArrayList<>();
         ArrayList<Double> ROC = new ArrayList<>();
         ArrayList<Integer> EPR = new ArrayList<>();
-//        ArrayList<Integer> runs = new ArrayList<>();
+        ArrayList<Integer> runs = new ArrayList<>();
 //        ArrayList<String> neighbourhood = new ArrayList<>();
         ArrayList<String> imitation_noise = new ArrayList<>();
         ArrayList<String> approach_noise = new ArrayList<>();
+        ArrayList<String> w = new ArrayList<>();
+        ArrayList<String> u = new ArrayList<>();
 
 
 
@@ -533,16 +492,18 @@ public class Alg1 extends Thread{
                     mean_avg_p.add(Double.valueOf(row_contents[1]));
                     avg_p_SD.add(Double.valueOf(row_contents[2]));
 
-//                    runs.add(Integer.valueOf(row_contents[3]));
 //                    neighbourhood.add(String.valueOf(row_contents[5]));
 
                     switch (varying_parameter) {
+                        case "runs" -> runs.add(Integer.valueOf(row_contents[3]));
                         case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
                         case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
                         case "ROC" -> ROC.add(Double.valueOf(row_contents[7]));
                         case "EPR" -> EPR.add(Integer.valueOf(row_contents[8]));
                         case "imitation_noise" -> imitation_noise.add(row_contents[10]);
                         case "approach_noise" -> approach_noise.add(row_contents[10]);
+                        case "w" -> w.add(row_contents[10]);
+                        case "u" -> u.add(row_contents[10]);
                     }
                 }
                 row_count++;
@@ -558,14 +519,16 @@ public class Alg1 extends Thread{
             ;
 
             switch (varying_parameter) {
+                case "runs" -> summary += "\truns=" + runs.get(i);
                 case "gens" -> summary += "\tgens=" + gens.get(i);
                 case "rows_columns" -> summary += "\tN=" + N.get(i);
                 case "ROC" -> summary += "\tROC=" + DF4.format(ROC.get(i));
                 case "EPR" -> summary += "\tEPR=" + EPR.get(i);
                 case "imitation_noise" -> summary += "\t" + imitation_noise.get(i);
                 case "approach_noise" -> summary += "\t" + approach_noise.get(i);
+                case "w" -> summary += "\t" + w.get(i);
+                case "u" -> summary += "\t" + u.get(i);
             }
-
 
 
             summary += "\n";
@@ -925,87 +888,4 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
     }
-
-
-
-
-
-    /**
-     * Selection method where the child compares their score with their neighbours'. The
-     * greater the difference in score, the neighbour's probability of being selected as child's
-     * parent is exponentially affected. If child selects itself as parent, no evolution occurs.<br>
-     * After parent has been selected, evolution takes place.<br>
-     */
-    public Player weightedRouletteWheelSelection(Player child){
-
-        /**
-         * If a parent does not yet been selected, the child selects itself as parent by default.
-         * Therefore, the child will not undergo any evolutionary change.
-         */
-        Player parent = child;
-
-        ArrayList<Player> neighbourhood = child.getNeighbourhood();
-        double[] imitation_scores = new double[neighbourhood.size()];
-        double total_imitation_score = 0;
-        double player_avg_score = child.getAverageScore();
-        for (int i = 0; i < neighbourhood.size(); i++) {
-            imitation_scores[i] =
-                    Math.exp(neighbourhood.get(i).getAverageScore() - player_avg_score);
-            total_imitation_score += imitation_scores[i];
-        }
-        total_imitation_score += 1.0;
-        double imitation_score_tally = 0;
-        double random_double_to_beat = ThreadLocalRandom.current().nextDouble();
-        for (int j = 0; j < neighbourhood.size(); j++) {
-            imitation_score_tally += imitation_scores[j];
-            double percentage = imitation_score_tally / total_imitation_score;
-            if (random_double_to_beat < percentage) {
-                parent = neighbourhood.get(j);
-                break;
-            }
-        }
-
-        return parent;
-    }
-
-
-    /**
-     * Selection method where child selects the highest scoring neighbour this gen as parent if
-     * that neighbour scored higher than the child.<br>
-     * Should the score comparison be between avg scores or just scores?<br>
-     */
-    public Player bestSelection(Player child) {
-        Player parent;
-        int index = 0;
-        ArrayList<Player> neighbourhood = child.getNeighbourhood();
-        double best_avg_score;
-        for(int i=1;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            Player best = neighbourhood.get(index);
-            double neighbour_avg_score = neighbour.getAverageScore();
-            best_avg_score = best.getAverageScore();
-            if(neighbour_avg_score > best_avg_score){
-                index = i;
-            }
-        }
-        parent = neighbourhood.get(index);
-        best_avg_score = parent.getAverageScore();
-        double child_avg_score = child.getAverageScore();
-        if(best_avg_score <= child_avg_score){
-            parent = child;
-        }
-
-        return parent;
-    }
-
-
-
-
-
-
-
-
-
-
-
 }

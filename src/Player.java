@@ -487,4 +487,118 @@ public class Player {
     public void setNumSuccessfulReceptions(int i){
         num_successful_receptions=i;
     }
+
+
+
+
+
+    /**
+     * Selection method where the child compares their score with their neighbours'. The
+     * greater the difference in score, the neighbour's probability of being selected as child's
+     * parent is exponentially affected. If a parent is not selected, the child is selected as parent
+     * by default.<br>
+     */
+    public Player weightedRouletteWheelSelection(){
+        Player parent = this; // by default, the child is the parent
+        double[] parent_scores = new double[neighbourhood.size()];
+        double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
+        for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
+            double neighbour_average_score = neighbourhood.get(i).average_score;
+            parent_scores[i] = Math.exp(neighbour_average_score - average_score);
+            total_parent_score += parent_scores[i];
+        }
+        total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
+        double parent_score_tally = 0.0; // helps us count through the parent scores up to the total
+
+        // the first parent score to be greater than this double is the winner.
+        // if no neighbour's parent score wins, the child wins.
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        for(int j=0;j<neighbourhood.size();j++){
+            parent_score_tally += parent_scores[j];
+            double percentile = parent_score_tally / total_parent_score;
+            if (random_double < percentile) {
+                parent = neighbourhood.get(j);
+                break;
+            }
+        }
+
+        return parent;
+    }
+
+
+
+    /**
+     * Selection method where child selects the highest scoring neighbour this gen as parent if
+     * that neighbour scored higher than the child.<br>
+     * Should the score comparison be between scores or avg scores?<br>
+     */
+    public Player bestSelection(){
+        Player parent;
+        int best_index = 0;
+        for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
+            Player neighbour = neighbourhood.get(i);
+            Player best = neighbourhood.get(best_index);
+            if(neighbour.average_score > best.average_score){
+                best_index = i;
+            }
+        }
+
+        // did the highest scoring neighbour score higher than child? if not, select child as parent
+        parent = neighbourhood.get(best_index);
+        if(parent.average_score <= average_score){
+            parent = this;
+        }
+
+        return parent;
+    }
+
+
+
+
+    /**
+     * Implementation of the selection & evolution featured in the paper by
+     * Rand et al. (rand2013evolution).<br>
+     * Calculate effective payoffs of neighbours. Select highest as parent.
+     */
+    private static double w; // intensity of selection
+    public static double getW(){
+        return w;
+    }
+    public static void setW(double d){
+        w=d;
+    }
+    public Player randSelection(){
+        Player parent;
+        double[] effective_payoffs = new double[neighbourhood.size()];
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            effective_payoffs[i] = Math.exp(w * neighbour.average_score);
+        }
+
+        double best_effective_payoff = effective_payoffs[0];
+        int index = 0;
+        for(int j=1;j<effective_payoffs.length;j++){
+            if(effective_payoffs[j] > best_effective_payoff){
+                index = j;
+            }
+        }
+        parent = neighbourhood.get(index);
+
+        return parent;
+    }
+    private static double u; // mutation rate
+    public static double getU(){
+        return u;
+    }
+    public static void setU(double d){
+        u=d;
+    }
+    public void randEvolution(Player parent){
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        if(random_double > u){ // the greater u is, the more likely mutation occurs
+            setP(ThreadLocalRandom.current().nextDouble()); // randomly generate new p
+        } else {
+            setP(parent.old_p);
+        }
+    }
 }
