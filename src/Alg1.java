@@ -393,11 +393,6 @@ public class Alg1 extends Thread{
 
             // write selection method
             String selection_method = Player.getSelectionMethod();
-            if(selection_method.equals("WRW")){
-                fw.append(",WRW");
-            } else if(selection_method.equals("best")){
-                fw.append(",best");
-            }
             switch(selection_method){
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
