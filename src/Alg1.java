@@ -299,8 +299,6 @@ public class Alg1 extends Thread{
 
         // mark the beginning of the algorithm's runtime
         Instant start = Instant.now();
-        System.out.println("Executing "+Thread.currentThread().getStackTrace()[1].getClassName()+"."
-                +Thread.currentThread().getStackTrace()[1].getMethodName()+"()...");
         System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
 
         if(experiment_series){
@@ -450,7 +448,7 @@ public class Alg1 extends Thread{
                 case "imitation_noise" -> Player.setImitationNoise(Player.getImitationNoise() + variation);
                 case "approach_noise" -> Player.setApproachNoise(Player.getApproachNoise() + variation);
                 case "w" -> Player.setW(Player.getW() + variation);
-                case "u" -> Player.setW(Player.getU() + variation);
+                case "u" -> Player.setU(Player.getU() + variation);
             }
         }
 
@@ -594,10 +592,15 @@ public class Alg1 extends Thread{
 
         // state the selection method used
         String selection_method = Player.getSelectionMethod();
-        if(selection_method.equals("WRW")){
-            s += ", WRW selection";
-        }else if(selection_method.equals("best")){
-            s += ", best selection";
+//        if(selection_method.equals("WRW")){
+//            s += ", WRW selection";
+//        }else if(selection_method.equals("best")){
+//            s += ", best selection";
+//        }
+        switch(selection_method){
+            case "WRW" -> s += ", WRW selection";
+            case "best" -> s += ", best selection";
+            case "rand" -> s += ", rand selection with w=" + Player.getW();
         }
 
         // state the evolution method used
@@ -606,6 +609,7 @@ public class Alg1 extends Thread{
             case "copy" -> s += ", copy evolution";
             case "imitation" -> s += ", imitation evolution with noise=" + Player.getImitationNoise();
             case "approach" -> s += ", approach evolution with noise=" + Player.getApproachNoise();
+            case "rand" -> s += ", rand evolution with u=" + Player.getU();
         }
 
         s += ":";
