@@ -15,48 +15,39 @@ public class Player {
 
     private static int count = 0; // class-wide attribute that helps assign player id
     private final int id; // each player has a unique id
-    private double score; // amount of reward player has received from playing; i.e. this player's fitness
-    private double p; // proposal value; real num within [0,1]
-    private double q; // acceptance threshold value; real num within [0,1]
-    private static String neighbourhood_type; // neighbourhood type of this player
-    private ArrayList<Player> neighbourhood; // this player's neighbourhood
-    private static double prize; // the prize amount being split in an interaction
-    private double old_p; // the p value held at the beginning of the gen; will be copied by imitators
-    private double average_score; // average score of this player this gen
+    public int getId(){
+        return id;
+    }
+
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
+    public static DecimalFormat getDF1() { return DF1; }
+
     private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
-
-    /**
-     * Stores edge weights belonging to the player.
-     * For each neighbour y of player x, e_xy denotes the edge from x to y.
-     * w_e_xy denotes the weight of e_xy probability of y dictating to x.
-     * w_e_xy lies within the interval [0,1].
-     * x controls w_e_xy i.e. the probability of x's neighbours getting to dictate to x.
-     */
-    private double[] edge_weights;
-
-    private static double rate_of_change; // fixed amount by which edge weight is modified.
-
-    /**
-     * NI: how many interactions the player had (within some timeframe e.g. within a gen).<br>
-     * NSI: how many successful interactions the player had. A successful interaction is defined as an
-     * interaction where payoff was received.<br>
-     * NSD: how many successful interaction the player had as dictator.<br>
-     * NSR: how many successful interaction the player had as recipient.<br>
-     */
-    private int num_interactions = 0;               // NI
-    private int num_successful_interactions = 0;    // NSI
-    private int num_successful_dictations;          // NSD
-    private int num_successful_receptions;          // NSR
-
-    private static double fairness_interval; // the leeway given when determining fair relationships
-    private static double imitation_noise; // the amount of noise that may affect imitation evolution
-    private static double approach_noise; // states by how much a player can change via approach evolution
-    private static String selection_method; // indicates the selection method to be used
-    private static String evolution_method; // indicates the evolution method to be used
+    public static DecimalFormat getDF4(){
+        return DF4;
+    }
 
 
 
+
+
+    private double p; // proposal value; real num within [0,1]
+    public double getP(){
+        return p;
+    }
+    public void setP(double p){ // recall that p must lie within the range [0,1]
+        this.p=p;
+        if(this.p>1){
+            this.p=1;
+        } else if(this.p<0){
+            this.p=0;
+        }
+    }
+    private double old_p; // the p value held at the beginning of the gen; will be copied by imitators
+    public void setOldP(double old_p){
+        this.old_p=old_p;
+    }
+    private double q; // acceptance threshold value; real num within [0,1]
 
     /**
      * Constructor method for instantiating a Player object.<br>
@@ -69,6 +60,38 @@ public class Player {
         old_p=p;
     }
 
+
+
+
+    private static double prize; // the prize amount being split in an interaction
+    public static void setPrize(double d){
+        prize=d;
+    }
+
+    private ArrayList<Player> neighbourhood; // this player's neighbourhood
+    public ArrayList<Player> getNeighbourhood() {
+        return neighbourhood;
+    }
+
+    private static String neighbourhood_type; // neighbourhood type of this player
+    public static String getNeighbourhoodType(){
+        return neighbourhood_type;
+    }
+    public static void setNeighbourhoodType(String s){
+        neighbourhood_type=s;
+    }
+
+    /**
+     * Stores edge weights belonging to the player.
+     * For each neighbour y of player x, e_xy denotes the edge from x to y.
+     * w_e_xy denotes the weight of e_xy probability of y dictating to x.
+     * w_e_xy lies within the interval [0,1].
+     * x controls w_e_xy i.e. the probability of x's neighbours getting to dictate to x.
+     */
+    private double[] edge_weights;
+    public double[] getEdgeWeights(){
+        return edge_weights;
+    }
 
     /**
      * Play the UG with respect to space and edge weights.<br>
@@ -102,24 +125,38 @@ public class Player {
 
 
 
+
+    /**
+     * NI: how many interactions the player had (within some timeframe e.g. within a gen).<br>
+     * NSI: how many successful interactions the player had. A successful interaction is defined as an
+     * interaction where payoff was received.<br>
+     * NSD: how many successful interaction the player had as dictator.<br>
+     * NSR: how many successful interaction the player had as recipient.<br>
+     */
+    private int num_interactions = 0;               // NI
+    private int num_successful_interactions = 0;    // NSI
+    private int num_successful_dictations = 0;      // NSD
+    private int num_successful_receptions = 0;      // NSR
+    public void setNumInteractions(int i){
+        num_interactions=i;
+    }
+    public int getNumSuccessfulInteractions(){
+        return num_successful_interactions;
+    }
+    public void setNumSuccessfulInteractions(int i){
+        num_successful_interactions=i;
+    }
+    public void setNumSuccessfulDictations(int i){
+        num_successful_dictations=i;
+    }
+    public void setNumSuccessfulReceptions(int i){
+        num_successful_receptions=i;
+    }
+    private double score; // amount of reward player has received from playing; i.e. this player's fitness
     public void setScore(double score){
         this.score=score;
     }
-
-    public double getP(){
-        return p;
-    }
-
-    // recall that p must lie within the range [0,1]
-    public void setP(double p){
-        this.p=p;
-        if(this.p>1){
-            this.p=1;
-        } else if(this.p<0){
-            this.p=0;
-        }
-    }
-
+    private double average_score; // average score of this player this gen
 
     /**
      * Update the status of the player after having played, including score and average score.<br>
@@ -136,22 +173,11 @@ public class Player {
             }
         }
 
-//        average_score = score / num_interactions;
-        average_score = score / num_successful_interactions;
+        average_score = score / num_successful_interactions; // this has been the default setting.
+//        average_score = score / num_interactions; // alternative setting
+
     }
 
-
-    public int getId(){
-        return id;
-    }
-
-    public static String getNeighbourhoodType(){
-        return neighbourhood_type;
-    }
-
-    public static void setNeighbourhoodType(String s){
-        neighbourhood_type=s;
-    }
 
 
 
@@ -159,9 +185,7 @@ public class Player {
     /**
      * Method for assigning a position of the player x on a 2D space and finding x's neighbours in
      * the space.<br>
-     *
      * Possible neighbourhood_type values: VN, M.<br>
-     *
      * Neighbourhood order (with VN): up, down, left, right.<br>
      */
     public void findNeighbours2D(ArrayList<ArrayList<Player>> grid, int row_position, int column_position){
@@ -200,6 +224,8 @@ public class Player {
 
 
 
+
+
     /**
      * Method that allows players to perform a form of edge weight learning.
      * Here, a player x's edge weights is supposed to represent x's neighbours' relationship towards x.
@@ -207,6 +233,13 @@ public class Player {
      * If y has a lower value of p than x, x reduces the weight of their edge to y.
      * The amount by which an edge is modified is determined by the rate_of_change parameter.
      */
+    private static double rate_of_change; // fixed amount by which edge weight is modified.
+    public static double getRateOfChange(){
+        return rate_of_change;
+    }
+    public static void setRateOfChange(double d){
+        rate_of_change=d;
+    }
     public void edgeWeightLearning(){
         for (int i = 0; i < neighbourhood.size(); i++) {
             Player neighbour = neighbourhood.get(i);
@@ -225,24 +258,27 @@ public class Player {
     }
 
 
+
+
+
     /**
      *  Identifies if the player and the given neighbour have a fair relationship under the given
      *  fairness_interval.<br>
-     *
      *  A fair relationship here is loosely defined as one where the p values of the two players
      *  are within the fairness interval from each other. The "fairness interval" indicates how
      *  much leeway is being given.<br>
-     *
      *  Nodes x and y have a fair relationship if p_y lies within [p_x - fairness_interval, p_y +
      *  fairness_interval].<br>
-     *
      *  E.g. p_1=0.4, p_2=0.37 and fairness_interval=0.05 is a fair relationship because p_2 lies within
      *  the interval [p_1 - fairness_interval, p_1 + fairness_interval] = [0.4 - 0.05, 0.4 + 0.05] =
      *  [0.35, 0.45] so here node 1 and 2 have a fair relationship.<br>
-     *
      *  E.g. With p_3=0.2, p_4=0.05 and fairness_interval=0.1, node 3 and 4 do not have a fair
      *  relationship.<br>
      */
+    private static double fairness_interval; // the leeway given when determining fair relationships
+    public static void setFairnessInterval(double d){
+        fairness_interval=d;
+    }
     public boolean identifyFairRelationship(Player neighbour){
         double p_y = neighbour.getP();
         double lower_bound = p - fairness_interval;
@@ -253,40 +289,6 @@ public class Player {
 
 
 
-
-    public static void setPrize(double d){
-        prize=d;
-    }
-
-    public ArrayList<Player> getNeighbourhood() {
-        return neighbourhood;
-    }
-
-    public void setOldP(double old_p){
-        this.old_p=old_p;
-    }
-
-    public static DecimalFormat getDF1() { return DF1; }
-
-    public static DecimalFormat getDF4(){
-        return DF4;
-    }
-
-    public double[] getEdge_weights(){
-        return edge_weights;
-    }
-
-    public static double getRate_of_change(){
-        return rate_of_change;
-    }
-
-    public static void setRateOfChange(double d){
-        rate_of_change=d;
-    }
-
-    public int getNum_successful_interactions(){
-        return num_successful_interactions;
-    }
 
 
 
@@ -303,6 +305,8 @@ public class Player {
         }
         return num_fair_relationships;
     }
+
+
 
 
 
@@ -333,9 +337,7 @@ public class Player {
 
 
     /**
-     * Finds the index of the player x in the neighbourhood of a neighbour.
-     *
-     * @return index
+     * Returns the index of the player x in the neighbourhood of a neighbour.
      */
     public int findXInNeighboursNeighbourhood(Player neighbour){
         int index = 0; // by default, assign index to 0.
@@ -349,14 +351,9 @@ public class Player {
     }
 
 
-
-    public static void setFairnessInterval(double d){
-        fairness_interval=d;
-    }
-
-
-
-    // method for calculating sum of own connections of the player
+    /**
+     * Returns the sum of own connections of the player
+      */
     public double calculateOwnConnections(){
         double sum = 0.0;
         for(int i=0;i<edge_weights.length;i++){
@@ -366,18 +363,18 @@ public class Player {
     }
 
 
-
-    // method for calculating sum of all associated connections of the player
+    /**
+     * Returns the sum of all associated connections of the player.<br>
+     * How to find weights of neighbour edges associated with player x:<br>
+     * - Loop through x's neighbourhood;<br>
+     * - For each neighbour y of x, find x's index within y's neighbourhood;<br>
+     * - Use the index to find the weight of the edge from y to x;<br>
+     * - Add the weight to the sum.<br>
+     */
     public double calculateAllConnections(){
         double sum = calculateOwnConnections();
 
-        /**
-         * How to find weights of neighbour edges associated with player x:
-         * Loop through x's neighbourhood;
-         * For each neighbour y of x, find x's index within y's neighbourhood;
-         * Use the index to find the weight of the edge from y to x;
-         * Add the weight to the sum.
-         */
+
         for(int k=0;k<neighbourhood.size();k++) {
             Player y = neighbourhood.get(k);
             sum += y.edge_weights[findXInNeighboursNeighbourhood(y)];
@@ -389,13 +386,16 @@ public class Player {
 
 
 
-
+    private static String selection_method; // indicates the selection method to be used
     public static String getSelectionMethod(){
         return selection_method;
     }
     public static void setSelectionMethod(String s){
         selection_method=s;
     }
+
+
+    private static String evolution_method; // indicates the evolution method to be used
     public static String getEvolutionMethod(){
         return evolution_method;
     }
@@ -417,12 +417,6 @@ public class Player {
 
 
 
-    public static double getImitationNoise(){
-        return imitation_noise;
-    }
-    public static void setImitationNoise(double d){
-        imitation_noise = d;
-    }
 
     /**
      * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
@@ -431,6 +425,13 @@ public class Player {
      * The lower the noise, the more accurate the imitations will generally be.<br>
      * If noise is set to 0, the result of the evolution is identical to copy evolution.<br>
      */
+    private static double imitation_noise; // the amount of noise that may affect imitation evolution
+    public static double getImitationNoise(){
+        return imitation_noise;
+    }
+    public static void setImitationNoise(double d){
+        imitation_noise = d;
+    }
     public void imitationEvolution(Player parent){
         if(parent.id != id){
             double new_p = ThreadLocalRandom.current().nextDouble(
@@ -453,6 +454,13 @@ public class Player {
      * Evolution does not take place if the parent and the child are the same player.<br>
      * The greater the noise, the greater the approach is.<br>
      */
+    private static double approach_noise; // states by how much a player can change via approach evolution
+    public static double getApproachNoise(){
+        return approach_noise;
+    }
+    public static void setApproachNoise(double d){
+        approach_noise=d;
+    }
     public void approachEvolution(Player parent){
         if(parent.id != id){
             double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
@@ -462,30 +470,6 @@ public class Player {
             double new_p = p + approach;
             setP(new_p);
         }
-    }
-
-    public static double getApproachNoise(){
-        return approach_noise;
-    }
-    public static void setApproachNoise(double d){
-        approach_noise=d;
-    }
-
-
-
-
-
-    public void setNumInteractions(int i){
-        num_interactions=i;
-    }
-    public void setNumSuccessfulInteractions(int i){
-        num_successful_interactions=i;
-    }
-    public void setNumSuccessfulDictations(int i){
-        num_successful_dictations=i;
-    }
-    public void setNumSuccessfulReceptions(int i){
-        num_successful_receptions=i;
     }
 
 
@@ -556,9 +540,8 @@ public class Player {
 
 
     /**
-     * Implementation of the selection & evolution featured in the paper by
-     * Rand et al. (rand2013evolution).<br>
-     * Calculate effective payoffs of neighbours. Select highest as parent.
+     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
+     * Calculate effective payoffs of neighbours. Select highest as parent.<br>
      */
     private static double w; // intensity of selection
     public static double getW(){
@@ -567,7 +550,7 @@ public class Player {
     public static void setW(double d){
         w=d;
     }
-    public Player randSelection(){
+    public Player variableSelection(){
         Player parent;
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
@@ -586,19 +569,46 @@ public class Player {
 
         return parent;
     }
-    private static double u; // mutation rate
-    public static double getU(){
-        return u;
+
+
+
+
+    private static String mutation_method;
+    public static String getMutationMethod(){
+        return mutation_method;
     }
-    public static void setU(double d){
-        u=d;
+    public static void setMutationMethod(String s){
+        mutation_method=s;
     }
-    public void randEvolution(Player parent){
+
+
+    /**
+     * Mutation rate parameter determines the probability for mutation to occur.<br>
+     * Returns a boolean indicating whether mutation should occur. If true is returned, mutation will
+     * occur. If false is returned, mutation will not occur.<br>
+     */
+    private static double mutation_rate;
+    public static double getMutationRate(){
+        return mutation_rate;
+    }
+    public static void setMutationRate(double d){
+        mutation_rate=d;
+    }
+    public boolean mutationCheck(){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        if(random_double > u){ // the greater u is, the more likely mutation occurs
-            setP(ThreadLocalRandom.current().nextDouble()); // randomly generate new p
+        if(random_double < mutation_rate){ // the greater the mutation rate, the more likely mutation occurs
+            return true; // mutation will occur
         } else {
-            setP(parent.old_p);
+            return false; // mutation will not occur
         }
+    }
+
+
+
+    /**
+     * Mutation method where the player's p is randomly generated.
+     */
+    public void newMutation(){
+        setP(ThreadLocalRandom.current().nextDouble());
     }
 }
