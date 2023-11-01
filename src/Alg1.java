@@ -412,7 +412,7 @@ public class Alg1 extends Thread{
             switch(selection_method){ // write selection method
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
-                case "variable" -> fw.append(",rand");
+                case "variable" -> fw.append(",variable selection with w="+DF4.format(Player.getW()));
             }
             String evolution_method = Player.getEvolutionMethod();
             switch (evolution_method) { // write evolution method
@@ -509,9 +509,9 @@ public class Alg1 extends Thread{
                         case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
                         case "ROC" -> ROC.add(Double.valueOf(row_contents[7]));
                         case "EPR" -> EPR.add(Integer.valueOf(row_contents[8]));
+                        case "w" -> w.add(row_contents[9]);
                         case "imitation_noise" -> imitation_noise.add(row_contents[10]);
                         case "approach_noise" -> approach_noise.add(row_contents[10]);
-                        case "w" -> w.add(row_contents[10]);
                         case "mutation_rate" -> mutation_rate.add(row_contents[11]);
                     }
                 }
