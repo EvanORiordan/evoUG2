@@ -225,33 +225,81 @@ public class Player {
 
 
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    private static String edge_weight_learning_method;
+    public static String getEdgeWeightLearningMethod(){
+        return edge_weight_learning_method;
+    }
+    public static void setEdgeWeightLearningMethod(String s){
+        edge_weight_learning_method=s;
+    }
+    
+
 
     /**
      * Method that allows players to perform a form of edge weight learning.
      * Here, a player x's edge weights is supposed to represent x's neighbours' relationship towards x.
      * If a neighbour y has a higher value of p than x, x raises the weight of their edge to y.
      * If y has a lower value of p than x, x reduces the weight of their edge to y.
-     * The amount by which an edge is modified is determined by the rate_of_change parameter.
+     * The amount by which an edge is modified is determined by the ROC parameter.
      */
-    private static double rate_of_change; // fixed amount by which edge weight is modified.
-    public static double getRateOfChange(){
-        return rate_of_change;
+    private static double ROC; // fixed amount by which edge weight is modified.
+    public static double getROC(){
+        return ROC;
     }
-    public static void setRateOfChange(double d){
-        rate_of_change=d;
+    public static void setROC(double d){
+        ROC=d;
     }
-    public void edgeWeightLearning(){
+    public void edgeWeightLearning1(){
         for (int i = 0; i < neighbourhood.size(); i++) {
             Player neighbour = neighbourhood.get(i);
             if (neighbour.p > p) { // if neighbour is more generous than you, increase EW
-                edge_weights[i] += rate_of_change;
+                edge_weights[i] += ROC;
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
             } else if(neighbour.p < p){ // if neighbour is less generous, decrease EW
-                edge_weights[i] -= rate_of_change;
+                edge_weights[i] -= ROC;
                 if(edge_weights[i] < 0.0){
                     edge_weights[i] = 0.0;
+                }
+            }
+        }
+    }
+
+
+
+
+    /**
+     * EWL method where the amount of EW modification is exponentially affected by the difference
+     * between the player's p and the neighbour's p.
+     */
+    public void edgeWeightLearning2(){
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            double diff = Math.abs(neighbour.p - p);
+            double exp_diff = Math.exp(diff);
+            if(neighbour.p > p){
+//                double diff = neighbour.p - p;
+//                double exp_diff = Math.exp(diff);
+                edge_weights[i] += exp_diff;
+                if(edge_weights[i] > 1.0){
+                    edge_weights[i] = 1.0;
+                }
+            } else if(neighbour.p < p){
+//                double diff = p - neighbour.p;
+//                double exp_diff = Math.exp(diff);
+                edge_weights[i] -= exp_diff;
+                if(edge_weights[i] < 0.0){
+                    edge_weights[i] = 1.0;
                 }
             }
         }
