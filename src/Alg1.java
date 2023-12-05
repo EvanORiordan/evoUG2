@@ -20,13 +20,13 @@ import java.util.concurrent.ThreadLocalRandom;
  * DG Algorithm.<br>
  */
 public class Alg1 extends Thread{
-
     static int rows; // how many rows in the square grid.
     static int columns; // how many rows in the square grid.
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    static int EPR; // how often evolutionary phases occurs e.g if 5, then evo occurs every 5 gens
+    static int EPR; // how often evolutionary phases occur e.g if 5, then evo occurs every 5 gens
+    static double ROC; // rate of change wrt EWL1
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
     double avg_p; // the average value of p across the population.
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
@@ -65,17 +65,19 @@ public class Alg1 extends Thread{
     static String interaction_data_filename_prefix = "csv_data\\interactions_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-    // here, manually set the rate at which interaction data will be recorded
     static int interaction_data_record_rate;
-
     static int data_gen;
 
     // Prefix for filenames of player data files.
     static String player_data_filename_prefix = "csv_data\\player_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-    // filename of config file
-    static String config_filename = "config.csv";
+    static String config_filename = "config.csv"; // filename of config file
+
+    static String selection_method;
+    static String evolution_method;
+    static String mutation_method;
+    static String edge_weight_learning_method;
 
 
 
@@ -89,9 +91,9 @@ public class Alg1 extends Thread{
         // Scanner object for receiving input
         Scanner scanner = new Scanner(System.in);
 
-
+        // does user want to load a pre-made configuration from the config file or manually set up?
         boolean config;
-        System.out.println("config file or manual setting selection? (1: config, 2: manual)");
+        System.out.println("config file or manual set up? (1: config, 2: manual)");
         switch(scanner.nextInt()){
             case 1 -> {
                 config = true;
@@ -105,8 +107,7 @@ public class Alg1 extends Thread{
             }
         }
 
-
-        if(config){ // if user wants to use a pre-made configuration from the config file
+        if(config){ // if user wants to use config file
             ArrayList<String> configurations = new ArrayList<>(); // stores configurations
             try{  // read in the configs from the file
                 BufferedReader br = new BufferedReader(new FileReader(config_filename));
@@ -121,14 +122,17 @@ public class Alg1 extends Thread{
             // display configs to user
             for(int i=0;i<configurations.size();i++){
                 String[] settings = configurations.get(i).split(",");
-                System.out.print("config "+i+": "+
-                        "runs = "+settings[0]+
-                        ", gens = "+settings[1]+
-                        ", rows = "+settings[2]+
-                        ", EPR = "+settings[3]+
-                        ", ROC = "+settings[4]+
-                        ", varying parameter = "+settings[5]
-                );
+                System.out.print("config "+i+": ");
+                System.out.print("runs = "+settings[0]);
+                System.out.print(", gens = "+settings[1]);
+                System.out.print(", rows = "+settings[2]);
+                System.out.print(", EPR = "+settings[3]);
+                if(Double.parseDouble(settings[4]) > 0.0){
+                    System.out.print(", EWL1 with ROC = " + settings[4]);
+                } else{
+                    System.out.print(", EWL2");
+                }
+                System.out.print(", varying parameter = "+settings[5]);
                 if(!settings[5].equals("none")){
                     System.out.print(", variation = "+settings[6]+
                             ", num experiments = "+settings[7]);
@@ -146,33 +150,46 @@ public class Alg1 extends Thread{
                     gens = Integer.parseInt(settings[1]);
                     rows = Integer.parseInt(settings[2]);
                     EPR = Integer.parseInt(settings[3]);
-                    Player.setROC(Double.parseDouble(settings[4]));
+//                    Player.setROC(Double.parseDouble(settings[4]));
+                    ROC = Double.parseDouble(settings[4]);
+//                    if(Player.getROC() > 0.0){
+                    if(ROC > 0.0){
+//                        Player.setEdgeWeightLearningMethod("1");
+                        edge_weight_learning_method = "1";
+                    } else {
+//                        Player.setEdgeWeightLearningMethod("2");
+                        edge_weight_learning_method = "2";
+                    }
                     varying_parameter = settings[5];
                     if(!varying_parameter.equals("none")) {
+                        experiment_series = true;
                         variation = Double.parseDouble(settings[6]);
                         num_experiments = Integer.parseInt(settings[7]);
                     }
+                    break;
                 }
             }
 
 
+            // default settings:
             // automatically assign von neumann as neighbourhood
             Player.setNeighbourhoodType("VN");
-
             // automatically assign selection method
-            Player.setSelectionMethod("WRW");
-
+//            Player.setSelectionMethod("WRW");
+            selection_method = "WRW";
             // automatically assign evolution method
-            Player.setEvolutionMethod("copy");
-
+//            Player.setEvolutionMethod("copy");
+            evolution_method = "copy";
             // automatically assign mutation method
-            Player.setMutationMethod("none");
-
+//            Player.setMutationMethod("none");
+            mutation_method = "none";
             // automatically assign data_gen and interaction_data_record_rate
             data_gen = gens;
             interaction_data_record_rate = gens;
 
-        }
+        } // end of config file code
+
+
         else {  // if user wants to define algorithm parameters at runtime
 
             System.out.println("series or experiment? (1: series; 2: experiment)");
@@ -191,8 +208,6 @@ public class Alg1 extends Thread{
             System.out.println("gens? (int)");
             gens = scanner.nextInt();
 
-
-
             System.out.println("neighbourhood type? (VN, M)");
             Player.setNeighbourhoodType(scanner.next());
             String neighbourhood_type = Player.getNeighbourhoodType();
@@ -204,11 +219,10 @@ public class Alg1 extends Thread{
                 }
             }
 
-
-
             System.out.println("selection method? (WRW, best, variable)");
-            Player.setSelectionMethod(scanner.next());
-            String selection_method = Player.getSelectionMethod();
+//            Player.setSelectionMethod(scanner.next());
+//            String selection_method = Player.getSelectionMethod();
+            selection_method=scanner.next();
             switch (selection_method) {
                 case "WRW", "best" -> {}
                 case "variable" -> {
@@ -221,10 +235,10 @@ public class Alg1 extends Thread{
                 }
             }
 
-
             System.out.println("evolution method? (copy, imitation, approach)");
-            Player.setEvolutionMethod(scanner.next());
-            String evolution_method = Player.getEvolutionMethod();
+//            Player.setEvolutionMethod(scanner.next());
+//            String evolution_method = Player.getEvolutionMethod();
+            evolution_method = scanner.next();
             switch (evolution_method) {
                 case "copy" -> {}
                 case "imitation" -> {
@@ -241,10 +255,10 @@ public class Alg1 extends Thread{
                 }
             }
 
-
             System.out.println("mutation? (none, new)");
-            Player.setMutationMethod(scanner.next());
-            String mutation_method = Player.getMutationMethod();
+//            Player.setMutationMethod(scanner.next());
+//            String mutation_method = Player.getMutationMethod();
+            mutation_method = scanner.next();
             switch(mutation_method){
                 case "new" -> {
                     System.out.println("mutation rate? (double)");
@@ -253,25 +267,25 @@ public class Alg1 extends Thread{
                 default -> System.out.println("NOTE: no mutation");
             }
 
-
             System.out.println("EPR? (int)");
             EPR = scanner.nextInt();
 
             System.out.println("EWL? (1, 2)");
-            Player.setEdgeWeightLearningMethod(scanner.next());
-            String edge_weight_learning_method = Player.getEdgeWeightLearningMethod();
+//            Player.setEdgeWeightLearningMethod(scanner.next());
+//            String edge_weight_learning_method = Player.getEdgeWeightLearningMethod();
             switch (edge_weight_learning_method) {
                 case "1" -> {
                     System.out.println("ROC? (double)");
-                    Player.setROC(scanner.nextDouble());
+//                    Player.setROC(scanner.nextDouble());
+                    ROC = scanner.nextDouble();
                 }
                 case "2" -> {
                 }
                 default -> {
-                    System.out.println("NOTE: no EWL");
+                    System.out.println("ERROR: no EWL");
+                    return;
                 }
             }
-
 
             if (experiment_series) { // user configures series parameters
             System.out.println("varying parameter? (runs, gens, rows_columns, EPR, ROC, " +
@@ -353,7 +367,7 @@ public class Alg1 extends Thread{
             // playing phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.playEWSpatialUG();
+                    player.play();
                 }
             }
 
@@ -361,7 +375,16 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.edgeWeightLearning1();
+//                    String edge_weight_learning_method = Player.getEdgeWeightLearningMethod();
+                    switch(edge_weight_learning_method){
+                        case "1" ->{
+                            player.edgeWeightLearning1(ROC);
+                        }
+                        case "2" ->{
+                            player.edgeWeightLearning2();
+                        }
+                    }
+//                    player.edgeWeightLearning1();
 //                    player.edgeWeightLearning2();
                 }
             }
@@ -377,7 +400,7 @@ public class Alg1 extends Thread{
 
                         // select parent
                         Player parent = null;
-                        String selection_method = Player.getSelectionMethod();
+//                        String selection_method = Player.getSelectionMethod();
                         switch(selection_method){
                             case "WRW" -> parent = player.weightedRouletteWheelSelection();
                             case "best" -> parent = player.bestSelection();
@@ -385,7 +408,7 @@ public class Alg1 extends Thread{
                         }
 
                         // evolve child
-                        String evolution_method = Player.getEvolutionMethod();
+//                        String evolution_method = Player.getEvolutionMethod();
                         switch (evolution_method) {
                             case "copy" -> player.copyEvolution(parent);
                             case "imitation" -> player.imitationEvolution(parent);
@@ -393,7 +416,7 @@ public class Alg1 extends Thread{
                         }
 
                         // mutate child
-                        String mutation_method = Player.getMutationMethod();
+//                        String mutation_method = Player.getMutationMethod();
                         switch (mutation_method){
                             case "new" -> {
                                 if(player.mutationCheck()){
@@ -488,6 +511,12 @@ public class Alg1 extends Thread{
                 + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
         );
 
+
+
+
+
+
+
         // write results and settings to a .csv data file.
         try{
             FileWriter fw;
@@ -496,47 +525,56 @@ public class Alg1 extends Thread{
             // write headings
             if(experiment_number == 0){
                 fw = new FileWriter(filename, false);
-                fw.append("experiment"
-                        + ",mean avg p"
-                        + ",avg p SD"
-                        + ",runs"
-                        + ",gens"
-                        + ",neighbourhood"
-                        + ",N"
-                        + ",ROC"
-                        + ",EPR"
-                        + ",selection"
-                        + ",evolution"
-                        + ",mutation"
-                );
+                fw.append("experiment");
+                fw.append(",mean avg p");
+                fw.append(",avg p SD");
+                fw.append(",runs");
+                fw.append(",gens");
+                fw.append(",neighbourhood");
+                fw.append(",N");
+                if(edge_weight_learning_method.equals("1")){
+                    fw.append(", EWL1 ROC");
+                } else{
+                    fw.append(", EWL2");
+                }
+                fw.append(",EPR");
+                fw.append(",selection");
+                fw.append(",evolution");
+                fw.append(",mutation");
             } else {
                 fw = new FileWriter(filename, true);
             }
 
             // write data
-            fw.append("\n" + experiment_number
-                    + "," + DF4.format(mean_avg_p_of_experiment)
-                    + "," + DF4.format(sd_avg_p_of_experiment)
-                    + "," + runs
-                    + "," + gens
-                    + "," + Player.getNeighbourhoodType()
-                    + "," + N
-                    + "," + Player.getROC()
-                    + "," + EPR
-            );
-            String selection_method = Player.getSelectionMethod();
+            fw.append("\n" + experiment_number);
+            fw.append("," + DF4.format(mean_avg_p_of_experiment));
+            fw.append("," + DF4.format(sd_avg_p_of_experiment));
+            fw.append("," + runs);
+            fw.append("," + gens);
+            fw.append("," + Player.getNeighbourhoodType());
+            fw.append("," + N);
+//                    + "," + Player.getROC());
+            if(edge_weight_learning_method.equals("1")){
+                fw.append("," + ROC);
+            } else{
+                fw.append(",,");
+            }
+            fw.append("," + EPR);
+
+
+//            String selection_method = Player.getSelectionMethod();
             switch(selection_method){ // write selection method
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
                 case "variable" -> fw.append(",variable selection with w="+DF4.format(Player.getW()));
             }
-            String evolution_method = Player.getEvolutionMethod();
+//            String evolution_method = Player.getEvolutionMethod();
             switch (evolution_method) { // write evolution method
                 case "copy" -> fw.append(",copy");
                 case "imitation" -> fw.append(",imitation noise=" + DF4.format(Player.getImitationNoise()));
                 case "approach" -> fw.append(",approach noise=" + DF4.format(Player.getApproachNoise()));
             }
-            String mutation_method = Player.getMutationMethod();
+//            String mutation_method = Player.getMutationMethod();
             switch (mutation_method){ // write mutation method
                 case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
                 default -> fw.append(",no mutation");
@@ -569,7 +607,8 @@ public class Alg1 extends Thread{
             // change the value of the assigned varying parameter
             switch (varying_parameter) {
                 case "runs" -> runs += (int) variation;
-                case "ROC" -> Player.setROC(Player.getROC() + variation);
+//                case "ROC" -> Player.setROC(Player.getROC() + variation);
+                case "ROC" -> ROC += variation;
                 case "EPR" -> EPR += (int) variation;
                 case "gens" -> gens += (int) variation;
                 case "rows_columns" -> {
@@ -592,7 +631,7 @@ public class Alg1 extends Thread{
         ArrayList<Double> avg_p_SD = new ArrayList<>();
         ArrayList<Integer> gens = new ArrayList<>();
         ArrayList<Integer> N = new ArrayList<>();
-        ArrayList<Double> ROC = new ArrayList<>();
+        ArrayList<Double> ROC_list = new ArrayList<>();
         ArrayList<Integer> EPR_list = new ArrayList<>();
         ArrayList<Integer> runs = new ArrayList<>();
 //        ArrayList<String> neighbourhood = new ArrayList<>();
@@ -623,7 +662,7 @@ public class Alg1 extends Thread{
                         case "runs" -> runs.add(Integer.valueOf(row_contents[3]));
                         case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
                         case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
-                        case "ROC" -> ROC.add(Double.valueOf(row_contents[7]));
+                        case "ROC" -> ROC_list.add(Double.valueOf(row_contents[7]));
                         case "EPR" -> EPR_list.add(Integer.valueOf(row_contents[8]));
                         case "w" -> w.add(row_contents[9]);
                         case "imitation_noise" -> imitation_noise.add(row_contents[10]);
@@ -647,7 +686,7 @@ public class Alg1 extends Thread{
                 case "runs" -> summary += "\truns=" + runs.get(i);
                 case "gens" -> summary += "\tgens=" + gens.get(i);
                 case "rows_columns" -> summary += "\tN=" + N.get(i);
-                case "ROC" -> summary += "\tROC=" + DF4.format(ROC.get(i));
+                case "ROC" -> summary += "\tROC=" + DF4.format(ROC_list.get(i));
                 case "EPR" -> summary += "\tEPR=" + EPR_list.get(i);
                 case "imitation_noise" -> summary += "\t" + imitation_noise.get(i);
                 case "approach_noise" -> summary += "\t" + approach_noise.get(i);
@@ -715,16 +754,21 @@ public class Alg1 extends Thread{
 
         s+="\n";
 
-        s += "runs="+runs
-                + ", gens="+gens
-                + ", neighbourhood="+Player.getNeighbourhoodType()
-                + ", N="+N
-                + ", ROC="+DF4.format(Player.getROC())
-                + ", EPR="+EPR
-        ;
+        s += "runs="+runs;
+        s += ", gens="+gens;
+        s += ", neighbourhood="+Player.getNeighbourhoodType();
+        s += ", N="+N;
+//        if(Player.getEdgeWeightLearningMethod().equals("1")){
+        if(edge_weight_learning_method.equals("1")){
+//            s += ", EWL1 with ROC="+DF4.format(Player.getROC());
+            s += ", EWL1 with ROC="+DF4.format(ROC);
+        } else {
+            s += ", EWL2";
+        }
+        s += ", EPR="+EPR;
 
         // state the selection method used
-        String selection_method = Player.getSelectionMethod();
+//        String selection_method = Player.getSelectionMethod();
         switch(selection_method){
             case "WRW" -> s += ", WRW selection";
             case "best" -> s += ", best selection";
@@ -732,7 +776,7 @@ public class Alg1 extends Thread{
         }
 
         // state the evolution method used
-        String evolution_method = Player.getEvolutionMethod();
+//        String evolution_method = Player.getEvolutionMethod();
         switch (evolution_method) {
             case "copy" -> s += ", copy evolution";
             case "imitation" -> s += ", imitation evolution with noise="
@@ -742,7 +786,7 @@ public class Alg1 extends Thread{
         }
 
         // state the mutation method used
-        String mutation_method = Player.getMutationMethod();
+//        String mutation_method = Player.getMutationMethod();
         switch (mutation_method){
             case "new" -> s += ", new mutation with mutation rate="
                     + DF4.format(Player.getMutationRate());
@@ -924,15 +968,16 @@ public class Alg1 extends Thread{
 
             // add the data to the .csv file.
             fw = new FileWriter(filename, true); // append set to true means append mode.
-            fw.append(gen
-                    + "," + DF4.format(avg_p)
-                    + "," + DF4.format(SD)
-                    + "," + gens
-                    + "," + Player.getNeighbourhoodType()
-                    + "," + N
-                    + "," + Player.getROC()
-                    + "," + EPR
-                    + "\n");
+            fw.append(gen + "");
+            fw.append("," + DF4.format(avg_p));
+            fw.append("," + DF4.format(SD));
+            fw.append("," + gens);
+            fw.append("," + Player.getNeighbourhoodType());
+            fw.append("," + N);
+//                    + "," + Player.getROC()
+            fw.append("," + ROC);
+            fw.append("," + EPR);
+            fw.append("\n");
             fw.close();
         } catch(IOException e){
             e.printStackTrace();

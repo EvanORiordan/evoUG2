@@ -99,7 +99,7 @@ public class Player {
      * edge to x, which represents y's likelihood of receiving from x, is greater than a
      * randomly generated double between 0 and 1.<br>
      */
-    public void playEWSpatialUG(){
+    public void play(){
         for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
             Player neighbour = neighbourhood.get(i);
             for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
@@ -233,15 +233,15 @@ public class Player {
     
     
     
-    
-    private static String edge_weight_learning_method;
-    public static String getEdgeWeightLearningMethod(){
-        return edge_weight_learning_method;
-    }
-    public static void setEdgeWeightLearningMethod(String s){
-        edge_weight_learning_method=s;
-    }
-    
+
+//    private static String edge_weight_learning_method;
+//    public static String getEdgeWeightLearningMethod(){
+//        return edge_weight_learning_method;
+//    }
+//    public static void setEdgeWeightLearningMethod(String s){
+//        edge_weight_learning_method=s;
+//    }
+
 
 
     /**
@@ -251,14 +251,14 @@ public class Player {
      * If y has a lower value of p than x, x reduces the weight of their edge to y.
      * The amount by which an edge is modified is determined by the ROC parameter.
      */
-    private static double ROC; // fixed amount by which edge weight is modified.
-    public static double getROC(){
-        return ROC;
-    }
-    public static void setROC(double d){
-        ROC=d;
-    }
-    public void edgeWeightLearning1(){
+//    private static double ROC; // fixed amount by which edge weight is modified.
+//    public static double getROC(){
+//        return ROC;
+//    }
+//    public static void setROC(double d){
+//        ROC=d;
+//    }
+    public void edgeWeightLearning1(double ROC){
         for (int i = 0; i < neighbourhood.size(); i++) {
             Player neighbour = neighbourhood.get(i);
             if (neighbour.p > p) { // if neighbour is more generous than you, increase EW
@@ -279,31 +279,55 @@ public class Player {
 
 
     /**
-     * EWL method where the amount of EW modification is exponentially affected by the difference
+     * EWL method where the amount of EW modification is affected by the difference
      * between the player's p and the neighbour's p.
      */
     public void edgeWeightLearning2(){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             double diff = Math.abs(neighbour.p - p);
+            if(neighbour.p > p){
+                edge_weights[i] += diff;
+                if(edge_weights[i] > 1.0){
+                    edge_weights[i] = 1.0;
+                }
+            } else if(neighbour.p < p){
+                edge_weights[i] -= diff;
+                if(edge_weights[i] < 0.0){
+                    edge_weights[i] = 0.0;
+                }
+            }
+        }
+    }
+
+
+
+
+
+    /**
+     * EWL method where the amount of EW modification is exponentially affected by the difference
+     * between the player's p and the neighbour's p.
+     */
+    public void edgeWeightLearning3(){
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            double diff = Math.abs(neighbour.p - p);
             double exp_diff = Math.exp(diff);
             if(neighbour.p > p){
-//                double diff = neighbour.p - p;
-//                double exp_diff = Math.exp(diff);
                 edge_weights[i] += exp_diff;
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
             } else if(neighbour.p < p){
-//                double diff = p - neighbour.p;
-//                double exp_diff = Math.exp(diff);
                 edge_weights[i] -= exp_diff;
                 if(edge_weights[i] < 0.0){
-                    edge_weights[i] = 1.0;
+                    edge_weights[i] = 0.0;
                 }
             }
         }
     }
+
+
 
 
 
@@ -434,22 +458,22 @@ public class Player {
 
 
 
-    private static String selection_method; // indicates the selection method to be used
-    public static String getSelectionMethod(){
-        return selection_method;
-    }
-    public static void setSelectionMethod(String s){
-        selection_method=s;
-    }
+//    private static String selection_method; // indicates the selection method to be used
+//    public static String getSelectionMethod(){
+//        return selection_method;
+//    }
+//    public static void setSelectionMethod(String s){
+//        selection_method=s;
+//    }
 
 
-    private static String evolution_method; // indicates the evolution method to be used
-    public static String getEvolutionMethod(){
-        return evolution_method;
-    }
-    public static void setEvolutionMethod(String s){
-        evolution_method=s;
-    }
+//    private static String evolution_method; // indicates the evolution method to be used
+//    public static String getEvolutionMethod(){
+//        return evolution_method;
+//    }
+//    public static void setEvolutionMethod(String s){
+//        evolution_method=s;
+//    }
 
 
 
@@ -621,13 +645,13 @@ public class Player {
 
 
 
-    private static String mutation_method;
-    public static String getMutationMethod(){
-        return mutation_method;
-    }
-    public static void setMutationMethod(String s){
-        mutation_method=s;
-    }
+//    private static String mutation_method;
+//    public static String getMutationMethod(){
+//        return mutation_method;
+//    }
+//    public static void setMutationMethod(String s){
+//        mutation_method=s;
+//    }
 
 
     /**
