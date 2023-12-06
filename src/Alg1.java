@@ -150,14 +150,10 @@ public class Alg1 extends Thread{
                     gens = Integer.parseInt(settings[1]);
                     rows = Integer.parseInt(settings[2]);
                     EPR = Integer.parseInt(settings[3]);
-//                    Player.setROC(Double.parseDouble(settings[4]));
                     ROC = Double.parseDouble(settings[4]);
-//                    if(Player.getROC() > 0.0){
                     if(ROC > 0.0){
-//                        Player.setEdgeWeightLearningMethod("1");
                         edge_weight_learning_method = "1";
                     } else {
-//                        Player.setEdgeWeightLearningMethod("2");
                         edge_weight_learning_method = "2";
                     }
                     varying_parameter = settings[5];
@@ -175,13 +171,10 @@ public class Alg1 extends Thread{
             // automatically assign von neumann as neighbourhood
             Player.setNeighbourhoodType("VN");
             // automatically assign selection method
-//            Player.setSelectionMethod("WRW");
             selection_method = "WRW";
             // automatically assign evolution method
-//            Player.setEvolutionMethod("copy");
             evolution_method = "copy";
             // automatically assign mutation method
-//            Player.setMutationMethod("none");
             mutation_method = "none";
             // automatically assign data_gen and interaction_data_record_rate
             data_gen = gens;
@@ -220,8 +213,6 @@ public class Alg1 extends Thread{
             }
 
             System.out.println("selection method? (WRW, best, variable)");
-//            Player.setSelectionMethod(scanner.next());
-//            String selection_method = Player.getSelectionMethod();
             selection_method=scanner.next();
             switch (selection_method) {
                 case "WRW", "best" -> {}
@@ -236,8 +227,6 @@ public class Alg1 extends Thread{
             }
 
             System.out.println("evolution method? (copy, imitation, approach)");
-//            Player.setEvolutionMethod(scanner.next());
-//            String evolution_method = Player.getEvolutionMethod();
             evolution_method = scanner.next();
             switch (evolution_method) {
                 case "copy" -> {}
@@ -256,8 +245,6 @@ public class Alg1 extends Thread{
             }
 
             System.out.println("mutation? (none, new)");
-//            Player.setMutationMethod(scanner.next());
-//            String mutation_method = Player.getMutationMethod();
             mutation_method = scanner.next();
             switch(mutation_method){
                 case "new" -> {
@@ -271,12 +258,9 @@ public class Alg1 extends Thread{
             EPR = scanner.nextInt();
 
             System.out.println("EWL? (1, 2)");
-//            Player.setEdgeWeightLearningMethod(scanner.next());
-//            String edge_weight_learning_method = Player.getEdgeWeightLearningMethod();
             switch (edge_weight_learning_method) {
                 case "1" -> {
                     System.out.println("ROC? (double)");
-//                    Player.setROC(scanner.nextDouble());
                     ROC = scanner.nextDouble();
                 }
                 case "2" -> {
@@ -375,7 +359,6 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-//                    String edge_weight_learning_method = Player.getEdgeWeightLearningMethod();
                     switch(edge_weight_learning_method){
                         case "1" ->{
                             player.edgeWeightLearning1(ROC);
@@ -384,8 +367,6 @@ public class Alg1 extends Thread{
                             player.edgeWeightLearning2();
                         }
                     }
-//                    player.edgeWeightLearning1();
-//                    player.edgeWeightLearning2();
                 }
             }
 
@@ -400,7 +381,6 @@ public class Alg1 extends Thread{
 
                         // select parent
                         Player parent = null;
-//                        String selection_method = Player.getSelectionMethod();
                         switch(selection_method){
                             case "WRW" -> parent = player.weightedRouletteWheelSelection();
                             case "best" -> parent = player.bestSelection();
@@ -408,7 +388,6 @@ public class Alg1 extends Thread{
                         }
 
                         // evolve child
-//                        String evolution_method = Player.getEvolutionMethod();
                         switch (evolution_method) {
                             case "copy" -> player.copyEvolution(parent);
                             case "imitation" -> player.imitationEvolution(parent);
@@ -416,7 +395,6 @@ public class Alg1 extends Thread{
                         }
 
                         // mutate child
-//                        String mutation_method = Player.getMutationMethod();
                         switch (mutation_method){
                             case "new" -> {
                                 if(player.mutationCheck()){
@@ -514,9 +492,6 @@ public class Alg1 extends Thread{
 
 
 
-
-
-
         // write results and settings to a .csv data file.
         try{
             FileWriter fw;
@@ -532,10 +507,8 @@ public class Alg1 extends Thread{
                 fw.append(",gens");
                 fw.append(",neighbourhood");
                 fw.append(",N");
-                if(edge_weight_learning_method.equals("1")){
-                    fw.append(", EWL1 ROC");
-                } else{
-                    fw.append(", EWL2");
+                if(edge_weight_learning_method.equals("1")) {
+                    fw.append(",EWL1 ROC");
                 }
                 fw.append(",EPR");
                 fw.append(",selection");
@@ -553,28 +526,23 @@ public class Alg1 extends Thread{
             fw.append("," + gens);
             fw.append("," + Player.getNeighbourhoodType());
             fw.append("," + N);
-//                    + "," + Player.getROC());
             if(edge_weight_learning_method.equals("1")){
                 fw.append("," + ROC);
-            } else{
-                fw.append(",,");
             }
             fw.append("," + EPR);
 
-
-//            String selection_method = Player.getSelectionMethod();
             switch(selection_method){ // write selection method
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
                 case "variable" -> fw.append(",variable selection with w="+DF4.format(Player.getW()));
             }
-//            String evolution_method = Player.getEvolutionMethod();
+
             switch (evolution_method) { // write evolution method
                 case "copy" -> fw.append(",copy");
                 case "imitation" -> fw.append(",imitation noise=" + DF4.format(Player.getImitationNoise()));
                 case "approach" -> fw.append(",approach noise=" + DF4.format(Player.getApproachNoise()));
             }
-//            String mutation_method = Player.getMutationMethod();
+
             switch (mutation_method){ // write mutation method
                 case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
                 default -> fw.append(",no mutation");
@@ -607,7 +575,6 @@ public class Alg1 extends Thread{
             // change the value of the assigned varying parameter
             switch (varying_parameter) {
                 case "runs" -> runs += (int) variation;
-//                case "ROC" -> Player.setROC(Player.getROC() + variation);
                 case "ROC" -> ROC += variation;
                 case "EPR" -> EPR += (int) variation;
                 case "gens" -> gens += (int) variation;
@@ -624,7 +591,7 @@ public class Alg1 extends Thread{
         }
 
 
-        // display a summary of the experiment series on the console.
+        // storages for experiment data
         String summary = "";
         ArrayList<String> experiment_number = new ArrayList<>();
         ArrayList<Double> mean_avg_p = new ArrayList<>();
@@ -634,14 +601,12 @@ public class Alg1 extends Thread{
         ArrayList<Double> ROC_list = new ArrayList<>();
         ArrayList<Integer> EPR_list = new ArrayList<>();
         ArrayList<Integer> runs = new ArrayList<>();
-//        ArrayList<String> neighbourhood = new ArrayList<>();
         ArrayList<String> imitation_noise = new ArrayList<>();
         ArrayList<String> approach_noise = new ArrayList<>();
         ArrayList<String> w = new ArrayList<>();
         ArrayList<String> mutation_rate = new ArrayList<>();
 
-
-
+        // gather experiment data into storages
         int row_count = 0;
         try {
             BufferedReader br =
@@ -656,14 +621,20 @@ public class Alg1 extends Thread{
                     mean_avg_p.add(Double.valueOf(row_contents[1]));
                     avg_p_SD.add(Double.valueOf(row_contents[2]));
 
-//                    neighbourhood.add(String.valueOf(row_contents[5]));
 
                     switch (varying_parameter) {
                         case "runs" -> runs.add(Integer.valueOf(row_contents[3]));
                         case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
                         case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
                         case "ROC" -> ROC_list.add(Double.valueOf(row_contents[7]));
-                        case "EPR" -> EPR_list.add(Integer.valueOf(row_contents[8]));
+                        case "EPR" -> {
+                            if(edge_weight_learning_method.equals("1")){
+                                EPR_list.add(Integer.valueOf(row_contents[8]));
+                            } else {
+                                EPR_list.add(Integer.valueOf(row_contents[7]));
+                            }
+                        }
+
                         case "w" -> w.add(row_contents[9]);
                         case "imitation_noise" -> imitation_noise.add(row_contents[10]);
                         case "approach_noise" -> approach_noise.add(row_contents[10]);

@@ -232,15 +232,6 @@ public class Player {
     
     
     
-    
-
-//    private static String edge_weight_learning_method;
-//    public static String getEdgeWeightLearningMethod(){
-//        return edge_weight_learning_method;
-//    }
-//    public static void setEdgeWeightLearningMethod(String s){
-//        edge_weight_learning_method=s;
-//    }
 
 
 
@@ -251,13 +242,6 @@ public class Player {
      * If y has a lower value of p than x, x reduces the weight of their edge to y.
      * The amount by which an edge is modified is determined by the ROC parameter.
      */
-//    private static double ROC; // fixed amount by which edge weight is modified.
-//    public static double getROC(){
-//        return ROC;
-//    }
-//    public static void setROC(double d){
-//        ROC=d;
-//    }
     public void edgeWeightLearning1(double ROC){
         for (int i = 0; i < neighbourhood.size(); i++) {
             Player neighbour = neighbourhood.get(i);
@@ -458,22 +442,8 @@ public class Player {
 
 
 
-//    private static String selection_method; // indicates the selection method to be used
-//    public static String getSelectionMethod(){
-//        return selection_method;
-//    }
-//    public static void setSelectionMethod(String s){
-//        selection_method=s;
-//    }
 
 
-//    private static String evolution_method; // indicates the evolution method to be used
-//    public static String getEvolutionMethod(){
-//        return evolution_method;
-//    }
-//    public static void setEvolutionMethod(String s){
-//        evolution_method=s;
-//    }
 
 
 
@@ -486,7 +456,6 @@ public class Player {
             setP(parent.old_p);
         }
     }
-
 
 
 
@@ -645,13 +614,8 @@ public class Player {
 
 
 
-//    private static String mutation_method;
-//    public static String getMutationMethod(){
-//        return mutation_method;
-//    }
-//    public static void setMutationMethod(String s){
-//        mutation_method=s;
-//    }
+
+
 
 
     /**
