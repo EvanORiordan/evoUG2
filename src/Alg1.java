@@ -112,6 +112,7 @@ public class Alg1 extends Thread{
             try{  // read in the configs from the file
                 BufferedReader br = new BufferedReader(new FileReader(config_filename));
                 String line;
+                line = br.readLine(); // ignore the row of headings
                 while((line = br.readLine()) != null){
                     configurations.add(line);
                 }
@@ -137,6 +138,7 @@ public class Alg1 extends Thread{
                     System.out.print(", variation = "+settings[6]+
                             ", num experiments = "+settings[7]);
                 }
+                System.out.print(", description = "+settings[8]);
                 System.out.println();
             }
 

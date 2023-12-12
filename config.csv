@@ -1,8 +1,6 @@
-1000,10000,30,3,0.2,none
-1,1,10,3,0.2,none
-1000,10000,30,1,0.2,EPR,1,8
-1000,10000,30,3,0.0,none
-1000,10000,30,1,0.0,EPR,1,8
-1000,10000,30,8,0.0,EPR,1,5
-2,100,10,1,0.0,EPR,1,5
-2,10000,30,8,0.0,EPR,1,5
+runs,gens,rows,EPR,ROC,varying parameter,variation,num experiments,description
+1000,10000,30,3,0.2,none,,,von neumann experiment
+1000,10000,30,1,0.2,EPR,1,8,series varying EPR
+1000,10000,30,5,0.05,ROC,0.05,8,series varying ROC
+10,10000,30,1,0.0,EPR,1,5,for testing the alg
+1000,10000,30,16,0.0,EPR,1,10,series varying EPR with EWL2
