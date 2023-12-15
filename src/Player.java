@@ -640,11 +640,20 @@ public class Player {
     }
 
 
-
     /**
      * Mutation method where the player's p is randomly generated.
      */
     public void newMutation(){
         setP(ThreadLocalRandom.current().nextDouble());
+    }
+
+
+    /**
+     * Mutation method where p is modified by a random double within an interval determined by the
+     * given argument.
+     */
+    public void noiseMutation(double bound){
+        double mutation_amount = ThreadLocalRandom.current().nextDouble(0 - bound, bound);
+        p += mutation_amount;
     }
 }

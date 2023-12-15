@@ -4,4 +4,8 @@ runs,gens,rows,EPR,ROC,varying parameter,variation,num experiments,description
 1000,10000,30,5,0.05,ROC,0.05,8,series varying ROC
 10,10000,30,1,0.0,EPR,1,5,for testing the alg
 1000,10000,30,16,0.0,EPR,1,10,EWL2 series varying EPR
-1000,1000,30,5,0.0,gens,1000,10,EWL2 series varying gens
+1000,1000,30,5,0.0,gens,1000,10,EWL2 series varying gens between 1000-10000
+1000,15000,30,5,0.0,gens,1000,6,EWL2 series varying gens between 15000-20000
+2,10000,5,5,0.0,rows,1,10,testing varying rows
+2,10000,5,5,0.0,rows,5,8,testing varying rows
+1000,10000,5,5,0.0,rows,5,8,ELW2 series varying rows between 5-40

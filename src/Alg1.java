@@ -274,7 +274,7 @@ public class Alg1 extends Thread{
             }
 
             if (experiment_series) { // user configures series parameters
-            System.out.println("varying parameter? (runs, gens, rows_columns, EPR, ROC, " +
+            System.out.println("varying parameter? (runs, gens, rows, EPR, ROC, " +
                     "imitation_noise, approach_noise, w, mutation_rate)");
                 varying_parameter = scanner.next();
 
@@ -580,7 +580,7 @@ public class Alg1 extends Thread{
                 case "ROC" -> ROC += variation;
                 case "EPR" -> EPR += (int) variation;
                 case "gens" -> gens += (int) variation;
-                case "rows_columns" -> {
+                case "rows" -> {
                     rows += (int) variation;
                     columns += (int) variation;
                     N = rows * columns;
@@ -627,7 +627,7 @@ public class Alg1 extends Thread{
                     switch (varying_parameter) {
                         case "runs" -> runs.add(Integer.valueOf(row_contents[3]));
                         case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
-                        case "rows_columns" -> N.add(Integer.valueOf(row_contents[6]));
+                        case "rows" -> N.add(Integer.valueOf(row_contents[6]));
                         case "ROC" -> ROC_list.add(Double.valueOf(row_contents[7]));
                         case "EPR" -> {
                             if(edge_weight_learning_method.equals("1")){
@@ -658,7 +658,7 @@ public class Alg1 extends Thread{
             switch (varying_parameter) {
                 case "runs" -> summary += "\truns=" + runs.get(i);
                 case "gens" -> summary += "\tgens=" + gens.get(i);
-                case "rows_columns" -> summary += "\tN=" + N.get(i);
+                case "rows" -> summary += "\tN=" + N.get(i);
                 case "ROC" -> summary += "\tROC=" + DF4.format(ROC_list.get(i));
                 case "EPR" -> summary += "\tEPR=" + EPR_list.get(i);
                 case "imitation_noise" -> summary += "\t" + imitation_noise.get(i);
