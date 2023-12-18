@@ -55,7 +55,8 @@ public class Alg1 extends Thread{
     static int num_experiments;
     static int experiment_number = 0;
 
-
+    static FileWriter fw;
+    static BufferedReader br;
 
     // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
@@ -79,6 +80,12 @@ public class Alg1 extends Thread{
     static String mutation_method;
     static String edge_weight_learning_method;
 
+    static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
+    static int choice;
+    static boolean record_pop = false;
+    static boolean use_saved_pop = false;
+    static boolean config = false;
+
 
 
 
@@ -88,30 +95,22 @@ public class Alg1 extends Thread{
     // main method for executing the program
     public static void main(String[] args) {
 
-        // Scanner object for receiving input
-        Scanner scanner = new Scanner(System.in);
+        // ask user if they want to use the pop saved in the strategies .csv file
+        use_saved_pop = binaryQuestion("use saved pop? (1: yes, 2: no)");
 
-        // does user want to load a pre-made configuration from the config file or manually set up?
-        boolean config;
-        System.out.println("config file or manual set up? (1: config, 2: manual)");
-        switch(scanner.nextInt()){
-            case 1 -> {
-                config = true;
-            }
-            case 2 -> {
-                config = false;
-            }
-            default -> {
-                System.out.println("ERROR: select a valid option");
-                return;
-            }
-        }
+        // ask user if they want to record the initial pop (so that it can be used again)
+        record_pop = binaryQuestion("record initial pop? (1: yes, 2: no)");
 
-        if(config){ // if user wants to use config file
+
+
+        // ask user if they want to use a pre-made configuration from config file or manually set up
+        config = binaryQuestion("config file or manual set up? (1: config, 2: manual)");
+
+        if(config){ // user wants to use a pre-made config
             ArrayList<String> configurations = new ArrayList<>(); // stores configurations
-            try{  // read in the configs from the file
-                BufferedReader br = new BufferedReader(new FileReader(config_filename));
-                String line;
+            try{ // load the configs from the file
+                br = new BufferedReader(new FileReader(config_filename));
+                String line; // initialise String to store rows of data
                 line = br.readLine(); // ignore the row of headings
                 while((line = br.readLine()) != null){
                     configurations.add(line);
@@ -133,39 +132,55 @@ public class Alg1 extends Thread{
                 } else{
                     System.out.print(", EWL2");
                 }
-                System.out.print(", varying parameter = "+settings[5]);
-                if(!settings[5].equals("none")){
-                    System.out.print(", variation = "+settings[6]+
-                            ", num experiments = "+settings[7]);
+                if(!settings[5].equals("")){
+                    System.out.print(", varying parameter = "+settings[5]);
+                    System.out.print(", variation = "+settings[6]);
+                    System.out.print("num experiments = "+settings[7]);
                 }
-                System.out.print(", description = "+settings[8]);
+                if(!settings[8].equals("")){
+                    System.out.println(", data gen = "+settings[8]);
+                }
+                if(!settings[9].equals("")) {
+                    System.out.print(", description = " + settings[9]);
+                }
                 System.out.println();
             }
 
             // ask user which config they want to use
             System.out.println("which config would you like to use? (int)");
-            int config_num = scanner.nextInt();
-            for(int i=0;i<configurations.size();i++){
-                if(config_num == i){
-                    String[] settings = configurations.get(i).split(",");
-                    runs = Integer.parseInt(settings[0]);
-                    gens = Integer.parseInt(settings[1]);
-                    rows = Integer.parseInt(settings[2]);
-                    EPR = Integer.parseInt(settings[3]);
-                    ROC = Double.parseDouble(settings[4]);
-                    if(ROC > 0.0){
-                        edge_weight_learning_method = "1";
-                    } else {
-                        edge_weight_learning_method = "2";
-                    }
-                    varying_parameter = settings[5];
-                    if(!varying_parameter.equals("none")) {
-                        experiment_series = true;
-                        variation = Double.parseDouble(settings[6]);
-                        num_experiments = Integer.parseInt(settings[7]);
-                    }
-                    break;
+            boolean config_found = false;
+            int config_num;
+            do{
+                config_num = scanner.nextInt();
+                if(0 <= config_num && config_num < configurations.size()){
+                    config_found = true;
+                } else{
+                    System.out.println("ERROR: invalid config number, try again");
                 }
+            }while(!config_found);
+
+            // apply the config
+            String[] settings = configurations.get(config_num).split(",");
+            runs = Integer.parseInt(settings[0]);
+            gens = Integer.parseInt(settings[1]);
+            rows = Integer.parseInt(settings[2]);
+            EPR = Integer.parseInt(settings[3]);
+            ROC = Double.parseDouble(settings[4]);
+            if(ROC > 0.0){
+                edge_weight_learning_method = "1";
+            } else {
+                edge_weight_learning_method = "2";
+            }
+            if(!settings[5].equals("")) {
+                varying_parameter = settings[5];
+                experiment_series = true;
+                variation = Double.parseDouble(settings[6]);
+                num_experiments = Integer.parseInt(settings[7]);
+            }
+            if(!settings[8].equals("")){
+                data_gen = Integer.parseInt(settings[8]);
+            } else{
+                data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
             }
 
 
@@ -178,17 +193,23 @@ public class Alg1 extends Thread{
             evolution_method = "copy";
             // automatically assign mutation method
             mutation_method = "none";
-            // automatically assign data_gen and interaction_data_record_rate
-            data_gen = gens;
+            // automatically assign interaction_data_record_rate
             interaction_data_record_rate = gens;
 
         } // end of config file code
 
 
-        else {  // if user wants to define algorithm parameters at runtime
+
+
+
+
+
+
+
+        else {  // user wants to define algorithm parameters at runtime
 
             System.out.println("series or experiment? (1: series; 2: experiment)");
-            int choice = scanner.nextInt();
+            choice = scanner.nextInt();
             switch (choice) {
                 case 1 -> experiment_series = true;
                 default -> experiment_series = false;
@@ -331,15 +352,43 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
-
-        // initialise the population
-        for(int i=0;i<rows;i++){
-            ArrayList<Player> row = new ArrayList<>();
-            for(int j=0;j<columns;j++){
-                row.add(new Player(ThreadLocalRandom.current().nextDouble(), 0.0));
+        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
+            try{
+                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+                String line;
+                int i=0;
+                while((line = br.readLine()) != null) {
+                    String[] row_contents = line.split(",");
+                    ArrayList<Player> row = new ArrayList<>();
+                    for(int j=0;j<row_contents.length;j++){
+                        row.add(new Player(Double.parseDouble(row_contents[i]),0));
+                    }
+                    i++;
+                    grid.add(row);
+                }
+            } catch(IOException e){
+                e.printStackTrace();
             }
-            grid.add(row);
+        } else { // user wants to randomly generate a population
+            for (int i = 0; i < rows; i++) {
+                ArrayList<Player> row = new ArrayList<>();
+                for (int j = 0; j < columns; j++) {
+                    row.add(new Player(ThreadLocalRandom.current().nextDouble(), 0.0));
+                }
+                grid.add(row);
+            }
         }
+
+
+        if(record_pop){ // user wants to record initial pop into strategies .csv file
+            writeStrategies(data_filename_prefix + "Strategies.csv");
+        }
+
+
+
+
+
+        // initialise neighbourhoods
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
                 grid.get(i).get(j).findNeighbours2D(grid, i, j);
@@ -417,22 +466,22 @@ public class Alg1 extends Thread{
                 writePerGenData(data_filename_prefix + "PerGenData.csv");
 
                 // write interaction data every once in a while
-                if(gen % interaction_data_record_rate == 0){
-                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-                }
+//                if(gen % interaction_data_record_rate == 0){
+//                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+//                }
 
 
                 if(gen==data_gen){
                     System.out.println("Recording detailed data for gen "+data_gen+"...");
                     writeStrategies(data_filename_prefix + "Strategies.csv");
-                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
-
-                    Player x = grid.get(1).get(1);
-                    writeDetailedPlayer(
-                            player_data_filename_prefix + "Player" + x.getId() + ".csv"
-                            , x);
+//                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+//                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+//                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
+//
+//                    Player x = grid.get(1).get(1);
+//                    writeDetailedPlayer(
+//                            player_data_filename_prefix + "Player" + x.getId() + ".csv"
+//                            , x);
                 }
             }
 
@@ -496,7 +545,6 @@ public class Alg1 extends Thread{
 
         // write results and settings to a .csv data file.
         try{
-            FileWriter fw;
             String filename = data_filename_prefix + "Data.csv";
 
             // write headings
@@ -611,10 +659,7 @@ public class Alg1 extends Thread{
         // gather experiment data into storages
         int row_count = 0;
         try {
-            BufferedReader br =
-                    new BufferedReader(
-                            new FileReader(
-                                    data_filename_prefix + "Data.csv"));
+            br = new BufferedReader(new FileReader(data_filename_prefix + "Data.csv"));
             String line;
             while((line = br.readLine()) != null){
                 String[] row_contents = line.split(",");
@@ -677,6 +722,7 @@ public class Alg1 extends Thread{
 
 
 
+
     /**
      * Calculate the average value of p across the population at the current gen.<br>
      * The most important avg p is that of the final gen. That particular value is what is being
@@ -731,9 +777,7 @@ public class Alg1 extends Thread{
         s += ", gens="+gens;
         s += ", neighbourhood="+Player.getNeighbourhoodType();
         s += ", N="+N;
-//        if(Player.getEdgeWeightLearningMethod().equals("1")){
         if(edge_weight_learning_method.equals("1")){
-//            s += ", EWL1 with ROC="+DF4.format(Player.getROC());
             s += ", EWL1 with ROC="+DF4.format(ROC);
         } else {
             s += ", EWL2";
@@ -741,7 +785,6 @@ public class Alg1 extends Thread{
         s += ", EPR="+EPR;
 
         // state the selection method used
-//        String selection_method = Player.getSelectionMethod();
         switch(selection_method){
             case "WRW" -> s += ", WRW selection";
             case "best" -> s += ", best selection";
@@ -749,7 +792,6 @@ public class Alg1 extends Thread{
         }
 
         // state the evolution method used
-//        String evolution_method = Player.getEvolutionMethod();
         switch (evolution_method) {
             case "copy" -> s += ", copy evolution";
             case "imitation" -> s += ", imitation evolution with noise="
@@ -759,7 +801,6 @@ public class Alg1 extends Thread{
         }
 
         // state the mutation method used
-//        String mutation_method = Player.getMutationMethod();
         switch (mutation_method){
             case "new" -> s += ", new mutation with mutation rate="
                     + DF4.format(Player.getMutationRate());
@@ -769,6 +810,37 @@ public class Alg1 extends Thread{
         s += ":";
         System.out.println(s);
     }
+
+
+
+
+
+
+    /**
+     * Method for asking the user a binary question to receive a boolean answer.
+     */
+    public static boolean binaryQuestion(String question){
+        boolean answer = false;
+        boolean keep_looping = true;
+        do{
+            System.out.printf(question);
+            switch(scanner.nextInt()){
+                case 1 -> {
+                    answer = true;
+                    keep_looping = false;
+                }
+                case 2 -> {
+                    keep_looping = false;
+                }
+                default -> {
+                    System.out.println("ERROR: select a valid option");
+                }
+            }
+        } while(keep_looping);
+        return answer;
+    }
+
+
 
 
 
@@ -789,7 +861,6 @@ public class Alg1 extends Thread{
      */
     public void writeOwnConnections(String filename){
         double avg_own_connections = 0;
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
@@ -823,7 +894,6 @@ public class Alg1 extends Thread{
      */
     public void writeAllConnections(String filename){
         double avg_all_connections = 0;
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
@@ -854,7 +924,6 @@ public class Alg1 extends Thread{
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
      */
     public void writeStrategies(String filename){
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
@@ -882,7 +951,6 @@ public class Alg1 extends Thread{
      * Tracks how many successful interactions the players had (this gen).
      */
     public void writeInteractionData(String filename){
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
@@ -919,7 +987,6 @@ public class Alg1 extends Thread{
      * - Create a line chart with the data.<br>
      */
     public void writePerGenData(String filename){
-        FileWriter fw;
         double SD = calculateSD();
 
         try{
@@ -983,7 +1050,6 @@ public class Alg1 extends Thread{
      * Writes the number of "fair" relationships per node.
      */
     public void writeFairRelationships(String filename){
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
@@ -1010,7 +1076,6 @@ public class Alg1 extends Thread{
      * Writes a detailed account of player x to a .csv file.
      */
     public void writeDetailedPlayer(String filename, Player x){
-        FileWriter fw;
         try{
             fw = new FileWriter(filename, false);
 
