@@ -82,7 +82,7 @@ public class Alg1 extends Thread{
 
     static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
     static int choice;
-    static boolean record_pop = false;
+    static boolean save_pop = false;
     static boolean use_saved_pop = false;
     static boolean config = false;
 
@@ -95,16 +95,8 @@ public class Alg1 extends Thread{
     // main method for executing the program
     public static void main(String[] args) {
 
-        // ask user if they want to use the pop saved in the strategies .csv file
-        use_saved_pop = binaryQuestion("use saved pop? (1: yes, 2: no)");
-
-        // ask user if they want to record the initial pop (so that it can be used again)
-        record_pop = binaryQuestion("record initial pop? (1: yes, 2: no)");
-
-
-
         // ask user if they want to use a pre-made configuration from config file or manually set up
-        config = binaryQuestion("config file or manual set up? (1: config, 2: manual)");
+        config = binaryQuestion("config file or manual set up? (0: manual, 1: config)");
 
         if(config){ // user wants to use a pre-made config
             ArrayList<String> configurations = new ArrayList<>(); // stores configurations
@@ -138,7 +130,7 @@ public class Alg1 extends Thread{
                     System.out.print("num experiments = "+settings[7]);
                 }
                 if(!settings[8].equals("")){
-                    System.out.println(", data gen = "+settings[8]);
+                    System.out.print(", data gen = "+settings[8]);
                 }
                 if(!settings[9].equals("")) {
                     System.out.print(", description = " + settings[9]);
@@ -319,6 +311,17 @@ public class Alg1 extends Thread{
 
 
 
+        // ask user if they want to save the initial pop (so that it can be used again)
+        save_pop = binaryQuestion("save initial pop? (0: no, 1: yes)");
+
+        // ask user if they want to use the pop saved in the strategies .csv file
+        use_saved_pop = binaryQuestion("use saved pop? (0: no, 1: yes)");
+
+
+
+
+
+
         Player.setPrize(1.0);
         columns = rows;
         N = rows * columns;
@@ -352,6 +355,7 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
+
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
             try{
                 br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
@@ -380,7 +384,7 @@ public class Alg1 extends Thread{
         }
 
 
-        if(record_pop){ // user wants to record initial pop into strategies .csv file
+        if(save_pop){ // user wants to record initial pop into strategies .csv file
             writeStrategies(data_filename_prefix + "Strategies.csv");
         }
 
@@ -825,11 +829,11 @@ public class Alg1 extends Thread{
         do{
             System.out.printf(question);
             switch(scanner.nextInt()){
-                case 1 -> {
-                    answer = true;
+                case 0 -> { // 0 => no/false
                     keep_looping = false;
                 }
-                case 2 -> {
+                case 1 -> { // 1 => yes/true
+                    answer = true;
                     keep_looping = false;
                 }
                 default -> {

@@ -1,2 +1,4 @@
 runs,gens,rows,EPR,ROC,varying parameter,variation,num experiments,data gen,description
-1,10000,30,5,0.0,,,,,experiment of 1 run
+1000,10000,30,16,0.0,,,,,EWL2
+1000,10000,30,5,0.25,,,,,EWL1
+1,10000,30,5,0.25,,,,,for saving a new pop
