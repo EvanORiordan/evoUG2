@@ -466,14 +466,14 @@ public class Player {
      * The lower the noise, the more accurate the imitations will generally be.<br>
      * If noise is set to 0, the result of the evolution is identical to copy evolution.<br>
      */
-    private static double imitation_noise; // the amount of noise that may affect imitation evolution
-    public static double getImitationNoise(){
-        return imitation_noise;
-    }
-    public static void setImitationNoise(double d){
-        imitation_noise = d;
-    }
-    public void imitationEvolution(Player parent){
+//    private static double imitation_noise; // the amount of noise that may affect imitation evolution
+//    public static double getImitationNoise(){
+//        return imitation_noise;
+//    }
+//    public static void setImitationNoise(double d){
+//        imitation_noise = d;
+//    }
+    public void imitationEvolution(Player parent, double imitation_noise){
         if(parent.id != id){
             double new_p = ThreadLocalRandom.current().nextDouble(
                     parent.old_p - imitation_noise, parent.old_p + imitation_noise);
@@ -495,14 +495,14 @@ public class Player {
      * Evolution does not take place if the parent and the child are the same player.<br>
      * The greater the noise, the greater the approach is.<br>
      */
-    private static double approach_noise; // states by how much a player can change via approach evolution
-    public static double getApproachNoise(){
-        return approach_noise;
-    }
-    public static void setApproachNoise(double d){
-        approach_noise=d;
-    }
-    public void approachEvolution(Player parent){
+//    private static double approach_noise; // states by how much a player can change via approach evolution
+//    public static double getApproachNoise(){
+//        return approach_noise;
+//    }
+//    public static void setApproachNoise(double d){
+//        approach_noise=d;
+//    }
+    public void approachEvolution(Player parent, double approach_noise){
         if(parent.id != id){
             double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
             if(parent.old_p < p){ // if parent's p is lower, reduce p; else, increase p
@@ -584,14 +584,14 @@ public class Player {
      * Inspired by Rand et al. (2013) (rand2013evolution).<br>
      * Calculate effective payoffs of neighbours. Select highest as parent.<br>
      */
-    private static double w; // intensity of selection
-    public static double getW(){
-        return w;
-    }
-    public static void setW(double d){
-        w=d;
-    }
-    public Player variableSelection(){
+//    private static double w; // intensity of selection
+//    public static double getW(){
+//        return w;
+//    }
+//    public static void setW(double d){
+//        w=d;
+//    }
+    public Player variableSelection(double w){
         Player parent;
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
@@ -653,7 +653,9 @@ public class Player {
      * given argument.
      */
     public void noiseMutation(double bound){
-        double mutation_amount = ThreadLocalRandom.current().nextDouble(0 - bound, bound);
-        setP(p + mutation_amount);
+//        double mutation_amount = ThreadLocalRandom.current().nextDouble(0 - bound, bound);
+//        setP(p + mutation_amount);
+        double new_p = ThreadLocalRandom.current().nextDouble(p - bound, p + bound);
+        setP(new_p);
     }
 }

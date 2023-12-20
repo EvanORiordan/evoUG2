@@ -1,11 +1,10 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.sql.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -48,12 +47,29 @@ public class Alg1 extends Thread{
      *
      * num_experiments indicates the number of experiments to occur in the series.<br>
      *
-     * experiment_number tracks which experiment is taking place at any given time during a series.
+     * experiment_number tracks which experiment is taking place at any given time during a series.<br>
+     *
+     * possible_varying_parameters stores all the possible parameters that can be varied in a series.<br>
      */
     static String varying_parameter;
+    static int varying_parameter_index;
     static double variation;
     static int num_experiments;
     static int experiment_number = 0;
+    static List<String> possible_varying_parameters = new ArrayList<>(
+            List.of("runs", //0
+                    "gens", //1
+                    "rows", //2
+                    "EPR", //3
+                    "ROC", //4
+                    "imitation_noise", //5
+                    "approach_noise", //6
+                    "mutation_rate", //7
+                    "mutation_noise", //8
+                    "w" //9
+            ));
+
+
 
     static FileWriter fw;
     static BufferedReader br;
@@ -78,9 +94,15 @@ public class Alg1 extends Thread{
     static String selection_method;
     static String evolution_method;
     static String mutation_method;
+    static String edge_weight_learning_method;
+
+    static double w;
+    static double approach_noise;
+    static double imitation_noise;
     static double mutation_rate;
     static double mutation_noise;
-    static String edge_weight_learning_method;
+
+
 
     static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
     static int choice;
@@ -94,263 +116,160 @@ public class Alg1 extends Thread{
 
 
 
+
     // main method for executing the program
     public static void main(String[] args) {
 
-        // ask user if they want to use a pre-made configuration from config file or manually set up
-        config = binaryQuestion("config file or manual set up? (0: manual, 1: config)");
-
-        if(config){ // user wants to use a pre-made config
-            ArrayList<String> configurations = new ArrayList<>(); // stores configurations
-            try{ // load the configs from the file
-                br = new BufferedReader(new FileReader(config_filename));
-                String line; // initialise String to store rows of data
-                line = br.readLine(); // ignore the row of headings
-                while((line = br.readLine()) != null){
-                    configurations.add(line);
-                }
-            } catch(IOException e){
-                e.printStackTrace();
+        ArrayList<String> configurations = new ArrayList<>(); // stores configurations
+        try{ // load the configs from the file
+            br = new BufferedReader(new FileReader(config_filename));
+            String line; // initialise String to store rows of data
+            line = br.readLine(); // ignore the row of headings
+            while((line = br.readLine()) != null){
+                configurations.add(line);
             }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
 
-            // display configs to user
-            for(int i=0;i<configurations.size();i++){
-                String[] settings = configurations.get(i).split(",");
-                System.out.print("config "+i+": ");
-                System.out.print("runs = "+settings[0]);
-                System.out.print(", gens = "+settings[1]);
-                System.out.print(", rows = "+settings[2]);
-                System.out.print(", EPR = "+settings[3]);
-                if(Double.parseDouble(settings[4]) > 0.0){
-                    System.out.print(", EWL1 with ROC = " + settings[4]);
-                } else{
-                    System.out.print(", EWL2");
-                }
-                if(!settings[5].equals("")){
-                    System.out.print(", varying parameter = "+settings[5]);
-                    System.out.print(", variation = "+settings[6]);
-                    System.out.print("num experiments = "+settings[7]);
-                }
-                if(!settings[8].equals("")){
-                    System.out.print(", data gen = "+settings[8]);
-                }
-                if(!settings[9].equals("")){
-                    System.out.print(", neighbourhood = "+settings[9]);
-                }
-                if(!settings[10].equals("")){
-                    System.out.print(", selection = "+settings[10]);
-                }
-                if(!settings[11].equals("")){
-                    System.out.print(", evolution = "+settings[11]);
-                }
-                if(!settings[12].equals("")){
-                    System.out.print(", mutation = "+settings[12]);
-                    System.out.print(", mutation rate = "+settings[13]);
-                    if(settings[12].equals("noise")){
-                        System.out.print(", mutation bound = "+settings[14]);
-                    }
-                }
-                if(!settings[14].equals("")) {
-                    System.out.print(", description = " + settings[15]);
-                }
-                System.out.println();
+        // display configs to user
+        for(int i=0;i<configurations.size();i++){
+            String[] settings = configurations.get(i).split(",");
+            System.out.print("config "+i+": ");
+            System.out.print("runs="+settings[0]);
+            System.out.print(", gens="+settings[1]);
+            System.out.print(", rows="+settings[2]);
+            System.out.print(", EPR="+settings[3]);
+            if(Double.parseDouble(settings[4]) > 0.0){
+                System.out.print(", EWL1 with ROC=" + settings[4]);
+            } else{
+                System.out.print(", EWL2");
             }
-
-            // ask user which config they want to use
-            System.out.println("which config would you like to use? (int)");
-            boolean config_found = false;
-            int config_num;
-            do{
-                config_num = scanner.nextInt();
-                if(0 <= config_num && config_num < configurations.size()){
-                    config_found = true;
-                } else{
-                    System.out.println("ERROR: invalid config number, try again");
-                }
-            }while(!config_found);
-
-            // apply the config
-            String[] settings = configurations.get(config_num).split(",");
-            runs = Integer.parseInt(settings[0]);
-            gens = Integer.parseInt(settings[1]);
-            rows = Integer.parseInt(settings[2]);
-            EPR = Integer.parseInt(settings[3]);
-            ROC = Double.parseDouble(settings[4]);
-            if(ROC > 0.0){
-                edge_weight_learning_method = "1";
-            } else {
-                edge_weight_learning_method = "2";
-            }
-            if(!settings[5].equals("")) {
-                varying_parameter = settings[5];
-                experiment_series = true;
-                variation = Double.parseDouble(settings[6]);
-                num_experiments = Integer.parseInt(settings[7]);
+            if(!settings[5].equals("")){
+                System.out.print(", varying parameter="+settings[5]);
+                System.out.print(", variation="+settings[6]);
+                System.out.print(", num experiments="+settings[7]);
             }
             if(!settings[8].equals("")){
-                data_gen = Integer.parseInt(settings[8]);
+                System.out.print(", data gen="+settings[8]);
+            }
+            if(!settings[9].equals("")){
+                System.out.print(", neighbourhood="+settings[9]);
+            }
+            if(!settings[10].equals("")){
+                System.out.print(", selection="+settings[10]);
+            }
+            if(!settings[11].equals("")){
+                System.out.print(", evolution="+settings[11]);
+                switch(settings[11]){
+                    case"imitation"->System.out.print(" with imitation noise="+settings[12]);
+                    case"approach"->System.out.print(" with approach noise="+settings[12]);
+                }
+            }
+            if(!settings[13].equals("")){
+                System.out.print(", mutation="+settings[13]);
+                System.out.print(" with mutation rate="+settings[14]);
+                if(settings[13].equals("noise")){
+                    System.out.print(", mutation bound="+settings[15]);
+                }
             } else{
-                data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
+                System.out.print(", no mutation");
             }
-            if(settings[9].equals("")){ // default neighbourhood is VN
-                Player.setNeighbourhoodType("VN");
-            }else{
-                Player.setNeighbourhoodType(settings[9]);
+            if(!settings[15].equals("")) {
+                System.out.print(", description=" + settings[16]);
             }
-            if(settings[10].equals("")){ // default selection is WRW
-                selection_method = "WRW";
-            }else{
-                selection_method = settings[10];
+            System.out.println();
+        }
+
+        // ask user which config they want to use
+        System.out.println("which config would you like to use? (int)");
+        boolean config_found = false;
+        int config_num;
+        do{ // ensure user selects valid config
+            config_num = scanner.nextInt();
+            if(0 <= config_num && config_num < configurations.size()){
+                config_found = true;
+            } else{
+                System.out.println("ERROR: invalid config number, try again");
             }
-            if(settings[11].equals("")){ // default evolution is copy
-                evolution_method = "copy";
-            }else{
-                evolution_method = settings[11];
+        }while(!config_found);
+
+        // apply the config
+        String[] settings = configurations.get(config_num).split(",");
+        runs = Integer.parseInt(settings[0]);
+        gens = Integer.parseInt(settings[1]);
+        rows = Integer.parseInt(settings[2]);
+        EPR = Integer.parseInt(settings[3]);
+        ROC = Double.parseDouble(settings[4]);
+        if(ROC > 0.0){
+            edge_weight_learning_method = "1";
+        } else {
+            edge_weight_learning_method = "2";
+        }
+        if(!settings[5].equals("")) {
+            varying_parameter = settings[5];
+            switch(varying_parameter){
+                case"runs"->varying_parameter_index=0;
+                case"gens"->varying_parameter_index=1;
+                case"rows"->varying_parameter_index=2;
+                case"EPR"->varying_parameter_index=3;
+                case"ROC"->varying_parameter_index=4;
+                case"imitation_noise"->varying_parameter_index=5;
+                case"approach_noise"->varying_parameter_index=6;
+                case"mutation_rate"->varying_parameter_index=7;
+                case"mutation_noise"->varying_parameter_index=8;
+                case"w"->varying_parameter_index=9;
             }
-            mutation_method = settings[12];
-            if(!mutation_method.equals("")){
-                mutation_rate = Double.parseDouble(settings[13]);
-                if(mutation_method.equals("noise")){
-                    mutation_noise = Double.parseDouble(settings[14]);
-                }
-            }
-        } // end of config file code
-
-
-
-
-
-
-
-        else {  // user wants to define algorithm parameters at runtime
-
-            System.out.println("series or experiment? (1: series; 2: experiment)");
-            choice = scanner.nextInt();
-            switch (choice) {
-                case 1 -> experiment_series = true;
-                default -> experiment_series = false;
-            }
-
-            System.out.println("runs? (int)");
-            runs = scanner.nextInt();
-
-            System.out.println("rows and columns? (int)");
-            rows = scanner.nextInt();
-
-            System.out.println("gens? (int)");
-            gens = scanner.nextInt();
-
-            System.out.println("neighbourhood type? (VN, M)");
-            Player.setNeighbourhoodType(scanner.next());
-            String neighbourhood_type = Player.getNeighbourhoodType();
-            switch (neighbourhood_type) {
-                case "VN", "M" -> {}
-                default -> {
-                    System.out.println("ERROR: invalid neighbourhood type");
-                    return; // terminate the program
-                }
-            }
-
-            System.out.println("selection method? (WRW, best, variable)");
-            selection_method=scanner.next();
-            switch (selection_method) {
-                case "WRW", "best" -> {}
-                case "variable" -> {
-                    System.out.println("intensity of selection (w)? (double)");
-                    Player.setW(scanner.nextDouble());
-                }
-                default -> {
-                    System.out.println("ERROR: invalid selection method");
-                    return; // terminate the program
-                }
-            }
-
-            System.out.println("evolution method? (copy, imitation, approach)");
-            evolution_method = scanner.next();
-            switch (evolution_method) {
-                case "copy" -> {}
-                case "imitation" -> {
-                    System.out.println("imitation noise? (double)");
-                    Player.setImitationNoise(scanner.nextDouble());
-                }
-                case "approach" -> {
-                    System.out.println("approach noise? (double)");
-                    Player.setApproachNoise(scanner.nextDouble());
-                }
-                default -> {
-                    System.out.println("ERROR: invalid evolution method");
-                    return; // terminate the program
-                }
-            }
-
-            System.out.println("mutation? (none, new)");
-            mutation_method = scanner.next();
-            switch(mutation_method){
-                case "new" -> {
-                    System.out.println("mutation rate? (double)");
-//                    Player.setMutationRate(scanner.nextDouble());
-                    mutation_rate = scanner.nextDouble();
-                }
-                default -> System.out.println("NOTE: no mutation");
-            }
-
-            System.out.println("EPR? (int)");
-            EPR = scanner.nextInt();
-
-            System.out.println("EWL? (1, 2)");
-            switch (edge_weight_learning_method) {
-                case "1" -> {
-                    System.out.println("ROC? (double)");
-                    ROC = scanner.nextDouble();
-                }
-                case "2" -> {
-                }
-                default -> {
-                    System.out.println("ERROR: no EWL");
-                    return;
-                }
-            }
-
-            if (experiment_series) { // user configures series parameters
-            System.out.println("varying parameter? (runs, gens, rows, EPR, ROC, " +
-                    "imitation_noise, approach_noise, w, mutation_rate)");
-                varying_parameter = scanner.next();
-
-                System.out.println("variation amount?");
-                variation = scanner.nextDouble();
-
-                System.out.println("number of experiments? (int)");
-                num_experiments = scanner.nextInt();
-            }
-            else {
-
-                // manually assign data_gen and interaction_data_record_rate at runtime
-                System.out.println("data gen? (int)");
-                data_gen = scanner.nextInt();
-                System.out.println("interaction data record rate? (int)");
-                interaction_data_record_rate = scanner.nextInt();
-
+            experiment_series = true;
+            variation = Double.parseDouble(settings[6]);
+            num_experiments = Integer.parseInt(settings[7]);
+        }
+        if(!settings[8].equals("")){
+            data_gen = Integer.parseInt(settings[8]);
+        } else{
+            data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
+        }
+        if(settings[9].equals("")){ // default neighbourhood is VN
+            Player.setNeighbourhoodType("VN");
+        }else{
+            Player.setNeighbourhoodType(settings[9]);
+        }
+        if(settings[10].equals("")){ // default selection is WRW
+            selection_method = "WRW";
+        }else{
+            selection_method = settings[10];
+        }
+        if(settings[11].equals("")){ // default evolution is copy
+            evolution_method = "copy";
+        } else if(settings[11].equals("imitation")){
+            evolution_method = settings[11];
+            imitation_noise = Double.parseDouble(settings[12]);
+        } else if(settings[11].equals("approach")){
+            evolution_method = settings[11];
+            approach_noise = Double.parseDouble(settings[12]);
+        } else{
+            evolution_method = settings[11];
+        }
+        mutation_method = settings[13];
+        if(!mutation_method.equals("")){
+            mutation_rate = Double.parseDouble(settings[14]);
+            if(mutation_method.equals("noise")){
+                mutation_noise = Double.parseDouble(settings[15]);
             }
         }
 
-
-
-
+        // enable these lines if you want to use them.
         // ask user if they want to save the initial pop (so that it can be used again)
-        save_pop = binaryQuestion("save initial pop? (0: no, 1: yes)");
-
+//        save_pop = binaryQuestion("save initial pop? (0: no, 1: yes)");
         // ask user if they want to use the pop saved in the strategies .csv file
-        use_saved_pop = binaryQuestion("use saved pop? (0: no, 1: yes)");
+//        use_saved_pop = binaryQuestion("use saved pop? (0: no, 1: yes)");
 
 
+        Player.setPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
 
-
-
-
-        Player.setPrize(1.0);
+        // square topology
         columns = rows;
         N = rows * columns;
-
 
         // mark the beginning of the algorithm's runtime
         Instant start = Instant.now();
@@ -464,14 +383,14 @@ public class Alg1 extends Thread{
                         switch(selection_method){
                             case "WRW" -> parent = player.weightedRouletteWheelSelection();
                             case "best" -> parent = player.bestSelection();
-                            case "variable" -> parent = player.variableSelection();
+                            case "variable" -> parent = player.variableSelection(w);
                         }
 
                         // evolve child
                         switch (evolution_method) {
                             case "copy" -> player.copyEvolution(parent);
-                            case "imitation" -> player.imitationEvolution(parent);
-                            case "approach" -> player.approachEvolution(parent);
+                            case "imitation" -> player.imitationEvolution(parent, imitation_noise);
+                            case "approach" -> player.approachEvolution(parent, approach_noise);
                         }
 
                         // mutate child
@@ -508,14 +427,11 @@ public class Alg1 extends Thread{
                 if(gen==data_gen){
                     System.out.println("Recording detailed data for gen "+data_gen+"...");
                     writeStrategies(data_filename_prefix + "Strategies.csv");
-//                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-//                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-//                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
-//
-//                    Player x = grid.get(1).get(1);
-//                    writeDetailedPlayer(
-//                            player_data_filename_prefix + "Player" + x.getId() + ".csv"
-//                            , x);
+                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
+                    Player x = grid.get(1).get(1);
+                    writeDetailedPlayer(player_data_filename_prefix+"Player"+x.getId()+".csv",x);
                 }
             }
 
@@ -541,7 +457,7 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        displaySettings(); // display settings of experiment
+//        displaySettings(); // display settings of experiment
 
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
@@ -597,7 +513,10 @@ public class Alg1 extends Thread{
                 fw.append(",EPR");
                 fw.append(",selection");
                 fw.append(",evolution");
-                fw.append(",mutation");
+                if(!mutation_method.equals("")){
+                    fw.append(",mutation");
+                    fw.append(",mutation rate");
+                }
             } else {
                 fw = new FileWriter(filename, true);
             }
@@ -618,21 +537,21 @@ public class Alg1 extends Thread{
             switch(selection_method){ // write selection method
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
-                case "variable" -> fw.append(",variable selection with w="+DF4.format(Player.getW()));
+                case "variable" -> fw.append(",variable selection with w="+DF4.format(w));
             }
 
             switch (evolution_method) { // write evolution method
                 case "copy" -> fw.append(",copy");
-                case "imitation" -> fw.append(",imitation noise=" + DF4.format(Player.getImitationNoise()));
-                case "approach" -> fw.append(",approach noise=" + DF4.format(Player.getApproachNoise()));
+                case "imitation" -> fw.append(",imitation noise=" + DF4.format(imitation_noise));
+                case "approach" -> fw.append(",approach noise=" + DF4.format(approach_noise));
             }
 
             switch (mutation_method){ // write mutation method
 //                case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
                 case "new" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
                 case "noise" -> {
+                    fw.append(",noise mutation="+DF4.format(mutation_noise));
                     fw.append(",mutation rate=" + DF4.format(mutation_rate));
-                    fw.append(",mutation noise="+DF4.format(mutation_noise));
                 }
                 default -> fw.append(",no mutation");
             }
@@ -657,103 +576,101 @@ public class Alg1 extends Thread{
      */
     public static void experimentSeries(){
 
-        // run the experiment series.
+        // store initial value of varying parameter
+        ArrayList<Double> various_amounts = new ArrayList<>();
+        switch(varying_parameter_index){
+            case 0->various_amounts.add((double)runs);
+            case 1->various_amounts.add((double)gens);
+            case 2->various_amounts.add((double)rows);
+            case 3->various_amounts.add((double)EPR);
+            case 4->various_amounts.add(ROC);
+            case 5->various_amounts.add(imitation_noise);
+            case 6->various_amounts.add(approach_noise);
+            case 7->various_amounts.add(mutation_rate);
+            case 8->various_amounts.add(mutation_noise);
+            case 9->various_amounts.add(w);
+        }
+
+        // run experiment series
         for(int i=0;i<num_experiments;i++){
+            System.out.println("varying parameter is at "+various_amounts.get(i));
             experiment(); // run the experiment and store its final data
-
-            // change the value of the assigned varying parameter
-            switch (varying_parameter) {
-                case "runs" -> runs += (int) variation;
-                case "ROC" -> ROC += variation;
-                case "EPR" -> EPR += (int) variation;
-                case "gens" -> gens += (int) variation;
-                case "rows" -> {
-                    rows += (int) variation;
-                    columns += (int) variation;
-                    N = rows * columns;
+            switch(varying_parameter_index){ // change the value of the varying parameter
+                case 0->{
+                    runs+=(int)variation;
+                    various_amounts.add((double)runs);
                 }
-                case "imitation_noise" -> Player.setImitationNoise(Player.getImitationNoise() + variation);
-                case "approach_noise" -> Player.setApproachNoise(Player.getApproachNoise() + variation);
-                case "w" -> Player.setW(Player.getW() + variation);
-//                case "mutation_rate" -> Player.setMutationRate(Player.getMutationRate() + variation);
-                case "mutation_rate" -> mutation_rate += variation;
+                case 1->{
+                    gens+=(int)variation;
+                    various_amounts.add((double)gens);
+                }
+                case 2->{
+                    rows+=(int)variation;
+                    various_amounts.add((double)rows);
+                }
+                case 3->{
+                    EPR+=(int)variation;
+                    various_amounts.add((double)EPR);
+                }
+                case 4->{
+                    ROC+=variation;
+                    various_amounts.add(ROC);
+                }
+                case 5->{
+                    imitation_noise+=variation;
+                    various_amounts.add(imitation_noise);
+                }
+                case 6->{
+                    approach_noise+=variation;
+                    various_amounts.add(approach_noise);
+                }
+                case 7->{
+                    mutation_rate+=variation;
+                    various_amounts.add(mutation_rate);
+                }
+                case 8->{
+                    mutation_noise+=variation;
+                    various_amounts.add(mutation_noise);
+                }
+                case 9->{
+                    w+=variation;
+                    various_amounts.add(w);
+                }
             }
         }
 
-
-        // storages for experiment data
+        // display a summary of the series in the console
         String summary = "";
-        ArrayList<String> experiment_number = new ArrayList<>();
-        ArrayList<Double> mean_avg_p = new ArrayList<>();
-        ArrayList<Double> avg_p_SD = new ArrayList<>();
-        ArrayList<Integer> gens = new ArrayList<>();
-        ArrayList<Integer> N = new ArrayList<>();
-        ArrayList<Double> ROC_list = new ArrayList<>();
-        ArrayList<Integer> EPR_list = new ArrayList<>();
-        ArrayList<Integer> runs = new ArrayList<>();
-        ArrayList<String> imitation_noise = new ArrayList<>();
-        ArrayList<String> approach_noise = new ArrayList<>();
-        ArrayList<String> w = new ArrayList<>();
-        ArrayList<String> mutation_rate = new ArrayList<>();
-
-        // gather experiment data into storages
-        int row_count = 0;
-        try {
-            br = new BufferedReader(new FileReader(data_filename_prefix + "Data.csv"));
+        try{
+            br = new BufferedReader(new FileReader(data_filename_prefix+"Data.csv"));
             String line;
-            while((line = br.readLine()) != null){
+            line = br.readLine();
+            int i=0; // indicates which index of the row we are currently on
+            while((line=br.readLine()) != null){
                 String[] row_contents = line.split(",");
-                if(row_count != 0){
-                    experiment_number.add(row_contents[0]);
-                    mean_avg_p.add(Double.valueOf(row_contents[1]));
-                    avg_p_SD.add(Double.valueOf(row_contents[2]));
-
-
-                    switch (varying_parameter) {
-                        case "runs" -> runs.add(Integer.valueOf(row_contents[3]));
-                        case "gens" -> gens.add(Integer.valueOf(row_contents[4]));
-                        case "rows" -> N.add(Integer.valueOf(row_contents[6]));
-                        case "ROC" -> ROC_list.add(Double.valueOf(row_contents[7]));
-                        case "EPR" -> {
-                            if(edge_weight_learning_method.equals("1")){
-                                EPR_list.add(Integer.valueOf(row_contents[8]));
-                            } else {
-                                EPR_list.add(Integer.valueOf(row_contents[7]));
-                            }
-                        }
-
-                        case "w" -> w.add(row_contents[9]);
-                        case "imitation_noise" -> imitation_noise.add(row_contents[10]);
-                        case "approach_noise" -> approach_noise.add(row_contents[10]);
-                        case "mutation_rate" -> mutation_rate.add(row_contents[11]);
-                    }
+                summary += "experiment="+row_contents[0];
+                summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
+                summary += "\tp SD="+DF4.format(Double.parseDouble(row_contents[2]));
+                summary += "\t";
+                switch(varying_parameter_index){
+                    case 0->summary+="runs=";
+                    case 1->summary+="gens=";
+                    case 2->summary+="rows=";
+                    case 3->summary+="EPR=";
+                    case 4->summary+="ROC=";
+                    case 5->summary+="imitation noise=";
+                    case 6->summary+="approach noise=";
+                    case 7->summary+="mutation rate=";
+                    case 8->summary+="mutation noise=";
+                    case 9->summary+="w=";
                 }
-                row_count++;
+                summary += DF4.format(various_amounts.get(i));
+                i++;
+                summary += "\n";
             }
-        } catch(IOException e){
+            br.close();
+        }catch(IOException e){
             e.printStackTrace();
-        }
-
-        for(int i=0;i<row_count-1;i++){
-            summary += "experiment="+experiment_number.get(i)
-                    + "\tmean avg p="+DF4.format(mean_avg_p.get(i))
-                    + "\tavg p SD="+DF4.format(avg_p_SD.get(i))
-            ;
-
-            switch (varying_parameter) {
-                case "runs" -> summary += "\truns=" + runs.get(i);
-                case "gens" -> summary += "\tgens=" + gens.get(i);
-                case "rows" -> summary += "\tN=" + N.get(i);
-                case "ROC" -> summary += "\tROC=" + DF4.format(ROC_list.get(i));
-                case "EPR" -> summary += "\tEPR=" + EPR_list.get(i);
-                case "imitation_noise" -> summary += "\t" + imitation_noise.get(i);
-                case "approach_noise" -> summary += "\t" + approach_noise.get(i);
-                case "w" -> summary += "\t" + w.get(i);
-                case "mutation_rate" -> summary += "\t" + mutation_rate.get(i);
-            }
-
-
-            summary += "\n";
         }
         System.out.println(summary);
     }
@@ -801,57 +718,57 @@ public class Alg1 extends Thread{
     /**
      * Displays experiment settings.
      */
-    public static void displaySettings(){
-        String s = "";
-
-        if(experiment_series && experiment_number == 0){ // if at start of series
-            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
-                    num_experiments+" experiments with settings: ";
-        } else {
-            s += "Experiment with settings: ";
-        }
-
-        s+="\n";
-
-        s += "runs="+runs;
-        s += ", gens="+gens;
-        s += ", neighbourhood="+Player.getNeighbourhoodType();
-        s += ", N="+N;
-        if(edge_weight_learning_method.equals("1")){
-            s += ", EWL1 with ROC="+DF4.format(ROC);
-        } else {
-            s += ", EWL2";
-        }
-        s += ", EPR="+EPR;
-
-        // state the selection method used
-        switch(selection_method){
-            case "WRW" -> s += ", WRW selection";
-            case "best" -> s += ", best selection";
-            case "variable" -> s += ", variable selection with w=" + DF4.format(Player.getW());
-        }
-
-        // state the evolution method used
-        switch (evolution_method) {
-            case "copy" -> s += ", copy evolution";
-            case "imitation" -> s += ", imitation evolution with noise="
-                    + DF4.format(Player.getImitationNoise());
-            case "approach" -> s += ", approach evolution with noise="
-                    + DF4.format(Player.getApproachNoise());
-        }
-
-        // state the mutation method used
-        switch (mutation_method){
-//            case "new" -> s += ", new mutation with mutation rate="+ DF4.format(Player.getMutationRate());
-            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
-            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+" and " +
-                    "noise="+mutation_noise;
-            default -> s += ", no mutation";
-        }
-
-        s += ":";
-        System.out.println(s);
-    }
+//    public static void displaySettings(){
+//        String s = "";
+//
+//        if(experiment_series && experiment_number == 0){ // if at start of series
+//            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
+//                    num_experiments+" experiments with settings: ";
+//        } else {
+//            s += "Experiment with settings: ";
+//        }
+//
+//        s+="\n";
+//
+//        s += "runs="+runs;
+//        s += ", gens="+gens;
+//        s += ", neighbourhood="+Player.getNeighbourhoodType();
+//        s += ", N="+N;
+//        if(edge_weight_learning_method.equals("1")){
+//            s += ", EWL1 with ROC="+DF4.format(ROC);
+//        } else {
+//            s += ", EWL2";
+//        }
+//        s += ", EPR="+EPR;
+//
+//        // state the selection method used
+//        switch(selection_method){
+//            case "WRW" -> s += ", WRW selection";
+//            case "best" -> s += ", best selection";
+//            case "variable" -> s += ", variable selection with w=" + DF4.format(w);
+//        }
+//
+//        // state the evolution method used
+//        switch (evolution_method) {
+//            case "copy" -> s += ", copy evolution";
+//            case "imitation" -> s += ", imitation evolution with noise="
+//                    + DF4.format(imitation_noise);
+//            case "approach" -> s += ", approach evolution with noise="
+//                    + DF4.format(approach_noise);
+//        }
+//
+//        // state the mutation method used
+//        switch (mutation_method){
+////            case "new" -> s += ", new mutation with mutation rate="+ DF4.format(Player.getMutationRate());
+//            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
+//            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+" and " +
+//                    "noise="+DF4.format(mutation_noise);
+//            default -> s += ", no mutation";
+//        }
+//
+//        s += ":";
+//        System.out.println(s);
+//    }
 
 
 
