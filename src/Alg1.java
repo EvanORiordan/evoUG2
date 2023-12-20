@@ -66,7 +66,7 @@ public class Alg1 extends Thread{
     static String interaction_data_filename_prefix = "csv_data\\interactions_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-    static int interaction_data_record_rate;
+    static int interaction_data_record_rate = gens;
     static int data_gen;
 
     // Prefix for filenames of player data files.
@@ -78,6 +78,8 @@ public class Alg1 extends Thread{
     static String selection_method;
     static String evolution_method;
     static String mutation_method;
+    static double mutation_rate;
+    static double mutation_noise;
     static String edge_weight_learning_method;
 
     static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
@@ -132,8 +134,24 @@ public class Alg1 extends Thread{
                 if(!settings[8].equals("")){
                     System.out.print(", data gen = "+settings[8]);
                 }
-                if(!settings[9].equals("")) {
-                    System.out.print(", description = " + settings[9]);
+                if(!settings[9].equals("")){
+                    System.out.print(", neighbourhood = "+settings[9]);
+                }
+                if(!settings[10].equals("")){
+                    System.out.print(", selection = "+settings[10]);
+                }
+                if(!settings[11].equals("")){
+                    System.out.print(", evolution = "+settings[11]);
+                }
+                if(!settings[12].equals("")){
+                    System.out.print(", mutation = "+settings[12]);
+                    System.out.print(", mutation rate = "+settings[13]);
+                    if(settings[12].equals("noise")){
+                        System.out.print(", mutation bound = "+settings[14]);
+                    }
+                }
+                if(!settings[14].equals("")) {
+                    System.out.print(", description = " + settings[15]);
                 }
                 System.out.println();
             }
@@ -174,23 +192,29 @@ public class Alg1 extends Thread{
             } else{
                 data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
             }
-
-
-            // default settings:
-            // automatically assign von neumann as neighbourhood
-            Player.setNeighbourhoodType("VN");
-            // automatically assign selection method
-            selection_method = "WRW";
-            // automatically assign evolution method
-            evolution_method = "copy";
-            // automatically assign mutation method
-            mutation_method = "none";
-            // automatically assign interaction_data_record_rate
-            interaction_data_record_rate = gens;
-
+            if(settings[9].equals("")){ // default neighbourhood is VN
+                Player.setNeighbourhoodType("VN");
+            }else{
+                Player.setNeighbourhoodType(settings[9]);
+            }
+            if(settings[10].equals("")){ // default selection is WRW
+                selection_method = "WRW";
+            }else{
+                selection_method = settings[10];
+            }
+            if(settings[11].equals("")){ // default evolution is copy
+                evolution_method = "copy";
+            }else{
+                evolution_method = settings[11];
+            }
+            mutation_method = settings[12];
+            if(!mutation_method.equals("")){
+                mutation_rate = Double.parseDouble(settings[13]);
+                if(mutation_method.equals("noise")){
+                    mutation_noise = Double.parseDouble(settings[14]);
+                }
+            }
         } // end of config file code
-
-
 
 
 
@@ -264,7 +288,8 @@ public class Alg1 extends Thread{
             switch(mutation_method){
                 case "new" -> {
                     System.out.println("mutation rate? (double)");
-                    Player.setMutationRate(scanner.nextDouble());
+//                    Player.setMutationRate(scanner.nextDouble());
+                    mutation_rate = scanner.nextDouble();
                 }
                 default -> System.out.println("NOTE: no mutation");
             }
@@ -452,8 +477,13 @@ public class Alg1 extends Thread{
                         // mutate child
                         switch (mutation_method){
                             case "new" -> {
-                                if(player.mutationCheck()){
+                                if(player.mutationCheck(mutation_rate)){
                                     player.newMutation();
+                                }
+                            }
+                            case "noise" -> {
+                                if(player.mutationCheck(mutation_rate)){
+                                    player.noiseMutation(mutation_noise);
                                 }
                             }
                         }
@@ -598,7 +628,12 @@ public class Alg1 extends Thread{
             }
 
             switch (mutation_method){ // write mutation method
-                case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
+//                case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
+                case "new" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
+                case "noise" -> {
+                    fw.append(",mutation rate=" + DF4.format(mutation_rate));
+                    fw.append(",mutation noise="+DF4.format(mutation_noise));
+                }
                 default -> fw.append(",no mutation");
             }
 
@@ -640,7 +675,8 @@ public class Alg1 extends Thread{
                 case "imitation_noise" -> Player.setImitationNoise(Player.getImitationNoise() + variation);
                 case "approach_noise" -> Player.setApproachNoise(Player.getApproachNoise() + variation);
                 case "w" -> Player.setW(Player.getW() + variation);
-                case "mutation_rate" -> Player.setMutationRate(Player.getMutationRate() + variation);
+//                case "mutation_rate" -> Player.setMutationRate(Player.getMutationRate() + variation);
+                case "mutation_rate" -> mutation_rate += variation;
             }
         }
 
@@ -806,8 +842,10 @@ public class Alg1 extends Thread{
 
         // state the mutation method used
         switch (mutation_method){
-            case "new" -> s += ", new mutation with mutation rate="
-                    + DF4.format(Player.getMutationRate());
+//            case "new" -> s += ", new mutation with mutation rate="+ DF4.format(Player.getMutationRate());
+            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
+            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+" and " +
+                    "noise="+mutation_noise;
             default -> s += ", no mutation";
         }
 

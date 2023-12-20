@@ -623,14 +623,14 @@ public class Player {
      * Returns a boolean indicating whether mutation should occur. If true is returned, mutation will
      * occur. If false is returned, mutation will not occur.<br>
      */
-    private static double mutation_rate;
-    public static double getMutationRate(){
-        return mutation_rate;
-    }
-    public static void setMutationRate(double d){
-        mutation_rate=d;
-    }
-    public boolean mutationCheck(){
+//    private static double mutation_rate;
+//    public static double getMutationRate(){
+//        return mutation_rate;
+//    }
+//    public static void setMutationRate(double d){
+//        mutation_rate=d;
+//    }
+    public boolean mutationCheck(double mutation_rate){
         double random_double = ThreadLocalRandom.current().nextDouble();
         if(random_double < mutation_rate){ // the greater the mutation rate, the more likely mutation occurs
             return true; // mutation will occur
@@ -654,6 +654,6 @@ public class Player {
      */
     public void noiseMutation(double bound){
         double mutation_amount = ThreadLocalRandom.current().nextDouble(0 - bound, bound);
-        p += mutation_amount;
+        setP(p + mutation_amount);
     }
 }

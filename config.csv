@@ -1,4 +1,3 @@
-runs,gens,rows,EPR,ROC,varying parameter,variation,num experiments,data gen,description
-1000,10000,30,16,0.0,,,,,EWL2
-1000,10000,30,5,0.25,,,,,EWL1
-1,10000,30,5,0.25,,,,,for saving a new pop
+runs,gens,rows,EPR,ROC,varying,variation,num exp,data gen,neigh,sel,evo,mut,mut rate,mut noise,desc
+1000,10000,30,16,0.0,,,,,VN,WRW,copy,,,,test
+1000,10000,30,16,0.0,,,,,VN,WRW,copy,noise,0.1,0.1,test
