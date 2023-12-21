@@ -57,16 +57,15 @@ public class Alg1 extends Thread{
     static int num_experiments;
     static int experiment_number = 0;
     static List<String> possible_varying_parameters = new ArrayList<>(
-            List.of("runs", //0
-                    "gens", //1
-                    "rows", //2
-                    "EPR", //3
-                    "ROC", //4
-                    "imitation_noise", //5
-                    "approach_noise", //6
-                    "mutation_rate", //7
-                    "mutation_noise", //8
-                    "w" //9
+            List.of("runs" //0
+                    , "gens" //1
+                    , "rows" //2
+                    , "EPR" //3
+                    , "ROC" //4
+                    , "w" //5
+                    , "approach_noise" //6
+                    , "mutation_rate" //7
+                    , "mutation_noise" //8
             ));
 
 
@@ -98,7 +97,6 @@ public class Alg1 extends Thread{
 
     static double w;
     static double approach_noise;
-    static double imitation_noise;
     static double mutation_rate;
     static double mutation_noise;
 
@@ -109,6 +107,16 @@ public class Alg1 extends Thread{
     static boolean save_pop = false;
     static boolean use_saved_pop = false;
     static boolean config = false;
+
+    // i would like to use this to make it easier to add config settings without having to
+    // amend all settings later in the row but i am not sure how to do so.
+//    static List<String> config_settings = new ArrayList<>(
+//            List.of("runs"
+//                    ,"gens"
+//                    ,"rows"
+//                    ,"EPR"
+//                    ,"ROC"
+//            ));
 
 
 
@@ -153,30 +161,27 @@ public class Alg1 extends Thread{
             if(!settings[8].equals("")){
                 System.out.print(", data gen="+settings[8]);
             }
-            if(!settings[9].equals("")){
-                System.out.print(", neighbourhood="+settings[9]);
+            switch(settings[9]){
+                case"VN",""->System.out.print(", VN neighbourhood");
+                case"M"->System.out.print(", M neighbourhood");
             }
-            if(!settings[10].equals("")){
-                System.out.print(", selection="+settings[10]);
+            switch(settings[10]){
+                case"WRW",""->System.out.print(", WRW selection");
+                case"best"->System.out.print(", best selection");
+                case"variable"->System.out.print(", variable selection with w="+settings[11]);
             }
-            if(!settings[11].equals("")){
-                System.out.print(", evolution="+settings[11]);
-                switch(settings[11]){
-                    case"imitation"->System.out.print(" with imitation noise="+settings[12]);
-                    case"approach"->System.out.print(" with approach noise="+settings[12]);
-                }
+            switch(settings[12]){
+                case"copy", ""-> System.out.print(", copy evolution");
+                case"approach"->System.out.print(", approach evolution with noise="+settings[13]);
             }
-            if(!settings[13].equals("")){
-                System.out.print(", mutation="+settings[13]);
-                System.out.print(" with mutation rate="+settings[14]);
-                if(settings[13].equals("noise")){
-                    System.out.print(", mutation bound="+settings[15]);
-                }
-            } else{
-                System.out.print(", no mutation");
+            switch(settings[14]){
+                case""-> System.out.print(", no mutation");
+                case"noise"->System.out.print(", noise mutation with mutation rate="+settings[15]+
+                            " and noise="+settings[16]);
+                case"new"-> System.out.print(", new mutation with mutation rate="+settings[15]);
             }
-            if(!settings[15].equals("")) {
-                System.out.print(", description=" + settings[16]);
+            if(!settings[17].equals("")) {
+                System.out.print(", description: " + settings[17]);
             }
             System.out.println();
         }
@@ -214,11 +219,10 @@ public class Alg1 extends Thread{
                 case"rows"->varying_parameter_index=2;
                 case"EPR"->varying_parameter_index=3;
                 case"ROC"->varying_parameter_index=4;
-                case"imitation_noise"->varying_parameter_index=5;
+                case"w"->varying_parameter_index=5;
                 case"approach_noise"->varying_parameter_index=6;
                 case"mutation_rate"->varying_parameter_index=7;
                 case"mutation_noise"->varying_parameter_index=8;
-                case"w"->varying_parameter_index=9;
             }
             experiment_series = true;
             variation = Double.parseDouble(settings[6]);
@@ -234,29 +238,40 @@ public class Alg1 extends Thread{
         }else{
             Player.setNeighbourhoodType(settings[9]);
         }
-        if(settings[10].equals("")){ // default selection is WRW
-            selection_method = "WRW";
-        }else{
-            selection_method = settings[10];
-        }
-        if(settings[11].equals("")){ // default evolution is copy
-            evolution_method = "copy";
-        } else if(settings[11].equals("imitation")){
-            evolution_method = settings[11];
-            imitation_noise = Double.parseDouble(settings[12]);
-        } else if(settings[11].equals("approach")){
-            evolution_method = settings[11];
-            approach_noise = Double.parseDouble(settings[12]);
-        } else{
-            evolution_method = settings[11];
-        }
-        mutation_method = settings[13];
-        if(!mutation_method.equals("")){
-            mutation_rate = Double.parseDouble(settings[14]);
-            if(mutation_method.equals("noise")){
-                mutation_noise = Double.parseDouble(settings[15]);
+        switch(settings[10]){
+            case"WRW",""->selection_method="WRW"; // default is WRW
+            case"variable"->{
+                selection_method="variable";
+                w=Double.parseDouble(settings[11]);
             }
         }
+        switch(settings[12]){
+            case"copy",""->evolution_method="copy"; // default is copy
+            case"approach"->{
+                evolution_method="approach";
+                approach_noise = Double.parseDouble(settings[13]);
+            }
+        }
+        mutation_method = settings[14];
+
+
+//        if(!mutation_method.equals("")){
+//            mutation_rate = Double.parseDouble(settings[15]);
+//            if(mutation_method.equals("noise")){
+//                mutation_noise = Double.parseDouble(settings[16]);
+//            }
+//        }
+
+
+        switch(mutation_method){
+            case"new"->mutation_rate=Double.parseDouble(settings[15]);
+            case"noise"->{
+                mutation_rate=Double.parseDouble(settings[15]);
+                mutation_noise=Double.parseDouble(settings[16]);
+            }
+        }
+
+
 
         // enable these lines if you want to use them.
         // ask user if they want to save the initial pop (so that it can be used again)
@@ -389,7 +404,6 @@ public class Alg1 extends Thread{
                         // evolve child
                         switch (evolution_method) {
                             case "copy" -> player.copyEvolution(parent);
-                            case "imitation" -> player.imitationEvolution(parent, imitation_noise);
                             case "approach" -> player.approachEvolution(parent, approach_noise);
                         }
 
@@ -457,7 +471,7 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-//        displaySettings(); // display settings of experiment
+        displaySettings(); // display settings of experiment
 
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
@@ -542,12 +556,10 @@ public class Alg1 extends Thread{
 
             switch (evolution_method) { // write evolution method
                 case "copy" -> fw.append(",copy");
-                case "imitation" -> fw.append(",imitation noise=" + DF4.format(imitation_noise));
                 case "approach" -> fw.append(",approach noise=" + DF4.format(approach_noise));
             }
 
             switch (mutation_method){ // write mutation method
-//                case "new" -> fw.append(",mutation rate=" + DF4.format(Player.getMutationRate()));
                 case "new" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
                 case "noise" -> {
                     fw.append(",noise mutation="+DF4.format(mutation_noise));
@@ -584,16 +596,14 @@ public class Alg1 extends Thread{
             case 2->various_amounts.add((double)rows);
             case 3->various_amounts.add((double)EPR);
             case 4->various_amounts.add(ROC);
-            case 5->various_amounts.add(imitation_noise);
+            case 5->various_amounts.add(w);
             case 6->various_amounts.add(approach_noise);
             case 7->various_amounts.add(mutation_rate);
             case 8->various_amounts.add(mutation_noise);
-            case 9->various_amounts.add(w);
         }
 
         // run experiment series
         for(int i=0;i<num_experiments;i++){
-            System.out.println("varying parameter is at "+various_amounts.get(i));
             experiment(); // run the experiment and store its final data
             switch(varying_parameter_index){ // change the value of the varying parameter
                 case 0->{
@@ -617,8 +627,8 @@ public class Alg1 extends Thread{
                     various_amounts.add(ROC);
                 }
                 case 5->{
-                    imitation_noise+=variation;
-                    various_amounts.add(imitation_noise);
+                    w+=variation;
+                    various_amounts.add(w);
                 }
                 case 6->{
                     approach_noise+=variation;
@@ -631,10 +641,6 @@ public class Alg1 extends Thread{
                 case 8->{
                     mutation_noise+=variation;
                     various_amounts.add(mutation_noise);
-                }
-                case 9->{
-                    w+=variation;
-                    various_amounts.add(w);
                 }
             }
         }
@@ -718,57 +724,54 @@ public class Alg1 extends Thread{
     /**
      * Displays experiment settings.
      */
-//    public static void displaySettings(){
-//        String s = "";
-//
-//        if(experiment_series && experiment_number == 0){ // if at start of series
-//            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
-//                    num_experiments+" experiments with settings: ";
-//        } else {
-//            s += "Experiment with settings: ";
-//        }
-//
-//        s+="\n";
-//
-//        s += "runs="+runs;
-//        s += ", gens="+gens;
-//        s += ", neighbourhood="+Player.getNeighbourhoodType();
-//        s += ", N="+N;
-//        if(edge_weight_learning_method.equals("1")){
-//            s += ", EWL1 with ROC="+DF4.format(ROC);
-//        } else {
-//            s += ", EWL2";
-//        }
-//        s += ", EPR="+EPR;
-//
-//        // state the selection method used
-//        switch(selection_method){
-//            case "WRW" -> s += ", WRW selection";
-//            case "best" -> s += ", best selection";
-//            case "variable" -> s += ", variable selection with w=" + DF4.format(w);
-//        }
-//
-//        // state the evolution method used
-//        switch (evolution_method) {
-//            case "copy" -> s += ", copy evolution";
-//            case "imitation" -> s += ", imitation evolution with noise="
-//                    + DF4.format(imitation_noise);
-//            case "approach" -> s += ", approach evolution with noise="
-//                    + DF4.format(approach_noise);
-//        }
-//
-//        // state the mutation method used
-//        switch (mutation_method){
-////            case "new" -> s += ", new mutation with mutation rate="+ DF4.format(Player.getMutationRate());
-//            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
-//            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+" and " +
-//                    "noise="+DF4.format(mutation_noise);
-//            default -> s += ", no mutation";
-//        }
-//
-//        s += ":";
-//        System.out.println(s);
-//    }
+    public static void displaySettings(){
+        String s = "";
+
+        if(experiment_series && experiment_number == 0){ // if at start of series
+            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
+                    num_experiments+" experiments with settings: ";
+        } else {
+            s += "Experiment with settings: ";
+        }
+
+        s+="\n";
+
+        s += "runs="+runs;
+        s += ", gens="+gens;
+        s += ", neighbourhood="+Player.getNeighbourhoodType();
+        s += ", N="+N;
+        if(edge_weight_learning_method.equals("1")){
+            s += ", EWL1 with ROC="+DF4.format(ROC);
+        } else {
+            s += ", EWL2";
+        }
+        s += ", EPR="+EPR;
+
+        // state the selection method used
+        switch(selection_method){
+            case "WRW" -> s += ", WRW selection";
+            case "best" -> s += ", best selection";
+            case "variable" -> s += ", variable selection with w=" + DF4.format(w);
+        }
+
+        // state the evolution method used
+        switch (evolution_method) {
+            case "copy" -> s += ", copy evolution";
+            case "approach" -> s += ", approach evolution with noise="
+                    + DF4.format(approach_noise);
+        }
+
+        // state the mutation method used
+        switch (mutation_method){
+            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
+            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+
+                    " and noise="+DF4.format(mutation_noise);
+            default -> s += ", no mutation";
+        }
+
+        s += ":";
+        System.out.println(s);
+    }
 
 
 

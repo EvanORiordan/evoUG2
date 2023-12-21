@@ -108,14 +108,23 @@ public class Player {
                     double edge_weight = neighbour.edge_weights[j];
                     double random_double = ThreadLocalRandom.current().nextDouble();
                     if(edge_weight > random_double){ // x has EW% probability of success
-                        if(p >= neighbour.q){ // accept offer
+                        if(p >= neighbour.q){
                             updateStats(prize * (1 - p), true);
                             neighbour.updateStats(prize * p, false);
-                        } else { // reject offer
-                            updateStats(0, true);
-                            neighbour.updateStats(0, false);
                         }
+//                        else {
+//                            updateStats(0, true);
+//                            neighbour.updateStats(0, false);
+//                        }
                     }
+                    else{
+                        updateStats(0,true);
+                        neighbour.updateStats(0,false);
+
+                    }
+
+
+
                     break;
                 }
             }
@@ -157,6 +166,10 @@ public class Player {
         this.score=score;
     }
     private double average_score; // average score of this player this gen
+    public double getAverageScore(){
+        return average_score;
+    }
+
 
     /**
      * Update the status of the player after having played, including score and average score.<br>
@@ -164,7 +177,7 @@ public class Player {
     public void updateStats(double payoff, boolean dictator){
         score+=payoff;
         num_interactions++;
-        if(payoff != 0){ // check if the interaction was successful i.e. if any payoff was received.
+        if(payoff > 0){ // check if the interaction was successful i.e. if any payoff was received.
             num_successful_interactions++;
             if(dictator){
                 num_successful_dictations++;
@@ -459,32 +472,7 @@ public class Player {
 
 
 
-    /**
-     * Evolution method where evolver imitates parent's strategy with respect to noise i.e.
-     * new strategy lies within interval centred around parent's strategy.<br>
-     * Evolution does not take place if the parent and the child are the same player.<br>
-     * The lower the noise, the more accurate the imitations will generally be.<br>
-     * If noise is set to 0, the result of the evolution is identical to copy evolution.<br>
-     */
-//    private static double imitation_noise; // the amount of noise that may affect imitation evolution
-//    public static double getImitationNoise(){
-//        return imitation_noise;
-//    }
-//    public static void setImitationNoise(double d){
-//        imitation_noise = d;
-//    }
-    public void imitationEvolution(Player parent, double imitation_noise){
-        if(parent.id != id){
-            double new_p = ThreadLocalRandom.current().nextDouble(
-                    parent.old_p - imitation_noise, parent.old_p + imitation_noise);
-            setP(new_p);
-        }
-    }
 
-
-    public double getAverageScore(){
-        return average_score;
-    }
 
 
 
@@ -495,13 +483,6 @@ public class Player {
      * Evolution does not take place if the parent and the child are the same player.<br>
      * The greater the noise, the greater the approach is.<br>
      */
-//    private static double approach_noise; // states by how much a player can change via approach evolution
-//    public static double getApproachNoise(){
-//        return approach_noise;
-//    }
-//    public static void setApproachNoise(double d){
-//        approach_noise=d;
-//    }
     public void approachEvolution(Player parent, double approach_noise){
         if(parent.id != id){
             double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
@@ -528,8 +509,16 @@ public class Player {
         double[] parent_scores = new double[neighbourhood.size()];
         double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
-            double neighbour_average_score = neighbourhood.get(i).average_score;
-            parent_scores[i] = Math.exp(neighbour_average_score - average_score);
+
+
+//            double neighbour_average_score = neighbourhood.get(i).average_score;
+//            parent_scores[i] = Math.exp(neighbour_average_score - average_score);
+
+
+            double neighbour_score = neighbourhood.get(i).score;
+            parent_scores[i] = Math.exp(neighbour_score - score);
+
+
             total_parent_score += parent_scores[i];
         }
         total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
@@ -563,14 +552,29 @@ public class Player {
         for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
             Player neighbour = neighbourhood.get(i);
             Player best = neighbourhood.get(best_index);
-            if(neighbour.average_score > best.average_score){
+
+
+//            if(neighbour.average_score > best.average_score){
+
+
+            if(neighbour.score > best.score){
+
+
+
                 best_index = i;
             }
         }
 
         // did the highest scoring neighbour score higher than child? if not, select child as parent
         parent = neighbourhood.get(best_index);
-        if(parent.average_score <= average_score){
+
+
+//        if(parent.average_score <= average_score){
+
+
+        if(parent.score <= score){
+
+
             parent = this;
         }
 
@@ -584,19 +588,19 @@ public class Player {
      * Inspired by Rand et al. (2013) (rand2013evolution).<br>
      * Calculate effective payoffs of neighbours. Select highest as parent.<br>
      */
-//    private static double w; // intensity of selection
-//    public static double getW(){
-//        return w;
-//    }
-//    public static void setW(double d){
-//        w=d;
-//    }
     public Player variableSelection(double w){
         Player parent;
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            effective_payoffs[i] = Math.exp(w * neighbour.average_score);
+
+
+//            effective_payoffs[i] = Math.exp(w * neighbour.average_score);
+
+
+            effective_payoffs[i] = Math.exp(w * neighbour.score);
+
+
         }
 
         double best_effective_payoff = effective_payoffs[0];
