@@ -1,6 +1,5 @@
-runs,gens,rows,EPR,ROC,varying,variation,num exp,data gen,neigh,sel,sel noise,evo,evo noise,mut,mut rate,mut noise,desc
-100,10000,30,16,0.0,,,,,,,,,,,,,EWL2 strong settings
-100,10000,30,1,0.0,,,,,,,,,,,,,EWL2 weak settings
-100,10000,30,1,0.2,EPR,1,8,,,,,,,,,,EWL1 varying EPR
-1,10000,30,16,0.0,w,500,5,,,variable,500,,,,,,testing varying w
-100,10000,30,16,0.0,w,500,5,,,variable,500,,,,,,varying w
+runs,gens,rows,EPR,ROC,varying,variation,num exp,data gen,neigh,sel,sel noise,evo,evo noise,mut,mut rate,mut noise,FI,desc
+100,10000,30,16,0.0,,,,,,,,,,,,,,EWL2 strong settings
+100,10000,30,1,0.0,,,,,,,,,,,,,,EWL2 weak settings
+100,10000,30,1,0.2,EPR,1,8,,,,,,,,,,,EWL1 varying EPR
+1,100,30,1,0.0,,,,,,,,,,,,,,testing writePerGenData()

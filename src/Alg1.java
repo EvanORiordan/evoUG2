@@ -1,5 +1,4 @@
 import java.io.*;
-import java.sql.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -24,10 +23,11 @@ public class Alg1 extends Thread{
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    static int EPR; // how often evolutionary phases occur e.g if 5, then evo occurs every 5 gens
+    static int EPR; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
     static double ROC; // rate of change wrt EWL1
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
     double avg_p; // the average value of p across the population.
+    double p_SD; // the standard deviation of p across the pop
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     int gen = 0; // indicates which generation is currently running.
@@ -49,7 +49,8 @@ public class Alg1 extends Thread{
      *
      * experiment_number tracks which experiment is taking place at any given time during a series.<br>
      *
-     * possible_varying_parameters stores all the possible parameters that can be varied in a series.<br>
+     * possible_varying_parameters stores all the possible parameters that can be varied in a series.
+     * Currently, the ArrayList just indicates the indices of the possible varying parameters.<br>
      */
     static String varying_parameter;
     static int varying_parameter_index;
@@ -81,8 +82,8 @@ public class Alg1 extends Thread{
     static String interaction_data_filename_prefix = "csv_data\\interactions_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-    static int interaction_data_record_rate = gens;
-    static int data_gen;
+    static int interaction_data_record_rate;
+    static int data_gen; // is used only during single experiments
 
     // Prefix for filenames of player data files.
     static String player_data_filename_prefix = "csv_data\\player_data\\" +
@@ -103,20 +104,25 @@ public class Alg1 extends Thread{
 
 
     static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
-    static int choice;
     static boolean save_pop = false;
     static boolean use_saved_pop = false;
-    static boolean config = false;
 
-    // i would like to use this to make it easier to add config settings without having to
-    // amend all settings later in the row but i am not sure how to do so.
+    // I would like to use this to make it easier to add config settings without having to
+    // amend all settings later in the row, but I am not sure how to do so.
 //    static List<String> config_settings = new ArrayList<>(
 //            List.of("runs"
 //                    ,"gens"
 //                    ,"rows"
 //                    ,"EPR"
 //                    ,"ROC"
+//                    etc.
 //            ));
+
+
+
+    // the fairness interval (FI) is called within methods that are only called during the data gen,
+    // so you only need to initialise FI if you have initialised data_gen.
+    static double fairness_interval;
 
 
 
@@ -132,7 +138,7 @@ public class Alg1 extends Thread{
         try{ // load the configs from the file
             br = new BufferedReader(new FileReader(config_filename));
             String line; // initialise String to store rows of data
-            line = br.readLine(); // ignore the row of headings
+            line = br.readLine(); // purposely ignore the row of headings
             while((line = br.readLine()) != null){
                 configurations.add(line);
             }
@@ -143,7 +149,7 @@ public class Alg1 extends Thread{
         // display configs to user
         for(int i=0;i<configurations.size();i++){
             String[] settings = configurations.get(i).split(",");
-            System.out.print("config "+i+": ");
+            System.out.print(i+": ");
             System.out.print("runs="+settings[0]);
             System.out.print(", gens="+settings[1]);
             System.out.print(", rows="+settings[2]);
@@ -180,8 +186,11 @@ public class Alg1 extends Thread{
                             " and noise="+settings[16]);
                 case"new"-> System.out.print(", new mutation with mutation rate="+settings[15]);
             }
-            if(!settings[17].equals("")) {
-                System.out.print(", description: " + settings[17]);
+            if(!settings[17].equals("")){
+                System.out.print(", FI="+settings[17]);
+            }
+            if(!settings[18].equals("")) {
+                System.out.print(", description: " + settings[18]);
             }
             System.out.println();
         }
@@ -253,16 +262,6 @@ public class Alg1 extends Thread{
             }
         }
         mutation_method = settings[14];
-
-
-//        if(!mutation_method.equals("")){
-//            mutation_rate = Double.parseDouble(settings[15]);
-//            if(mutation_method.equals("noise")){
-//                mutation_noise = Double.parseDouble(settings[16]);
-//            }
-//        }
-
-
         switch(mutation_method){
             case"new"->mutation_rate=Double.parseDouble(settings[15]);
             case"noise"->{
@@ -270,10 +269,13 @@ public class Alg1 extends Thread{
                 mutation_noise=Double.parseDouble(settings[16]);
             }
         }
+        if(!settings[17].equals("")){
+            fairness_interval=Double.parseDouble(settings[17]);
+        }
 
 
 
-        // enable these lines if you want to use them.
+        // enable these lines if you want to use these features.
         // ask user if they want to save the initial pop (so that it can be used again)
 //        save_pop = binaryQuestion("save initial pop? (0: no, 1: yes)");
         // ask user if they want to use the pop saved in the strategies .csv file
@@ -285,6 +287,12 @@ public class Alg1 extends Thread{
         // square topology
         columns = rows;
         N = rows * columns;
+
+
+        // you could ask the user how often they want to record interaction data. alternatively,
+        // it could be a column of the config file.
+        interaction_data_record_rate = gens; // by default, do not collect interaction data
+
 
         // mark the beginning of the algorithm's runtime
         Instant start = Instant.now();
@@ -374,21 +382,14 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     switch(edge_weight_learning_method){
-                        case "1" ->{
-                            player.edgeWeightLearning1(ROC);
-                        }
-                        case "2" ->{
-                            player.edgeWeightLearning2();
-                        }
+                        case "1" -> player.edgeWeightLearning1(ROC);
+                        case "2" -> player.edgeWeightLearning2();
                     }
                 }
             }
 
 
-            /**
-             * Selection and evolution occur every EPR gens.
-             * Each player in the grid tries to evolve.
-             */
+            // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
             if((gen + 1) % EPR == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
@@ -424,21 +425,20 @@ public class Alg1 extends Thread{
                 }
             }
 
-            /**
-             * Only collect this data if interested in the results (of this individual
-             * run) of this individual experiment.
-             */
+
+            // opportunity to collect intricate data
             if(!experiment_series && runs == 1){
-                getStats();
+
+                // record the avg p and p SD of the gen that just ended
+                calculateStats();
                 writePerGenData(data_filename_prefix + "PerGenData.csv");
 
-                // write interaction data every once in a while
-//                if(gen % interaction_data_record_rate == 0){
-//                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-//                }
+                // record interaction data according to the interaction data record rate
+                if(gen % interaction_data_record_rate == 0){
+                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+                }
 
-
-                if(gen==data_gen){
+                if(gen==data_gen){ // at end of data gen, record lots of extra info
                     System.out.println("Recording detailed data for gen "+data_gen+"...");
                     writeStrategies(data_filename_prefix + "Strategies.csv");
                     writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
@@ -449,11 +449,11 @@ public class Alg1 extends Thread{
                 }
             }
 
-            reset(); // reset certain player attributes.
+            reset(); // reset certain player attributes
             gen++; // move on to the next generation
         }
 
-        getStats(); // get stats at the end of the run
+        calculateStats(); // record the avg p and p SD of the pop at the end of the run
     }
 
 
@@ -471,7 +471,6 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        displaySettings(); // display settings of experiment
 
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
@@ -480,30 +479,25 @@ public class Alg1 extends Thread{
 
         // perform the experiment multiple times
         for(int i=0;i<runs;i++){
-            Alg1 run = new Alg1();
-            run.start();
-            mean_avg_p_of_experiment += run.avg_p;
+            Alg1 run = new Alg1(); // one run of the algorithm
+            run.start(); // start the run
+            mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
             avg_p_values_of_experiment[i] = run.avg_p;
 
-            // display the final avg p of the pop of the run that just concluded.
-            // this is a different print statement than the one in a similar position in DG18.java!
-            System.out.println("final avg p of run "+i+" of experiment "+experiment_number+
-                    ": "+run.avg_p);
+            // display the final avg p of the pop of the run
+            System.out.println("avg p of run "+i+" of experiment "+experiment_number+": "+run.avg_p);
         }
 
         // calculate stats
         mean_avg_p_of_experiment /= runs;
         for(int i=0;i<runs;i++){
-            sd_avg_p_of_experiment +=
-                    Math.pow(avg_p_values_of_experiment[i] - mean_avg_p_of_experiment, 2);
+            sd_avg_p_of_experiment+=Math.pow(avg_p_values_of_experiment[i]-mean_avg_p_of_experiment,2);
         }
         sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
 
-        // display stats in console
+        // display stats to user in console
         System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
-                + ", avg p SD="+DF4.format(sd_avg_p_of_experiment)
-        );
-
+                +", avg p SD="+DF4.format(sd_avg_p_of_experiment));
 
 
 
@@ -573,7 +567,7 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
 
-        experiment_number++; // indicates that we are moving onto the next experiment in series
+        experiment_number++; // move on to the next experiment in the series
     }
 
 
@@ -604,7 +598,11 @@ public class Alg1 extends Thread{
 
         // run experiment series
         for(int i=0;i<num_experiments;i++){
-            experiment(); // run the experiment and store its final data
+
+            // helps user keep track of the current value of the varying parameter
+            System.out.println("start of "+varying_parameter+"="+various_amounts.get(i)+":");
+
+            experiment(); // run an experiment
             switch(varying_parameter_index){ // change the value of the varying parameter
                 case 0->{
                     runs+=(int)variation;
@@ -643,6 +641,9 @@ public class Alg1 extends Thread{
                     various_amounts.add(mutation_noise);
                 }
             }
+
+            // informs user what the varying parameter's value was
+            System.out.println("end of "+varying_parameter+"="+various_amounts.get(i)+".");
         }
 
         // display a summary of the series in the console
@@ -650,7 +651,7 @@ public class Alg1 extends Thread{
         try{
             br = new BufferedReader(new FileReader(data_filename_prefix+"Data.csv"));
             String line;
-            line = br.readLine();
+            line = br.readLine(); // purposely ignore the row of headings
             int i=0; // indicates which index of the row we are currently on
             while((line=br.readLine()) != null){
                 String[] row_contents = line.split(",");
@@ -683,15 +684,12 @@ public class Alg1 extends Thread{
 
 
 
-
-
-
     /**
-     * Calculate the average value of p across the population at the current gen.<br>
-     * The most important avg p is that of the final gen. That particular value is what is being
-     * used to calculate the avg p of the experiment as a whole.<br>
+     * Calculate the average value of p and the standard deviation of p across the population
+     * at the current generation.
      */
-    public void getStats(){
+    public void calculateStats(){
+        // calculate avg p
         avg_p = 0.0;
         for(ArrayList<Player> row: grid){
             for(Player player: row){
@@ -699,7 +697,17 @@ public class Alg1 extends Thread{
             }
         }
         avg_p /= N;
+
+        // calculate p SD
+        p_SD = 0.0;
+        for(ArrayList<Player> row: grid){
+            for(Player player: row){
+                p_SD += Math.pow(player.getP() - avg_p, 2);
+            }
+        }
+        p_SD = Math.pow(p_SD / N, 0.5);
     }
+
 
 
     /**
@@ -722,63 +730,6 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Displays experiment settings.
-     */
-    public static void displaySettings(){
-        String s = "";
-
-        if(experiment_series && experiment_number == 0){ // if at start of series
-            s += "Experiment series: \nVarying "+varying_parameter+" by "+variation+ " between " +
-                    num_experiments+" experiments with settings: ";
-        } else {
-            s += "Experiment with settings: ";
-        }
-
-        s+="\n";
-
-        s += "runs="+runs;
-        s += ", gens="+gens;
-        s += ", neighbourhood="+Player.getNeighbourhoodType();
-        s += ", N="+N;
-        if(edge_weight_learning_method.equals("1")){
-            s += ", EWL1 with ROC="+DF4.format(ROC);
-        } else {
-            s += ", EWL2";
-        }
-        s += ", EPR="+EPR;
-
-        // state the selection method used
-        switch(selection_method){
-            case "WRW" -> s += ", WRW selection";
-            case "best" -> s += ", best selection";
-            case "variable" -> s += ", variable selection with w=" + DF4.format(w);
-        }
-
-        // state the evolution method used
-        switch (evolution_method) {
-            case "copy" -> s += ", copy evolution";
-            case "approach" -> s += ", approach evolution with noise="
-                    + DF4.format(approach_noise);
-        }
-
-        // state the mutation method used
-        switch (mutation_method){
-            case "new" -> s += ", new mutation with mutation rate="+DF4.format(mutation_rate);
-            case "noise" -> s += ", noise mutation with mutation rate="+DF4.format(mutation_rate)+
-                    " and noise="+DF4.format(mutation_noise);
-            default -> s += ", no mutation";
-        }
-
-        s += ":";
-        System.out.println(s);
-    }
-
-
-
-
-
-
-    /**
      * Method for asking the user a binary question to receive a boolean answer.
      */
     public static boolean binaryQuestion(String question){
@@ -787,22 +738,59 @@ public class Alg1 extends Thread{
         do{
             System.out.printf(question);
             switch(scanner.nextInt()){
-                case 0 -> { // 0 => no/false
-                    keep_looping = false;
-                }
+                case 0 ->keep_looping = false; // 0 => no/false
                 case 1 -> { // 1 => yes/true
                     answer = true;
                     keep_looping = false;
                 }
-                default -> {
-                    System.out.println("ERROR: select a valid option");
-                }
+                default ->System.out.println("ERROR: select a valid option");
             }
         } while(keep_looping);
         return answer;
     }
 
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Allows for the visualisation of the avg p of a run with respect to gens, with gens on x-axis
+     * and avg p on y-axis. Now also collects standard deviation (SD) data.<br>
+     * <br>Steps:<br>
+     * - Export the data of a single run to a .csv file<br>
+     * - Import the .csv data into an Excel sheet<br>
+     * - Separate the data into columns: gen number, avg p and SD for that gen<br>
+     * - Create a line chart with the data.<br>
+     */
+    public void writePerGenData(String filename){
+        try{
+            if(gen == 0){ // apply headings to file before writing data
+                fw = new FileWriter(filename, false); // append set to false means writing mode.
+                fw.append("gen"
+                        + ",avg p"
+                        + ",p SD"
+                        + "\n"
+                );
+                fw.close();
+            }
+
+            // write the data
+            fw = new FileWriter(filename, true); // append set to true means append mode.
+            fw.append(gen + "");
+            fw.append("," + DF4.format(avg_p));
+            fw.append("," + DF4.format(p_SD));
+            fw.append("\n");
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
 
 
 
@@ -909,6 +897,9 @@ public class Alg1 extends Thread{
     }
 
 
+
+
+
     /**
      * Tracks how many successful interactions the players had (this gen).
      */
@@ -939,71 +930,6 @@ public class Alg1 extends Thread{
 
 
 
-    /**
-     * Allows for the visualisation of the avg p of a run with respect to gens, with gens on x-axis
-     * and avg p on y-axis. Now also collects standard deviation (SD) data.<br>
-     * <br>Steps:<br>
-     * - Export the data of a single run to a .csv file<br>
-     * - Import the .csv data into an Excel sheet<br>
-     * - Separate the data into columns: gen number, avg p and SD for that gen<br>
-     * - Create a line chart with the data.<br>
-     */
-    public void writePerGenData(String filename){
-        double SD = calculateSD();
-
-        try{
-            // reset the .csv file for this run.
-            if(gen == 0){
-                fw = new FileWriter(filename, false); // append set to false means writing mode.
-                fw.append("gen"
-                        + ",avg p"
-                        + ",p SD"
-                        + ",gens"
-                        + ",neighbourhood"
-                        + ",N"
-                        + ",ROC"
-                        + ",EPR"
-                        + "\n"
-                );
-                fw.close();
-            }
-
-            // add the data to the .csv file.
-            fw = new FileWriter(filename, true); // append set to true means append mode.
-            fw.append(gen + "");
-            fw.append("," + DF4.format(avg_p));
-            fw.append("," + DF4.format(SD));
-            fw.append("," + gens);
-            fw.append("," + Player.getNeighbourhoodType());
-            fw.append("," + N);
-//                    + "," + Player.getROC()
-            fw.append("," + ROC);
-            fw.append("," + EPR);
-            fw.append("\n");
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-    }
-
-
-    /**
-     * Calculates SD of the pop wrt p.
-     */
-    public double calculateSD(){
-        double SD = 0.0;
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                SD += Math.pow(player.getP() - avg_p, 2);
-            }
-        }
-        SD = Math.pow(SD / N, 0.5);
-
-        return SD;
-    }
-
-
-
 
 
 
@@ -1019,7 +945,7 @@ public class Alg1 extends Thread{
                     Player x = row.get(j);
 
                     // write number of fair relationships of x this gen.
-                    fw.append(Integer.toString(x.getNumFairRelationships()));
+                    fw.append(Integer.toString(x.getNumFairRelationships(fairness_interval)));
 
                     if(j+1<row.size()){
                         fw.append(",");
@@ -1032,6 +958,11 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
     }
+
+
+
+
+
 
 
     /**
@@ -1061,11 +992,10 @@ public class Alg1 extends Thread{
 
             // general statistics relating to x
             double strategy = x.getP();
-            int num_fair_relationships = x.getNumFairRelationships();
+            int num_fair_relationships = x.getNumFairRelationships(fairness_interval);
             double own_connections = x.calculateOwnConnections();
             double all_connections = x.calculateAllConnections();
 
-//            DF4.format()
             // write data in the form of a 4x4 grid
             fw.append(","+DF4.format(ew_up)+","+DF4.format(neighbour_ew_up)+"\n"
                     +DF4.format(neighbour_ew_left)+","+DF4.format(strategy)+","+DF4.format(num_fair_relationships)+","+DF4.format(ew_right)+"\n"
