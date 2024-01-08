@@ -111,7 +111,6 @@ public class Player {
                         if(p >= neighbour.q){
                             updateStats(prize - (prize * p), true);
                             neighbour.updateStats(prize * p, false);
-                            System.out.println("hello");
                         }
                     }
                     else{
