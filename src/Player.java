@@ -109,8 +109,9 @@ public class Player {
                     double random_double = ThreadLocalRandom.current().nextDouble();
                     if(edge_weight > random_double){ // x has EW% probability of success
                         if(p >= neighbour.q){
-                            updateStats(prize * (1 - p), true);
+                            updateStats(prize - (prize * p), true);
                             neighbour.updateStats(prize * p, false);
+                            System.out.println("hello");
                         }
                     }
                     else{
@@ -162,7 +163,7 @@ public class Player {
 
 
     /**
-     * Update the status of the player after having played, including score and average score.<br>
+     * Update the status of the player after having played, including score and average score.
      */
     public void updateStats(double payoff, boolean dictator){
         score+=payoff;
