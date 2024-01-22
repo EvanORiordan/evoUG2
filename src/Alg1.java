@@ -23,7 +23,7 @@ public class Alg1 extends Thread{
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    static int EPR; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
+    static int EPR = 1; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
     static double ROC; // rate of change wrt EWL1
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
     double avg_p; // the average value of p across the population.
@@ -126,6 +126,10 @@ public class Alg1 extends Thread{
 
 
 
+    static String game; // what game is being played
+
+
+
 
 
 
@@ -147,51 +151,88 @@ public class Alg1 extends Thread{
         }
 
         // display configs to user
+        int config_index;
         for(int i=0;i<configurations.size();i++){
             String[] settings = configurations.get(i).split(",");
-            System.out.print(i+": ");
-            System.out.print("runs="+settings[0]);
-            System.out.print(", gens="+settings[1]);
-            System.out.print(", rows="+settings[2]);
-            System.out.print(", EPR="+settings[3]);
-            if(Double.parseDouble(settings[4]) > 0.0){
-                System.out.print(", EWL1 with ROC=" + settings[4]);
-            } else{
-                System.out.print(", EWL2");
+            System.out.print(i+": "); // begin displaying the config
+            config_index = 0;
+
+            // game
+            System.out.print(settings[config_index]);
+            config_index++;
+
+            // runs
+            System.out.print(", runs="+settings[config_index]);
+            config_index++;
+
+            // gens
+            System.out.print(", gens="+settings[config_index]);
+            config_index++;
+
+            // rows
+            System.out.print(", rows="+settings[config_index]);
+            config_index++;
+
+            // EWL,EPR,ROC
+            switch(settings[config_index]){
+                case""->System.out.print(", no EWL");
+                case"1"->System.out.print(", EWL 1, EPR="+settings[config_index+1]+", ROC="+settings[config_index+2]);
+                case"2"->System.out.print(", EWL 1, EPR="+settings[config_index+1]);
             }
-            if(!settings[5].equals("")){
-                System.out.print(", varying parameter="+settings[5]);
-                System.out.print(", variation="+settings[6]);
-                System.out.print(", num experiments="+settings[7]);
+            config_index+=3;
+
+            // varying,variation,num exp
+            if(!settings[config_index].equals("")){
+                System.out.print(", varying parameter="+settings[config_index]+", variation="+settings[config_index+1]+
+                        ", num experiments="+settings[config_index+2]);
             }
-            if(!settings[8].equals("")){
-                System.out.print(", data gen="+settings[8]);
+            config_index+=3;
+
+            // data gen
+            if(!settings[config_index].equals("")){
+                System.out.print(", data gen="+settings[config_index]);
             }
-            switch(settings[9]){
-                case"VN",""->System.out.print(", VN neighbourhood");
-                case"M"->System.out.print(", M neighbourhood");
-            }
-            switch(settings[10]){
-                case"WRW",""->System.out.print(", WRW selection");
+            config_index++;
+
+            // neigh
+            System.out.print(", "+settings[config_index]+" neighbourhood");
+            config_index++;
+
+            // sel,sel noise
+            switch(settings[config_index]){
+                case"WRW"->System.out.print(", WRW selection");
                 case"best"->System.out.print(", best selection");
-                case"variable"->System.out.print(", variable selection with w="+settings[11]);
+                case"variable"->System.out.print(", variable selection with w="+settings[config_index+1]);
             }
-            switch(settings[12]){
-                case"copy", ""-> System.out.print(", copy evolution");
-                case"approach"->System.out.print(", approach evolution with noise="+settings[13]);
+            config_index+=2;
+
+            // evo,evo noise
+            switch(settings[config_index]){
+                case"copy"->System.out.print(", copy evolution");
+                case"approach"->System.out.print(", approach evolution with noise="+settings[config_index+1]);
             }
-            switch(settings[14]){
+            config_index+=2;
+
+            //mut,mut rate,mut noise
+            switch(settings[config_index]){
                 case""-> System.out.print(", no mutation");
-                case"noise"->System.out.print(", noise mutation with mutation rate="+settings[15]+
-                            " and noise="+settings[16]);
-                case"new"-> System.out.print(", new mutation with mutation rate="+settings[15]);
+                case"noise"->System.out.print(", noise mutation with mutation rate="+settings[config_index+1]+
+                            " and noise="+settings[config_index+2]);
+                case"new"-> System.out.print(", new mutation with mutation rate="+settings[config_index+1]);
             }
-            if(!settings[17].equals("")){
-                System.out.print(", FI="+settings[17]);
+            config_index+=3;
+
+            // FI
+            if(!settings[config_index].equals("")){
+                System.out.print(", FI="+settings[config_index]);
             }
-            if(!settings[18].equals("")) {
-                System.out.print(", description: " + settings[18]);
+            config_index++;
+
+            // desc
+            if(!settings[config_index].equals("")) {
+                System.out.print(", description: " + settings[config_index]);
             }
+
             System.out.println();
         }
 
@@ -210,18 +251,40 @@ public class Alg1 extends Thread{
 
         // apply the config
         String[] settings = configurations.get(config_num).split(",");
-        runs = Integer.parseInt(settings[0]);
-        gens = Integer.parseInt(settings[1]);
-        rows = Integer.parseInt(settings[2]);
-        EPR = Integer.parseInt(settings[3]);
-        ROC = Double.parseDouble(settings[4]);
-        if(ROC > 0.0){
-            edge_weight_learning_method = "1";
-        } else {
-            edge_weight_learning_method = "2";
+        config_index = 0;
+
+        // game
+        game = settings[config_index];
+        config_index++;
+
+        // runs
+        runs = Integer.parseInt(settings[config_index]);
+        config_index++;
+
+        // gens
+        gens = Integer.parseInt(settings[config_index]);
+        config_index++;
+
+        // rows
+        rows = Integer.parseInt(settings[config_index]);
+        config_index++;
+
+        // EWL,EPR,ROC
+        edge_weight_learning_method = settings[config_index];
+        switch(edge_weight_learning_method){
+            case"1","2"->{
+                EPR=Integer.parseInt(settings[config_index+1]);
+                switch(edge_weight_learning_method){
+                    case"1"->ROC = Double.parseDouble(settings[config_index+2]);
+                }
+            }
         }
-        if(!settings[5].equals("")) {
-            varying_parameter = settings[5];
+        config_index+=3;
+
+
+        // varying,variation,num exp
+        if(!settings[config_index].equals("")) {
+            varying_parameter = settings[config_index];
             switch(varying_parameter){
                 case"runs"->varying_parameter_index=0;
                 case"gens"->varying_parameter_index=1;
@@ -234,43 +297,52 @@ public class Alg1 extends Thread{
                 case"mutation_noise"->varying_parameter_index=8;
             }
             experiment_series = true;
-            variation = Double.parseDouble(settings[6]);
-            num_experiments = Integer.parseInt(settings[7]);
+            variation = Double.parseDouble(settings[config_index+1]);
+            num_experiments = Integer.parseInt(settings[config_index+2]);
         }
-        if(!settings[8].equals("")){
-            data_gen = Integer.parseInt(settings[8]);
+        config_index+=3;
+
+        // data gen
+        if(!settings[config_index].equals("")){
+            data_gen = Integer.parseInt(settings[config_index]);
         } else{
             data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
         }
-        if(settings[9].equals("")){ // default neighbourhood is VN
-            Player.setNeighbourhoodType("VN");
-        }else{
-            Player.setNeighbourhoodType(settings[9]);
+        config_index++;
+
+        // neigh
+        Player.setNeighbourhoodType(settings[config_index]);
+        config_index++;
+
+        // sel,sel noise
+        selection_method=settings[config_index];
+        switch(settings[config_index]){
+            case"variable"->w=Double.parseDouble(settings[config_index+1]);
         }
-        switch(settings[10]){
-            case"WRW",""->selection_method="WRW"; // default is WRW
-            case"variable"->{
-                selection_method="variable";
-                w=Double.parseDouble(settings[11]);
-            }
+        config_index+=2;
+
+        // evo,evo noise
+        evolution_method=settings[config_index];
+        switch(settings[config_index]){
+            case"approach"->approach_noise=Double.parseDouble(settings[config_index+1]);
         }
-        switch(settings[12]){
-            case"copy",""->evolution_method="copy"; // default is copy
-            case"approach"->{
-                evolution_method="approach";
-                approach_noise = Double.parseDouble(settings[13]);
-            }
-        }
-        mutation_method = settings[14];
+        config_index+=2;
+
+        // mut,mut rate,mut noise
+        mutation_method = settings[config_index];
         switch(mutation_method){
-            case"new"->mutation_rate=Double.parseDouble(settings[15]);
-            case"noise"->{
-                mutation_rate=Double.parseDouble(settings[15]);
-                mutation_noise=Double.parseDouble(settings[16]);
+            case"new","noise"->{
+                mutation_rate=Double.parseDouble(settings[config_index+1]);
+                switch(mutation_method){
+                    case"noise"->mutation_noise=Double.parseDouble(settings[config_index+2]);
+                }
             }
         }
-        if(!settings[17].equals("")){
-            fairness_interval=Double.parseDouble(settings[17]);
+        config_index+=3;
+
+        // FI
+        if(!settings[config_index].equals("")){
+            fairness_interval=Double.parseDouble(settings[config_index]);
         }
 
 
@@ -284,7 +356,8 @@ public class Alg1 extends Thread{
 
         Player.setPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
 
-        // square topology
+
+        // square topology by default
         columns = rows;
         N = rows * columns;
 
@@ -292,6 +365,7 @@ public class Alg1 extends Thread{
         // you could ask the user how often they want to record interaction data. alternatively,
         // it could be a column of the config file.
         interaction_data_record_rate = gens; // by default, do not collect interaction data
+
 
 
         // mark the beginning of the algorithm's runtime
@@ -322,7 +396,6 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
-
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
             try{
                 br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
@@ -332,7 +405,14 @@ public class Alg1 extends Thread{
                     String[] row_contents = line.split(",");
                     ArrayList<Player> row = new ArrayList<>();
                     for(int j=0;j<row_contents.length;j++){
-                        row.add(new Player(Double.parseDouble(row_contents[i]),0));
+                        switch(game){
+                            case"UG"->row.add(new Player(
+                                    Double.parseDouble(row_contents[i]),
+                                    ThreadLocalRandom.current().nextDouble()));
+                            case"DG"->row.add(new Player(
+                                    Double.parseDouble(row_contents[i]),
+                                    0));
+                        }
                     }
                     i++;
                     grid.add(row);
@@ -340,11 +420,20 @@ public class Alg1 extends Thread{
             } catch(IOException e){
                 e.printStackTrace();
             }
-        } else { // user wants to randomly generate a population
+        }
+
+        else { // user wants to randomly generate a population
             for (int i = 0; i < rows; i++) {
                 ArrayList<Player> row = new ArrayList<>();
                 for (int j = 0; j < columns; j++) {
-                    row.add(new Player(ThreadLocalRandom.current().nextDouble(), 0.0));
+                    switch(game){
+                        case"UG"->row.add(new Player(
+                                ThreadLocalRandom.current().nextDouble(),
+                                ThreadLocalRandom.current().nextDouble()));
+                        case"DG"->row.add(new Player(
+                                ThreadLocalRandom.current().nextDouble(),
+                                0.0));
+                    }
                 }
                 grid.add(row);
             }
@@ -373,7 +462,12 @@ public class Alg1 extends Thread{
             // playing phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.play();
+                    switch(game){
+                        case"UG","DG"->player.playUG();
+//                        case"PD"->player.playPD();
+//                        case"IG"->player.playIG();
+//                        case"TG"->player.playTG();
+                    }
                 }
             }
 
@@ -382,6 +476,7 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     switch(edge_weight_learning_method){
+                        default->{}
                         case "1" -> player.edgeWeightLearning1(ROC);
                         case "2" -> player.edgeWeightLearning2();
                     }
@@ -684,6 +779,12 @@ public class Alg1 extends Thread{
 
 
 
+
+
+
+
+
+
     /**
      * Calculate the average value of p and the standard deviation of p across the population
      * at the current generation.
@@ -719,6 +820,7 @@ public class Alg1 extends Thread{
             for(Player player: row){
                 player.setScore(0);
                 player.setOldP(player.getP());
+                player.setOldQ(player.getQ());
                 player.setNumInteractions(0);
                 player.setNumSuccessfulInteractions(0);
                 player.setNumSuccessfulDictations(0);

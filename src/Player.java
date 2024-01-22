@@ -43,11 +43,25 @@ public class Player {
             this.p=0;
         }
     }
-    private double old_p; // the p value held at the beginning of the gen; will be copied by imitators
+    private double old_p; // p value held at beginning of gen to be inherited by children
     public void setOldP(double old_p){
         this.old_p=old_p;
     }
+
     private double q; // acceptance threshold value; real num within [0,1]
+    public double getQ(){return q;}
+    public void setQ(double q){
+        this.q=q;
+        if(this.q>1){
+            this.q=1;
+        } else if(this.q<0){
+            this.q=0;
+        }
+    }
+    private double old_q; // q value held at beginning of gen to be inherited by children
+    public void setOldQ(double old_q){
+        this.old_p=old_q;
+    }
 
     /**
      * Constructor method for instantiating a Player object.<br>
@@ -99,7 +113,7 @@ public class Player {
      * edge to x, which represents y's likelihood of receiving from x, is greater than a
      * randomly generated double between 0 and 1.<br>
      */
-    public void play(){
+    public void playUG(){
         for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
             Player neighbour = neighbourhood.get(i);
             for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
@@ -407,29 +421,30 @@ public class Player {
     public String toString(){ // document details relating to the player
 
         // document key player attributes
-        String description = "";
-        description += "id="+id;
-        description += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
-        description += " score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
+        String player_desc = "";
+        player_desc += "id="+id;
+        player_desc += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
+        player_desc += " q=" + DF4.format(q) + " ("+DF4.format(old_q) + ")"; // document q and old q
+        player_desc += " score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
 
         // document neighbourhood and EWs
-        description += " neighbourhood=[";
+        player_desc += " neighbourhood=[";
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            description += neighbour.id + " (" + DF4.format(edge_weights[i]) + ")";
+            player_desc += neighbour.id + " (" + DF4.format(edge_weights[i]) + ")";
             if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
-                description +=", ";
+                player_desc +=", ";
             }
         }
-        description +="]";
+        player_desc +="]";
 
         // document interaction stats
-        description += " NI="+ num_interactions;
-        description += " NSI="+ num_successful_interactions;
-        description += " NSD="+ num_successful_dictations;
-        description += " NSR="+ num_successful_receptions;
+        player_desc += " NI="+ num_interactions;
+        player_desc += " NSI="+ num_successful_interactions;
+        player_desc += " NSD="+ num_successful_dictations;
+        player_desc += " NSR="+ num_successful_receptions;
 
-        return description;
+        return player_desc;
     }
 
 
