@@ -60,7 +60,7 @@ public class Player {
     }
     private double old_q; // q value held at beginning of gen to be inherited by children
     public void setOldQ(double old_q){
-        this.old_p=old_q;
+        this.old_q=old_q;
     }
 
     /**
@@ -508,9 +508,12 @@ public class Player {
      * Evolution does not take place if the parent and the child are the same player.<br>
      */
     public void copyEvolution(Player parent){
-        if(parent.id != id){
-            setP(parent.old_p);
-        }
+        // i dont think the if is necessary
+//        if(parent.id != id){
+//            setP(parent.old_p);
+//        }
+
+        setP(parent.old_p);
     }
 
 
@@ -591,29 +594,16 @@ public class Player {
         for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
             Player neighbour = neighbourhood.get(i);
             Player best = neighbourhood.get(best_index);
-
-
 //            if(neighbour.average_score > best.average_score){
-
-
             if(neighbour.score > best.score){
-
-
-
                 best_index = i;
             }
         }
 
         // did the highest scoring neighbour score higher than child? if not, select child as parent
         parent = neighbourhood.get(best_index);
-
-
 //        if(parent.average_score <= average_score){
-
-
         if(parent.score <= score){
-
-
             parent = this;
         }
 

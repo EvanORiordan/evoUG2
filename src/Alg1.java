@@ -125,7 +125,6 @@ public class Alg1 extends Thread{
     static double fairness_interval;
 
 
-
     static String game; // what game is being played
 
 
@@ -526,6 +525,7 @@ public class Alg1 extends Thread{
 
                 // record the avg p and p SD of the gen that just ended
                 calculateStats();
+                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                 writePerGenData(data_filename_prefix + "PerGenData.csv");
 
                 // record interaction data according to the interaction data record rate
