@@ -27,6 +27,9 @@ public class Player {
         return DF4;
     }
 
+    private static String game;
+    public static void setGame(String s){game=s;}
+
 
 
 
@@ -47,7 +50,6 @@ public class Player {
     public void setOldP(double old_p){
         this.old_p=old_p;
     }
-
     private double q; // acceptance threshold value; real num within [0,1]
     public double getQ(){return q;}
     public void setQ(double q){
@@ -62,6 +64,11 @@ public class Player {
     public void setOldQ(double old_q){
         this.old_q=old_q;
     }
+    public void setStrategy(double p, double q){
+        setP(p);
+        setQ(q);
+    }
+
 
     /**
      * Constructor method for instantiating a Player object.<br>
@@ -73,6 +80,7 @@ public class Player {
         this.q=q; // assign q value
         old_p=p;
     }
+
 
 
 
@@ -108,10 +116,14 @@ public class Player {
     }
 
     /**
-     * Play the UG with respect to space and edge weights.<br>
+     * Play the UG with neighbours.<br>
+     * Game is played with respect to edge weights if EWL parameter is set.<br>
+     * UG with EWL works as follows:
      * For each neighbour y in x's neighbourhood, x proposes/dictates to them if the weight of y's
      * edge to x, which represents y's likelihood of receiving from x, is greater than a
      * randomly generated double between 0 and 1.<br>
+     * Note: When the EW is 1.0, the game always occurs. Since EWs initialise at 1.0,
+     * if EWL is not occurring, games should and do always take place.
      */
     public void playUG(){
         for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
@@ -125,6 +137,9 @@ public class Player {
                         if(p >= neighbour.q){
                             updateStats(prize - (prize * p), true);
                             neighbour.updateStats(prize * p, false);
+                        }
+                        else {
+                            System.out.println("proposal rejected!");
                         }
                     }
                     else{
@@ -168,7 +183,7 @@ public class Player {
     public void setNumSuccessfulReceptions(int i){
         num_successful_receptions=i;
     }
-    private double score; // amount of reward player has received from playing; i.e. this player's fitness
+    private double score; // total accumulated payoff; fitness
     public void setScore(double score){
         this.score=score;
     }
@@ -249,7 +264,7 @@ public class Player {
 
     /**
      * Method that allows players to perform a form of edge weight learning.
-     * Here, a player x's edge weights is supposed to represent x's neighbours' relationship towards x.
+     * A player x's edge weights is supposed to represent x's neighbours' relationship towards x.
      * If a neighbour y has a higher value of p than x, x raises the weight of their edge to y.
      * If y has a lower value of p than x, x reduces the weight of their edge to y.
      * The amount by which an edge is modified is determined by the ROC parameter.
@@ -332,10 +347,10 @@ public class Player {
      * EWL method where EW modification occurs if neighbour's p is not within player's p's FI. Amount of
      * modification is determined by ROC parameter.
      */
-    public void edgeWeightLearning4(double ROC, double fairness_interval){
+    public void edgeWeightLearning4(double ROC, double FI){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            if(isRelationshipFair(neighbour, fairness_interval)){
+            if(isRelationshipFair(neighbour, FI)){
                 edge_weights[i] += ROC;
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
@@ -356,11 +371,11 @@ public class Player {
      * EWL method where EW modification occurs if neighbour's p is not within player's p's FI. Amount of
      * modification is determined by the difference between the player's p and the neighbour's p.
      */
-    public void edgeWeightLearning5(double ROC, double fairness_interval){
+    public void edgeWeightLearning5(double FI){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             double diff = Math.abs(neighbour.p - p);
-            if(isRelationshipFair(neighbour, fairness_interval)){
+            if(isRelationshipFair(neighbour, FI)){
                 edge_weights[i] += diff;
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
@@ -377,22 +392,20 @@ public class Player {
 
 
     /**
-     *  Identifies if the player and the given neighbour have a fair relationship under the given
-     *  fairness_interval.<br>
+     *  Identifies if the player and the given neighbour have a fair relationship wrt FI.<br>
      *  A close or <b>fair</b> relationship here is loosely defined as one where the p values of the two players
      *  are within the fairness interval from each other. The <b>fairness interval</b> indicates how
      *  much leeway is being given.<br>
-     *  Nodes x and y have a fair relationship if p_y lies within [p_x - fairness_interval, p_y +
-     *  fairness_interval].<br>
-     *  E.g. p_1=0.4, p_2=0.37 and fairness_interval=0.05 is a fair relationship because p_2 lies within
-     *  the interval [p_1 - fairness_interval, p_1 + fairness_interval] = [0.4 - 0.05, 0.4 + 0.05] =
+     *  Nodes x and y have a fair relationship if p_y lies within [p_x - FI, p_y + FI].<br>
+     *  E.g. p_1=0.4, p_2=0.37 and FI=0.05 is a fair relationship because p_2 lies within
+     *  the interval [p_1 - FI, p_1 + FI] = [0.4 - 0.05, 0.4 + 0.05] =
      *  [0.35, 0.45] so here node 1 and 2 have a fair relationship.<br>
-     *  E.g. With p_3=0.2, p_4=0.05 and fairness_interval=0.1, node 3 and 4 do not have a fair
+     *  E.g. With p_3=0.2, p_4=0.05 and FI=0.1, node 3 and 4 do not have a fair
      *  relationship.<br>
      */
-    public boolean isRelationshipFair(Player neighbour, double fairness_interval){
-        double lower_bound = p - fairness_interval;
-        double upper_bound = p + fairness_interval;
+    public boolean isRelationshipFair(Player neighbour, double FI){
+        double lower_bound = p - FI;
+        double upper_bound = p + FI;
 
         return lower_bound <= neighbour.p && upper_bound >= neighbour.p;
     }
@@ -403,10 +416,10 @@ public class Player {
      * Identifies the number of fair relationships the player has with their neighbours with
      * respect to the given fairness interval.
      */
-    public int getNumFairRelationships(double fairness_interval){
+    public int getNumFairRelationships(double FI){
         int num_fair_relationships = 0;
         for(Player neighbour: neighbourhood){
-            if(isRelationshipFair(neighbour, fairness_interval)){
+            if(isRelationshipFair(neighbour, FI)){
                 num_fair_relationships++;
             }
         }
@@ -423,9 +436,17 @@ public class Player {
         // document key player attributes
         String player_desc = "";
         player_desc += "id="+id;
-        player_desc += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
-        player_desc += " q=" + DF4.format(q) + " ("+DF4.format(old_q) + ")"; // document q and old q
-        player_desc += " score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
+        switch(game){
+            case"UG","DG"->{
+                player_desc += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
+                switch(game){
+                    case"UG"-> {
+                        player_desc += " q=" + DF4.format(q) + " (" + DF4.format(old_q) + ")"; // document q and old q
+                    }
+                }
+            }
+        }
+        player_desc+=" score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
 
         // document neighbourhood and EWs
         player_desc += " neighbourhood=[";
@@ -513,7 +534,8 @@ public class Player {
 //            setP(parent.old_p);
 //        }
 
-        setP(parent.old_p);
+//        setP(parent.old_p);
+        setStrategy(parent.old_p, parent.old_q);
     }
 
 
@@ -532,7 +554,14 @@ public class Player {
                 approach *= -1;
             }
             double new_p = p + approach;
-            setP(new_p);
+
+            if(parent.old_q < q){
+                approach *= -1;
+            }
+            double new_q = q + approach;
+
+//            setP(new_p);
+            setStrategy(new_p, new_q);
         }
     }
 
@@ -552,14 +581,10 @@ public class Player {
         double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
 
-
 //            double neighbour_average_score = neighbourhood.get(i).average_score;
 //            parent_scores[i] = Math.exp(neighbour_average_score - average_score);
-
-
             double neighbour_score = neighbourhood.get(i).score;
             parent_scores[i] = Math.exp(neighbour_score - score);
-
 
             total_parent_score += parent_scores[i];
         }
@@ -621,16 +646,9 @@ public class Player {
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-
-
 //            effective_payoffs[i] = Math.exp(w * neighbour.average_score);
-
-
             effective_payoffs[i] = Math.exp(w * neighbour.score);
-
-
         }
-
         double best_effective_payoff = effective_payoffs[0];
         int index = 0;
         for(int j=1;j<effective_payoffs.length;j++){
@@ -664,10 +682,11 @@ public class Player {
 
 
     /**
-     * Mutation method where the player's p is randomly generated.
+     * Mutation method where the player's strategy is randomly generated.
      */
     public void newMutation(){
-        setP(ThreadLocalRandom.current().nextDouble());
+//        setP(ThreadLocalRandom.current().nextDouble());
+        setStrategy(ThreadLocalRandom.current().nextDouble(), ThreadLocalRandom.current().nextDouble());
     }
 
 
@@ -678,6 +697,9 @@ public class Player {
      */
     public void noiseMutation(double bound){
         double new_p = ThreadLocalRandom.current().nextDouble(p - bound, p + bound);
-        setP(new_p);
+        double new_q = ThreadLocalRandom.current().nextDouble(q - bound, q + bound);
+
+//        setP(new_p);
+        setStrategy(new_p,new_q);
     }
 }

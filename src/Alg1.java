@@ -119,10 +119,11 @@ public class Alg1 extends Thread{
 //            ));
 
 
-
-    // the fairness interval (FI) is called within methods that are only called during the data gen,
-    // so you only need to initialise FI if you have initialised data_gen.
-    static double fairness_interval;
+    /**
+     * Indicates the (upper bound of the) fairness interval (FI) used to determine whether a
+     * relationship is fair.
+     */
+    static double FI = 0;
 
 
     static String game; // what game is being played
@@ -172,13 +173,27 @@ public class Alg1 extends Thread{
             System.out.print(", rows="+settings[config_index]);
             config_index++;
 
-            // EWL,EPR,ROC
+            // EWL,EPR,ROC,FI
             switch(settings[config_index]){
                 case""->System.out.print(", no EWL");
-                case"1"->System.out.print(", EWL 1, EPR="+settings[config_index+1]+", ROC="+settings[config_index+2]);
-                case"2"->System.out.print(", EWL 1, EPR="+settings[config_index+1]);
+                case"1","2","3","4","5"->{
+                    switch(settings[config_index]){
+                        case"1"->System.out.print(", EWL 1");
+                        case"2"->System.out.print(", EWL 2");
+                        case"3"->System.out.print(", EWL 3");
+                        case"4"->System.out.print(", EWL 4");
+                        case"5"->System.out.print(", EWL 5");
+                    }
+                    System.out.print(", EPR="+settings[config_index+1]);
+                    switch(settings[config_index]){ // ROC-dependent methods
+                        case"1","4"->System.out.print(", ROC="+settings[config_index+2]);
+                    }
+                    switch(settings[config_index]){ // FI-dependent methods
+                        case"4","5"->System.out.print(", FI="+settings[config_index]+3);
+                    }
+                }
             }
-            config_index+=3;
+            config_index+=4;
 
             // varying,variation,num exp
             if(!settings[config_index].equals("")){
@@ -221,12 +236,6 @@ public class Alg1 extends Thread{
             }
             config_index+=3;
 
-            // FI
-            if(!settings[config_index].equals("")){
-                System.out.print(", FI="+settings[config_index]);
-            }
-            config_index++;
-
             // desc
             if(!settings[config_index].equals("")) {
                 System.out.print(", description: " + settings[config_index]);
@@ -254,6 +263,7 @@ public class Alg1 extends Thread{
 
         // game
         game = settings[config_index];
+        Player.setGame(game);
         config_index++;
 
         // runs
@@ -268,18 +278,20 @@ public class Alg1 extends Thread{
         rows = Integer.parseInt(settings[config_index]);
         config_index++;
 
-        // EWL,EPR,ROC
+        // EWL,EPR,ROC,FI
         edge_weight_learning_method = settings[config_index];
         switch(edge_weight_learning_method){
-            case"1","2"->{
+            case"1","2","3","4","5"->{
                 EPR=Integer.parseInt(settings[config_index+1]);
-                switch(edge_weight_learning_method){
-                    case"1"->ROC = Double.parseDouble(settings[config_index+2]);
+                switch(edge_weight_learning_method){ // ROC-dependent methods
+                    case"1","4"-> ROC = Double.parseDouble(settings[config_index+2]);
+                }
+                switch(edge_weight_learning_method){ // FI-dependent methods
+                    case"4","5"-> FI=Double.parseDouble(settings[config_index+3]);
                 }
             }
         }
-        config_index+=3;
-
+        config_index+=4;
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
@@ -339,10 +351,6 @@ public class Alg1 extends Thread{
         }
         config_index+=3;
 
-        // FI
-        if(!settings[config_index].equals("")){
-            fairness_interval=Double.parseDouble(settings[config_index]);
-        }
 
 
 
@@ -478,6 +486,9 @@ public class Alg1 extends Thread{
                         default->{}
                         case "1" -> player.edgeWeightLearning1(ROC);
                         case "2" -> player.edgeWeightLearning2();
+                        case"3"->player.edgeWeightLearning3();
+                        case"4"->player.edgeWeightLearning4(ROC,FI);
+                        case"5"->player.edgeWeightLearning5(FI);
                     }
                 }
             }
@@ -538,9 +549,11 @@ public class Alg1 extends Thread{
                     writeStrategies(data_filename_prefix + "Strategies.csv");
                     writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
                     writeAllConnections(data_filename_prefix + "AllConnections.csv");
-                    writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
-                    Player x = grid.get(1).get(1);
-                    writeDetailedPlayer(player_data_filename_prefix+"Player"+x.getId()+".csv",x);
+                    if(FI > 0) { // methods that assume FI > 0.
+                        writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
+                        Player x = grid.get(1).get(1);
+                        writeDetailedPlayer(player_data_filename_prefix + "Player" + x.getId() + ".csv", x);
+                    }
                 }
             }
 
@@ -592,7 +605,7 @@ public class Alg1 extends Thread{
 
         // display stats to user in console
         System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
-                +", avg p SD="+DF4.format(sd_avg_p_of_experiment));
+                +" avg p SD="+DF4.format(sd_avg_p_of_experiment));
 
 
 
@@ -819,12 +832,22 @@ public class Alg1 extends Thread{
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 player.setScore(0);
-                player.setOldP(player.getP());
-                player.setOldQ(player.getQ());
+//                player.setOldP(player.getP());
+//                player.setOldQ(player.getQ());
                 player.setNumInteractions(0);
                 player.setNumSuccessfulInteractions(0);
                 player.setNumSuccessfulDictations(0);
                 player.setNumSuccessfulReceptions(0);
+
+                switch(game){
+                    case"UG","DG"->{
+                        player.setOldP(player.getP());
+                        switch(game){
+                            case"UG"->player.setOldQ(player.getQ());
+                            case"DG"->player.setQ(0);
+                        }
+                    }
+                }
             }
         }
     }
@@ -1047,7 +1070,7 @@ public class Alg1 extends Thread{
                     Player x = row.get(j);
 
                     // write number of fair relationships of x this gen.
-                    fw.append(Integer.toString(x.getNumFairRelationships(fairness_interval)));
+                    fw.append(Integer.toString(x.getNumFairRelationships(FI)));
 
                     if(j+1<row.size()){
                         fw.append(",");
@@ -1094,7 +1117,7 @@ public class Alg1 extends Thread{
 
             // general statistics relating to x
             double strategy = x.getP();
-            int num_fair_relationships = x.getNumFairRelationships(fairness_interval);
+            int num_fair_relationships = x.getNumFairRelationships(FI);
             double own_connections = x.calculateOwnConnections();
             double all_connections = x.calculateAllConnections();
 
