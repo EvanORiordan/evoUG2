@@ -236,6 +236,12 @@ public class Alg1 extends Thread{
             }
             config_index+=3;
 
+            //PPM,ASD
+            System.out.print(", PPM="+settings[config_index]);
+            System.out.print(", ASD="+settings[config_index+1]);
+            config_index+=2;
+
+
             // desc
             if(!settings[config_index].equals("")) {
                 System.out.print(", description: " + settings[config_index]);
@@ -243,6 +249,9 @@ public class Alg1 extends Thread{
 
             System.out.println();
         }
+
+
+
 
         // ask user which config they want to use
         System.out.println("which config would you like to use? (int)");
@@ -351,6 +360,11 @@ public class Alg1 extends Thread{
         }
         config_index+=3;
 
+        //PPM
+        Player.setPPM(settings[config_index]);
+        Player.setASD(settings[config_index+1]);
+        config_index+=2;
+
 
 
 
@@ -403,6 +417,8 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
+        // WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the
+        // strategies file currently only stores p values.
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
             try{
                 br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
@@ -412,14 +428,7 @@ public class Alg1 extends Thread{
                     String[] row_contents = line.split(",");
                     ArrayList<Player> row = new ArrayList<>();
                     for(int j=0;j<row_contents.length;j++){
-                        switch(game){
-                            case"UG"->row.add(new Player(
-                                    Double.parseDouble(row_contents[i]),
-                                    ThreadLocalRandom.current().nextDouble()));
-                            case"DG"->row.add(new Player(
-                                    Double.parseDouble(row_contents[i]),
-                                    0));
-                        }
+                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
                     }
                     i++;
                     grid.add(row);
