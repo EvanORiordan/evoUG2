@@ -189,9 +189,10 @@ public class Player {
         this.score=score;
     }
     private double average_score; // average score of this player this gen
-    private static String ASD; // average score denominator
+    private static String ASD = ""; // average score denominator
     public static void setASD(String s){ASD=s;}
     private static String PPM; // player performance metric
+    public static String getPPM(){return PPM;}
     public static void setPPM(String s){PPM=s;}
 
 
@@ -663,6 +664,7 @@ public class Player {
     /**
      * Inspired by Rand et al. (2013) (rand2013evolution).<br>
      * Calculate effective payoffs of neighbours. Select highest as parent.<br>
+     * w represents the intensity of selection.
      */
     public Player variableSelection(double w){
         Player parent;
@@ -693,6 +695,9 @@ public class Player {
 
 
 
+
+
+
     /**
      * Mutation rate parameter determines the probability for mutation to occur.<br>
      * Returns a boolean indicating whether mutation should occur. If true is returned, mutation will
@@ -707,24 +712,24 @@ public class Player {
 
 
     /**
-     * Mutation method where the player's strategy is randomly generated.
+     * Mutation method where the player's strategy is randomly generated. Mutation is co-occurring.
+     * Inspired by Akdeniz and van Veelen (2023).
      */
-    public void newMutation(){
-//        setP(ThreadLocalRandom.current().nextDouble());
+    public void globalMutation(){
         setStrategy(ThreadLocalRandom.current().nextDouble(), ThreadLocalRandom.current().nextDouble());
     }
 
 
 
     /**
-     * Mutation method where p is modified by a random double within an interval determined by the
-     * given argument.
+     * Mutation method where attributes are modified by a random double within an interval
+     * determined by delta. The mutation is co-occurring i.e. the mutation applied to
+     * one attribute is independent of the mutation of another.
+     * Inspired by Akdeniz and van Veelen (2023).
      */
-    public void noiseMutation(double bound){
-        double new_p = ThreadLocalRandom.current().nextDouble(p - bound, p + bound);
-        double new_q = ThreadLocalRandom.current().nextDouble(q - bound, q + bound);
-
-//        setP(new_p);
+    public void localMutation(double delta){
+        double new_p = ThreadLocalRandom.current().nextDouble(p - delta, p + delta);
+        double new_q = ThreadLocalRandom.current().nextDouble(q - delta, q + delta);
         setStrategy(new_p,new_q);
     }
 }

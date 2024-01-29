@@ -66,7 +66,7 @@ public class Alg1 extends Thread{
                     , "w" //5
                     , "approach_noise" //6
                     , "mutation_rate" //7
-                    , "mutation_noise" //8
+                    , "delta" //8
             ));
 
 
@@ -99,7 +99,7 @@ public class Alg1 extends Thread{
     static double w;
     static double approach_noise;
     static double mutation_rate;
-    static double mutation_noise;
+    static double delta; // represents mutation noise
 
 
 
@@ -227,18 +227,20 @@ public class Alg1 extends Thread{
             }
             config_index+=2;
 
-            //mut,mut rate,mut noise
+            //mut,mut rate,delta
             switch(settings[config_index]){
                 case""-> System.out.print(", no mutation");
-                case"noise"->System.out.print(", noise mutation with mutation rate="+settings[config_index+1]+
-                            " and noise="+settings[config_index+2]);
-                case"new"-> System.out.print(", new mutation with mutation rate="+settings[config_index+1]);
+                case"local"->System.out.print(", local mutation with mutation rate="+settings[config_index+1]+
+                            " and delta="+settings[config_index+2]);
+                case"global"-> System.out.print(", global mutation with mutation rate="+settings[config_index+1]);
             }
             config_index+=3;
 
             //PPM,ASD
             System.out.print(", PPM="+settings[config_index]);
-            System.out.print(", ASD="+settings[config_index+1]);
+            switch(settings[config_index]){
+                case"avg score"->System.out.print(", ASD="+settings[config_index+1]);
+            }
             config_index+=2;
 
 
@@ -314,7 +316,7 @@ public class Alg1 extends Thread{
                 case"w"->varying_parameter_index=5;
                 case"approach_noise"->varying_parameter_index=6;
                 case"mutation_rate"->varying_parameter_index=7;
-                case"mutation_noise"->varying_parameter_index=8;
+                case"delta"->varying_parameter_index=8;
             }
             experiment_series = true;
             variation = Double.parseDouble(settings[config_index+1]);
@@ -348,13 +350,13 @@ public class Alg1 extends Thread{
         }
         config_index+=2;
 
-        // mut,mut rate,mut noise
+        // mut,mut rate,delta
         mutation_method = settings[config_index];
         switch(mutation_method){
-            case"new","noise"->{
+            case"global","local"->{
                 mutation_rate=Double.parseDouble(settings[config_index+1]);
                 switch(mutation_method){
-                    case"noise"->mutation_noise=Double.parseDouble(settings[config_index+2]);
+                    case"local"->delta=Double.parseDouble(settings[config_index+2]);
                 }
             }
         }
@@ -362,7 +364,9 @@ public class Alg1 extends Thread{
 
         //PPM
         Player.setPPM(settings[config_index]);
-        Player.setASD(settings[config_index+1]);
+        switch(Player.getPPM()){
+            case"avg score"->Player.setASD(settings[config_index+1]);
+        }
         config_index+=2;
 
 
@@ -524,14 +528,14 @@ public class Alg1 extends Thread{
 
                         // mutate child
                         switch (mutation_method){
-                            case "new" -> {
+                            case "global" -> {
                                 if(player.mutationCheck(mutation_rate)){
-                                    player.newMutation();
+                                    player.globalMutation();
                                 }
                             }
-                            case "noise" -> {
+                            case "local" -> {
                                 if(player.mutationCheck(mutation_rate)){
-                                    player.noiseMutation(mutation_noise);
+                                    player.localMutation(delta);
                                 }
                             }
                         }
@@ -671,9 +675,9 @@ public class Alg1 extends Thread{
             }
 
             switch (mutation_method){ // write mutation method
-                case "new" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
-                case "noise" -> {
-                    fw.append(",noise mutation="+DF4.format(mutation_noise));
+                case "global" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
+                case "local" -> {
+                    fw.append(",local mutation with delta="+DF4.format(delta));
                     fw.append(",mutation rate=" + DF4.format(mutation_rate));
                 }
                 default -> fw.append(",no mutation");
@@ -710,7 +714,7 @@ public class Alg1 extends Thread{
             case 5->various_amounts.add(w);
             case 6->various_amounts.add(approach_noise);
             case 7->various_amounts.add(mutation_rate);
-            case 8->various_amounts.add(mutation_noise);
+            case 8->various_amounts.add(delta);
         }
 
         // run experiment series
@@ -754,8 +758,8 @@ public class Alg1 extends Thread{
                     various_amounts.add(mutation_rate);
                 }
                 case 8->{
-                    mutation_noise+=variation;
-                    various_amounts.add(mutation_noise);
+                    delta+=variation;
+                    various_amounts.add(delta);
                 }
             }
 
@@ -785,7 +789,7 @@ public class Alg1 extends Thread{
                     case 5->summary+="imitation noise=";
                     case 6->summary+="approach noise=";
                     case 7->summary+="mutation rate=";
-                    case 8->summary+="mutation noise=";
+                    case 8->summary+="delta=";
                     case 9->summary+="w=";
                 }
                 summary += DF4.format(various_amounts.get(i));
