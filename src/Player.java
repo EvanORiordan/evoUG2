@@ -712,7 +712,7 @@ public class Player {
 
 
     /**
-     * Mutation method where the player's strategy is randomly generated. Mutation is co-occurring.
+     * Mutation method where the player's strategy is randomly generated. Mutation is independent.
      * Inspired by Akdeniz and van Veelen (2023).
      */
     public void globalMutation(){
@@ -723,7 +723,7 @@ public class Player {
 
     /**
      * Mutation method where attributes are modified by a random double within an interval
-     * determined by delta. The mutation is co-occurring i.e. the mutation applied to
+     * determined by delta. The mutation is independent as the mutation applied to
      * one attribute is independent of the mutation of another.
      * Inspired by Akdeniz and van Veelen (2023).
      */
