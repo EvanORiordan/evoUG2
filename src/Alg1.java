@@ -65,7 +65,7 @@ public class Alg1 extends Thread{
                     , "ROC" //4
                     , "w" //5
                     , "approach_noise" //6
-                    , "mutation_rate" //7
+                    , "u" //7
                     , "delta" //8
             ));
 
@@ -98,7 +98,7 @@ public class Alg1 extends Thread{
 
     static double w;
     static double approach_noise;
-    static double mutation_rate;
+    static double u; // represents mutation rate
     static double delta; // represents mutation noise
 
 
@@ -227,12 +227,12 @@ public class Alg1 extends Thread{
             }
             config_index+=2;
 
-            //mut,mut rate,delta
+            //mut,u,delta
             switch(settings[config_index]){
                 case""-> System.out.print(", no mutation");
-                case"local"->System.out.print(", local mutation with mutation rate="+settings[config_index+1]+
+                case"local"->System.out.print(", local mutation with u="+settings[config_index+1]+
                             " and delta="+settings[config_index+2]);
-                case"global"-> System.out.print(", global mutation with mutation rate="+settings[config_index+1]);
+                case"global"-> System.out.print(", global mutation with u="+settings[config_index+1]);
             }
             config_index+=3;
 
@@ -315,7 +315,7 @@ public class Alg1 extends Thread{
                 case"ROC"->varying_parameter_index=4;
                 case"w"->varying_parameter_index=5;
                 case"approach_noise"->varying_parameter_index=6;
-                case"mutation_rate"->varying_parameter_index=7;
+                case"u"->varying_parameter_index=7;
                 case"delta"->varying_parameter_index=8;
             }
             experiment_series = true;
@@ -350,11 +350,11 @@ public class Alg1 extends Thread{
         }
         config_index+=2;
 
-        // mut,mut rate,delta
+        // mut,u,delta
         mutation_method = settings[config_index];
         switch(mutation_method){
             case"global","local"->{
-                mutation_rate=Double.parseDouble(settings[config_index+1]);
+                u=Double.parseDouble(settings[config_index+1]);
                 switch(mutation_method){
                     case"local"->delta=Double.parseDouble(settings[config_index+2]);
                 }
@@ -529,12 +529,12 @@ public class Alg1 extends Thread{
                         // mutate child
                         switch (mutation_method){
                             case "global" -> {
-                                if(player.mutationCheck(mutation_rate)){
+                                if(player.mutationCheck(u)){
                                     player.globalMutation();
                                 }
                             }
                             case "local" -> {
-                                if(player.mutationCheck(mutation_rate)){
+                                if(player.mutationCheck(u)){
                                     player.localMutation(delta);
                                 }
                             }
@@ -644,7 +644,7 @@ public class Alg1 extends Thread{
                 fw.append(",evolution");
                 if(!mutation_method.equals("")){
                     fw.append(",mutation");
-                    fw.append(",mutation rate");
+                    fw.append(",u");
                 }
             } else {
                 fw = new FileWriter(filename, true);
@@ -675,10 +675,10 @@ public class Alg1 extends Thread{
             }
 
             switch (mutation_method){ // write mutation method
-                case "global" -> fw.append(",mutation rate=" + DF4.format(mutation_rate));
+                case "global" -> fw.append(",u=" + DF4.format(u));
                 case "local" -> {
                     fw.append(",local mutation with delta="+DF4.format(delta));
-                    fw.append(",mutation rate=" + DF4.format(mutation_rate));
+                    fw.append(",u=" + DF4.format(u));
                 }
                 default -> fw.append(",no mutation");
             }
@@ -713,7 +713,7 @@ public class Alg1 extends Thread{
             case 4->various_amounts.add(ROC);
             case 5->various_amounts.add(w);
             case 6->various_amounts.add(approach_noise);
-            case 7->various_amounts.add(mutation_rate);
+            case 7->various_amounts.add(u);
             case 8->various_amounts.add(delta);
         }
 
@@ -754,8 +754,8 @@ public class Alg1 extends Thread{
                     various_amounts.add(approach_noise);
                 }
                 case 7->{
-                    mutation_rate+=variation;
-                    various_amounts.add(mutation_rate);
+                    u+=variation;
+                    various_amounts.add(u);
                 }
                 case 8->{
                     delta+=variation;
@@ -788,7 +788,7 @@ public class Alg1 extends Thread{
                     case 4->summary+="ROC=";
                     case 5->summary+="imitation noise=";
                     case 6->summary+="approach noise=";
-                    case 7->summary+="mutation rate=";
+                    case 7->summary+="u=";
                     case 8->summary+="delta=";
                     case 9->summary+="w=";
                 }
