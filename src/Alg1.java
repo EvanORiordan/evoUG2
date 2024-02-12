@@ -185,13 +185,18 @@ public class Alg1 extends Thread{
             System.out.print(", "+settings[config_index]+" neighbourhood");
             config_index++;
 
-            // sel,sel noise
+            //sel,sel noise,PPM,ASD
             switch(settings[config_index]){
                 case"WRW"->System.out.print(", WRW selection");
                 case"best"->System.out.print(", best selection");
                 case"variable"->System.out.print(", variable selection with w="+settings[config_index+1]);
             }
-            config_index+=2;
+            System.out.print(", PPM="+settings[config_index+2]);
+            switch(settings[config_index]){
+                case"avg score"->System.out.print(", ASD="+settings[config_index+3]);
+            }
+            config_index+=4;
+
 
             // evo,evo noise
             switch(settings[config_index]){
@@ -208,14 +213,6 @@ public class Alg1 extends Thread{
                 case"global"-> System.out.print(", global mutation with u="+settings[config_index+1]);
             }
             config_index+=3;
-
-            //PPM,ASD
-            System.out.print(", PPM="+settings[config_index]);
-            switch(settings[config_index]){
-                case"avg score"->System.out.print(", ASD="+settings[config_index+1]);
-            }
-            config_index+=2;
-
 
             // desc
             if(!settings[config_index].equals("")) {
@@ -307,12 +304,16 @@ public class Alg1 extends Thread{
         Player.setNeighbourhoodType(settings[config_index]);
         config_index++;
 
-        // sel,sel noise
+        //sel,sel noise,PPM,ASD
         selection_method=settings[config_index];
         switch(settings[config_index]){
             case"variable"->w=Double.parseDouble(settings[config_index+1]);
         }
-        config_index+=2;
+        Player.setPPM(settings[config_index+2]);
+        switch(Player.getPPM()){
+            case"avg score"->Player.setASD(settings[config_index+3]);
+        }
+        config_index+=4;
 
         // evo,evo noise
         evolution_method=settings[config_index];
@@ -333,12 +334,7 @@ public class Alg1 extends Thread{
         }
         config_index+=3;
 
-        //PPM
-        Player.setPPM(settings[config_index]);
-        switch(Player.getPPM()){
-            case"avg score"->Player.setASD(settings[config_index+1]);
-        }
-        config_index+=2;
+
 
 
 
