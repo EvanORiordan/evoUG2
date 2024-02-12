@@ -18,13 +18,14 @@ import java.util.concurrent.ThreadLocalRandom;
  * DG Algorithm.<br>
  */
 public class Alg1 extends Thread{
+    static FileWriter fw;
+    static BufferedReader br;
+    static String game; // what game is being played
     static int rows; // how many rows in the square grid.
     static int columns; // how many rows in the square grid.
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    static int EPR = 1; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
-    static double ROC; // rate of change wrt EWL1
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
@@ -32,14 +33,12 @@ public class Alg1 extends Thread{
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     int gen = 0; // indicates which generation is currently running.
 
-    /**
-     * Indicate whether to run an experiment or an experiment series.<br>
-     * A series should be used when you want to vary a parameter of the algorithm between experiments.
-     * Otherwise, a single experiment should suffice.
-     */
-    static boolean experiment_series;
 
     /**
+     * experiment_series indicates whether to run an experiment or an experiment series. A series should be
+     * used when you want to vary a parameter of the algorithm between experiments. Otherwise, a single
+     * experiment should suffice.<br>
+     *
      * varying_parameter indicates which parameter will be varied in an experiment series.<br>
      *
      * variation indicates by how much the parameter will vary between subsequent experiments in the
@@ -52,6 +51,7 @@ public class Alg1 extends Thread{
      * possible_varying_parameters stores all the possible parameters that can be varied in a series.
      * Currently, the ArrayList just indicates the indices of the possible varying parameters.<br>
      */
+    static boolean experiment_series;
     static String varying_parameter;
     static int varying_parameter_index;
     static double variation;
@@ -70,63 +70,48 @@ public class Alg1 extends Thread{
             ));
 
 
-
-    static FileWriter fw;
-    static BufferedReader br;
-
     // Prefix for filenames of generic data files.
     static String data_filename_prefix = "csv_data\\" +
             Thread.currentThread().getStackTrace()[1].getClassName();
 
-    // Prefix for filenames of interaction data files.
-    static String interaction_data_filename_prefix = "csv_data\\interactions_data\\" +
-            Thread.currentThread().getStackTrace()[1].getClassName();
 
+    // Prefix for filenames of interaction data files.
+    static String interaction_data_filename_prefix="csv_data\\interactions_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
     static int interaction_data_record_rate;
     static int data_gen; // is used only during single experiments
 
+
     // Prefix for filenames of player data files.
-    static String player_data_filename_prefix = "csv_data\\player_data\\" +
-            Thread.currentThread().getStackTrace()[1].getClassName();
+    static String player_data_filename_prefix="csv_data\\player_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
+
 
     static String config_filename = "config.csv"; // filename of config file
 
-    static String selection_method;
-    static String evolution_method;
-    static String mutation_method;
-    static String edge_weight_learning_method;
 
+    static String evolution_method;
+
+
+    static String EWLE; // edge weight learning equation
+    static int EPR = 1; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
+    static double ROC = 0.0; // EW rate of change
+    static double leeway = 0.0; // leeway affecting EWL
+
+
+    static String selection_method;
     static double w;
     static double approach_noise;
+
+
+    static String mutation_method;
     static double u; // represents mutation rate
     static double delta; // represents mutation noise
-
 
 
     static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
     static boolean save_pop = false;
     static boolean use_saved_pop = false;
 
-    // I would like to use this to make it easier to add config settings without having to
-    // amend all settings later in the row, but I am not sure how to do so.
-//    static List<String> config_settings = new ArrayList<>(
-//            List.of("runs"
-//                    ,"gens"
-//                    ,"rows"
-//                    ,"EPR"
-//                    ,"ROC"
-//                    etc.
-//            ));
 
-
-    /**
-     * Indicates the (upper bound of the) fairness interval (FI) used to determine whether a
-     * relationship is fair.
-     */
-    static double FI = 0;
-
-
-    static String game; // what game is being played
 
 
 
@@ -173,25 +158,13 @@ public class Alg1 extends Thread{
             System.out.print(", rows="+settings[config_index]);
             config_index++;
 
-            // EWL,EPR,ROC,FI
+            // EWLE,EPR,ROC,leeway
             switch(settings[config_index]){
-                case""->System.out.print(", no EWL");
-                case"1","2","3","4","5"->{
-                    switch(settings[config_index]){
-                        case"1"->System.out.print(", EWL 1");
-                        case"2"->System.out.print(", EWL 2");
-                        case"3"->System.out.print(", EWL 3");
-                        case"4"->System.out.print(", EWL 4");
-                        case"5"->System.out.print(", EWL 5");
-                    }
-                    System.out.print(", EPR="+settings[config_index+1]);
-                    switch(settings[config_index]){ // ROC-dependent methods
-                        case"1","4"->System.out.print(", ROC="+settings[config_index+2]);
-                    }
-                    switch(settings[config_index]){ // FI-dependent methods
-                        case"4","5"->System.out.print(", FI="+settings[config_index]+3);
-                    }
-                }
+                default->System.out.print(", no EWL");
+                case"ROC","AD","EAD"->System.out.print(", EWL equation="+settings[config_index]
+                        +", EPR="+settings[config_index+1]
+                        +", ROC="+settings[config_index+2]
+                        +", leeway="+settings[config_index+3]);
             }
             config_index+=4;
 
@@ -289,20 +262,18 @@ public class Alg1 extends Thread{
         rows = Integer.parseInt(settings[config_index]);
         config_index++;
 
-        // EWL,EPR,ROC,FI
-        edge_weight_learning_method = settings[config_index];
-        switch(edge_weight_learning_method){
-            case"1","2","3","4","5"->{
+        // EWLE,EPR,ROC,leeway
+        EWLE = settings[config_index];
+        switch(EWLE){
+            case"ROC","AD","EAD"->{
                 EPR=Integer.parseInt(settings[config_index+1]);
-                switch(edge_weight_learning_method){ // ROC-dependent methods
-                    case"1","4"-> ROC = Double.parseDouble(settings[config_index+2]);
-                }
-                switch(edge_weight_learning_method){ // FI-dependent methods
-                    case"4","5"-> FI=Double.parseDouble(settings[config_index+3]);
-                }
+                ROC=Double.parseDouble(settings[config_index+2]);
+                leeway=Double.parseDouble(settings[config_index+3]);
             }
         }
         config_index+=4;
+
+
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
@@ -495,13 +466,8 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    switch(edge_weight_learning_method){
-                        default->{}
-                        case "1" -> player.edgeWeightLearning1(ROC);
-                        case "2" -> player.edgeWeightLearning2();
-                        case"3"->player.edgeWeightLearning3();
-                        case"4"->player.edgeWeightLearning4(ROC,FI);
-                        case"5"->player.edgeWeightLearning5(FI);
+                    switch(EWLE){
+                        case"ROC","AD","EAD"->player.EWL(EWLE, ROC,leeway);
                     }
                 }
             }
@@ -562,11 +528,6 @@ public class Alg1 extends Thread{
                     writeStrategies(data_filename_prefix + "Strategies.csv");
                     writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
                     writeAllConnections(data_filename_prefix + "AllConnections.csv");
-                    if(FI > 0) { // methods that assume FI > 0.
-                        writeFairRelationships(data_filename_prefix + "FairRelationships.csv");
-                        Player x = grid.get(1).get(1);
-                        writeDetailedPlayer(player_data_filename_prefix + "Player" + x.getId() + ".csv", x);
-                    }
                 }
             }
 
@@ -636,10 +597,13 @@ public class Alg1 extends Thread{
                 fw.append(",gens");
                 fw.append(",neighbourhood");
                 fw.append(",N");
-                if(edge_weight_learning_method.equals("1")) {
-                    fw.append(",EWL1 ROC");
+                switch(EWLE){
+                    case"ROC","AD","EAD"->{
+                        fw.append(",EPR");
+                        fw.append(",ROC");
+                        fw.append(",leeway");
+                    }
                 }
-                fw.append(",EPR");
                 fw.append(",selection");
                 fw.append(",evolution");
                 if(!mutation_method.equals("")){
@@ -658,31 +622,29 @@ public class Alg1 extends Thread{
             fw.append("," + gens);
             fw.append("," + Player.getNeighbourhoodType());
             fw.append("," + N);
-            if(edge_weight_learning_method.equals("1")){
-                fw.append("," + ROC);
+            switch(EWLE){
+                case"ROC","AD","EAD"->{
+                    fw.append("," + EPR);
+                    fw.append("," + ROC);
+                    fw.append("," + leeway);
+                }
             }
-            fw.append("," + EPR);
-
-            switch(selection_method){ // write selection method
+            switch(selection_method){ // write selection parameters
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
-                case "variable" -> fw.append(",variable selection with w="+DF4.format(w));
+                case "variable" -> fw.append(",w="+DF4.format(w));
             }
-
-            switch (evolution_method) { // write evolution method
+            switch (evolution_method) { // write evolution parameters
                 case "copy" -> fw.append(",copy");
                 case "approach" -> fw.append(",approach noise=" + DF4.format(approach_noise));
             }
-
-            switch (mutation_method){ // write mutation method
+            switch (mutation_method){ // write mutation parameters
                 case "global" -> fw.append(",u=" + DF4.format(u));
                 case "local" -> {
-                    fw.append(",local mutation with delta="+DF4.format(delta));
+                    fw.append(",delta="+DF4.format(delta));
                     fw.append(",u=" + DF4.format(u));
                 }
-                default -> fw.append(",no mutation");
             }
-
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -845,13 +807,10 @@ public class Alg1 extends Thread{
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 player.setScore(0);
-//                player.setOldP(player.getP());
-//                player.setOldQ(player.getQ());
                 player.setNumInteractions(0);
                 player.setNumSuccessfulInteractions(0);
                 player.setNumSuccessfulDictations(0);
                 player.setNumSuccessfulReceptions(0);
-
                 switch(game){
                     case"UG","DG"->{
                         player.setOldP(player.getP());
@@ -1065,84 +1024,4 @@ public class Alg1 extends Thread{
     }
 
 
-
-
-
-
-
-
-
-    /**
-     * Writes the number of "fair" relationships per node.
-     */
-    public void writeFairRelationships(String filename){
-        try{
-            fw = new FileWriter(filename, false);
-            for(ArrayList<Player> row:grid){
-                for(int j=0;j<row.size();j++){
-                    Player x = row.get(j);
-
-                    // write number of fair relationships of x this gen.
-                    fw.append(Integer.toString(x.getNumFairRelationships(FI)));
-
-                    if(j+1<row.size()){
-                        fw.append(",");
-                    }
-                }
-                fw.append("\n");
-            }
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-    }
-
-
-
-
-
-
-
-    /**
-     * Writes a detailed account of player x to a .csv file.
-     */
-    public void writeDetailedPlayer(String filename, Player x){
-        try{
-            fw = new FileWriter(filename, false);
-
-            // neighbours of x
-            Player up = x.getNeighbourhood().get(0);
-            Player down = x.getNeighbourhood().get(0);
-            Player left = x.getNeighbourhood().get(0);
-            Player right = x.getNeighbourhood().get(0);
-
-            // weights of edges pointing from neighbours to x
-            double neighbour_ew_up = up.getEdgeWeights()[x.findXInNeighboursNeighbourhood(up)]; // ew of neighbour above x
-            double neighbour_ew_down = down.getEdgeWeights()[x.findXInNeighboursNeighbourhood(down)]; // ew of neighbour below x
-            double neighbour_ew_left = left.getEdgeWeights()[x.findXInNeighboursNeighbourhood(left)]; // ew of neighbour to x's left
-            double neighbour_ew_right = right.getEdgeWeights()[x.findXInNeighboursNeighbourhood(right)]; // ew of neighbour to x's right
-
-            // weights of edges from x to x's neighbours
-            double ew_up = x.getEdgeWeights()[0];
-            double ew_down = x.getEdgeWeights()[1];
-            double ew_left = x.getEdgeWeights()[2];
-            double ew_right = x.getEdgeWeights()[3];
-
-            // general statistics relating to x
-            double strategy = x.getP();
-            int num_fair_relationships = x.getNumFairRelationships(FI);
-            double own_connections = x.calculateOwnConnections();
-            double all_connections = x.calculateAllConnections();
-
-            // write data in the form of a 4x4 grid
-            fw.append(","+DF4.format(ew_up)+","+DF4.format(neighbour_ew_up)+"\n"
-                    +DF4.format(neighbour_ew_left)+","+DF4.format(strategy)+","+DF4.format(num_fair_relationships)+","+DF4.format(ew_right)+"\n"
-                    +DF4.format(ew_left)+","+DF4.format(own_connections)+","+DF4.format(all_connections)+","+DF4.format(neighbour_ew_right)+"\n"
-                    +","+DF4.format(neighbour_ew_down)+","+DF4.format(ew_down)+"\n"
-            );
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-    }
 }

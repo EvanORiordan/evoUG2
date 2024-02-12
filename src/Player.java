@@ -221,11 +221,13 @@ public class Player {
 
 
 
+
     /**
-     * Method for assigning a position of the player x on a 2D space and finding x's neighbours in
-     * the space.<br>
-     * Possible neighbourhood_type values: VN, M.<br>
-     * Neighbourhood order (with VN): up, down, left, right.<br>
+     * Assigns neighbours to the player in a 2D square lattice grid with respect
+     * to the von Neumann or the Moore neighbourhood type.
+     * @param grid is the grid/population of players.
+     * @param row_position is the x coordinate of the player.
+     * @param column_position is the y coordinate of the player.
      */
     public void findNeighbours2D(ArrayList<ArrayList<Player>> grid, int row_position, int column_position){
         neighbourhood = new ArrayList<>();
@@ -252,7 +254,7 @@ public class Player {
 
 
     /**
-     * Initialise edge_weights with respect to neighbourhood size.
+     * Initialise the player's edge weights.
      */
     public void initialiseEdgeWeights() {
         edge_weights = new double[neighbourhood.size()];
@@ -262,54 +264,30 @@ public class Player {
     }
 
 
-
-
-    
-
-
-
     /**
-     * Method that allows players to perform a form of edge weight learning.
-     * A player x's edge weights is supposed to represent x's neighbours' relationship towards x.
-     * If a neighbour y has a higher value of p than x, x raises the weight of their edge to y.
-     * If y has a lower value of p than x, x reduces the weight of their edge to y.
-     * The amount by which an edge is modified is determined by the ROC parameter.
+     * Edge weight learning method.
+     * @param EWLE is the edge weight learning equation used to calculate the amount of edge weight adjustment.
+     * @param ROC is the rate of change of edge weights
+     * @param leeway is the leeway allowed by the player to their neighbours
      */
-    public void edgeWeightLearning1(double ROC){
-        for (int i = 0; i < neighbourhood.size(); i++) {
-            Player neighbour = neighbourhood.get(i);
-            if (neighbour.p > p) { // if neighbour is more generous than you, increase EW
-                edge_weights[i] += ROC;
-                if(edge_weights[i] > 1.0){
-                    edge_weights[i] = 1.0;
-                }
-            } else if(neighbour.p < p){ // if neighbour is less generous, decrease EW
-                edge_weights[i] -= ROC;
-                if(edge_weights[i] < 0.0){
-                    edge_weights[i] = 0.0;
-                }
-            }
-        }
-    }
-
-
-
-
-    /**
-     * EWL method where the amount of EW modification is affected by the difference
-     * between the player's p and the neighbour's p.
-     */
-    public void edgeWeightLearning2(){
+    public void EWL(String EWLE, double ROC, double leeway){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double diff = Math.abs(neighbour.p - p);
-            if(neighbour.p > p){
-                edge_weights[i] += diff;
+            if(neighbour.p + leeway > neighbour.p){ // you could try implementing different EWL conditions here
+                switch(EWLE){
+                    case"ROC"->edge_weights[i]+=ROC; // rate of change
+                    case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
+                    case"EAD"->edge_weights[i]+=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
+                }
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p < p){
-                edge_weights[i] -= diff;
+            } else if(neighbour.p + leeway < neighbour.p){
+                switch(EWLE){
+                    case"ROC"->edge_weights[i]-=ROC; // rate of change
+                    case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
+                    case"EAD"->edge_weights[i]-=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
+                }
                 if(edge_weights[i] < 0.0){
                     edge_weights[i] = 0.0;
                 }
@@ -317,120 +295,6 @@ public class Player {
         }
     }
 
-
-
-
-
-    /**
-     * EWL method where the amount of EW modification is exponentially affected by the difference
-     * between the player's p and the neighbour's p.
-     */
-    public void edgeWeightLearning3(){
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            double diff = Math.abs(neighbour.p - p);
-            double exp_diff = Math.exp(diff);
-            if(neighbour.p > p){
-                edge_weights[i] += exp_diff;
-                if(edge_weights[i] > 1.0){
-                    edge_weights[i] = 1.0;
-                }
-            } else if(neighbour.p < p){
-                edge_weights[i] -= exp_diff;
-                if(edge_weights[i] < 0.0){
-                    edge_weights[i] = 0.0;
-                }
-            }
-        }
-    }
-
-
-
-
-
-
-    /**
-     * EWL method where EW modification occurs if neighbour's p is not within player's p's FI. Amount of
-     * modification is determined by ROC parameter.
-     */
-    public void edgeWeightLearning4(double ROC, double FI){
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            if(isRelationshipFair(neighbour, FI)){
-                edge_weights[i] += ROC;
-                if(edge_weights[i] > 1.0){
-                    edge_weights[i] = 1.0;
-                }
-            }else{
-                edge_weights[i] -= ROC;
-                if(edge_weights[i] < 0.0){
-                    edge_weights[i] = 0.0;
-                }
-            }
-        }
-    }
-
-
-
-
-    /**
-     * EWL method where EW modification occurs if neighbour's p is not within player's p's FI. Amount of
-     * modification is determined by the difference between the player's p and the neighbour's p.
-     */
-    public void edgeWeightLearning5(double FI){
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            double diff = Math.abs(neighbour.p - p);
-            if(isRelationshipFair(neighbour, FI)){
-                edge_weights[i] += diff;
-                if(edge_weights[i] > 1.0){
-                    edge_weights[i] = 1.0;
-                }
-            }else{
-                edge_weights[i] -= diff;
-                if(edge_weights[i] < 0.0){
-                    edge_weights[i] = 0.0;
-                }
-            }
-        }
-    }
-
-
-
-    /**
-     *  Identifies if the player and the given neighbour have a fair relationship wrt FI.<br>
-     *  A close or <b>fair</b> relationship here is loosely defined as one where the p values of the two players
-     *  are within the fairness interval from each other. The <b>fairness interval</b> indicates how
-     *  much leeway is being given.<br>
-     *  Nodes x and y have a fair relationship if p_y lies within [p_x - FI, p_y + FI].<br>
-     *  E.g. p_1=0.4, p_2=0.37 and FI=0.05 is a fair relationship because p_2 lies within
-     *  the interval [p_1 - FI, p_1 + FI] = [0.4 - 0.05, 0.4 + 0.05] =
-     *  [0.35, 0.45] so here node 1 and 2 have a fair relationship.<br>
-     *  E.g. With p_3=0.2, p_4=0.05 and FI=0.1, node 3 and 4 do not have a fair
-     *  relationship.<br>
-     */
-    public boolean isRelationshipFair(Player neighbour, double FI){
-        double lower_bound = p - FI;
-        double upper_bound = p + FI;
-
-        return lower_bound <= neighbour.p && upper_bound >= neighbour.p;
-    }
-
-
-
-    /**
-     * Identifies the number of fair relationships the player has with their neighbours with
-     * respect to the given fairness interval.
-     */
-    public int getNumFairRelationships(double FI){
-        int num_fair_relationships = 0;
-        for(Player neighbour: neighbourhood){
-            if(isRelationshipFair(neighbour, FI)){
-                num_fair_relationships++;
-            }
-        }
-        return num_fair_relationships;
-    }
 
 
 
