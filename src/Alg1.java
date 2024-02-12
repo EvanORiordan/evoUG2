@@ -92,7 +92,7 @@ public class Alg1 extends Thread{
 
 
     static String EWLE; // edge weight learning equation
-    static int EPR = 1; // how often evolutionary phases occur e.g. if 5, then evo occurs every 5 gens
+    static int EPR = 1; // how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
     static double leeway = 0.0; // leeway affecting EWL
 
