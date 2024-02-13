@@ -91,7 +91,7 @@ public class Alg1 extends Thread{
     static String evolution_method;
 
 
-    static String EWLE; // edge weight learning equation
+    static String EWAE; // edge weight adjustment equation
     static int EPR = 1; // how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
     static double leeway = 0.0; // leeway affecting EWL
@@ -158,7 +158,7 @@ public class Alg1 extends Thread{
             System.out.print(", rows="+settings[config_index]);
             config_index++;
 
-            // EWLE,EPR,ROC,leeway
+            // EWAE,EPR,ROC,leeway
             switch(settings[config_index]){
                 default->System.out.print(", no EWL");
                 case"ROC","AD","EAD"->System.out.print(", EWL equation="+settings[config_index]
@@ -259,9 +259,9 @@ public class Alg1 extends Thread{
         rows = Integer.parseInt(settings[config_index]);
         config_index++;
 
-        // EWLE,EPR,ROC,leeway
-        EWLE = settings[config_index];
-        switch(EWLE){
+        // EWAE,EPR,ROC,leeway
+        EWAE = settings[config_index];
+        switch(EWAE){
             case"ROC","AD","EAD"->{
                 EPR=Integer.parseInt(settings[config_index+1]);
                 ROC=Double.parseDouble(settings[config_index+2]);
@@ -462,8 +462,8 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    switch(EWLE){
-                        case"ROC","AD","EAD"->player.EWL(EWLE, ROC,leeway);
+                    switch(EWAE){
+                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
                     }
                 }
             }
@@ -593,7 +593,7 @@ public class Alg1 extends Thread{
                 fw.append(",gens");
                 fw.append(",neighbourhood");
                 fw.append(",N");
-                switch(EWLE){
+                switch(EWAE){
                     case"ROC","AD","EAD"->{
                         fw.append(",EPR");
                         fw.append(",ROC");
@@ -618,7 +618,7 @@ public class Alg1 extends Thread{
             fw.append("," + gens);
             fw.append("," + Player.getNeighbourhoodType());
             fw.append("," + N);
-            switch(EWLE){
+            switch(EWAE){
                 case"ROC","AD","EAD"->{
                     fw.append("," + EPR);
                     fw.append("," + ROC);

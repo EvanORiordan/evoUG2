@@ -266,15 +266,15 @@ public class Player {
 
     /**
      * Edge weight learning method.
-     * @param EWLE is the edge weight learning equation used to calculate the amount of edge weight adjustment.
+     * @param EWAE is the edge weight learning equation used to calculate the amount of edge weight adjustment.
      * @param ROC is the rate of change of edge weights
      * @param leeway is the leeway allowed by the player to their neighbours
      */
-    public void EWL(String EWLE, double ROC, double leeway){
+    public void EWL(String EWAE, double ROC, double leeway){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             if(neighbour.p + leeway > neighbour.p){ // you could try implementing different EWL conditions here
-                switch(EWLE){
+                switch(EWAE){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
                     case"EAD"->edge_weights[i]+=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
@@ -283,7 +283,7 @@ public class Player {
                     edge_weights[i] = 1.0;
                 }
             } else if(neighbour.p + leeway < neighbour.p){
-                switch(EWLE){
+                switch(EWAE){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
                     case"EAD"->edge_weights[i]-=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
