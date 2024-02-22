@@ -1,2 +1,5 @@
 game,runs,gens,rows,EWAE,EPR,ROC,leeway,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
 DG,10,10000,10,AD,5,0.0,0.01,,,,,VN,WRW,,score,,copy,,,,,leeway test
+DG,10,1,10,AD,5,0.01,0.01,,,,,VN,WRW,,score,,copy,,,,,dummy config 1
+DG,10,2,10,AD,5,0.002,0.01,,,,,VN,WRW,,score,,copy,,,,,dummy config 2
+DG,10,3,10,AD,5,0.0003,0.01,leeway,0.01,10,-1,VN,WRW,,score,,copy,,local,0.5,0.1,dummy config 3

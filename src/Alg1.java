@@ -63,10 +63,11 @@ public class Alg1 extends Thread{
                     , "rows" //2
                     , "EPR" //3
                     , "ROC" //4
-                    , "w" //5
-                    , "approach_noise" //6
-                    , "u" //7
-                    , "delta" //8
+                    , "leeway" //5
+                    , "sel noise" //6
+                    , "evo noise" //7
+                    , "u" //8
+                    , "delta" //9
             ));
 
 
@@ -89,6 +90,7 @@ public class Alg1 extends Thread{
 
 
     static String evolution_method;
+    static double approach_noise; // affected by evo noise
 
 
     static String EWAE; // edge weight adjustment equation
@@ -98,8 +100,7 @@ public class Alg1 extends Thread{
 
 
     static String selection_method;
-    static double w;
-    static double approach_noise;
+    static double w; // affected by sel noise
 
 
     static String mutation_method;
@@ -135,98 +136,65 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
 
-        // display configs to user
+
+        // display intro and config table headings
+        System.out.printf("=========================================%n");
+        System.out.printf("   Evolutionary Game Theory Simulator%n");
+        System.out.printf("   By Evan O'Riordan%n");
+        System.out.printf("===================================================================================================================================================================================================================================================================%n");
+        System.out.printf("%-6s | %-4s | %-6s | %-9s | %-4s | %-4s | %-3s | %-6s | %-6s |" +
+                        " %-10s | %-9s | %-7s | %-9s | %-5s | %-8s | %-9s |" +
+                        " %-9s | %-3s | %-8s | %-9s | %-6s | %-6s | %-6s |" +
+                        " desc%n" // ensure desc is the last column
+                ,"config","game","runs","gens","rows","EWAE","EPR","ROC","leeway"
+                ,"varying","variation","num exp","data gen","neigh","sel","sel noise"
+                ,"PPM","ASD","evo","evo noise","mut","u","delta");
+        System.out.printf("===================================================================================================================================================================================================================================================================%n");
+
+
+
+
+        // display config table rows
         int config_index;
         for(int i=0;i<configurations.size();i++){
             String[] settings = configurations.get(i).split(",");
-            System.out.print(i+": "); // begin displaying the config
             config_index = 0;
 
-            // game
-            System.out.print(settings[config_index]);
-            config_index++;
+            System.out.printf("%-6d ", i); //config
+            System.out.printf("| %-4s ", settings[config_index++]); //game
+            System.out.printf("| %-6s ", settings[config_index++]); //runs
+            System.out.printf("| %-9s ", settings[config_index++]); //gens
+            System.out.printf("| %-4s ", settings[config_index++]); //rows
+            System.out.printf("| %-4s ", settings[config_index++]); //EWAE
+            System.out.printf("| %-3s ", settings[config_index++]); //EPR
+            System.out.printf("| %-6s ", settings[config_index++]); //ROC
+            System.out.printf("| %-6s ", settings[config_index++]); //leeway
+            System.out.printf("| %-10s ", settings[config_index++]); //varying
+            System.out.printf("| %-9s ", settings[config_index++]); //variation
+            System.out.printf("| %-7s ", settings[config_index++]); //num exp
+            System.out.printf("| %-9s ", settings[config_index++]); //data gen
+            System.out.printf("| %-5s ", settings[config_index++]); //neigh
+            System.out.printf("| %-8s ", settings[config_index++]); //sel
+            System.out.printf("| %-9s ", settings[config_index++]); //sel noise
+            System.out.printf("| %-9s ", settings[config_index++]); //PPM
+            System.out.printf("| %-3s ", settings[config_index++]); //ASD
+            System.out.printf("| %-8s ", settings[config_index++]); //evo
+            System.out.printf("| %-9s ", settings[config_index++]); //evo noise
+            System.out.printf("| %-6s ", settings[config_index++]); //mut
+            System.out.printf("| %-6s ", settings[config_index++]); //u
+            System.out.printf("| %-6s ", settings[config_index++]); //delta
+            System.out.printf("| %s ", settings[config_index]); //desc
 
-            // runs
-            System.out.print(", runs="+settings[config_index]);
-            config_index++;
-
-            // gens
-            System.out.print(", gens="+settings[config_index]);
-            config_index++;
-
-            // rows
-            System.out.print(", rows="+settings[config_index]);
-            config_index++;
-
-            // EWAE,EPR,ROC,leeway
-            switch(settings[config_index]){
-                default->System.out.print(", no EWL");
-                case"ROC","AD","EAD"->System.out.print(", EWAE="+settings[config_index]
-                        +", EPR="+settings[config_index+1]
-                        +", ROC="+settings[config_index+2]
-                        +", leeway="+settings[config_index+3]);
-            }
-            config_index+=4;
-
-            // varying,variation,num exp
-            if(!settings[config_index].equals("")){
-                System.out.print(", varying parameter="+settings[config_index]+", variation="+settings[config_index+1]+
-                        ", num experiments="+settings[config_index+2]);
-            }
-            config_index+=3;
-
-            // data gen
-            if(!settings[config_index].equals("")){
-                System.out.print(", data gen="+settings[config_index]);
-            }
-            config_index++;
-
-            // neigh
-            System.out.print(", "+settings[config_index]+" neighbourhood");
-            config_index++;
-
-            //sel,sel noise,PPM,ASD
-            switch(settings[config_index]){
-                case"WRW"->System.out.print(", WRW selection");
-                case"best"->System.out.print(", best selection");
-                case"variable"->System.out.print(", variable selection with w="+settings[config_index+1]);
-            }
-            System.out.print(", PPM="+settings[config_index+2]);
-            switch(settings[config_index]){
-                case"avg score"->System.out.print(", ASD="+settings[config_index+3]);
-            }
-            config_index+=4;
-
-
-            // evo,evo noise
-            switch(settings[config_index]){
-                case"copy"->System.out.print(", copy evolution");
-                case"approach"->System.out.print(", approach evolution with noise="+settings[config_index+1]);
-            }
-            config_index+=2;
-
-            //mut,u,delta
-            switch(settings[config_index]){
-                case""-> System.out.print(", no mutation");
-                case"local"->System.out.print(", local mutation with u="+settings[config_index+1]+
-                            " and delta="+settings[config_index+2]);
-                case"global"-> System.out.print(", global mutation with u="+settings[config_index+1]);
-            }
-            config_index+=3;
-
-            // desc
-            if(!settings[config_index].equals("")) {
-                System.out.print(", description: " + settings[config_index]);
-            }
 
             System.out.println();
         }
+        System.out.printf("===================================================================================================================================================================================================================================================================%n");
 
 
 
 
         // ask user which config they want to use
-        System.out.println("which config would you like to use? (int)");
+        System.out.println("Which config would you like to use? (int)");
         boolean config_found = false;
         int config_num;
         do{ // ensure user selects valid config
@@ -281,10 +249,11 @@ public class Alg1 extends Thread{
                 case"rows"->varying_parameter_index=2;
                 case"EPR"->varying_parameter_index=3;
                 case"ROC"->varying_parameter_index=4;
-                case"w"->varying_parameter_index=5;
-                case"approach_noise"->varying_parameter_index=6;
-                case"u"->varying_parameter_index=7;
-                case"delta"->varying_parameter_index=8;
+                case"leeway"->varying_parameter_index=5;
+                case"sel noise"->varying_parameter_index=6;
+                case"evo noise"->varying_parameter_index=7;
+                case"u"->varying_parameter_index=8;
+                case"delta"->varying_parameter_index=9;
             }
             experiment_series = true;
             variation = Double.parseDouble(settings[config_index+1]);
@@ -673,6 +642,7 @@ public class Alg1 extends Thread{
             case 6->various_amounts.add(approach_noise);
             case 7->various_amounts.add(u);
             case 8->various_amounts.add(delta);
+            case 9->various_amounts.add(leeway);
         }
 
         // run experiment series
@@ -718,6 +688,10 @@ public class Alg1 extends Thread{
                 case 8->{
                     delta+=variation;
                     various_amounts.add(delta);
+                }
+                case 9->{
+                    leeway+=variation;
+                    various_amounts.add(leeway);
                 }
             }
 
