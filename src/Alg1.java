@@ -161,7 +161,7 @@ public class Alg1 extends Thread{
             // EWAE,EPR,ROC,leeway
             switch(settings[config_index]){
                 default->System.out.print(", no EWL");
-                case"ROC","AD","EAD"->System.out.print(", EWL equation="+settings[config_index]
+                case"ROC","AD","EAD"->System.out.print(", EWAE="+settings[config_index]
                         +", EPR="+settings[config_index+1]
                         +", ROC="+settings[config_index+2]
                         +", leeway="+settings[config_index+3]);

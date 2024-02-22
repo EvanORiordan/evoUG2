@@ -1,4 +1,2 @@
 game,runs,gens,rows,EWAE,EPR,ROC,leeway,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,1,10000,30,ROC,3,0.15,0.1,ROC,0.05,5,5000,VN,variable,0.1,score,,approach,0.2,noise,0.1,0.2,example config
-UG,100,10000,30,,,,,,,,,VN,variable,10,copy,,,,,score,,UG; variable sel
-DG,10,10000,10,,,,,,,,,VN,best,,copy,,local,1,0.1,score,,DG; delta=0.05
+DG,10,10000,10,AD,5,0.0,0.01,,,,,VN,WRW,,score,,copy,,,,,leeway test

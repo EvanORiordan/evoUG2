@@ -273,7 +273,7 @@ public class Player {
     public void EWL(String EWAE, double ROC, double leeway){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            if(neighbour.p + leeway > neighbour.p){ // you could try implementing different EWL conditions here
+            if(neighbour.p + leeway > p){ // EWL condition with leeway
                 switch(EWAE){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
@@ -282,7 +282,7 @@ public class Player {
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p + leeway < neighbour.p){
+            } else if(neighbour.p + leeway < p){
                 switch(EWAE){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
@@ -316,7 +316,10 @@ public class Player {
                 }
             }
         }
-        player_desc+=" score="+DF4.format(score)+" ("+DF4.format(average_score)+")"; // score and avg score
+        player_desc+=" score="+DF4.format(score); // score
+        switch(PPM){
+            case"avg score"->player_desc+="("+DF4.format(average_score)+")"; // avg score
+        }
 
         // document neighbourhood and EWs
         player_desc += " neighbourhood=[";
@@ -451,13 +454,9 @@ public class Player {
         double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
             switch(PPM){
-                case"score"-> parent_scores[i] = Math.exp(neighbourhood.get(i).score - score);
-                case"avg score"-> parent_scores[i] =
-                        Math.exp(neighbourhood.get(i).average_score - average_score);
+                case"score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).score - score);
+                case"avg score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).average_score-average_score);
             }
-            double neighbour_score = neighbourhood.get(i).score;
-            parent_scores[i] = Math.exp(neighbour_score - score);
-
             total_parent_score += parent_scores[i];
         }
         total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
