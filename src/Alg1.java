@@ -564,16 +564,28 @@ public class Alg1 extends Thread{
                 fw.append(",N");
                 switch(EWAE){
                     case"ROC","AD","EAD"->{
+                        fw.append(",EWAE");
                         fw.append(",EPR");
                         fw.append(",ROC");
                         fw.append(",leeway");
                     }
                 }
                 fw.append(",selection");
+                switch(selection_method){
+                    case"variable"->fw.append(",w");
+                }
                 fw.append(",evolution");
-                if(!mutation_method.equals("")){
-                    fw.append(",mutation");
-                    fw.append(",u");
+                switch(evolution_method){
+                    case"approach"->fw.append(",approach noise");
+                }
+                switch(mutation_method){
+                    case"local","global"->{
+                        fw.append(",mutation");
+                        fw.append(",u");
+                        switch(mutation_method){
+                            case"local"->fw.append(",delta");
+                        }
+                    }
                 }
             } else {
                 fw = new FileWriter(filename, true);
@@ -589,6 +601,7 @@ public class Alg1 extends Thread{
             fw.append("," + N);
             switch(EWAE){
                 case"ROC","AD","EAD"->{
+                    fw.append("," + EWAE);
                     fw.append("," + EPR);
                     fw.append("," + ROC);
                     fw.append("," + leeway);
@@ -597,17 +610,25 @@ public class Alg1 extends Thread{
             switch(selection_method){ // write selection parameters
                 case "WRW" -> fw.append(",WRW");
                 case "best" -> fw.append(",best");
-                case "variable" -> fw.append(",w="+DF4.format(w));
+                case "variable" ->{
+                    fw.append(",variable");
+                    fw.append("," + DF4.format(w));
+                }
             }
             switch (evolution_method) { // write evolution parameters
                 case "copy" -> fw.append(",copy");
-                case "approach" -> fw.append(",approach noise=" + DF4.format(approach_noise));
+                case "approach" -> {
+                    fw.append(",approach");
+                    fw.append("," + DF4.format(approach_noise));
+                }
             }
             switch (mutation_method){ // write mutation parameters
-                case "global" -> fw.append(",u=" + DF4.format(u));
-                case "local" -> {
-                    fw.append(",delta="+DF4.format(delta));
-                    fw.append(",u=" + DF4.format(u));
+                case"local","global"->{
+                    fw.append(","+mutation_method);
+                    fw.append(","+DF4.format(u));
+                    switch(mutation_method){
+                        case"local"->fw.append(","+DF4.format(delta));
+                    }
                 }
             }
             fw.close();
