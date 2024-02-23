@@ -18,8 +18,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * DG Algorithm.<br>
  */
 public class Alg1 extends Thread{
-    static FileWriter fw;
-    static BufferedReader br;
     static String game; // what game is being played
     static int rows; // how many rows in the square grid.
     static int columns; // how many rows in the square grid.
@@ -29,26 +27,38 @@ public class Alg1 extends Thread{
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
-    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
-    static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     int gen = 0; // indicates which generation is currently running.
 
+    // decimal formatting objects
+    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
+    static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
+
+    // I/O objects
+    static FileWriter fw;
+    static BufferedReader br;
+    static Scanner scanner = new Scanner(System.in);
+
+    // parameters for determining whether to use saved pop and/or save pop
+    static boolean save_pop = false;
+    static boolean use_saved_pop = false;
 
     /**
-     * experiment_series indicates whether to run an experiment or an experiment series. A series should be
+     * experiment series parameters:<br>
+     *
+     * - experiment_series indicates whether to run an experiment or an experiment series. A series should be
      * used when you want to vary a parameter of the algorithm between experiments. Otherwise, a single
      * experiment should suffice.<br>
      *
-     * varying_parameter indicates which parameter will be varied in an experiment series.<br>
+     * - varying_parameter indicates which parameter will be varied in an experiment series.<br>
      *
-     * variation indicates by how much the parameter will vary between subsequent experiments in the
+     * - variation indicates by how much the parameter will vary between subsequent experiments in the
      * series. the double type here also works for varying integer type params such as gens.<br>
      *
-     * num_experiments indicates the number of experiments to occur in the series.<br>
+     * - num_experiments indicates the number of experiments to occur in the series.<br>
      *
-     * experiment_number tracks which experiment is taking place at any given time during a series.<br>
+     * - experiment_number tracks which experiment is taking place at any given time during a series.<br>
      *
-     * possible_varying_parameters stores all the possible parameters that can be varied in a series.
+     * - possible_varying_parameters stores all the possible parameters that can be varied in a series.
      * Currently, the ArrayList just indicates the indices of the possible varying parameters.<br>
      */
     static boolean experiment_series;
@@ -72,49 +82,41 @@ public class Alg1 extends Thread{
 
 
     // Prefix for filenames of generic data files.
-    static String data_filename_prefix = "csv_data\\" +
-            Thread.currentThread().getStackTrace()[1].getClassName();
-
+    static String data_filename_prefix = "csv_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
 
     // Prefix for filenames of interaction data files.
     static String interaction_data_filename_prefix="csv_data\\interactions_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
     static int interaction_data_record_rate;
     static int data_gen; // is used only during single experiments
 
-
     // Prefix for filenames of player data files.
     static String player_data_filename_prefix="csv_data\\player_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
 
-
+    // config filename
     static String config_filename = "config.csv"; // filename of config file
 
 
-    static String evolution_method;
-    static double approach_noise; // affected by evo noise
-
-
+    // EWL parameters
     static String EWAE; // edge weight adjustment equation
     static int EPR = 1; // how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
     static double leeway = 0.0; // leeway affecting EWL
 
+    // evolution parameters
+    static String evolution_method;
+    static double approach_noise; // affected by evo noise
 
+    // selection parameters
     static String selection_method;
     static double w; // affected by sel noise
 
-
+    // mutation parameters
     static String mutation_method;
     static double u; // represents mutation rate
     static double delta; // represents mutation noise
 
-
-    static Scanner scanner = new Scanner(System.in); // Scanner object for receiving input
-    static boolean save_pop = false;
-    static boolean use_saved_pop = false;
-
-
-
-
+    // parameter for description of experiment
+    static String desc;
 
 
 
@@ -302,6 +304,9 @@ public class Alg1 extends Thread{
             }
         }
         config_index+=3;
+
+        //desc
+        desc = settings[config_index];
 
 
 
@@ -557,6 +562,7 @@ public class Alg1 extends Thread{
                 }
             }
         }
+        s+=", desc: "+desc;
         s+=":"; // signals that there are no more settings left
         System.out.println(s);
 
@@ -683,7 +689,7 @@ public class Alg1 extends Thread{
 
             // helps user keep track of the current value of the varying parameter
             System.out.println("\n===================\n" +
-                    "NOTE: Start of "+varying_parameter+"="+various_amounts.get(i)+".");
+                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+various_amounts.get(i)+".");
 
             experiment(); // run an experiment
             switch(varying_parameter_index){ // change the value of the varying parameter
