@@ -190,6 +190,7 @@ public class Player {
     }
     private double average_score; // average score of this player this gen
     private static String ASD = ""; // average score denominator
+    public static String getASD(){return ASD;}
     public static void setASD(String s){ASD=s;}
     private static String PPM; // player performance metric
     public static String getPPM(){return PPM;}

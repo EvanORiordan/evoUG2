@@ -1,2 +1,2 @@
 game,runs,gens,rows,EWAE,EPR,ROC,leeway,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,2,10000,30,AD,1,0.0,0.0,EPR,1,10,-1,VN,WRW,,score,,copy,,,,,AD EPR-varying-series test
+DG,50,10000,30,AD,1,0.0,0.0,EPR,1,5,,VN,WRW,,score,,copy,,,,,AD EPR-varying-series test

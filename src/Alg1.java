@@ -265,7 +265,7 @@ public class Alg1 extends Thread{
         if(!settings[config_index].equals("")){
             data_gen = Integer.parseInt(settings[config_index]);
         } else{
-            data_gen = -1; // if no data gen entry, assign -1 to nullify the variable's effect
+            data_gen = -1; // if no data gen value given, assign -1 to nullify the variable's effect
         }
         config_index++;
 
@@ -519,6 +519,52 @@ public class Alg1 extends Thread{
      */
     public static void experiment(){
 
+        // display settings of experiment
+        String s = "";
+        if(experiment_series && experiment_number == 0){ // if at start of series
+            s += "Experiment series varying "+varying_parameter+" by "+variation+ " between " +
+                    num_experiments+" experiments: ";
+        } else if(!experiment_series){
+            s += "Experiment: ";
+        }
+        s+=game;
+        s+=", "+runs+" runs";
+        s+=", "+gens+" gens";
+        s+=", "+rows+" rows";
+        s+=", EWAE="+EWAE;
+        s+=", EPR="+EPR;
+        s+=", ROC="+ROC;
+        s+=", leeway="+leeway;
+        s+=", "+Player.getNeighbourhoodType()+" neigh";
+        s+=", "+selection_method+" sel";
+        switch(selection_method){
+            case"variable"->s+=", w="+w;
+        }
+        s+=", PPM="+Player.getPPM();
+        switch(Player.getPPM()){
+            case"avg score"->s+=", ASD="+Player.getASD();
+        }
+        s+=", "+evolution_method+" evo";
+        switch(evolution_method){
+            case"approach"->s+=", approach noise="+approach_noise;
+        }
+        switch(mutation_method){
+            case"local","global"->{
+                s+=", "+mutation_method+" mut";
+                s+=", u="+u;
+                switch(mutation_method){
+                    case"local"->s+=", delta="+delta;
+                }
+            }
+        }
+        s+=":"; // signals that there are no more settings left
+        System.out.println(s);
+
+
+
+
+
+
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
         double[] avg_p_values_of_experiment = new double[runs];
@@ -552,7 +598,7 @@ public class Alg1 extends Thread{
         try{
             String filename = data_filename_prefix + "Data.csv";
 
-            // write headings
+            // write column headings
             if(experiment_number == 0){
                 fw = new FileWriter(filename, false);
                 fw.append("experiment");
@@ -562,36 +608,22 @@ public class Alg1 extends Thread{
                 fw.append(",gens");
                 fw.append(",neighbourhood");
                 fw.append(",N");
-                switch(EWAE){
-                    case"ROC","AD","EAD"->{
-                        fw.append(",EWAE");
-                        fw.append(",EPR");
-                        fw.append(",ROC");
-                        fw.append(",leeway");
-                    }
-                }
+                fw.append(",EWAE");
+                fw.append(",EPR");
+                fw.append(",ROC");
+                fw.append(",leeway");
                 fw.append(",selection");
-                switch(selection_method){
-                    case"variable"->fw.append(",w");
-                }
+                fw.append(",w");
                 fw.append(",evolution");
-                switch(evolution_method){
-                    case"approach"->fw.append(",approach noise");
-                }
-                switch(mutation_method){
-                    case"local","global"->{
-                        fw.append(",mutation");
-                        fw.append(",u");
-                        switch(mutation_method){
-                            case"local"->fw.append(",delta");
-                        }
-                    }
-                }
+                fw.append(",approach noise");
+                fw.append(",mutation");
+                fw.append(",u");
+                fw.append(",delta");
             } else {
                 fw = new FileWriter(filename, true);
             }
 
-            // write data
+            // write row data
             fw.append("\n" + experiment_number);
             fw.append("," + DF4.format(mean_avg_p_of_experiment));
             fw.append("," + DF4.format(sd_avg_p_of_experiment));
@@ -599,38 +631,18 @@ public class Alg1 extends Thread{
             fw.append("," + gens);
             fw.append("," + Player.getNeighbourhoodType());
             fw.append("," + N);
-            switch(EWAE){
-                case"ROC","AD","EAD"->{
-                    fw.append("," + EWAE);
-                    fw.append("," + EPR);
-                    fw.append("," + ROC);
-                    fw.append("," + leeway);
-                }
-            }
-            switch(selection_method){ // write selection parameters
-                case "WRW" -> fw.append(",WRW");
-                case "best" -> fw.append(",best");
-                case "variable" ->{
-                    fw.append(",variable");
-                    fw.append("," + DF4.format(w));
-                }
-            }
-            switch (evolution_method) { // write evolution parameters
-                case "copy" -> fw.append(",copy");
-                case "approach" -> {
-                    fw.append(",approach");
-                    fw.append("," + DF4.format(approach_noise));
-                }
-            }
-            switch (mutation_method){ // write mutation parameters
-                case"local","global"->{
-                    fw.append(","+mutation_method);
-                    fw.append(","+DF4.format(u));
-                    switch(mutation_method){
-                        case"local"->fw.append(","+DF4.format(delta));
-                    }
-                }
-            }
+            fw.append("," + EWAE);
+            fw.append("," + EPR);
+            fw.append("," + ROC);
+            fw.append("," + leeway);
+            fw.append("," + selection_method);
+            fw.append("," + DF4.format(w));
+            fw.append("," + evolution_method);
+            fw.append("," + DF4.format(approach_noise));
+            fw.append("," + mutation_method);
+            fw.append("," + DF4.format(u));
+            fw.append("," + DF4.format(delta));
+
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -670,7 +682,8 @@ public class Alg1 extends Thread{
         for(int i=0;i<num_experiments;i++){
 
             // helps user keep track of the current value of the varying parameter
-            System.out.println("start of "+varying_parameter+"="+various_amounts.get(i)+":");
+            System.out.println("\n===================\n" +
+                    "NOTE: Start of "+varying_parameter+"="+various_amounts.get(i)+".");
 
             experiment(); // run an experiment
             switch(varying_parameter_index){ // change the value of the varying parameter
@@ -717,7 +730,8 @@ public class Alg1 extends Thread{
             }
 
             // informs user what the varying parameter's value was
-            System.out.println("end of "+varying_parameter+"="+various_amounts.get(i)+".");
+            System.out.println("NOTE: End of "+varying_parameter+"="+various_amounts.get(i)+"."
+                    +"\n===================");
         }
 
         // display a summary of the series in the console
