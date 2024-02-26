@@ -115,7 +115,7 @@ public class Alg1 extends Thread{
     static double u; // represents mutation rate
     static double delta; // represents mutation noise
 
-    // parameter for description of experiment
+    // Use this to describe experimentation and focus attention on key settings.
     static String desc;
 
 
@@ -523,53 +523,7 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-
-        // display settings of experiment
-        String s = "";
-        if(experiment_series && experiment_number == 0){ // if at start of series
-            s += "Experiment series varying "+varying_parameter+" by "+variation+ " between " +
-                    num_experiments+" experiments: ";
-        } else if(!experiment_series){
-            s += "Experiment: ";
-        }
-        s+=game;
-        s+=", "+runs+" runs";
-        s+=", "+gens+" gens";
-        s+=", "+rows+" rows";
-        s+=", EWAE="+EWAE;
-        s+=", EPR="+EPR;
-        s+=", ROC="+ROC;
-        s+=", leeway="+leeway;
-        s+=", "+Player.getNeighbourhoodType()+" neigh";
-        s+=", "+selection_method+" sel";
-        switch(selection_method){
-            case"variable"->s+=", w="+w;
-        }
-        s+=", PPM="+Player.getPPM();
-        switch(Player.getPPM()){
-            case"avg score"->s+=", ASD="+Player.getASD();
-        }
-        s+=", "+evolution_method+" evo";
-        switch(evolution_method){
-            case"approach"->s+=", approach noise="+approach_noise;
-        }
-        switch(mutation_method){
-            case"local","global"->{
-                s+=", "+mutation_method+" mut";
-                s+=", u="+u;
-                switch(mutation_method){
-                    case"local"->s+=", delta="+delta;
-                }
-            }
-        }
-        s+=", desc: "+desc;
-        s+=":"; // signals that there are no more settings left
-        System.out.println(s);
-
-
-
-
-
+        displaySettings(); // display settings of experiment
 
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
@@ -677,11 +631,11 @@ public class Alg1 extends Thread{
             case 2->various_amounts.add((double)rows);
             case 3->various_amounts.add((double)EPR);
             case 4->various_amounts.add(ROC);
-            case 5->various_amounts.add(w);
-            case 6->various_amounts.add(approach_noise);
-            case 7->various_amounts.add(u);
-            case 8->various_amounts.add(delta);
-            case 9->various_amounts.add(leeway);
+            case 5->various_amounts.add(leeway);
+            case 6->various_amounts.add(w);
+            case 7->various_amounts.add(approach_noise);
+            case 8->various_amounts.add(u);
+            case 9->various_amounts.add(delta);
         }
 
         // run experiment series
@@ -714,29 +668,29 @@ public class Alg1 extends Thread{
                     various_amounts.add(ROC);
                 }
                 case 5->{
+                    leeway+=variation;
+                    various_amounts.add(leeway);
+                }
+                case 6->{
                     w+=variation;
                     various_amounts.add(w);
                 }
-                case 6->{
+                case 7->{
                     approach_noise+=variation;
                     various_amounts.add(approach_noise);
                 }
-                case 7->{
+                case 8->{
                     u+=variation;
                     various_amounts.add(u);
                 }
-                case 8->{
+                case 9->{
                     delta+=variation;
                     various_amounts.add(delta);
-                }
-                case 9->{
-                    leeway+=variation;
-                    various_amounts.add(leeway);
                 }
             }
 
             // informs user what the varying parameter's value was
-            System.out.println("NOTE: End of "+varying_parameter+"="+various_amounts.get(i)+"."
+            System.out.println("NOTE: End of "+varying_parameter+"="+DF4.format(various_amounts.get(i))+"."
                     +"\n===================");
         }
 
@@ -759,11 +713,11 @@ public class Alg1 extends Thread{
                     case 2->summary+="rows=";
                     case 3->summary+="EPR=";
                     case 4->summary+="ROC=";
-                    case 5->summary+="imitation noise=";
-                    case 6->summary+="approach noise=";
-                    case 7->summary+="u=";
-                    case 8->summary+="delta=";
-                    case 9->summary+="w=";
+                    case 5->summary+="leeway=";
+                    case 6->summary+="sel noise=";
+                    case 7->summary+="evo noise=";
+                    case 8->summary+="u=";
+                    case 9->summary+="delta=";
                 }
                 summary += DF4.format(various_amounts.get(i));
                 i++;
@@ -834,6 +788,56 @@ public class Alg1 extends Thread{
             }
         }
     }
+
+
+
+
+    public static void displaySettings(){
+        String s = "";
+        if(experiment_series && experiment_number == 0){ // if at start of series
+            s += "Experiment series ("+desc+") varying "+varying_parameter+" by "+variation+ " between " +
+                    num_experiments+" experiments: ";
+        } else if(!experiment_series){
+            s += "Experiment: ";
+        }
+        s+=game;
+        s+=", "+runs+" runs";
+        s+=", "+gens+" gens";
+        s+=", "+rows+" rows";
+        s+=", EWAE="+EWAE;
+        s+=", EPR="+EPR;
+        s+=", ROC="+ROC;
+        s+=", leeway="+leeway;
+        s+=", "+Player.getNeighbourhoodType()+" neigh";
+        s+=", "+selection_method+" sel";
+        switch(selection_method){
+            case"variable"->s+=", w="+w;
+        }
+        s+=", PPM="+Player.getPPM();
+        switch(Player.getPPM()){
+            case"avg score"->s+=", ASD="+Player.getASD();
+        }
+        s+=", "+evolution_method+" evo";
+        switch(evolution_method){
+            case"approach"->s+=", approach noise="+approach_noise;
+        }
+        switch(mutation_method){
+            case"local","global"->{
+                s+=", "+mutation_method+" mut";
+                s+=", u="+u;
+                switch(mutation_method){
+                    case"local"->s+=", delta="+delta;
+                }
+            }
+        }
+        s+=":"; // signals that there are no more settings left
+        System.out.println(s);
+    }
+
+
+
+
+
 
 
 
