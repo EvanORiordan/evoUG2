@@ -554,59 +554,55 @@ public class Alg1 extends Thread{
 
 
 
-        // write results and settings to a .csv data file.
+        // write experiment data (results and settings) to a .csv data file.
         try{
             String filename = data_filename_prefix + "Data.csv";
-
-            // write column headings
-            if(experiment_number == 0){
+            if(experiment_number == 0){ // write column headings
                 fw = new FileWriter(filename, false);
-                fw.append("experiment");
+                fw.append("exp num");
                 fw.append(",mean avg p");
                 fw.append(",avg p SD");
                 fw.append(",runs");
                 fw.append(",gens");
-                fw.append(",neighbourhood");
-                fw.append(",N");
+//                fw.append(",neighbourhood");
+//                fw.append(",N");
                 fw.append(",EWAE");
                 fw.append(",EPR");
                 fw.append(",ROC");
                 fw.append(",leeway");
-                fw.append(",selection");
-                fw.append(",w");
-                fw.append(",evolution");
-                fw.append(",approach noise");
+//                fw.append(",selection");
+//                fw.append(",w");
+//                fw.append(",evolution");
+//                fw.append(",approach noise");
                 fw.append(",mutation");
                 fw.append(",u");
                 fw.append(",delta");
             } else {
                 fw = new FileWriter(filename, true);
             }
-
-            // write row data
-            fw.append("\n" + experiment_number);
+            fw.append("\n" + experiment_number); // write row data
             fw.append("," + DF4.format(mean_avg_p_of_experiment));
             fw.append("," + DF4.format(sd_avg_p_of_experiment));
             fw.append("," + runs);
             fw.append("," + gens);
-            fw.append("," + Player.getNeighbourhoodType());
-            fw.append("," + N);
+//            fw.append("," + Player.getNeighbourhoodType());
+//            fw.append("," + N);
             fw.append("," + EWAE);
             fw.append("," + EPR);
             fw.append("," + ROC);
-            fw.append("," + leeway);
-            fw.append("," + selection_method);
-            fw.append("," + DF4.format(w));
-            fw.append("," + evolution_method);
-            fw.append("," + DF4.format(approach_noise));
+            fw.append("," + DF4.format(leeway));
+//            fw.append("," + selection_method);
+//            fw.append("," + DF4.format(w));
+//            fw.append("," + evolution_method);
+//            fw.append("," + DF4.format(approach_noise));
             fw.append("," + mutation_method);
             fw.append("," + DF4.format(u));
             fw.append("," + DF4.format(delta));
-
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
         }
+
 
         experiment_number++; // move on to the next experiment in the series
     }
@@ -643,7 +639,7 @@ public class Alg1 extends Thread{
 
             // helps user keep track of the current value of the varying parameter
             System.out.println("\n===================\n" +
-                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+various_amounts.get(i)+".");
+                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
 
             experiment(); // run an experiment
             switch(varying_parameter_index){ // change the value of the varying parameter
@@ -809,18 +805,18 @@ public class Alg1 extends Thread{
         s+=", ROC="+ROC;
         s+=", leeway="+leeway;
         s+=", "+Player.getNeighbourhoodType()+" neigh";
-        s+=", "+selection_method+" sel";
-        switch(selection_method){
-            case"variable"->s+=", w="+w;
-        }
+//        s+=", "+selection_method+" sel";
+//        switch(selection_method){
+//            case"variable"->s+=", w="+w;
+//        }
         s+=", PPM="+Player.getPPM();
         switch(Player.getPPM()){
             case"avg score"->s+=", ASD="+Player.getASD();
         }
-        s+=", "+evolution_method+" evo";
-        switch(evolution_method){
-            case"approach"->s+=", approach noise="+approach_noise;
-        }
+//        s+=", "+evolution_method+" evo";
+//        switch(evolution_method){
+//            case"approach"->s+=", approach noise="+approach_noise;
+//        }
         switch(mutation_method){
             case"local","global"->{
                 s+=", "+mutation_method+" mut";
