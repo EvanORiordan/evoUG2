@@ -74,6 +74,7 @@ public class Alg1 extends Thread{
                     , "EPR" //3
                     , "ROC" //4
                     , "leeway" //5
+                    , "MLB" // 10
                     , "sel noise" //6
                     , "evo noise" //7
                     , "u" //8
@@ -98,9 +99,10 @@ public class Alg1 extends Thread{
 
     // EWL parameters
     static String EWAE; // edge weight adjustment equation
-    static int EPR = 1; // how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
+    static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
     static double leeway = 0.0; // leeway affecting EWL
+    static double MLB = 0.0; // MLB: my_leeway bound
 
     // evolution parameters
     static String evolution_method;
@@ -144,13 +146,55 @@ public class Alg1 extends Thread{
         System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
         System.out.printf("===================================================================================================================================================================================================================================================================%n");
-        System.out.printf("%-6s | %-4s | %-6s | %-9s | %-4s | %-4s | %-3s | %-6s | %-6s |" +
-                        " %-10s | %-9s | %-7s | %-9s | %-5s | %-8s | %-9s |" +
-                        " %-9s | %-3s | %-8s | %-9s | %-6s | %-6s | %-6s |" +
+        System.out.printf("%-6s |" +//config
+                        " %-4s |" +//game
+                        " %-6s |" +//runs
+                        " %-9s |" +//gens
+                        " %-4s |" +//rows
+                        " %-4s |" +//EWAE
+                        " %-3s |" +//EPR
+                        " %-6s |" +//ROC
+                        " %-6s |" +//leeway
+                        " %-6s" +//MLB
+                        " %-10s |" +//varying
+                        " %-9s |" +//variation
+                        " %-7s |" +//num exp
+                        " %-9s |" +//data gen
+                        " %-5s |" +//neigh
+                        " %-8s |" +//sel
+                        " %-9s |" +//sel noise
+                        " %-9s |" +//PPM
+                        " %-3s |" +//ASD
+                        " %-8s |" +//evo
+                        " %-9s |" +//evo noise
+                        " %-6s |" +//mut
+                        " %-6s |" +//u
+                        " %-6s |" +//delta
                         " desc%n" // ensure desc is the last column
-                ,"config","game","runs","gens","rows","EWAE","EPR","ROC","leeway"
-                ,"varying","variation","num exp","data gen","neigh","sel","sel noise"
-                ,"PPM","ASD","evo","evo noise","mut","u","delta");
+                ,"config"
+                ,"game"
+                ,"runs"
+                ,"gens"
+                ,"rows"
+                ,"EWAE"
+                ,"EPR"
+                ,"ROC"
+                ,"leeway"
+                ,"MLB"
+                ,"varying"
+                ,"variation"
+                ,"num exp"
+                ,"data gen"
+                ,"neigh"
+                ,"sel"
+                ,"sel noise"
+                ,"PPM"
+                ,"ASD"
+                ,"evo"
+                ,"evo noise"
+                ,"mut"
+                ,"u"
+                ,"delta");
         System.out.printf("===================================================================================================================================================================================================================================================================%n");
 
 
@@ -171,6 +215,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-3s ", settings[config_index++]); //EPR
             System.out.printf("| %-6s ", settings[config_index++]); //ROC
             System.out.printf("| %-6s ", settings[config_index++]); //leeway
+            System.out.printf("| %-6s ", settings[config_index++]); //MLB
             System.out.printf("| %-10s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
@@ -236,9 +281,10 @@ public class Alg1 extends Thread{
                 EPR=Integer.parseInt(settings[config_index+1]);
                 ROC=Double.parseDouble(settings[config_index+2]);
                 leeway=Double.parseDouble(settings[config_index+3]);
+                MLB=Double.parseDouble(settings[config_index+4]);
             }
         }
-        config_index+=4;
+        config_index+=5;
 
 
 
@@ -252,6 +298,7 @@ public class Alg1 extends Thread{
                 case"EPR"->varying_parameter_index=3;
                 case"ROC"->varying_parameter_index=4;
                 case"leeway"->varying_parameter_index=5;
+                case"MLB"->varying_parameter_index=10;
                 case"sel noise"->varying_parameter_index=6;
                 case"evo noise"->varying_parameter_index=7;
                 case"u"->varying_parameter_index=8;
@@ -365,22 +412,22 @@ public class Alg1 extends Thread{
         // WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the
         // strategies file currently only stores p values.
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
-            try{
-                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-                String line;
-                int i=0;
-                while((line = br.readLine()) != null) {
-                    String[] row_contents = line.split(",");
-                    ArrayList<Player> row = new ArrayList<>();
-                    for(int j=0;j<row_contents.length;j++){
-                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
-                    }
-                    i++;
-                    grid.add(row);
-                }
-            } catch(IOException e){
-                e.printStackTrace();
-            }
+//            try{
+//                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+//                String line;
+//                int i=0;
+//                while((line = br.readLine()) != null) {
+//                    String[] row_contents = line.split(",");
+//                    ArrayList<Player> row = new ArrayList<>();
+//                    for(int j=0;j<row_contents.length;j++){
+//                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
+//                    }
+//                    i++;
+//                    grid.add(row);
+//                }
+//            } catch(IOException e){
+//                e.printStackTrace();
+//            }
         }
 
         else { // user wants to randomly generate a population
@@ -388,12 +435,13 @@ public class Alg1 extends Thread{
                 ArrayList<Player> row = new ArrayList<>();
                 for (int j = 0; j < columns; j++) {
                     switch(game){
-                        case"UG"->row.add(new Player(
-                                ThreadLocalRandom.current().nextDouble(),
-                                ThreadLocalRandom.current().nextDouble()));
+//                        case"UG"->row.add(new Player(
+//                                ThreadLocalRandom.current().nextDouble(),
+//                                ThreadLocalRandom.current().nextDouble());
                         case"DG"->row.add(new Player(
                                 ThreadLocalRandom.current().nextDouble(),
-                                0.0));
+                                0.0,
+                                ThreadLocalRandom.current().nextDouble(-MLB,MLB)));
                     }
                 }
                 grid.add(row);
@@ -570,6 +618,7 @@ public class Alg1 extends Thread{
                 fw.append(",EPR");
                 fw.append(",ROC");
                 fw.append(",leeway");
+                fw.append(",MLB");
 //                fw.append(",selection");
 //                fw.append(",w");
 //                fw.append(",evolution");
@@ -591,6 +640,7 @@ public class Alg1 extends Thread{
             fw.append("," + EPR);
             fw.append("," + ROC);
             fw.append("," + DF4.format(leeway));
+            fw.append("," + DF4.format(MLB));
 //            fw.append("," + selection_method);
 //            fw.append("," + DF4.format(w));
 //            fw.append("," + evolution_method);
@@ -628,6 +678,7 @@ public class Alg1 extends Thread{
             case 3->various_amounts.add((double)EPR);
             case 4->various_amounts.add(ROC);
             case 5->various_amounts.add(leeway);
+            case 10->various_amounts.add(MLB);
             case 6->various_amounts.add(w);
             case 7->various_amounts.add(approach_noise);
             case 8->various_amounts.add(u);
@@ -666,6 +717,10 @@ public class Alg1 extends Thread{
                 case 5->{
                     leeway+=variation;
                     various_amounts.add(leeway);
+                }
+                case 10->{
+                    MLB+=variation;
+                    various_amounts.add(MLB);
                 }
                 case 6->{
                     w+=variation;
@@ -710,6 +765,7 @@ public class Alg1 extends Thread{
                     case 3->summary+="EPR=";
                     case 4->summary+="ROC=";
                     case 5->summary+="leeway=";
+                    case 10->summary+="MLB=";
                     case 6->summary+="sel noise=";
                     case 7->summary+="evo noise=";
                     case 8->summary+="u=";
@@ -804,6 +860,7 @@ public class Alg1 extends Thread{
         s+=", EPR="+EPR;
         s+=", ROC="+ROC;
         s+=", leeway="+leeway;
+        s+=", MLB="+MLB;
         s+=", "+Player.getNeighbourhoodType()+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){

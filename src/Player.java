@@ -31,9 +31,6 @@ public class Player {
     public static void setGame(String s){game=s;}
 
 
-
-
-
     private double p; // proposal value; real num within [0,1]
     public double getP(){
         return p;
@@ -68,19 +65,24 @@ public class Player {
         setP(p);
         setQ(q);
     }
-
-
+    private double my_leeway; // leeway field
     /**
      * Constructor method for instantiating a Player object.<br>
-     * Since this is the DG, make sure to pass 0.0 to q.
+     * Since this is the DG, make sure to pass 0.0 to q.<br>
+     * 28/2/24: Introduced leeway parameter.
      */
-    public Player(double p, double q){
+    public Player(double p, double q, double my_leeway){
         id=count++; // assign this player's id
         this.p=p; // assign p value
         this.q=q; // assign q value
         old_p=p;
         old_q=q;
+
+        this.my_leeway=my_leeway; // assign my_leeway value
     }
+
+
+
 
 
 
@@ -274,7 +276,7 @@ public class Player {
     public void EWL(String EWAE, double ROC, double leeway){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            if(neighbour.p + leeway > p){ // EWL condition with leeway
+            if(neighbour.p + leeway + my_leeway > p){ // EWL condition with leeway
                 switch(EWAE){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
@@ -283,7 +285,7 @@ public class Player {
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p + leeway < p){
+            } else if(neighbour.p + leeway + my_leeway < p){
                 switch(EWAE){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
