@@ -102,7 +102,7 @@ public class Alg1 extends Thread{
     static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
     static double leeway = 0.0; // leeway affecting EWL
-    static double MLB = 0.0; // MLB: my_leeway bound
+    static double MLB = 0.0; // MLB: my_leeway_bound
 
     // evolution parameters
     static String evolution_method;
@@ -441,7 +441,7 @@ public class Alg1 extends Thread{
                         case"DG"->row.add(new Player(
                                 ThreadLocalRandom.current().nextDouble(),
                                 0.0,
-                                ThreadLocalRandom.current().nextDouble(-MLB,MLB)));
+                                MLB));
                     }
                 }
                 grid.add(row);

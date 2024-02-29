@@ -1,2 +1,3 @@
 game,runs,gens,rows,EWAE,EPR,ROC,leeway,MLB,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,50,10000,30,AD,1,0.0,0.0,0.1,EPR,1,10,,VN,WRW,,score,,copy,,,,,EPR-varying leeway=0.0 series
+DG,50,10000,30,AD,5,0.0,0.0,0.0,leeway,0.04,10,,VN,WRW,,score,,copy,,,,,leeway-varying series
+DG,50,10000,30,AD,5,0.0,0.0,0.0,MLB,0.04,10,,VN,WRW,,score,,copy,,,,,MLB-varying series

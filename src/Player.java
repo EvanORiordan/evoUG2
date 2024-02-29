@@ -69,16 +69,21 @@ public class Player {
     /**
      * Constructor method for instantiating a Player object.<br>
      * Since this is the DG, make sure to pass 0.0 to q.<br>
-     * 28/2/24: Introduced leeway parameter.
+     * 28/2/24: Introduced MLB (my_leeway_bound) parameter.
      */
-    public Player(double p, double q, double my_leeway){
+    public Player(double p, double q, double MLB){
         id=count++; // assign this player's id
         this.p=p; // assign p value
         this.q=q; // assign q value
         old_p=p;
         old_q=q;
 
-        this.my_leeway=my_leeway; // assign my_leeway value
+        // assign my_leeway value
+        if(MLB == 0){
+            my_leeway = 0;
+        } else {
+            my_leeway = ThreadLocalRandom.current().nextDouble(-MLB,MLB);
+        }
     }
 
 
