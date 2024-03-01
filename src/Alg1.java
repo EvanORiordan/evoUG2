@@ -155,7 +155,7 @@ public class Alg1 extends Thread{
                         " %-3s |" +//EPR
                         " %-6s |" +//ROC
                         " %-6s |" +//leeway
-                        " %-6s" +//MLB
+                        " %-6s |" +//MLB
                         " %-10s |" +//varying
                         " %-9s |" +//variation
                         " %-7s |" +//num exp

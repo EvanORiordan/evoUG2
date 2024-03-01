@@ -1,3 +1,3 @@
 game,runs,gens,rows,EWAE,EPR,ROC,leeway,MLB,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,50,10000,30,AD,5,0.0,0.0,0.0,leeway,0.04,10,,VN,WRW,,score,,copy,,,,,leeway-varying series
-DG,50,10000,30,AD,5,0.0,0.0,0.0,MLB,0.04,10,,VN,WRW,,score,,copy,,,,,MLB-varying series
+DG,50,10000,30,AD,1,0.0,0.0,0.0,u,0.02,20,,VN,WRW,,score,,copy,,local,0.0,0.0,u-varying series
+DG,50,10000,30,AD,1,0.0,0.0,0.0,delta,0.02,19,,VN,WRW,,score,,copy,,local,0.1,0.02,delta-varying series

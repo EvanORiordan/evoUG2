@@ -73,8 +73,8 @@ public class Player {
      */
     public Player(double p, double q, double MLB){
         id=count++; // assign this player's id
-        this.p=p; // assign p value
-        this.q=q; // assign q value
+        setP(p); // assign p value
+        setQ(q); // assign q value
         old_p=p;
         old_q=q;
 
