@@ -98,18 +98,18 @@ public class Player {
         prize=d;
     }
 
-    private ArrayList<Player> neighbourhood; // this player's neighbourhood
+    private ArrayList<Player> neighbourhood = new ArrayList<>(); // this player's neighbourhood
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }
 
-    private static String neighbourhood_type; // neighbourhood type of this player
-    public static String getNeighbourhoodType(){
-        return neighbourhood_type;
-    }
-    public static void setNeighbourhoodType(String s){
-        neighbourhood_type=s;
-    }
+//    private static String neighbourhood_type; // neighbourhood type of this player
+//    public static String getNeighbourhoodType(){
+//        return neighbourhood_type;
+//    }
+//    public static void setNeighbourhoodType(String s){
+//        neighbourhood_type=s;
+//    }
 
     /**
      * Stores edge weights belonging to the player.
@@ -231,37 +231,6 @@ public class Player {
 
 
     /**
-     * Assigns neighbours to the player in a 2D square lattice grid with respect
-     * to the von Neumann or the Moore neighbourhood type.
-     * @param grid is the grid/population of players.
-     * @param row_position is the x coordinate of the player.
-     * @param column_position is the y coordinate of the player.
-     */
-    public void findNeighbours2D(ArrayList<ArrayList<Player>> grid, int row_position, int column_position){
-        neighbourhood = new ArrayList<>();
-        int a=row_position;
-        int b=column_position;
-        int c=grid.size();
-        int d=grid.get(0).size();
-        int up=((a-1)%c+c)%c; // go up one node (on the square grid)
-        int down=((a+1)%c+c)%c; // down
-        int left=((b-1)%d+d)%d; // left
-        int right=((b+1)%d+d)%d; // right
-        neighbourhood.add(grid.get(up).get((b%d+d)%d));
-        neighbourhood.add(grid.get(down).get((b%d+d)%d));
-        neighbourhood.add(grid.get((a%c+c)%c).get(left));
-        neighbourhood.add(grid.get((a%c+c)%c).get(right));
-        if(neighbourhood_type.equals("M")){
-            neighbourhood.add(grid.get(up).get(left)); // up-left
-            neighbourhood.add(grid.get(up).get(right)); // up-right
-            neighbourhood.add(grid.get(down).get(left)); // down-left
-            neighbourhood.add(grid.get(down).get(right)); // down-right
-        }
-    }
-
-
-
-    /**
      * Initialise the player's edge weights.
      */
     public void initialiseEdgeWeights() {
@@ -270,7 +239,6 @@ public class Player {
             edge_weights[i] = 1.0; // initialise edge weight at 1.0
         }
     }
-
 
     /**
      * Edge weight learning method.

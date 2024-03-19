@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.reflect.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,12 +20,13 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Alg1 extends Thread{
     static String game; // what game is being played
-    static int rows; // how many rows in the square grid.
-    static int columns; // how many rows in the square grid.
+    static int rows; // how many rows in the square grid
+    static int columns; // how many rows in the square grid
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // contains the population.
+    static String neighbourhood_type;
+    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice grid containing the population.
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates which generation is currently running.
@@ -319,7 +321,8 @@ public class Alg1 extends Thread{
         config_index++;
 
         // neigh
-        Player.setNeighbourhoodType(settings[config_index]);
+//        Player.setNeighbourhoodType(settings[config_index]);
+        neighbourhood_type = settings[config_index];
         config_index++;
 
         //sel,sel noise,PPM,ASD
@@ -460,7 +463,13 @@ public class Alg1 extends Thread{
         // initialise neighbourhoods
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
-                grid.get(i).get(j).findNeighbours2D(grid, i, j);
+                Player player = grid.get(i).get(j);
+
+                switch(neighbourhood_type){
+                    case"VN","M"->assignAdjacentNeighbours(player, i, j);
+                    case"random"->assignRandomNeighbours(player, 4);
+                }
+
                 grid.get(i).get(j).initialiseEdgeWeights();
             }
         }
@@ -787,6 +796,142 @@ public class Alg1 extends Thread{
 
 
 
+//    public void findNeighbours2D(Player player, int row_position, int col_position){
+//        int a=row_position;
+//        int b=col_position;
+//        int c=grid.size();
+//        int d=grid.get(0).size();
+//        int up=((a-1)%c+c)%c; // go up one node (on the square grid)
+//        int down=((a+1)%c+c)%c; // down
+//        int left=((b-1)%d+d)%d; // left
+//        int right=((b+1)%d+d)%d; // right
+//
+//        player.getNeighbourhood().add(grid.get(up).get((b%d+d)%d));
+//        player.getNeighbourhood().add(grid.get(down).get((b%d+d)%d));
+//        player.getNeighbourhood().add(grid.get((a%c+c)%c).get(left));
+//        player.getNeighbourhood().add(grid.get((a%c+c)%c).get(right));
+//
+//        if(neighbourhood_type.equals("M")){
+//            player.getNeighbourhood().add(grid.get(up).get(left)); // up-left
+//            player.getNeighbourhood().add(grid.get(up).get(right)); // up-right
+//            player.getNeighbourhood().add(grid.get(down).get(left)); // down-left
+//            player.getNeighbourhood().add(grid.get(down).get(right)); // down-right
+//        }
+//    }
+
+
+    /**
+     * Assigns adjacent neighbours to the player in a 2D square lattice grid with respect
+     * to the von Neumann or Moore neighbourhood type.
+     * @param player is the player having their neighbourhood assigned.
+     * @param y is the y coordinate of the player which represents the row they are in.
+     * @param x is the x coordinate of the player which represents the column they are in.
+     */
+    public void assignAdjacentNeighbours(Player player, int y, int x){
+        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+
+        int row_col_length = grid.size();
+
+        int x_plus_one = (((x + 1) % row_col_length) + row_col_length) % row_col_length;
+        int x_minus_one = (((x - 1) % row_col_length) + row_col_length) % row_col_length;
+        int y_plus_one = (((y + 1) % row_col_length) + row_col_length) % row_col_length;
+        int y_minus_one = (((y - 1) % row_col_length) + row_col_length) % row_col_length;
+
+        neighbourhood.add(grid.get(y).get(x_plus_one)); // neighbour at x+1 i.e. to the right
+        neighbourhood.add(grid.get(y).get((x_minus_one))); // neighbour at x-1 i.e. to the left
+        neighbourhood.add(grid.get(y_plus_one).get(x)); // neighbour at y+1 i.e. above
+        neighbourhood.add(grid.get(y_minus_one).get(x)); // neighbour at y-1 i.e. below
+
+        if(neighbourhood_type.equals("M")){
+            neighbourhood.add(grid.get(y_plus_one).get(x_plus_one)); // neighbour at (x+1,y+1)
+            neighbourhood.add(grid.get(y_minus_one).get(x_plus_one)); // neighbour at (x+1,y-1)
+            neighbourhood.add(grid.get(y_minus_one).get(x_minus_one)); // neighbour at (x-1,y-1)
+            neighbourhood.add(grid.get(y_plus_one).get(x_minus_one)); // neighbour at (x-1,y+1)
+        }
+    }
+
+
+
+
+    public void assignRandomNeighbours(Player player, int size){
+        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+
+
+//        while(neighbourhood.size() != size){
+//            int a = ThreadLocalRandom.current().nextInt(0,rows);
+//            int b = ThreadLocalRandom.current().nextInt(0,rows);
+//            Player neighbour = grid.get(a).get(b);
+//            int id = neighbour.getId();
+//            boolean add_neighbour = true;
+//            if(id != player.getId()){
+//                for(int i=0;i<player.getNeighbourhood().size();i++){
+//                    if()
+//                }
+//            }
+//            if(add_neighbour){
+//                player.getNeighbourhood().add(neighbour);
+//            }
+//        }
+
+
+
+
+//        int row_positions[] = new int[4];
+//        ArrayList<Integer> row_positions = new ArrayList<>();
+//        int i = 0;
+//        row_positions.add(ThreadLocalRandom.current().nextInt(0,rows));
+//        while(i < 4){
+//            boolean bool = true;
+//            for(int j=1;j<row_positions.size();j++){
+//                if(row_positions.get(i) == row_positions.get(j)){
+////                    row_positions.get(i) = ThreadLocalRandom.current().nextInt(0,rows);
+//                    int x = 1;
+//                    row_positions.get(i) = x;
+//                    bool = false;
+//                    break;
+//                }
+//            }
+//            if(bool){
+//                i++;
+//            }
+//        }
+//
+//
+//
+//
+//        int col_positions[] = new int[4];
+
+
+
+
+
+
+
+        int row_positions[] = new int[4];
+        int col_positions[] = new int[4];
+        for(int i=0;i<row_positions.length;i++){
+            row_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
+            col_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
+        }
+        for(int i=0;i<size;i++){
+            while(true){
+                Player new_neighbour = grid.get(row_positions[i]).get(col_positions[i]);
+                int new_neighbour_id = new_neighbour.getId();
+                if(new_neighbour_id != player.getId()){
+                    for(int j=0;j<size;j++){
+                        if(new_neighbour_id != neighbourhood.get(j).getId()){
+                            neighbourhood.add(new_neighbour);
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
+
+
 
 
 
@@ -861,7 +1006,7 @@ public class Alg1 extends Thread{
         s+=", ROC="+ROC;
         s+=", leeway="+leeway;
         s+=", MLB="+MLB;
-        s+=", "+Player.getNeighbourhoodType()+" neigh";
+        s+=", "+neighbourhood_type+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){
 //            case"variable"->s+=", w="+w;
