@@ -1,11 +1,8 @@
 import java.io.*;
-import java.lang.reflect.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -467,12 +464,16 @@ public class Alg1 extends Thread{
 
                 switch(neighbourhood_type){
                     case"VN","M"->assignAdjacentNeighbours(player, i, j);
-                    case"random"->assignRandomNeighbours(player, 4);
+                    case"random"->assignRandomNeighbours(player, 3);
                 }
 
                 grid.get(i).get(j).initialiseEdgeWeights();
             }
         }
+
+
+        String str = grid.get(0).get(0).toString();
+
 
 
         // players begin playing the game
@@ -498,6 +499,7 @@ public class Alg1 extends Thread{
                     }
                 }
             }
+
 
 
             // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
@@ -907,25 +909,61 @@ public class Alg1 extends Thread{
 
 
 
-        int row_positions[] = new int[4];
-        int col_positions[] = new int[4];
-        for(int i=0;i<row_positions.length;i++){
-            row_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
-            col_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
+//        int row_positions[] = new int[4];
+//        int col_positions[] = new int[4];
+//        for(int i=0;i<row_positions.length;i++){
+//            row_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
+//            col_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
+//        }
+//        for(int i=0;i<size;i++){
+//            while(true){
+//                Player new_neighbour = grid.get(row_positions[i]).get(col_positions[i]);
+//                int new_neighbour_id = new_neighbour.getId();
+//                if(new_neighbour_id != player.getId()){
+//                    for(int j=0;j<size;j++){
+//                        if(new_neighbour_id != neighbourhood.get(j).getId()){
+//                            neighbourhood.add(new_neighbour);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+
+
+//        Set<Integer> rand_ints1 = new HashSet<>();
+//        Set<Integer> rand_ints2 = new HashSet<>();
+//        while(rand_ints1.size() < size){
+//            rand_ints1.add(ThreadLocalRandom.current().nextInt(0, rows));
+//        }
+//        while(rand_ints2.size() < size){
+//            rand_ints2.add(ThreadLocalRandom.current().nextInt(0, rows));
+//        }
+//        List<Integer> row_positions = new ArrayList<>(rand_ints1);
+//        List<Integer> col_positions = new ArrayList<>(rand_ints2);
+//        for(int i=0;i<size;i++){
+//            neighbourhood.add(grid.get(col_positions.get(i)).get(row_positions.get(i)));
+//        }
+
+
+
+
+
+        Set<Integer> rand_ints = new HashSet<>();
+        while(rand_ints.size() < size){
+            rand_ints.add(ThreadLocalRandom.current().nextInt(N));
         }
-        for(int i=0;i<size;i++){
-            while(true){
-                Player new_neighbour = grid.get(row_positions[i]).get(col_positions[i]);
-                int new_neighbour_id = new_neighbour.getId();
-                if(new_neighbour_id != player.getId()){
-                    for(int j=0;j<size;j++){
-                        if(new_neighbour_id != neighbourhood.get(j).getId()){
-                            neighbourhood.add(new_neighbour);
-                        }
-                    }
-                }
-            }
+        List<Integer> positions = new ArrayList<>(rand_ints); // position or id of new neighbours
+        for(int position: positions){
+            int col = position / rows;
+            int row = position % rows;
+            neighbourhood.add(grid.get(col).get(row));
+//            grid.get(col).get(row).getNeighbourhood().add(player);
         }
+
+
+
+
 
 
     }
