@@ -1,2 +1,2 @@
-game,runs,gens,rows,EWAE,EPR,ROC,leeway,MLB,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,50,10000,5,AD,1,0.0,0.0,0.0,,,,,random,WRW,,score,,copy,,local,0.0,0.0,test
+game,runs,gens,rows,EWT,EWAE,EPR,ROC,leeway,MLB,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
+DG,50,10000,10,2,AD,1,0.0,0.0,0.0,,,,,VN,WRW,,score,,copy,,local,0.0,0.0,test

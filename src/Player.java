@@ -93,9 +93,9 @@ public class Player {
 
 
 
-    private static double prize; // the prize amount being split in an interaction
-    public static void setPrize(double d){
-        prize=d;
+    private static double gross_prize; // the gross prize available in an interaction
+    public static void setGrossPrize(double d){
+        gross_prize=d;
     }
 
     private ArrayList<Player> neighbourhood = new ArrayList<>(); // this player's neighbourhood
@@ -124,16 +124,14 @@ public class Player {
     }
 
     /**
-     * Play the UG with neighbours.<br>
-     * Game is played with respect to edge weights if EWL parameter is set.<br>
-     * UG with EWL works as follows:
-     * For each neighbour y in x's neighbourhood, x proposes/dictates to them if the weight of y's
+     * Play the UG where for each neighbour y in player x's neighbourhood, x proposes/dictates
+     * to them if the weight of y's
      * edge to x, which represents y's likelihood of receiving from x, is greater than a
      * randomly generated double between 0 and 1.<br>
      * Note: When the EW is 1.0, the game always occurs. Since EWs initialise at 1.0,
      * if EWL is not occurring, games should and do always take place.
      */
-    public void playUG(){
+    public void playUG1(){
         for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
             Player neighbour = neighbourhood.get(i);
             for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
@@ -142,19 +140,27 @@ public class Player {
                     double edge_weight = neighbour.edge_weights[j];
                     double random_double = ThreadLocalRandom.current().nextDouble();
                     if(edge_weight > random_double){ // x has EW% probability of success
-                        if(p >= neighbour.q){
-                            updateStats(prize - (prize * p), true);
-                            neighbour.updateStats(prize * p, false);
-                        }
-//                        else {
-//                            System.out.println("proposal rejected!");
-//                        }
+                        UG(gross_prize, neighbour);
                     }
-                    else{
-                        updateStats(0,true);
-                        neighbour.updateStats(0,false);
+                    else{ // if interaction did not successfully occur, avg score decreases.
+                        unsuccessfulInteraction(neighbour);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
-                    }
+
+    /**
+     * UG where edge weight is factored into payoff calculation.
+     */
+    public void playUG2(){
+        for(Player neighbour: neighbourhood){
+            for(int j=0;j<neighbour.neighbourhood.size();j++){
+                Player neighbours_neighbour = neighbour.neighbourhood.get(j);
+                if(neighbours_neighbour.id == id) {
+                    UG(neighbour.edge_weights[j] * gross_prize, neighbour);
                     break;
                 }
             }
@@ -165,31 +171,73 @@ public class Player {
 
 
 
+
+
+
+
+
+
     /**
-     * NI: how many interactions the player had (within some timeframe e.g. within a gen).<br>
-     * NSI: how many successful interactions the player had. A successful interaction is defined as an
-     * interaction where payoff was received.<br>
+     * Standard UG where the player proposes to the responder.
+     * @param responder
+     */
+    public void UG(double net_prize, Player responder){
+        if(p >= responder.q){
+            successfulInteraction(net_prize, responder);
+        } else {
+            unsuccessfulInteraction(responder);
+        }
+    }
+
+    /**
+     * Method for updating player statistics after a successful interaction.
+     * @param responder
+     */
+    public void successfulInteraction(double net_prize, Player responder){
+        updateStats(net_prize - (net_prize * p), true);
+        responder.updateStats(net_prize * p, false);
+    }
+
+    /**
+     * Method for updating player statistics after an unsuccessful interaction.
+     * @param responder
+     */
+    public void unsuccessfulInteraction(Player responder){
+        updateStats(0, true);
+        responder.updateStats(0, false);
+    }
+
+
+
+
+
+
+
+    /**
+     * NI: how many interactions the player had this gen.<br>
+     * NSI: how many successful interactions the player had. A successful interaction is an
+     * interaction where the game was played and payoff was earned.<br>
      * NSD: how many successful interaction the player had as dictator.<br>
      * NSR: how many successful interaction the player had as recipient.<br>
      */
-    private int num_interactions = 0;               // NI
-    private int num_successful_interactions = 0;    // NSI
-    private int num_successful_dictations = 0;      // NSD
-    private int num_successful_receptions = 0;      // NSR
-    public void setNumInteractions(int i){
-        num_interactions=i;
+    private int NI = 0;  // num interaction
+    private int NSI = 0; // num successful interactions
+    private int NSP = 0; // num successful proposals
+    private int NSR = 0; // num successful receptions
+    public void setNI(int i){
+        NI=i;
     }
-    public int getNumSuccessfulInteractions(){
-        return num_successful_interactions;
+    public int getNSI(){
+        return NSI;
     }
-    public void setNumSuccessfulInteractions(int i){
-        num_successful_interactions=i;
+    public void setNSI(int i){
+        NSI=i;
     }
-    public void setNumSuccessfulDictations(int i){
-        num_successful_dictations=i;
+    public void setNSP(int i){
+        NSP=i;
     }
-    public void setNumSuccessfulReceptions(int i){
-        num_successful_receptions=i;
+    public void setNSR(int i){
+        NSR=i;
     }
     private double score; // total accumulated payoff; fitness
     public void setScore(double score){
@@ -203,25 +251,23 @@ public class Player {
     public static String getPPM(){return PPM;}
     public static void setPPM(String s){PPM=s;}
 
-
     /**
      * Update the status of the player after having played, including score and average score.
      */
-    public void updateStats(double payoff, boolean dictator){
+    public void updateStats(double payoff, boolean proposer){
         score+=payoff;
-        num_interactions++;
+        NI++;
         if(payoff > 0){ // check if the interaction was successful i.e. if any payoff was received.
-            num_successful_interactions++;
-            if(dictator){
-                num_successful_dictations++;
+            NSI++;
+            if(proposer){
+                NSP++;
             } else{
-                num_successful_receptions++;
+                NSR++;
             }
         }
-
         switch(ASD){
-            case"NI"->average_score=score/num_interactions;
-            case"NSI"->average_score=score/num_successful_interactions;
+            case"NI"->average_score = score / NI;
+            case"NSI"->average_score = score / NSI;
         }
     }
 
@@ -309,10 +355,10 @@ public class Player {
         player_desc +="]";
 
         // document interaction stats
-        player_desc += " NI="+ num_interactions;
-        player_desc += " NSI="+ num_successful_interactions;
-        player_desc += " NSD="+ num_successful_dictations;
-        player_desc += " NSR="+ num_successful_receptions;
+        player_desc += " NI="+ NI;
+        player_desc += " NSI="+ NSI;
+        player_desc += " NSD="+ NSP;
+        player_desc += " NSR="+ NSR;
 
         return player_desc;
     }

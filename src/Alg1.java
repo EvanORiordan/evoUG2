@@ -97,6 +97,7 @@ public class Alg1 extends Thread{
 
 
     // EWL parameters
+    static String EWT; // edge weight type
     static String EWAE; // edge weight adjustment equation
     static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
@@ -150,6 +151,7 @@ public class Alg1 extends Thread{
                         " %-6s |" +//runs
                         " %-9s |" +//gens
                         " %-4s |" +//rows
+                        " %-3s |" +//EWT
                         " %-4s |" +//EWAE
                         " %-3s |" +//EPR
                         " %-6s |" +//ROC
@@ -175,6 +177,7 @@ public class Alg1 extends Thread{
                 ,"runs"
                 ,"gens"
                 ,"rows"
+                ,"EWT"
                 ,"EWAE"
                 ,"EPR"
                 ,"ROC"
@@ -210,6 +213,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-6s ", settings[config_index++]); //runs
             System.out.printf("| %-9s ", settings[config_index++]); //gens
             System.out.printf("| %-4s ", settings[config_index++]); //rows
+            System.out.printf("| %-3s ", settings[config_index++]); //EWT
             System.out.printf("| %-4s ", settings[config_index++]); //EWAE
             System.out.printf("| %-3s ", settings[config_index++]); //EPR
             System.out.printf("| %-6s ", settings[config_index++]); //ROC
@@ -257,35 +261,25 @@ public class Alg1 extends Thread{
         config_index = 0;
 
         // game
-        game = settings[config_index];
+        game = settings[config_index++];
         Player.setGame(game);
-        config_index++;
 
         // runs
-        runs = Integer.parseInt(settings[config_index]);
-        config_index++;
+        runs = Integer.parseInt(settings[config_index++]);
 
         // gens
-        gens = Integer.parseInt(settings[config_index]);
-        config_index++;
+        gens = Integer.parseInt(settings[config_index++]);
 
         // rows
-        rows = Integer.parseInt(settings[config_index]);
-        config_index++;
+        rows = Integer.parseInt(settings[config_index++]);
 
-        // EWAE,EPR,ROC,leeway
-        EWAE = settings[config_index];
-        switch(EWAE){
-            case"ROC","AD","EAD"->{
-                EPR=Integer.parseInt(settings[config_index+1]);
-                ROC=Double.parseDouble(settings[config_index+2]);
-                leeway=Double.parseDouble(settings[config_index+3]);
-                MLB=Double.parseDouble(settings[config_index+4]);
-            }
-        }
-        config_index+=5;
-
-
+        // EWT,EWAE,EPR,ROC,leeway
+        EWT = settings[config_index++];
+        EWAE = settings[config_index++];
+        EPR=Integer.parseInt(settings[config_index++]);
+        ROC=Double.parseDouble(settings[config_index++]);
+        leeway=Double.parseDouble(settings[config_index++]);
+        MLB=Double.parseDouble(settings[config_index++]);
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
@@ -318,9 +312,7 @@ public class Alg1 extends Thread{
         config_index++;
 
         // neigh
-//        Player.setNeighbourhoodType(settings[config_index]);
-        neighbourhood_type = settings[config_index];
-        config_index++;
+        neighbourhood_type = settings[config_index++];
 
         //sel,sel noise,PPM,ASD
         selection_method=settings[config_index];
@@ -367,7 +359,7 @@ public class Alg1 extends Thread{
 //        use_saved_pop = binaryQuestion("use saved pop? (0: no, 1: yes)");
 
 
-        Player.setPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
+        Player.setGrossPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
 
 
         // square topology by default
@@ -472,9 +464,6 @@ public class Alg1 extends Thread{
         }
 
 
-        String str = grid.get(0).get(0).toString();
-
-
 
         // players begin playing the game
         while(gen != gens) { // algorithm stops once this condition is reached
@@ -482,7 +471,14 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     switch(game){
-                        case"UG","DG"->player.playUG();
+                        case"UG","DG"->{
+                            switch(EWT){
+                                case"1"->player.playUG1(); // EW affects probability to interact
+                                case"2"->player.playUG2(); // EW affects payoff calculation
+                            }
+                        }
+
+
 //                        case"PD"->player.playPD();
 //                        case"IG"->player.playIG();
 //                        case"TG"->player.playTG();
@@ -494,9 +490,12 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    switch(EWAE){
-                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
+                    switch(EWT){
+                        case"1","2"->player.EWL(EWAE,ROC,leeway);
                     }
+//                    switch(EWAE){
+//                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
+//                    }
                 }
             }
 
@@ -1007,10 +1006,10 @@ public class Alg1 extends Thread{
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 player.setScore(0);
-                player.setNumInteractions(0);
-                player.setNumSuccessfulInteractions(0);
-                player.setNumSuccessfulDictations(0);
-                player.setNumSuccessfulReceptions(0);
+                player.setNI(0);
+                player.setNSI(0);
+                player.setNSP(0);
+                player.setNSR(0);
                 switch(game){
                     case"UG","DG"->{
                         player.setOldP(player.getP());
@@ -1259,7 +1258,7 @@ public class Alg1 extends Thread{
                     Player x = row.get(j);
 
                     // write number of successful interactions this gen.
-                    fw.append(Integer.toString(x.getNumSuccessfulInteractions()));
+                    fw.append(Integer.toString(x.getNSI()));
 
 
                     if(j+1<row.size()){
