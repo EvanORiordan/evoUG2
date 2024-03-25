@@ -14,14 +14,13 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Player {
 
     private static int count = 0; // class-wide attribute that helps assign player id
-    private final int id; // each player has a unique id
+    private final int id; // each player has a unique id i.e. position
     public int getId(){
         return id;
     }
 
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
     public static DecimalFormat getDF1() { return DF1; }
-
     private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
     public static DecimalFormat getDF4(){
         return DF4;
@@ -31,7 +30,7 @@ public class Player {
     public static void setGame(String s){game=s;}
 
 
-    private double p; // proposal value; real num within [0,1]
+    private double p; // proposal value residing within [0,1]
     public double getP(){
         return p;
     }
@@ -47,7 +46,7 @@ public class Player {
     public void setOldP(double old_p){
         this.old_p=old_p;
     }
-    private double q; // acceptance threshold value; real num within [0,1]
+    private double q; // acceptance threshold value residing within [0,1]
     public double getQ(){return q;}
     public void setQ(double q){
         this.q=q;
@@ -65,24 +64,26 @@ public class Player {
         setP(p);
         setQ(q);
     }
-    private double my_leeway; // leeway field
+    private double local_leeway; // inherent leeway of the player
     /**
      * Constructor method for instantiating a Player object.<br>
      * Since this is the DG, make sure to pass 0.0 to q.<br>
-     * 28/2/24: Introduced MLB (my_leeway_bound) parameter.
+     * @param p is the proposal value of the player
+     * @param q is the acceptance threshold value of the player
+     * @param leeway2 is a factor used to calculate the player's local leeway
      */
-    public Player(double p, double q, double MLB){
+    public Player(double p, double q, double leeway2){
         id=count++; // assign this player's id
         setP(p); // assign p value
         setQ(q); // assign q value
         old_p=p;
         old_q=q;
 
-        // assign my_leeway value
-        if(MLB == 0){
-            my_leeway = 0;
+        // assign local_leeway value
+        if(leeway2 == 0){
+            local_leeway = 0;
         } else {
-            my_leeway = ThreadLocalRandom.current().nextDouble(-MLB,MLB);
+            local_leeway = ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
         }
     }
 
@@ -102,14 +103,6 @@ public class Player {
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }
-
-//    private static String neighbourhood_type; // neighbourhood type of this player
-//    public static String getNeighbourhoodType(){
-//        return neighbourhood_type;
-//    }
-//    public static void setNeighbourhoodType(String s){
-//        neighbourhood_type=s;
-//    }
 
     /**
      * Stores edge weights belonging to the player.
@@ -166,11 +159,6 @@ public class Player {
             }
         }
     }
-
-
-
-
-
 
 
 
@@ -239,7 +227,7 @@ public class Player {
     public void setNSR(int i){
         NSR=i;
     }
-    private double score; // total accumulated payoff; fitness
+    private double score; // total accumulated payoff i.e. fitness
     public void setScore(double score){
         this.score=score;
     }
@@ -290,12 +278,14 @@ public class Player {
      * Edge weight learning method.
      * @param EWAE is the edge weight learning equation used to calculate the amount of edge weight adjustment.
      * @param ROC is the rate of change of edge weights
-     * @param leeway is the leeway allowed by the player to their neighbours
+     * @param global_leeway is the leeway allowed by the player to their neighbours
+     * @param edge_weight_leeway_factor is a factor used to calculate the player's edge weight leeway with the neighbour
      */
-    public void EWL(String EWAE, double ROC, double leeway){
+    public void EWL(String EWAE, double ROC, double global_leeway, double edge_weight_leeway_factor){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            if(neighbour.p + leeway + my_leeway > p){ // EWL condition with leeway
+            double edge_weight_leeway = edge_weights[i] * edge_weight_leeway_factor;
+            if(neighbour.p + global_leeway + local_leeway + edge_weight_leeway > p){ // EWL condition subject to leeway
                 switch(EWAE){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
@@ -304,7 +294,7 @@ public class Player {
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p + leeway + my_leeway < p){
+            } else if(neighbour.p + global_leeway + local_leeway + edge_weight_leeway < p){
                 switch(EWAE){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
@@ -420,16 +410,10 @@ public class Player {
 
 
     /**
-     * Evolution method where child wholly copies parent's strategy.<br>
-     * Evolution does not take place if the parent and the child are the same player.<br>
+     * Evolution method where child wholly copies parent's strategy.
+     * @param parent is the parent the player is copying.
      */
     public void copyEvolution(Player parent){
-        // i dont think the if is necessary
-//        if(parent.id != id){
-//            setP(parent.old_p);
-//        }
-
-//        setP(parent.old_p);
         setStrategy(parent.old_p, parent.old_q);
     }
 
@@ -454,8 +438,6 @@ public class Player {
                 approach *= -1;
             }
             double new_q = q + approach;
-
-//            setP(new_p);
             setStrategy(new_p, new_q);
         }
     }
@@ -503,8 +485,7 @@ public class Player {
 
     /**
      * Selection method where child selects the highest scoring neighbour this gen as parent if
-     * that neighbour scored higher than the child.<br>
-     * Should the score comparison be between scores or avg scores?<br>
+     * that neighbour scored higher than the child.
      */
     public Player bestSelection(){
         Player parent;
@@ -584,9 +565,9 @@ public class Player {
 
 
     /**
-     * Mutation rate parameter determines the probability for mutation to occur.<br>
-     * Returns a boolean indicating whether mutation should occur. If true is returned, mutation will
-     * occur. If false is returned, mutation will not occur.<br>
+     * Mutation rate parameter determines the probability for mutation to occur.
+     * @param mutation_rate is the probability that mutation occurs.
+     * @return boolean indicating whether mutation will occur.
      */
     public boolean mutationCheck(double mutation_rate){
         double random_double = ThreadLocalRandom.current().nextDouble();

@@ -22,7 +22,7 @@ public class Alg1 extends Thread{
     static int N; // population size.
     static int gens; // how many generations occur per experiment run.
     static int runs; // how many times this experiment will be run.
-    static String neighbourhood_type;
+    static String neighbourhood_type; // indicates the type of neighbourhood being enforced
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice grid containing the population.
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
@@ -42,7 +42,7 @@ public class Alg1 extends Thread{
     static boolean use_saved_pop = false;
 
     /**
-     * experiment series parameters:<br>
+     * Experiment series parameters:<br>
      *
      * - experiment_series indicates whether to run an experiment or an experiment series. A series should be
      * used when you want to vary a parameter of the algorithm between experiments. Otherwise, a single
@@ -72,8 +72,9 @@ public class Alg1 extends Thread{
                     , "rows" //2
                     , "EPR" //3
                     , "ROC" //4
-                    , "leeway" //5
-                    , "MLB" // 10
+                    , "leeway1" //5
+                    , "leeway2" // 10
+                    , "leeway3"
                     , "sel noise" //6
                     , "evo noise" //7
                     , "u" //8
@@ -101,8 +102,9 @@ public class Alg1 extends Thread{
     static String EWAE; // edge weight adjustment equation
     static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
     static double ROC = 0.0; // EW rate of change
-    static double leeway = 0.0; // leeway affecting EWL
-    static double MLB = 0.0; // MLB: my_leeway_bound
+    static double leeway1 = 0.0; // param defines the global leeway affecting all players
+    static double leeway2 = 0.0; // param defines the bound of the interval that the player's inherent leeway may reside within.
+    static double leeway3 = 0.0;
 
     // evolution parameters
     static String evolution_method;
@@ -145,7 +147,7 @@ public class Alg1 extends Thread{
         System.out.printf("=========================================%n");
         System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
-        System.out.printf("===================================================================================================================================================================================================================================================================%n");
+        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
         System.out.printf("%-6s |" +//config
                         " %-4s |" +//game
                         " %-6s |" +//runs
@@ -155,13 +157,14 @@ public class Alg1 extends Thread{
                         " %-4s |" +//EWAE
                         " %-3s |" +//EPR
                         " %-6s |" +//ROC
-                        " %-6s |" +//leeway
-                        " %-6s |" +//MLB
+                        " %-7s |" +//leeway1
+                        " %-7s |" +//leeway2
+                        " %-7s |" +//leeway3
                         " %-10s |" +//varying
                         " %-9s |" +//variation
                         " %-7s |" +//num exp
                         " %-9s |" +//data gen
-                        " %-5s |" +//neigh
+                        " %-6s |" +//neigh
                         " %-8s |" +//sel
                         " %-9s |" +//sel noise
                         " %-9s |" +//PPM
@@ -181,8 +184,9 @@ public class Alg1 extends Thread{
                 ,"EWAE"
                 ,"EPR"
                 ,"ROC"
-                ,"leeway"
-                ,"MLB"
+                ,"leeway1"
+                ,"leeway2"
+                ,"leeway3"
                 ,"varying"
                 ,"variation"
                 ,"num exp"
@@ -197,7 +201,7 @@ public class Alg1 extends Thread{
                 ,"mut"
                 ,"u"
                 ,"delta");
-        System.out.printf("===================================================================================================================================================================================================================================================================%n");
+        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
 
 
 
@@ -217,8 +221,9 @@ public class Alg1 extends Thread{
             System.out.printf("| %-4s ", settings[config_index++]); //EWAE
             System.out.printf("| %-3s ", settings[config_index++]); //EPR
             System.out.printf("| %-6s ", settings[config_index++]); //ROC
-            System.out.printf("| %-6s ", settings[config_index++]); //leeway
-            System.out.printf("| %-6s ", settings[config_index++]); //MLB
+            System.out.printf("| %-7s ", settings[config_index++]); //leeway1
+            System.out.printf("| %-7s ", settings[config_index++]); //leeway2
+            System.out.printf("| %-7s ", settings[config_index++]); //leeway3
             System.out.printf("| %-10s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
@@ -238,7 +243,7 @@ public class Alg1 extends Thread{
 
             System.out.println();
         }
-        System.out.printf("===================================================================================================================================================================================================================================================================%n");
+        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
 
 
 
@@ -278,8 +283,9 @@ public class Alg1 extends Thread{
         EWAE = settings[config_index++];
         EPR=Integer.parseInt(settings[config_index++]);
         ROC=Double.parseDouble(settings[config_index++]);
-        leeway=Double.parseDouble(settings[config_index++]);
-        MLB=Double.parseDouble(settings[config_index++]);
+        leeway1=Double.parseDouble(settings[config_index++]);
+        leeway2=Double.parseDouble(settings[config_index++]);
+        leeway3=Double.parseDouble(settings[config_index++]);
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
@@ -290,8 +296,9 @@ public class Alg1 extends Thread{
                 case"rows"->varying_parameter_index=2;
                 case"EPR"->varying_parameter_index=3;
                 case"ROC"->varying_parameter_index=4;
-                case"leeway"->varying_parameter_index=5;
-                case"MLB"->varying_parameter_index=10;
+                case"leeway1"->varying_parameter_index=5;
+                case"leeway2"->varying_parameter_index=10;
+                case"leeway3"->varying_parameter_index=11;
                 case"sel noise"->varying_parameter_index=6;
                 case"evo noise"->varying_parameter_index=7;
                 case"u"->varying_parameter_index=8;
@@ -433,7 +440,7 @@ public class Alg1 extends Thread{
                         case"DG"->row.add(new Player(
                                 ThreadLocalRandom.current().nextDouble(),
                                 0.0,
-                                MLB));
+                                leeway2));
                     }
                 }
                 grid.add(row);
@@ -453,12 +460,16 @@ public class Alg1 extends Thread{
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
                 Player player = grid.get(i).get(j);
-
                 switch(neighbourhood_type){
                     case"VN","M"->assignAdjacentNeighbours(player, i, j);
                     case"random"->assignRandomNeighbours(player, 3);
                 }
+            }
+        }
 
+        // initialise edge weights
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<columns;j++){
                 grid.get(i).get(j).initialiseEdgeWeights();
             }
         }
@@ -491,7 +502,7 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     switch(EWT){
-                        case"1","2"->player.EWL(EWAE,ROC,leeway);
+                        case"1","2"->player.EWL(EWAE,ROC,leeway1,leeway3);
                     }
 //                    switch(EWAE){
 //                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
@@ -627,8 +638,9 @@ public class Alg1 extends Thread{
                 fw.append(",EWAE");
                 fw.append(",EPR");
                 fw.append(",ROC");
-                fw.append(",leeway");
-                fw.append(",MLB");
+                fw.append(",leeway1");
+                fw.append(",leeway2");
+                fw.append(",leeway3");
 //                fw.append(",selection");
 //                fw.append(",w");
 //                fw.append(",evolution");
@@ -649,8 +661,9 @@ public class Alg1 extends Thread{
             fw.append("," + EWAE);
             fw.append("," + EPR);
             fw.append("," + ROC);
-            fw.append("," + DF4.format(leeway));
-            fw.append("," + DF4.format(MLB));
+            fw.append("," + DF4.format(leeway1));
+            fw.append("," + DF4.format(leeway2));
+            fw.append("," + DF4.format(leeway3));
 //            fw.append("," + selection_method);
 //            fw.append("," + DF4.format(w));
 //            fw.append("," + evolution_method);
@@ -687,8 +700,9 @@ public class Alg1 extends Thread{
             case 2->various_amounts.add((double)rows);
             case 3->various_amounts.add((double)EPR);
             case 4->various_amounts.add(ROC);
-            case 5->various_amounts.add(leeway);
-            case 10->various_amounts.add(MLB);
+            case 5->various_amounts.add(leeway1);
+            case 10->various_amounts.add(leeway2);
+            case 11->various_amounts.add(leeway3);
             case 6->various_amounts.add(w);
             case 7->various_amounts.add(approach_noise);
             case 8->various_amounts.add(u);
@@ -725,12 +739,16 @@ public class Alg1 extends Thread{
                     various_amounts.add(ROC);
                 }
                 case 5->{
-                    leeway+=variation;
-                    various_amounts.add(leeway);
+                    leeway1+=variation;
+                    various_amounts.add(leeway1);
                 }
                 case 10->{
-                    MLB+=variation;
-                    various_amounts.add(MLB);
+                    leeway2+=variation;
+                    various_amounts.add(leeway2);
+                }
+                case 11->{
+                    leeway3+=variation;
+                    various_amounts.add(leeway3);
                 }
                 case 6->{
                     w+=variation;
@@ -774,8 +792,9 @@ public class Alg1 extends Thread{
                     case 2->summary+="rows=";
                     case 3->summary+="EPR=";
                     case 4->summary+="ROC=";
-                    case 5->summary+="leeway=";
-                    case 10->summary+="MLB=";
+                    case 5->summary+="leeway1=";
+                    case 10->summary+="leeway2=";
+                    case 11->summary+="leeway3=";
                     case 6->summary+="sel noise=";
                     case 7->summary+="evo noise=";
                     case 8->summary+="u=";
@@ -795,30 +814,6 @@ public class Alg1 extends Thread{
 
 
 
-
-
-//    public void findNeighbours2D(Player player, int row_position, int col_position){
-//        int a=row_position;
-//        int b=col_position;
-//        int c=grid.size();
-//        int d=grid.get(0).size();
-//        int up=((a-1)%c+c)%c; // go up one node (on the square grid)
-//        int down=((a+1)%c+c)%c; // down
-//        int left=((b-1)%d+d)%d; // left
-//        int right=((b+1)%d+d)%d; // right
-//
-//        player.getNeighbourhood().add(grid.get(up).get((b%d+d)%d));
-//        player.getNeighbourhood().add(grid.get(down).get((b%d+d)%d));
-//        player.getNeighbourhood().add(grid.get((a%c+c)%c).get(left));
-//        player.getNeighbourhood().add(grid.get((a%c+c)%c).get(right));
-//
-//        if(neighbourhood_type.equals("M")){
-//            player.getNeighbourhood().add(grid.get(up).get(left)); // up-left
-//            player.getNeighbourhood().add(grid.get(up).get(right)); // up-right
-//            player.getNeighbourhood().add(grid.get(down).get(left)); // down-left
-//            player.getNeighbourhood().add(grid.get(down).get(right)); // down-right
-//        }
-//    }
 
 
     /**
@@ -852,102 +847,14 @@ public class Alg1 extends Thread{
     }
 
 
-
-
+    /**
+     * Randomly assigns neighbours to the player. Does not assign the player as a neighbour of the
+     * neighbour i.e. the neighbour assignment is one-way i.e. the edges are directed.
+     * @param player is the player being assigned neighbours.
+     * @param size is the number of neighbours to be assigned to the player's neighbourhood.
+     */
     public void assignRandomNeighbours(Player player, int size){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
-
-
-//        while(neighbourhood.size() != size){
-//            int a = ThreadLocalRandom.current().nextInt(0,rows);
-//            int b = ThreadLocalRandom.current().nextInt(0,rows);
-//            Player neighbour = grid.get(a).get(b);
-//            int id = neighbour.getId();
-//            boolean add_neighbour = true;
-//            if(id != player.getId()){
-//                for(int i=0;i<player.getNeighbourhood().size();i++){
-//                    if()
-//                }
-//            }
-//            if(add_neighbour){
-//                player.getNeighbourhood().add(neighbour);
-//            }
-//        }
-
-
-
-
-//        int row_positions[] = new int[4];
-//        ArrayList<Integer> row_positions = new ArrayList<>();
-//        int i = 0;
-//        row_positions.add(ThreadLocalRandom.current().nextInt(0,rows));
-//        while(i < 4){
-//            boolean bool = true;
-//            for(int j=1;j<row_positions.size();j++){
-//                if(row_positions.get(i) == row_positions.get(j)){
-////                    row_positions.get(i) = ThreadLocalRandom.current().nextInt(0,rows);
-//                    int x = 1;
-//                    row_positions.get(i) = x;
-//                    bool = false;
-//                    break;
-//                }
-//            }
-//            if(bool){
-//                i++;
-//            }
-//        }
-//
-//
-//
-//
-//        int col_positions[] = new int[4];
-
-
-
-
-
-
-
-//        int row_positions[] = new int[4];
-//        int col_positions[] = new int[4];
-//        for(int i=0;i<row_positions.length;i++){
-//            row_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
-//            col_positions[i] = ThreadLocalRandom.current().nextInt(0,rows);
-//        }
-//        for(int i=0;i<size;i++){
-//            while(true){
-//                Player new_neighbour = grid.get(row_positions[i]).get(col_positions[i]);
-//                int new_neighbour_id = new_neighbour.getId();
-//                if(new_neighbour_id != player.getId()){
-//                    for(int j=0;j<size;j++){
-//                        if(new_neighbour_id != neighbourhood.get(j).getId()){
-//                            neighbourhood.add(new_neighbour);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
-
-
-//        Set<Integer> rand_ints1 = new HashSet<>();
-//        Set<Integer> rand_ints2 = new HashSet<>();
-//        while(rand_ints1.size() < size){
-//            rand_ints1.add(ThreadLocalRandom.current().nextInt(0, rows));
-//        }
-//        while(rand_ints2.size() < size){
-//            rand_ints2.add(ThreadLocalRandom.current().nextInt(0, rows));
-//        }
-//        List<Integer> row_positions = new ArrayList<>(rand_ints1);
-//        List<Integer> col_positions = new ArrayList<>(rand_ints2);
-//        for(int i=0;i<size;i++){
-//            neighbourhood.add(grid.get(col_positions.get(i)).get(row_positions.get(i)));
-//        }
-
-
-
-
-
         Set<Integer> rand_ints = new HashSet<>();
         while(rand_ints.size() < size){
             rand_ints.add(ThreadLocalRandom.current().nextInt(N));
@@ -957,14 +864,10 @@ public class Alg1 extends Thread{
             int col = position / rows;
             int row = position % rows;
             neighbourhood.add(grid.get(col).get(row));
-//            grid.get(col).get(row).getNeighbourhood().add(player);
+
+            // assign the player as the neighbour's neighbour.
+            grid.get(col).get(row).getNeighbourhood().add(player);
         }
-
-
-
-
-
-
     }
 
 
@@ -1041,8 +944,9 @@ public class Alg1 extends Thread{
         s+=", EWAE="+EWAE;
         s+=", EPR="+EPR;
         s+=", ROC="+ROC;
-        s+=", leeway="+leeway;
-        s+=", MLB="+MLB;
+        s+=", leeway1="+leeway1;
+        s+=", leeway2="+leeway2;
+        s+=", leeway3="+leeway3;
         s+=", "+neighbourhood_type+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){
