@@ -123,13 +123,213 @@ public class Alg1 extends Thread{
     static String desc;
 
 
-
-
-
-
-    // main method for executing the program
+    /**
+     * The main method calls other methods in order to execute the program.
+      */
     public static void main(String[] args) {
+        setupEnvironment(); // set up the environment before playing begins
 
+        // mark the beginning of the algorithm's runtime
+        Instant start = Instant.now();
+        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
+
+        if(experiment_series){
+            experimentSeries(); // run an experiment series
+        } else {
+            experiment(); // run a single experiment
+        }
+
+        // mark the end of the algorithm's runtime
+        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
+        Instant finish = Instant.now();
+        long secondsElapsed = Duration.between(start, finish).toSeconds();
+        long minutesElapsed = Duration.between(start, finish).toMinutes();
+        System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
+    }
+
+
+
+
+
+
+
+    /**
+     * Method for running the core algorithm at the heart of the program.
+     */
+    public void start(){
+        // WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the
+        // strategies file currently only stores p values.
+        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
+//            try{
+//                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+//                String line;
+//                int i=0;
+//                while((line = br.readLine()) != null) {
+//                    String[] row_contents = line.split(",");
+//                    ArrayList<Player> row = new ArrayList<>();
+//                    for(int j=0;j<row_contents.length;j++){
+//                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
+//                    }
+//                    i++;
+//                    grid.add(row);
+//                }
+//            } catch(IOException e){
+//                e.printStackTrace();
+//            }
+        }
+
+        else { // user wants to randomly generate a population
+            for (int i = 0; i < rows; i++) {
+                ArrayList<Player> row = new ArrayList<>();
+                for (int j = 0; j < columns; j++) {
+                    switch(game){
+//                        case"UG"->row.add(new Player(
+//                                ThreadLocalRandom.current().nextDouble(),
+//                                ThreadLocalRandom.current().nextDouble());
+                        case"DG"->row.add(new Player(
+                                ThreadLocalRandom.current().nextDouble(),
+                                0.0,
+                                leeway2));
+                    }
+                }
+                grid.add(row);
+            }
+        }
+
+
+        if(save_pop){ // user wants to record initial pop into strategies .csv file
+            writeStrategies(data_filename_prefix + "Strategies.csv");
+        }
+
+
+
+
+
+        // initialise neighbourhoods
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<columns;j++){
+                Player player = grid.get(i).get(j);
+                switch(neighbourhood_type){
+                    case"VN","M"->assignAdjacentNeighbours(player, i, j);
+                    case"random"->assignRandomNeighbours(player, 3);
+                }
+            }
+        }
+
+        // initialise edge weights
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<columns;j++){
+                grid.get(i).get(j).initialiseEdgeWeights();
+            }
+        }
+
+
+
+        // players begin playing the game
+        while(gen != gens) { // algorithm stops once this condition is reached
+            // playing phase
+            for(ArrayList<Player> row: grid){
+                for(Player player: row){
+                    switch(game){
+                        case"UG","DG"->{
+                            switch(EWT){
+                                case"1"->player.playUG1(); // EW affects probability to interact
+                                case"2"->player.playUG2(); // EW affects payoff calculation
+                            }
+                        }
+
+
+//                        case"PD"->player.playPD();
+//                        case"IG"->player.playIG();
+//                        case"TG"->player.playTG();
+                    }
+                }
+            }
+
+
+            // edge weight learning phase
+            for(ArrayList<Player> row: grid){
+                for(Player player: row){
+                    switch(EWT){
+                        case"1","2"->player.EWL(EWAE,ROC,leeway1,leeway3);
+                    }
+//                    switch(EWAE){
+//                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
+//                    }
+                }
+            }
+
+
+
+            // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
+            if((gen + 1) % EPR == 0) {
+                for (ArrayList<Player> row : grid) {
+                    for (Player player : row) {
+
+                        // select parent
+                        Player parent = null;
+                        switch(selection_method){
+                            case "WRW" -> parent = player.weightedRouletteWheelSelection();
+                            case "best" -> parent = player.bestSelection();
+                            case "variable" -> parent = player.variableSelection(w);
+                        }
+
+                        // evolve child
+                        switch (evolution_method) {
+                            case "copy" -> player.copyEvolution(parent);
+                            case "approach" -> player.approachEvolution(parent, approach_noise);
+                        }
+
+                        // mutate child
+                        switch (mutation_method){
+                            case "global" -> {
+                                if(player.mutationCheck(u)){
+                                    player.globalMutation();
+                                }
+                            }
+                            case "local" -> {
+                                if(player.mutationCheck(u)){
+                                    player.localMutation(delta);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            // opportunity to collect intricate data
+            if(!experiment_series && runs == 1){
+
+                // record the avg p and p SD of the gen that just ended
+                calculateStats();
+                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                writePerGenData(data_filename_prefix + "PerGenData.csv");
+
+                // record interaction data according to the interaction data record rate
+                if(gen % interaction_data_record_rate == 0){
+                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+                }
+
+                if(gen==data_gen){ // at end of data gen, record lots of extra info
+                    System.out.println("Recording detailed data for gen "+data_gen+"...");
+                    writeStrategies(data_filename_prefix + "Strategies.csv");
+                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+                }
+            }
+
+            reset(); // reset certain player attributes
+            calculateStats(); // record the avg p and p SD of the pop
+            gen++; // move on to the next generation
+        }
+    }
+
+
+    /**
+     * This function loads in a configuration of settings from a .csv file, allowing the user to assign the values they want to the environmental parameters.
+     */
+    public static void setupEnvironment(){
         ArrayList<String> configurations = new ArrayList<>(); // stores configurations
         try{ // load the configs from the file
             br = new BufferedReader(new FileReader(config_filename));
@@ -377,207 +577,7 @@ public class Alg1 extends Thread{
         // you could ask the user how often they want to record interaction data. alternatively,
         // it could be a column of the config file.
         interaction_data_record_rate = gens; // by default, do not collect interaction data
-
-
-
-        // mark the beginning of the algorithm's runtime
-        Instant start = Instant.now();
-        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
-
-        if(experiment_series){
-            experimentSeries(); // run an experiment series
-        } else {
-            experiment(); // run a single experiment
-        }
-
-        // mark the end of the algorithm's runtime
-        System.out.println("Timestamp: " + java.time.Clock.systemUTC().instant());
-        Instant finish = Instant.now();
-        long secondsElapsed = Duration.between(start, finish).toSeconds();
-        long minutesElapsed = Duration.between(start, finish).toMinutes();
-        System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
-
-
-
-
-
-
-
-    /**
-     * Method for running the core algorithm at the heart of the program.
-     */
-    public void start(){
-        // WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the
-        // strategies file currently only stores p values.
-        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
-//            try{
-//                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-//                String line;
-//                int i=0;
-//                while((line = br.readLine()) != null) {
-//                    String[] row_contents = line.split(",");
-//                    ArrayList<Player> row = new ArrayList<>();
-//                    for(int j=0;j<row_contents.length;j++){
-//                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
-//                    }
-//                    i++;
-//                    grid.add(row);
-//                }
-//            } catch(IOException e){
-//                e.printStackTrace();
-//            }
-        }
-
-        else { // user wants to randomly generate a population
-            for (int i = 0; i < rows; i++) {
-                ArrayList<Player> row = new ArrayList<>();
-                for (int j = 0; j < columns; j++) {
-                    switch(game){
-//                        case"UG"->row.add(new Player(
-//                                ThreadLocalRandom.current().nextDouble(),
-//                                ThreadLocalRandom.current().nextDouble());
-                        case"DG"->row.add(new Player(
-                                ThreadLocalRandom.current().nextDouble(),
-                                0.0,
-                                leeway2));
-                    }
-                }
-                grid.add(row);
-            }
-        }
-
-
-        if(save_pop){ // user wants to record initial pop into strategies .csv file
-            writeStrategies(data_filename_prefix + "Strategies.csv");
-        }
-
-
-
-
-
-        // initialise neighbourhoods
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<columns;j++){
-                Player player = grid.get(i).get(j);
-                switch(neighbourhood_type){
-                    case"VN","M"->assignAdjacentNeighbours(player, i, j);
-                    case"random"->assignRandomNeighbours(player, 3);
-                }
-            }
-        }
-
-        // initialise edge weights
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<columns;j++){
-                grid.get(i).get(j).initialiseEdgeWeights();
-            }
-        }
-
-
-
-        // players begin playing the game
-        while(gen != gens) { // algorithm stops once this condition is reached
-            // playing phase
-            for(ArrayList<Player> row: grid){
-                for(Player player: row){
-                    switch(game){
-                        case"UG","DG"->{
-                            switch(EWT){
-                                case"1"->player.playUG1(); // EW affects probability to interact
-                                case"2"->player.playUG2(); // EW affects payoff calculation
-                            }
-                        }
-
-
-//                        case"PD"->player.playPD();
-//                        case"IG"->player.playIG();
-//                        case"TG"->player.playTG();
-                    }
-                }
-            }
-
-
-            // edge weight learning phase
-            for(ArrayList<Player> row: grid){
-                for(Player player: row){
-                    switch(EWT){
-                        case"1","2"->player.EWL(EWAE,ROC,leeway1,leeway3);
-                    }
-//                    switch(EWAE){
-//                        case"ROC","AD","EAD"->player.EWL(EWAE, ROC,leeway);
-//                    }
-                }
-            }
-
-
-
-            // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
-            if((gen + 1) % EPR == 0) {
-                for (ArrayList<Player> row : grid) {
-                    for (Player player : row) {
-
-                        // select parent
-                        Player parent = null;
-                        switch(selection_method){
-                            case "WRW" -> parent = player.weightedRouletteWheelSelection();
-                            case "best" -> parent = player.bestSelection();
-                            case "variable" -> parent = player.variableSelection(w);
-                        }
-
-                        // evolve child
-                        switch (evolution_method) {
-                            case "copy" -> player.copyEvolution(parent);
-                            case "approach" -> player.approachEvolution(parent, approach_noise);
-                        }
-
-                        // mutate child
-                        switch (mutation_method){
-                            case "global" -> {
-                                if(player.mutationCheck(u)){
-                                    player.globalMutation();
-                                }
-                            }
-                            case "local" -> {
-                                if(player.mutationCheck(u)){
-                                    player.localMutation(delta);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            // opportunity to collect intricate data
-            if(!experiment_series && runs == 1){
-
-                // record the avg p and p SD of the gen that just ended
-                calculateStats();
-                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
-                writePerGenData(data_filename_prefix + "PerGenData.csv");
-
-                // record interaction data according to the interaction data record rate
-                if(gen % interaction_data_record_rate == 0){
-                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-                }
-
-                if(gen==data_gen){ // at end of data gen, record lots of extra info
-                    System.out.println("Recording detailed data for gen "+data_gen+"...");
-                    writeStrategies(data_filename_prefix + "Strategies.csv");
-                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-                }
-            }
-
-            reset(); // reset certain player attributes
-            gen++; // move on to the next generation
-        }
-
-        calculateStats(); // record the avg p and p SD of the pop at the end of the run
-    }
-
-
 
 
 

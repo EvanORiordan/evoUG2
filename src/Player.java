@@ -285,7 +285,8 @@ public class Player {
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             double edge_weight_leeway = edge_weights[i] * edge_weight_leeway_factor;
-            if(neighbour.p + global_leeway + local_leeway + edge_weight_leeway > p){ // EWL condition subject to leeway
+            double total_leeway = global_leeway + local_leeway + edge_weight_leeway;
+            if(neighbour.p + total_leeway > p){ // EWL condition subject to leeway
                 switch(EWAE){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
@@ -294,7 +295,7 @@ public class Player {
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p + global_leeway + local_leeway + edge_weight_leeway < p){
+            } else if(neighbour.p + total_leeway < p){
                 switch(EWAE){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
