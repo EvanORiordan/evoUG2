@@ -607,7 +607,7 @@ public class Alg1 extends Thread{
             avg_p_values_of_experiment[i] = run.avg_p;
 
             // display the final avg p of the pop of the run
-            System.out.println("avg p of run "+i+" of experiment "+experiment_number+": "+run.avg_p);
+            System.out.println("avg p of run "+i+" of experiment "+experiment_number+": "+DF4.format(run.avg_p));
         }
 
         // calculate stats
@@ -963,9 +963,9 @@ public class Alg1 extends Thread{
         switch(mutation_method){
             case"local","global"->{
                 s+=", "+mutation_method+" mut";
-                s+=", u="+u;
+                s+=", u="+DF4.format(u);
                 switch(mutation_method){
-                    case"local"->s+=", delta="+delta;
+                    case"local"->s+=", delta="+DF4.format(delta);
                 }
             }
         }
