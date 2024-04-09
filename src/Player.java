@@ -276,18 +276,18 @@ public class Player {
 
     /**
      * Edge weight learning method.
-     * @param EWAE is the edge weight learning equation used to calculate the amount of edge weight adjustment.
+     * @param EWLF is the formula used to calculate the amount of edge weight adjustment.
      * @param ROC is the rate of change of edge weights
      * @param global_leeway is the leeway allowed by the player to their neighbours
      * @param edge_weight_leeway_factor is a factor used to calculate the player's edge weight leeway with the neighbour
      */
-    public void EWL(String EWAE, double ROC, double global_leeway, double edge_weight_leeway_factor){
+    public void EWL(String EWLF, double ROC, double global_leeway, double edge_weight_leeway_factor){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             double edge_weight_leeway = edge_weights[i] * edge_weight_leeway_factor;
             double total_leeway = global_leeway + local_leeway + edge_weight_leeway;
             if(neighbour.p + total_leeway > p){ // EWL condition subject to leeway
-                switch(EWAE){
+                switch(EWLF){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
                     case"EAD"->edge_weights[i]+=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
@@ -296,8 +296,7 @@ public class Player {
                     edge_weights[i] = 1.0;
                 }
             } else if(neighbour.p + total_leeway < p){
-            } else if(neighbour.p + total_leeway < p){
-                switch(EWAE){
+                switch(EWLF){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
                     case"EAD"->edge_weights[i]-=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
