@@ -119,6 +119,9 @@ public class Alg1 extends Thread{
     static double u; // represents mutation rate
     static double delta; // represents mutation noise
 
+    // distance cost factor
+    static double DCF = 0.0;
+
     // Use this to describe experimentation and focus attention on key settings.
     static String desc;
 
@@ -157,46 +160,11 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
-        // WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the
-        // strategies file currently only stores p values.
-        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
-//            try{
-//                br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-//                String line;
-//                int i=0;
-//                while((line = br.readLine()) != null) {
-//                    String[] row_contents = line.split(",");
-//                    ArrayList<Player> row = new ArrayList<>();
-//                    for(int j=0;j<row_contents.length;j++){
-//                        row.add(new Player(Double.parseDouble(row_contents[i]), 0));
-//                    }
-//                    i++;
-//                    grid.add(row);
-//                }
-//            } catch(IOException e){
-//                e.printStackTrace();
-//            }
-        }
 
-        else { // user wants to randomly generate a population
-            for (int i = 0; i < rows; i++) {
-                ArrayList<Player> row = new ArrayList<>();
-                for (int j = 0; j < columns; j++) {
-                    Player new_player = null;
-                    switch(game){
-                        case"UG"->new_player = new Player(
-                                ThreadLocalRandom.current().nextDouble(),
-                                ThreadLocalRandom.current().nextDouble(),
-                                leeway2);
-                        case"DG"->new_player = new Player(
-                                ThreadLocalRandom.current().nextDouble(),
-                                0.0,
-                                leeway2);
-                    }
-                    row.add(new_player);
-                }
-                grid.add(row);
-            }
+        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
+            initSavedDGPop();
+        } else { // user wants to randomly generate a population
+            initRandomPop();
         }
 
 
@@ -584,6 +552,59 @@ public class Alg1 extends Thread{
 
 
 
+
+
+    /**
+     * Initialises a lattice grid population of players with randomly generated strategies.
+     */
+    public void initRandomPop(){
+        for (int i = 0; i < rows; i++) {
+            ArrayList<Player> row = new ArrayList<>();
+            for (int j = 0; j < columns; j++) {
+                Player new_player = null;
+                switch(game){
+                    case"UG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            ThreadLocalRandom.current().nextDouble(),
+                            leeway2);
+                    case"DG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            0.0,
+                            leeway2);
+                }
+                row.add(new_player);
+            }
+            grid.add(row);
+        }
+    }
+
+
+
+    /**
+     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
+     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
+     */
+    public void initSavedDGPop() {
+        try {
+            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+            String line;
+            int i = 0;
+            while ((line = br.readLine()) != null) {
+                String[] row_contents = line.split(",");
+                ArrayList<Player> row = new ArrayList<>();
+                for (int j = 0; j < row_contents.length; j++) {
+                    row.add(new Player(
+                            Double.parseDouble(row_contents[i]),
+                            0,
+                            leeway2));
+                }
+                i++;
+                grid.add(row);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 
