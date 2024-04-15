@@ -276,17 +276,25 @@ public class Player {
 
     /**
      * Edge weight learning method.
+     * @param EWLC is the condition used to determine whether positive, negative or no edge weight learning will occur.
      * @param EWLF is the formula used to calculate the amount of edge weight adjustment.
      * @param ROC is the rate of change of edge weights
-     * @param global_leeway is the leeway allowed by the player to their neighbours
-     * @param edge_weight_leeway_factor is a factor used to calculate the player's edge weight leeway with the neighbour
+     * @param leeway1 is the leeway allowed by the player to their neighbours
+     * @param leeway3 is a factor used to calculate the player's edge weight leeway with the neighbour
      */
-    public void EWL(String EWLF, double ROC, double global_leeway, double edge_weight_leeway_factor){
+    public void EWL(String EWLC, String EWLF, double ROC, double leeway1, double leeway3, double leeway4){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double edge_weight_leeway = edge_weights[i] * edge_weight_leeway_factor;
-            double total_leeway = global_leeway + local_leeway + edge_weight_leeway;
-            if(neighbour.p + total_leeway > p){ // EWL condition subject to leeway
+
+            // calculate total leeway
+            double global_leeway = leeway1;
+            double edge_weight_leeway = edge_weights[i] * leeway3;
+            double p_leeway = (p - neighbour.p) * leeway4;
+            double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_leeway;
+
+            // perform edge weight learning
+            int option = getOption(EWLC, neighbour, total_leeway);
+            if(option == 0){
                 switch(EWLF){
                     case"ROC"->edge_weights[i]+=ROC; // rate of change
                     case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
@@ -295,7 +303,7 @@ public class Player {
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
-            } else if(neighbour.p + total_leeway < p){
+            } else if (option == 1){
                 switch(EWLF){
                     case"ROC"->edge_weights[i]-=ROC; // rate of change
                     case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
@@ -308,9 +316,35 @@ public class Player {
         }
     }
 
-
-
-
+    /**
+     * Function used during EWL().<br>
+     * Determines what kind of edge weight learning should occur, if any.
+     *
+     * @param EWLC
+     * @param neighbour
+     * @param total_leeway
+     * @return int 0 for positive edge weight learning, 1 for negative, 2 for none
+     */
+    private int getOption(String EWLC, Player neighbour, double total_leeway) {
+        int option = 2;
+        switch(EWLC){
+            case"p"->{
+                if (neighbour.p + total_leeway > p){
+                    option = 0;
+                } else if (neighbour.p + total_leeway < p){
+                    option = 1;
+                }
+            }
+            case"score"->{
+                if (neighbour.score + total_leeway > score){
+                    option = 0;
+                } else if (neighbour.score + total_leeway < score){
+                    option = 1;
+                }
+            }
+        }
+        return option;
+    }
 
 
     @Override
