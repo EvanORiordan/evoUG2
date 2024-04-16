@@ -144,7 +144,6 @@ public class Player {
         }
     }
 
-
     /**
      * UG where edge weight is factored into payoff calculation.
      */
@@ -296,18 +295,18 @@ public class Player {
             int option = getOption(EWLC, neighbour, total_leeway);
             if(option == 0){
                 switch(EWLF){
-                    case"ROC"->edge_weights[i]+=ROC; // rate of change
-                    case"AD"->edge_weights[i]+=Math.abs(neighbour.p-p); // absolute difference
-                    case"EAD"->edge_weights[i]+=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
+                    case"ROC"->edge_weights[i] += ROC; // rate of change
+                    case"AD"->edge_weights[i] += Math.abs(neighbour.p - p); // absolute difference
+                    case"EAD"->edge_weights[i] += Math.exp(Math.abs(neighbour.p - p)); // exponential absolute difference
                 }
                 if(edge_weights[i] > 1.0){
                     edge_weights[i] = 1.0;
                 }
             } else if (option == 1){
                 switch(EWLF){
-                    case"ROC"->edge_weights[i]-=ROC; // rate of change
-                    case"AD"->edge_weights[i]-=Math.abs(neighbour.p-p); // absolute difference
-                    case"EAD"->edge_weights[i]-=Math.exp(Math.abs(neighbour.p-p)); // exponential absolute difference
+                    case"ROC"->edge_weights[i] -= ROC; // rate of change
+                    case"AD"->edge_weights[i] -= Math.abs(neighbour.p - p); // absolute difference
+                    case"EAD"->edge_weights[i] -= Math.exp(Math.abs(neighbour.p - p)); // exponential absolute difference
                 }
                 if(edge_weights[i] < 0.0){
                     edge_weights[i] = 0.0;

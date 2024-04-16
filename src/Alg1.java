@@ -153,6 +153,26 @@ public class Alg1 extends Thread{
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
 
+    /**
+     * Method used in main().<br>
+     * Asks the user a binary question, receiving a boolean answer.
+     */
+    private static boolean binaryQuestion(String question){
+        boolean answer = false;
+        boolean keep_looping = true;
+        do{
+            System.out.printf(question);
+            switch(scanner.nextInt()){
+                case 0 ->keep_looping = false; // 0 => no/false
+                case 1 -> { // 1 => yes/true
+                    answer = true;
+                    keep_looping = false;
+                }
+                default ->System.out.println("ERROR: select a valid option");
+            }
+        } while(keep_looping);
+        return answer;
+    }
 
 
 
@@ -163,21 +183,15 @@ public class Alg1 extends Thread{
      * Method for running the core algorithm at the heart of the program.
      */
     public void start(){
-
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
             initSavedDGPop();
         } else { // user wants to randomly generate a population
             initRandomPop();
         }
 
-
         if(save_pop){ // user wants to record initial pop into strategies .csv file
             writeStrategies(data_filename_prefix + "Strategies.csv");
         }
-
-
-
-
 
         // initialise neighbourhoods
         for(int i=0;i<rows;i++){
@@ -196,8 +210,6 @@ public class Alg1 extends Thread{
                 grid.get(i).get(j).initialiseEdgeWeights();
             }
         }
-
-
 
         // players begin playing the game
         while(gen != gens) { // algorithm stops once this condition is reached
@@ -220,15 +232,12 @@ public class Alg1 extends Thread{
                 }
             }
 
-
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4);
                 }
             }
-
-
 
             // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
             if((gen + 1) % EPR == 0) {
@@ -666,6 +675,7 @@ public class Alg1 extends Thread{
                 fw.append(",gens");
 //                fw.append(",neighbourhood");
 //                fw.append(",N");
+                fw.append(",EWT");
                 fw.append(",EWLC");
                 fw.append(",EWLF");
                 fw.append(",EPR");
@@ -691,6 +701,7 @@ public class Alg1 extends Thread{
             fw.append("," + gens);
 //            fw.append("," + Player.getNeighbourhoodType());
 //            fw.append("," + N);
+            fw.append("," + EWT);
             fw.append("," + EWLC);
             fw.append("," + EWLF);
             fw.append("," + EPR);
@@ -982,6 +993,7 @@ public class Alg1 extends Thread{
         s+=", "+runs+" runs";
         s+=", "+gens+" gens";
         s+=", "+rows+" rows";
+        s+=", EWT="+EWT;
         s+=", EWLC="+EWLC;
         s+=", EWLF="+EWLF;
         s+=", EPR="+EPR;
@@ -1023,25 +1035,7 @@ public class Alg1 extends Thread{
 
 
 
-    /**
-     * Method for asking the user a binary question to receive a boolean answer.
-     */
-    public static boolean binaryQuestion(String question){
-        boolean answer = false;
-        boolean keep_looping = true;
-        do{
-            System.out.printf(question);
-            switch(scanner.nextInt()){
-                case 0 ->keep_looping = false; // 0 => no/false
-                case 1 -> { // 1 => yes/true
-                    answer = true;
-                    keep_looping = false;
-                }
-                default ->System.out.println("ERROR: select a valid option");
-            }
-        } while(keep_looping);
-        return answer;
-    }
+
 
 
 

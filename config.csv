@@ -1,2 +1,6 @@
 game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,10,10000,30,1,p,ROC,1,0.25,0.0,0.0,0.0,0.0,EPR,1,6,,VN,WRW,,score,NSI,copy,,local,0.005,0.005,test
+DG,1,10000,30,1,p,ROC,1,0.25,0.0,0.0,0.0,0.5,,,,,VN,WRW,,score,NSI,copy,,local,0.0,0.0,test
+DG,10,5000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.0,leeway4,0.01,30,,VN,WRW,,score,NSI,copy,,local,0.0,0.0,leeway4 series
+DG,100,10000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.5,EPR,1,7,,VN,WRW,,score,NSI,copy,,local,0.0,0.0,EPR series with leeway4
+DG,100,10000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.0,EPR,1,7,,VN,WRW,,score,NSI,copy,,local,0.0,0.0,EPR series without leeway4
+DG,100,10000,30,1,p,ROC,2,0.2,0.0,0.0,0.0,0.0,leeway4,0.1,20,,VN,WRW,,score,NSI,copy,,local,0.0,0.0,leeway4 series
