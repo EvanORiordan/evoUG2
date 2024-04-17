@@ -324,7 +324,7 @@ public class Player {
      * @param total_leeway
      * @return int 0 for positive edge weight learning, 1 for negative, 2 for none
      */
-    private int getOption(String EWLC, Player neighbour, double total_leeway) {
+    public int getOption(String EWLC, Player neighbour, double total_leeway) {
         int option = 2;
         switch(EWLC){
             case"p"->{

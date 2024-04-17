@@ -129,11 +129,18 @@ public class Alg1 extends Thread{
     static String desc;
 
 
+
+
+
+
+
     /**
      * The main method calls other methods in order to execute the program.
       */
     public static void main(String[] args) {
-        setupEnvironment(); // set up the environment before playing begins
+        setupEnvironment();
+
+        setInitialSettings();
 
         // mark the beginning of the algorithm's runtime
         Instant start = Instant.now();
@@ -157,7 +164,7 @@ public class Alg1 extends Thread{
      * Method used in main().<br>
      * Asks the user a binary question, receiving a boolean answer.
      */
-    private static boolean binaryQuestion(String question){
+    public static boolean binaryQuestion(String question){
         boolean answer = false;
         boolean keep_looping = true;
         do{
@@ -325,7 +332,7 @@ public class Alg1 extends Thread{
         System.out.printf("=========================================%n");
         System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
-        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
+        printTableBorder();
         System.out.printf("%-6s |" +//config
                         " %-4s |" +//game
                         " %-6s |" +//runs
@@ -383,8 +390,7 @@ public class Alg1 extends Thread{
                 ,"mut"
                 ,"u"
                 ,"delta");
-        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
-
+        printTableBorder();
 
 
 
@@ -412,7 +418,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
             System.out.printf("| %-9s ", settings[config_index++]); //data gen
-            System.out.printf("| %-5s ", settings[config_index++]); //neigh
+            System.out.printf("| %-6s ", settings[config_index++]); //neigh
             System.out.printf("| %-8s ", settings[config_index++]); //sel
             System.out.printf("| %-9s ", settings[config_index++]); //sel noise
             System.out.printf("| %-9s ", settings[config_index++]); //PPM
@@ -427,8 +433,7 @@ public class Alg1 extends Thread{
 
             System.out.println();
         }
-        System.out.printf("=================================================================================================================================================================================================================================================================================================%n");
-
+        printTableBorder();
 
 
 
@@ -566,6 +571,19 @@ public class Alg1 extends Thread{
         interaction_data_record_rate = gens; // by default, do not collect interaction data
     }
 
+    public static void printTableBorder(){
+        System.out.printf(
+            "=======================================================" +
+            "=======================================================" +
+            "=======================================================" +
+            "=======================================================" +
+            "=======================================================" +
+            "=======================================================" +
+            "%n");
+    }
+
+
+
 
 
 
@@ -632,8 +650,6 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        displaySettings(); // display settings of experiment
-
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
         double[] avg_p_values_of_experiment = new double[runs];
@@ -732,11 +748,16 @@ public class Alg1 extends Thread{
 
 
 
+
+
+
     /**
      * Allows for the running of multiple experiments, i.e. the running of a series of
      * experiments, i.e. the running of an experiment series.
      */
     public static void experimentSeries(){
+        System.out.println();
+        printInitialSettings();
 
         // store initial value of varying parameter
         ArrayList<Double> various_amounts = new ArrayList<>();
@@ -860,8 +881,76 @@ public class Alg1 extends Thread{
         }catch(IOException e){
             e.printStackTrace();
         }
+        System.out.println("\nInitial settings: ");
+        printInitialSettings(); // print initial experimentation settings for comparison
+        System.out.println();
         System.out.println(summary);
     }
+
+
+
+
+
+
+    // stores initial experimentation settings
+    static String initial_settings = "";
+
+    /**
+     * Collects initial settings into a string.
+     */
+    public static void setInitialSettings(){
+        if(experiment_series && experiment_number == 0){ // if at start of series
+            initial_settings += "Experiment series ("+desc+")" +
+                    " varying "+varying_parameter+
+                    " by "+variation+
+                    " between " + num_experiments+" experiments. ";
+        } else if(!experiment_series){
+            initial_settings += "Experiment: ";
+        }
+        initial_settings+=game;
+        initial_settings+=", "+runs+" runs";
+        initial_settings+=", "+gens+" gens";
+        initial_settings+=", "+rows+" rows";
+        initial_settings+=", EWT="+EWT;
+        initial_settings+=", EWLC="+EWLC;
+        initial_settings+=", EWLF="+EWLF;
+        initial_settings+=", EPR="+EPR;
+        initial_settings+=", ROC="+ROC;
+        initial_settings+=", leeway1="+leeway1;
+        initial_settings+=", leeway2="+leeway2;
+        initial_settings+=", leeway3="+leeway3;
+        initial_settings+=", leeway4="+leeway4;
+        initial_settings+=", "+neighbourhood_type+" neigh";
+//        s+=", "+selection_method+" sel";
+//        switch(selection_method){
+//            case"variable"->s+=", w="+w;
+//        }
+        initial_settings+=", PPM="+Player.getPPM();
+        switch(Player.getPPM()){
+            case"avg score"->initial_settings+=", ASD="+Player.getASD();
+        }
+//        s+=", "+evolution_method+" evo";
+//        switch(evolution_method){
+//            case"approach"->s+=", approach noise="+approach_noise;
+//        }
+        switch(mutation_method){
+            case"local","global"->{
+                initial_settings+=", "+mutation_method+" mut";
+                initial_settings+=", u="+DF4.format(u);
+                switch(mutation_method){
+                    case"local"->initial_settings+=", delta="+DF4.format(delta);
+                }
+            }
+        }
+    }
+
+    /**
+     * Prints initial experimentation settings.
+     */
+    public static void printInitialSettings(){
+        System.out.println(initial_settings);
+    }
+
 
 
 
@@ -977,68 +1066,6 @@ public class Alg1 extends Thread{
             }
         }
     }
-
-
-
-
-    public static void displaySettings(){
-        String s = "";
-        if(experiment_series && experiment_number == 0){ // if at start of series
-            s += "Experiment series ("+desc+") varying "+varying_parameter+" by "+variation+ " between " +
-                    num_experiments+" experiments: ";
-        } else if(!experiment_series){
-            s += "Experiment: ";
-        }
-        s+=game;
-        s+=", "+runs+" runs";
-        s+=", "+gens+" gens";
-        s+=", "+rows+" rows";
-        s+=", EWT="+EWT;
-        s+=", EWLC="+EWLC;
-        s+=", EWLF="+EWLF;
-        s+=", EPR="+EPR;
-        s+=", ROC="+ROC;
-        s+=", leeway1="+leeway1;
-        s+=", leeway2="+leeway2;
-        s+=", leeway3="+leeway3;
-        s+=", leeway4="+leeway4;
-        s+=", "+neighbourhood_type+" neigh";
-//        s+=", "+selection_method+" sel";
-//        switch(selection_method){
-//            case"variable"->s+=", w="+w;
-//        }
-        s+=", PPM="+Player.getPPM();
-        switch(Player.getPPM()){
-            case"avg score"->s+=", ASD="+Player.getASD();
-        }
-//        s+=", "+evolution_method+" evo";
-//        switch(evolution_method){
-//            case"approach"->s+=", approach noise="+approach_noise;
-//        }
-        switch(mutation_method){
-            case"local","global"->{
-                s+=", "+mutation_method+" mut";
-                s+=", u="+DF4.format(u);
-                switch(mutation_method){
-                    case"local"->s+=", delta="+DF4.format(delta);
-                }
-            }
-        }
-        s+=":"; // signals that there are no more settings left
-        System.out.println(s);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
