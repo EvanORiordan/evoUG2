@@ -288,7 +288,8 @@ public class Player {
             // calculate total leeway
             double global_leeway = leeway1;
             double edge_weight_leeway = edge_weights[i] * leeway3;
-            double p_leeway = (p - neighbour.p) * leeway4;
+//            double p_leeway = (p - neighbour.p) * leeway4;
+            double p_leeway = (neighbour.p - p) * leeway4;
             double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_leeway;
 
             // perform edge weight learning
@@ -335,9 +336,9 @@ public class Player {
                 }
             }
             case"score"->{
-                if (neighbour.score + total_leeway > score){
+                if (neighbour.score < score + total_leeway){
                     option = 0;
-                } else if (neighbour.score + total_leeway < score){
+                } else if (neighbour.score > score + total_leeway){
                     option = 1;
                 }
             }

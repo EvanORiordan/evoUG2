@@ -467,6 +467,10 @@ public class Alg1 extends Thread{
         // rows
         rows = Integer.parseInt(settings[config_index++]);
 
+        // square topology by default
+        columns = rows;
+        N = rows * columns;
+
         // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4
         EWT = settings[config_index++];
         EWLC = settings[config_index++];
@@ -561,9 +565,7 @@ public class Alg1 extends Thread{
         Player.setGrossPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
 
 
-        // square topology by default
-        columns = rows;
-        N = rows * columns;
+
 
 
         // you could ask the user how often they want to record interaction data. alternatively,
@@ -689,8 +691,8 @@ public class Alg1 extends Thread{
                 fw.append(",avg p SD");
                 fw.append(",runs");
                 fw.append(",gens");
-//                fw.append(",neighbourhood");
-//                fw.append(",N");
+                fw.append(",neighbourhood");
+                fw.append(",N");
                 fw.append(",EWT");
                 fw.append(",EWLC");
                 fw.append(",EWLF");
@@ -716,7 +718,8 @@ public class Alg1 extends Thread{
             fw.append("," + runs);
             fw.append("," + gens);
 //            fw.append("," + Player.getNeighbourhoodType());
-//            fw.append("," + N);
+            fw.append("," + neighbourhood_type);
+            fw.append("," + N);
             fw.append("," + EWT);
             fw.append("," + EWLC);
             fw.append("," + EWLF);
@@ -796,6 +799,8 @@ public class Alg1 extends Thread{
                 }
                 case 2->{
                     rows+=(int)variation;
+                    columns+=(int)variation;
+                    N += (int) (variation * variation);
                     various_amounts.add((double)rows);
                 }
                 case 3->{
