@@ -339,8 +339,8 @@ public class Alg1 extends Thread{
                         " %-9s |" +//gens
                         " %-4s |" +//rows
                         " %-3s |" +//EWT
-                        " %-5s |" +//EWLC
-                        " %-4s |" +//EWLF
+                        " %-9s |" +//EWLC
+                        " %-13s |" +//EWLF
                         " %-3s |" +//EPR
                         " %-6s |" +//ROC
                         " %-7s |" +//leeway1
@@ -406,8 +406,8 @@ public class Alg1 extends Thread{
             System.out.printf("| %-9s ", settings[config_index++]); //gens
             System.out.printf("| %-4s ", settings[config_index++]); //rows
             System.out.printf("| %-3s ", settings[config_index++]); //EWT
-            System.out.printf("| %-5s ", settings[config_index++]); //EWLC
-            System.out.printf("| %-4s ", settings[config_index++]); //EWLF
+            System.out.printf("| %-9s ", settings[config_index++]); //EWLC
+            System.out.printf("| %-13s ", settings[config_index++]); //EWLF
             System.out.printf("| %-3s ", settings[config_index++]); //EPR
             System.out.printf("| %-6s ", settings[config_index++]); //ROC
             System.out.printf("| %-7s ", settings[config_index++]); //leeway1
