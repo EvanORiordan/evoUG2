@@ -285,18 +285,18 @@ public class Player {
      * @param leeway1 is the leeway allowed by the player to their neighbours
      * @param leeway3 is a factor used to calculate the player's edge weight leeway with the neighbour
      */
-    public void EWL(String EWLC, String EWLF, double ROC, double leeway1, double leeway3, double leeway4){
+    public void EWL(String EWLC, String EWLF, double ROC, double leeway1, double leeway3, double leeway4, double leeway5){
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4);
+            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5);
             int option = checkEWLC(EWLC, neighbour, total_leeway);
             if(option == 0){ // positive edge weight learning
-                applyPositiveEWL(EWLF, i, neighbour, ROC);
+                edge_weights[i] += calculateIncrease(EWLF, neighbour, ROC);
                 if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0.0,1.0]
                     edge_weights[i] = 1.0;
                 }
             } else if (option == 1){ // negative edge weight learning
-                applyNegativeEWL(EWLF, i, neighbour, ROC);
+                edge_weights[i] -= calculateDecrease(EWLF, neighbour, ROC);
                 if(edge_weights[i] < 0.0){ // ensure edge weight resides within [0.0,1.0]
                     edge_weights[i] = 0.0;
                 }
@@ -315,11 +315,18 @@ public class Player {
      * @param leeway4
      * @return total leeway
      */
-    public double calculateTotalLeeway(Player neighbour, int i, double leeway1, double leeway3, double leeway4){
+    public double calculateTotalLeeway(Player neighbour,
+                                       int i,
+                                       double leeway1,
+                                       double leeway3,
+                                       double leeway4,
+                                       double leeway5)
+    {
         double global_leeway = leeway1;
         double edge_weight_leeway = edge_weights[i] * leeway3;
-        double p_leeway = (neighbour.p - p) * leeway4;
-        double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_leeway;
+        double p_comparison_leeway = (neighbour.p - p) * leeway4;
+        double p_leeway = neighbour.p * leeway5;
+        double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_comparison_leeway + p_leeway;
 
         return total_leeway;
     }
@@ -366,36 +373,40 @@ public class Player {
      * Function used during EWL().<br>
      * Applies positive edge weight learning to the edge.
      * @param EWLF
-     * @param i
      * @param neighbour
      * @param ROC
      */
-    public void applyPositiveEWL(String EWLF, int i, Player neighbour, double ROC){
+    public double calculateIncrease(String EWLF, Player neighbour, double ROC){
+        double adjustment = 0.0;
         switch(EWLF){
-            case"ROC"->edge_weights[i] += applyROC(ROC); // rate of change
-            case"p AD"->edge_weights[i] += apply_p_AD(neighbour); // absolute difference of proposal value
-            case"p EAD"->edge_weights[i] += apply_p_EAD(neighbour); // exponential absolute difference of proposal value
-            case"avg score AD"->edge_weights[i] += apply_avg_score_AD(neighbour); // exponential absolute difference of average score
-            case"avg score EAD"->edge_weights[i] += apply_avg_score_EAD(neighbour); // exponential absolute difference of average score
+            case"ROC"->adjustment = applyROC(ROC); // rate of change
+            case"p AD"->adjustment = apply_p_AD(neighbour); // absolute difference of proposal value
+            case"p EAD"->adjustment = apply_p_EAD(neighbour); // exponential absolute difference of proposal value
+            case"avg score AD"->adjustment = apply_avg_score_AD(neighbour); // exponential absolute difference of average score
+            case"avg score EAD"->adjustment = apply_avg_score_EAD(neighbour); // exponential absolute difference of average score
         }
+
+        return adjustment;
     }
 
     /**
      * Function used during EWL().<br>
      * Applies positive edge weight learning to the edge.
      * @param EWLF
-     * @param i
      * @param neighbour
      * @param ROC
      */
-    public void applyNegativeEWL(String EWLF, int i, Player neighbour, double ROC){
+    public double calculateDecrease(String EWLF, Player neighbour, double ROC){
+        double adjustment = 0.0;
         switch(EWLF){
-            case"ROC"->edge_weights[i] -= applyROC(ROC);
-            case"p AD"->edge_weights[i] -= apply_p_AD(neighbour);
-            case"p EAD"->edge_weights[i] -= apply_p_EAD(neighbour);
-            case"avg score AD"->edge_weights[i] -= apply_avg_score_AD(neighbour);
-            case"avg score EAD"->edge_weights[i] -= apply_avg_score_EAD(neighbour);
+            case"ROC"->adjustment = applyROC(ROC);
+            case"p AD"->adjustment = apply_p_AD(neighbour);
+            case"p EAD"->adjustment = apply_p_EAD(neighbour);
+            case"avg score AD"->adjustment = apply_avg_score_AD(neighbour);
+            case"avg score EAD"->adjustment = apply_avg_score_EAD(neighbour);
         }
+
+        return adjustment;
     }
 
     // rate of change

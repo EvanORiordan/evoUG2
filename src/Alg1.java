@@ -76,6 +76,7 @@ public class Alg1 extends Thread{
                     , "leeway2" // 10
                     , "leeway3" // 11
                     , "leeway4" // 12
+                    , "leeway5" // 13
                     , "sel noise" //6
                     , "evo noise" //7
                     , "u" //8
@@ -108,6 +109,7 @@ public class Alg1 extends Thread{
     static double leeway2 = 0.0; // defines the bound of the interval that the player's inherent leeway may reside within.
     static double leeway3 = 0.0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
     static double leeway4 = 0.0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
+    static double leeway5 = 0.0; // defines factor used in calculation of leeway given wrt neighbour p.
 
     // evolution parameters
     static String evolution_method;
@@ -242,7 +244,7 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4);
+                    player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4, leeway5);
                 }
             }
 
@@ -347,6 +349,7 @@ public class Alg1 extends Thread{
                         " %-7s |" +//leeway2
                         " %-7s |" +//leeway3
                         " %-7s |" +//leeway4
+                        " %-7s |" +//leeway5
                         " %-10s |" +//varying
                         " %-9s |" +//variation
                         " %-7s |" +//num exp
@@ -376,6 +379,7 @@ public class Alg1 extends Thread{
                 ,"leeway2"
                 ,"leeway3"
                 ,"leeway4"
+                ,"leeway5"
                 ,"varying"
                 ,"variation"
                 ,"num exp"
@@ -414,6 +418,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-7s ", settings[config_index++]); //leeway2
             System.out.printf("| %-7s ", settings[config_index++]); //leeway3
             System.out.printf("| %-7s ", settings[config_index++]); //leeway4
+            System.out.printf("| %-7s ", settings[config_index++]); //leeway5
             System.out.printf("| %-10s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
@@ -471,7 +476,7 @@ public class Alg1 extends Thread{
         columns = rows;
         N = rows * columns;
 
-        // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4
+        // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5
         EWT = settings[config_index++];
         EWLC = settings[config_index++];
         EWLF = settings[config_index++];
@@ -481,6 +486,7 @@ public class Alg1 extends Thread{
         leeway2=Double.parseDouble(settings[config_index++]);
         leeway3=Double.parseDouble(settings[config_index++]);
         leeway4=Double.parseDouble(settings[config_index++]);
+        leeway5=Double.parseDouble(settings[config_index++]);
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
@@ -495,6 +501,7 @@ public class Alg1 extends Thread{
                 case"leeway2"->varying_parameter_index=10;
                 case"leeway3"->varying_parameter_index=11;
                 case"leeway4"->varying_parameter_index=12;
+                case"leeway5"->varying_parameter_index=13;
                 case"sel noise"->varying_parameter_index=6;
                 case"evo noise"->varying_parameter_index=7;
                 case"u"->varying_parameter_index=8;
@@ -702,6 +709,7 @@ public class Alg1 extends Thread{
                 fw.append(",leeway2");
                 fw.append(",leeway3");
                 fw.append(",leeway4");
+                fw.append(",leeway5");
 //                fw.append(",selection");
 //                fw.append(",w");
 //                fw.append(",evolution");
@@ -729,6 +737,7 @@ public class Alg1 extends Thread{
             fw.append("," + DF4.format(leeway2));
             fw.append("," + DF4.format(leeway3));
             fw.append("," + DF4.format(leeway4));
+            fw.append("," + DF4.format(leeway5));
 //            fw.append("," + selection_method);
 //            fw.append("," + DF4.format(w));
 //            fw.append("," + evolution_method);
@@ -774,6 +783,7 @@ public class Alg1 extends Thread{
             case 10->various_amounts.add(leeway2);
             case 11->various_amounts.add(leeway3);
             case 12->various_amounts.add(leeway4);
+            case 13->various_amounts.add(leeway5);
             case 6->various_amounts.add(w);
             case 7->various_amounts.add(approach_noise);
             case 8->various_amounts.add(u);
@@ -827,6 +837,10 @@ public class Alg1 extends Thread{
                     leeway4+=variation;
                     various_amounts.add(leeway4);
                 }
+                case 13->{
+                    leeway5+=variation;
+                    various_amounts.add(leeway5);
+                }
                 case 6->{
                     w+=variation;
                     various_amounts.add(w);
@@ -873,6 +887,7 @@ public class Alg1 extends Thread{
                     case 10->summary+="leeway2=";
                     case 11->summary+="leeway3=";
                     case 12->summary+="leeway4=";
+                    case 13->summary+="leeway5=";
                     case 6->summary+="sel noise=";
                     case 7->summary+="evo noise=";
                     case 8->summary+="u=";
@@ -925,6 +940,7 @@ public class Alg1 extends Thread{
         initial_settings+=", leeway2="+leeway2;
         initial_settings+=", leeway3="+leeway3;
         initial_settings+=", leeway4="+leeway4;
+        initial_settings+=", leeway5="+leeway5;
         initial_settings+=", "+neighbourhood_type+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){
