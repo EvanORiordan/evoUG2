@@ -1,5 +1,4 @@
-game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,100,10000,30,1,avg score,ROC,1,0.2,0.0,0.0,0.0,0.0,0.5,EPR,1,7,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,EPR series
-DG,100,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,0.0,0.1,leeway5,0.1,11,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway5 series
-DG,100,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,0.0,0.1,leeway5,-0.01,11,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway5 series
-DG,100,10000,30,1,avg score,avg score AD,1,0.0,0.0,0.0,0.0,0.0,0.1,leeway5,0.1,11,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway5 series
+game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
+DG,100,10000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.0,0.0,0.1,EPR,1,6,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,EPR series
+DG,100,10000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.0,0.0,0.0,EPR,1,6,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,EPR series
+DG,100,10000,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.05,leeway6,0.05,21,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway6 series

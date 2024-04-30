@@ -285,10 +285,18 @@ public class Player {
      * @param leeway1 is the leeway allowed by the player to their neighbours
      * @param leeway3 is a factor used to calculate the player's edge weight leeway with the neighbour
      */
-    public void EWL(String EWLC, String EWLF, double ROC, double leeway1, double leeway3, double leeway4, double leeway5){
+    public void EWL(String EWLC,
+                    String EWLF,
+                    double ROC,
+                    double leeway1,
+                    double leeway3,
+                    double leeway4,
+                    double leeway5,
+                    double leeway6)
+    {
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5);
+            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5, leeway6);
             int option = checkEWLC(EWLC, neighbour, total_leeway);
             if(option == 0){ // positive edge weight learning
                 edge_weights[i] += calculateIncrease(EWLF, neighbour, ROC);
@@ -320,13 +328,20 @@ public class Player {
                                        double leeway1,
                                        double leeway3,
                                        double leeway4,
-                                       double leeway5)
+                                       double leeway5,
+                                       double leeway6)
     {
         double global_leeway = leeway1;
         double edge_weight_leeway = edge_weights[i] * leeway3;
         double p_comparison_leeway = (neighbour.p - p) * leeway4;
         double p_leeway = neighbour.p * leeway5;
-        double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_comparison_leeway + p_leeway;
+        double random_leeway;
+        if(leeway6 == 0){
+            random_leeway = 0;
+        } else{
+            random_leeway = ThreadLocalRandom.current().nextDouble(-leeway6, leeway6);
+        }
+        double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_comparison_leeway + p_leeway + random_leeway;
 
         return total_leeway;
     }
