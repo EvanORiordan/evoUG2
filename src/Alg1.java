@@ -950,13 +950,20 @@ public class Alg1 extends Thread{
         initial_settings+=", EWLC="+EWLC;
         initial_settings+=", EWLF="+EWLF;
         initial_settings+=", EPR="+EPR;
-        initial_settings+=", ROC="+ROC;
-        initial_settings+=", leeway1="+leeway1;
-        initial_settings+=", leeway2="+leeway2;
-        initial_settings+=", leeway3="+leeway3;
-        initial_settings+=", leeway4="+leeway4;
-        initial_settings+=", leeway5="+leeway5;
-        initial_settings+=", leeway6="+leeway6;
+        if(ROC != 0)
+            initial_settings+=", ROC="+ROC;
+        if(leeway1 != 0)
+            initial_settings+=", leeway1="+leeway1;
+        if(leeway2 != 0)
+            initial_settings+=", leeway2="+leeway2;
+        if(leeway3 != 0)
+            initial_settings+=", leeway3="+leeway3;
+        if(leeway4 != 0)
+            initial_settings+=", leeway4="+leeway4;
+        if(leeway5 != 0)
+            initial_settings+=", leeway5="+leeway5;
+        if(leeway6 != 0)
+            initial_settings+=", leeway6="+leeway6;
         initial_settings+=", "+neighbourhood_type+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){
