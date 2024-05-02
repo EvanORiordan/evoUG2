@@ -666,6 +666,11 @@ public class Alg1 extends Thread{
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
+        }
+
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
         double[] avg_p_values_of_experiment = new double[runs];
@@ -688,6 +693,11 @@ public class Alg1 extends Thread{
             sd_avg_p_of_experiment+=Math.pow(avg_p_values_of_experiment[i]-mean_avg_p_of_experiment,2);
         }
         sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
+
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
+        }
 
         // display stats to user in console
         System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
