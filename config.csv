@@ -1,2 +1,4 @@
 game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,varying,variation,num exp,data gen,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,1000,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,1.0,0.0,0.0,,,,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway6 experiment
+DG,1000,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,leeway4,0.1,15,,VN,WRW,,avg score,NSI,copy,,local,0.01,0.01,leeway4 series
+DG,1000,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,leeway4,0.1,15,,VN,WRW,,avg score,NSI,copy,,local,0.0,0.0,leeway4 series without mutation
+DG,2,10000,30,1,avg score,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,leeway4,0.1,15,,VN,WRW,,avg score,NSI,copy,,,,,testing no mutation settings
