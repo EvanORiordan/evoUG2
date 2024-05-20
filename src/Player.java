@@ -292,11 +292,12 @@ public class Player {
                     double leeway3,
                     double leeway4,
                     double leeway5,
-                    double leeway6)
+                    double leeway6,
+                    double leeway7)
     {
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5, leeway6);
+            double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
             int option = checkEWLC(EWLC, neighbour, total_leeway);
             if(option == 0){ // positive edge weight learning
                 edge_weights[i] += calculateIncrease(EWLF, neighbour, ROC);
@@ -329,7 +330,8 @@ public class Player {
                                        double leeway3,
                                        double leeway4,
                                        double leeway5,
-                                       double leeway6)
+                                       double leeway6,
+                                       double leeway7)
     {
         double global_leeway = leeway1;
         double edge_weight_leeway = edge_weights[i] * leeway3;
@@ -341,7 +343,15 @@ public class Player {
         } else{
             random_leeway = ThreadLocalRandom.current().nextDouble(-leeway6, leeway6);
         }
-        double total_leeway = global_leeway + local_leeway + edge_weight_leeway + p_comparison_leeway + p_leeway + random_leeway;
+        double avg_score_comparison_leeway = (average_score - neighbour.average_score) * leeway7;
+
+        double total_leeway = global_leeway
+                + local_leeway
+                + edge_weight_leeway
+                + p_comparison_leeway
+                + p_leeway
+                + random_leeway
+                + avg_score_comparison_leeway;
 
         return total_leeway;
     }

@@ -95,6 +95,7 @@ public class Alg1 extends Thread{
     static double leeway4 = 0.0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
     static double leeway5 = 0.0; // defines factor used in calculation of leeway given wrt neighbour p.
     static double leeway6 = 0.0; // defines bounds of interval that random leeway is generated from.
+    static double leeway7 = 0.0; // defines avg score comparison leeway factor.
 
 
     // fields related to evolution, selection, mutation
@@ -241,7 +242,7 @@ public class Alg1 extends Thread{
             // edge weight learning phase
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4, leeway5, leeway6);
+                    player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
                 }
             }
 
@@ -348,6 +349,7 @@ public class Alg1 extends Thread{
                         " %-7s |" +//leeway4
                         " %-7s |" +//leeway5
                         " %-7s |" +//leeway6
+                        " %-7s |" +//leeway7
                         " %-10s |" +//varying
                         " %-9s |" +//variation
                         " %-7s |" +//num exp
@@ -379,6 +381,7 @@ public class Alg1 extends Thread{
                 ,"leeway4"
                 ,"leeway5"
                 ,"leeway6"
+                ,"leeway7"
                 ,"varying"
                 ,"variation"
                 ,"num exp"
@@ -419,6 +422,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-7s ", settings[config_index++]); //leeway4
             System.out.printf("| %-7s ", settings[config_index++]); //leeway5
             System.out.printf("| %-7s ", settings[config_index++]); //leeway6
+            System.out.printf("| %-7s ", settings[config_index++]); //leeway7
             System.out.printf("| %-10s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
@@ -476,7 +480,7 @@ public class Alg1 extends Thread{
         columns = rows;
         N = rows * columns;
 
-        // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6
+        // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7
         EWT = settings[config_index++];
         EWLC = settings[config_index++];
         EWLF = settings[config_index++];
@@ -488,33 +492,11 @@ public class Alg1 extends Thread{
         leeway4=Double.parseDouble(settings[config_index++]);
         leeway5=Double.parseDouble(settings[config_index++]);
         leeway6=Double.parseDouble(settings[config_index++]);
+        leeway7=Double.parseDouble(settings[config_index++]);
 
         // varying,variation,num exp
         if(!settings[config_index].equals("")) {
             varying_parameter = settings[config_index];
-
-
-
-//            switch(varying_parameter){
-//                case"runs"->varying_parameter_index=0;
-//                case"gens"->varying_parameter_index=1;
-//                case"rows"->varying_parameter_index=2;
-//                case"EPR"->varying_parameter_index=3;
-//                case"ROC"->varying_parameter_index=4;
-//                case"leeway1"->varying_parameter_index=5;
-//                case"leeway2"->varying_parameter_index=10;
-//                case"leeway3"->varying_parameter_index=11;
-//                case"leeway4"->varying_parameter_index=12;
-//                case"leeway5"->varying_parameter_index=13;
-//                case"leeway6"->varying_parameter_index=14;
-//                case"sel noise"->varying_parameter_index=6;
-//                case"evo noise"->varying_parameter_index=7;
-//                case"u"->varying_parameter_index=8;
-//                case"delta"->varying_parameter_index=9;
-//            }
-
-
-
             experiment_series = true;
             variation = Double.parseDouble(settings[config_index+1]);
             num_experiments = Integer.parseInt(settings[config_index+2]);
@@ -734,6 +716,7 @@ public class Alg1 extends Thread{
                 fw.append(",leeway4");
                 fw.append(",leeway5");
                 fw.append(",leeway6");
+                fw.append(",leeway7");
 //                fw.append(",selection");
 //                fw.append(",w");
 //                fw.append(",evolution");
@@ -763,6 +746,7 @@ public class Alg1 extends Thread{
             fw.append("," + DF4.format(leeway4));
             fw.append("," + DF4.format(leeway5));
             fw.append("," + DF4.format(leeway6));
+            fw.append("," + DF4.format(leeway7));
 //            fw.append("," + selection_method);
 //            fw.append("," + DF4.format(w));
 //            fw.append("," + evolution_method);
@@ -798,26 +782,6 @@ public class Alg1 extends Thread{
 
         // store initial value of varying parameter
         ArrayList<Double> various_amounts = new ArrayList<>();
-//        switch(varying_parameter_index){
-//            case 0->various_amounts.add((double)runs);
-//            case 1->various_amounts.add((double)gens);
-//            case 2->various_amounts.add((double)rows);
-//            case 3->various_amounts.add((double)EPR);
-//            case 4->various_amounts.add(ROC);
-//            case 5->various_amounts.add(leeway1);
-//            case 10->various_amounts.add(leeway2);
-//            case 11->various_amounts.add(leeway3);
-//            case 12->various_amounts.add(leeway4);
-//            case 13->various_amounts.add(leeway5);
-//            case 14->various_amounts.add(leeway6);
-//            case 6->various_amounts.add(w);
-//            case 7->various_amounts.add(approach_noise);
-//            case 8->various_amounts.add(u);
-//            case 9->various_amounts.add(delta);
-//        }
-
-
-
         switch(varying_parameter){
             case"runs"->various_amounts.add((double)runs);
             case"gens"->various_amounts.add((double)gens);
@@ -830,6 +794,7 @@ public class Alg1 extends Thread{
             case"leeway4"->various_amounts.add(leeway4);
             case"leeway5"->various_amounts.add(leeway5);
             case"leeway6"->various_amounts.add(leeway6);
+            case"leeway7"->various_amounts.add(leeway7);
 //            case"w"->various_amounts.add(w);
 //            case"approach_noise"->various_amounts.add(approach_noise);
             case"u"->various_amounts.add(u);
@@ -847,75 +812,6 @@ public class Alg1 extends Thread{
                     "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
 
             experiment(); // run an experiment
-//            switch(varying_parameter_index){ // change the value of the varying parameter
-//                case 0->{
-//                    runs+=(int)variation;
-//                    various_amounts.add((double)runs);
-//                }
-//                case 1->{
-//                    gens+=(int)variation;
-//                    various_amounts.add((double)gens);
-//                }
-//                case 2->{
-//                    rows+=(int)variation;
-//                    columns+=(int)variation;
-//                    N += (int) (variation * variation);
-//                    various_amounts.add((double)rows);
-//                }
-//                case 3->{
-//                    EPR+=(int)variation;
-//                    various_amounts.add((double)EPR);
-//                }
-//                case 4->{
-//                    ROC+=variation;
-//                    various_amounts.add(ROC);
-//                }
-//                case 5->{
-//                    leeway1+=variation;
-//                    various_amounts.add(leeway1);
-//                }
-//                case 10->{
-//                    leeway2+=variation;
-//                    various_amounts.add(leeway2);
-//                }
-//                case 11->{
-//                    leeway3+=variation;
-//                    various_amounts.add(leeway3);
-//                }
-//                case 12->{
-//                    leeway4+=variation;
-//                    various_amounts.add(leeway4);
-//                }
-//                case 13->{
-//                    leeway5+=variation;
-//                    various_amounts.add(leeway5);
-//                }
-//                case 14->{
-//                    leeway6+=variation;
-//                    various_amounts.add(leeway6);
-//                }
-//                case 6->{
-//                    w+=variation;
-//                    various_amounts.add(w);
-//                }
-//                case 7->{
-//                    approach_noise+=variation;
-//                    various_amounts.add(approach_noise);
-//                }
-//                case 8->{
-//                    u+=variation;
-//                    various_amounts.add(u);
-//                }
-//                case 9->{
-//                    delta+=variation;
-//                    various_amounts.add(delta);
-//                }
-//            }
-
-
-
-
-
 
             switch(varying_parameter){ // change the value of the varying parameter
                 case "runs"->{
@@ -964,6 +860,10 @@ public class Alg1 extends Thread{
                     leeway6+=variation;
                     various_amounts.add(leeway6);
                 }
+                case "leeway7"->{
+                    leeway7+=variation;
+                    various_amounts.add(leeway7);
+                }
                 case "w"->{
                     w+=variation;
                     various_amounts.add(w);
@@ -1005,51 +905,7 @@ public class Alg1 extends Thread{
                 summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
                 summary += "\tp SD="+DF4.format(Double.parseDouble(row_contents[2]));
                 summary += "\t";
-
-
-
-//                switch(varying_parameter_index){
-//                    case 0->summary+="runs=";
-//                    case 1->summary+="gens=";
-//                    case 2->summary+="rows=";
-//                    case 3->summary+="EPR=";
-//                    case 4->summary+="ROC=";
-//                    case 5->summary+="leeway1=";
-//                    case 10->summary+="leeway2=";
-//                    case 11->summary+="leeway3=";
-//                    case 12->summary+="leeway4=";
-//                    case 13->summary+="leeway5=";
-//                    case 14->summary+="leeway6=";
-//                    case 6->summary+="sel noise=";
-//                    case 7->summary+="evo noise=";
-//                    case 8->summary+="u=";
-//                    case 9->summary+="delta=";
-//                }
-
-
-
-//                switch(varying_parameter){
-//                    case "runs"->summary+="runs=";
-//                    case "gens"->summary+="gens=";
-//                    case "rows"->summary+="rows=";
-//                    case "EPR"->summary+="EPR=";
-//                    case "ROC"->summary+="ROC=";
-//                    case "leeway1"->summary+="leeway1=";
-//                    case "leeway2"->summary+="leeway2=";
-//                    case "leeway3"->summary+="leeway3=";
-//                    case "leeway4"->summary+="leeway4=";
-//                    case "leeway5"->summary+="leeway5=";
-//                    case "leeway6"->summary+="leeway6=";
-////                    case "sel noise"->summary+="sel noise=";
-////                    case "evo noise"->summary+="evo noise=";
-//                    case "u"->summary+="u=";
-//                    case "delta"->summary+="delta=";
-//                }
-
                 summary+=varying_parameter+"=";
-
-
-
                 summary += DF4.format(various_amounts.get(i));
                 i++;
                 summary += "\n";
@@ -1106,6 +962,8 @@ public class Alg1 extends Thread{
             initial_settings+=", leeway5="+leeway5;
         if(leeway6 != 0)
             initial_settings+=", leeway6="+leeway6;
+        if(leeway7 != 0)
+            initial_settings+=", leeway7="+leeway7;
         initial_settings+=", "+neighbourhood_type+" neigh";
 //        s+=", "+selection_method+" sel";
 //        switch(selection_method){
