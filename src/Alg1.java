@@ -66,23 +66,23 @@ public class Alg1 extends Thread{
     static FileWriter fw;
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
-    static String data_filename_prefix = "csv_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
-    static String interaction_data_filename_prefix="csv_data\\interactions_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
-    static int interaction_data_record_rate;
-    static int data_gen; // is used only during single experiments
-    static String player_data_filename_prefix="csv_data\\player_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
+//    static String data_filename_prefix = "csv_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
+//    static String interaction_data_filename_prefix="csv_data\\interactions_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
+//    static int interaction_data_record_rate = 0; // by default, do not collect interaction data
     static String config_filename = "config.csv";
     static boolean save_pop = false;
     static boolean use_saved_pop = false;
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc;//description of experiment from config file
-//    static int varying_parameter_index;//indicates which parameter is being varied during I/O operations
     static LocalDateTime timestamp;
+    static String timestamp_string;
     static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
+    static String gen_strategy_data_filename;
+    static String gen_interaction_data_filename;
 
 
     // fields related to edge weight learning (EWL)
@@ -124,19 +124,17 @@ public class Alg1 extends Thread{
 
         // mark the beginning of the algorithm's runtime
         timestamp = LocalDateTime.now();
-        experiment_results_folder_path = data_folder_path+"\\"
-                +timestamp.getYear()
+        timestamp_string = timestamp.getYear()
                 +"-"+timestamp.getMonthValue()
                 +"-"+timestamp.getDayOfMonth()
                 +"_"+timestamp.getHour()
                 +"-"+timestamp.getMinute()
                 +"-"+timestamp.getSecond();
-        try {
-            Path path = Paths.get(experiment_results_folder_path);
-            Files.createDirectories(path);
-            System.out.println("Directory was created!");
+        experiment_results_folder_path = data_folder_path+"\\"+timestamp_string;
+        try { // set up results folder
+            Files.createDirectories(Paths.get(experiment_results_folder_path));
         }catch(IOException e){
-            System.err.println("Failed to create directory! " + e.getMessage());
+            e.printStackTrace();
         }
         Instant start = Instant.now();
         System.out.println("Starting timestamp: "+timestamp);
@@ -352,7 +350,8 @@ public class Alg1 extends Thread{
         // write experiment data (results and settings) to a .csv data file.
         try{
 //            String filename = data_filename_prefix + "Data.csv";
-            series_data_filename = experiment_results_folder_path + "\\SeriesData.csv";
+//            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
             if(experiment_num == 0){ // write column headings
                 fw = new FileWriter(series_data_filename, false);
                 fw.append("exp num");
@@ -416,7 +415,6 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
 
-
         experiment_num++; // move on to the next experiment in the series
     }
 
@@ -426,17 +424,31 @@ public class Alg1 extends Thread{
      */
     @Override
     public void start(){
-        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
-            initSavedDGPop();
-        } else { // user wants to randomly generate a population
-            initRandomPop();
+//        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
+//            initSavedDGPop();
+//        } else { // user wants to randomly generate a population
+//            initRandomPop();
+//        }
+        initRandomPop();
+
+
+        // record extra data for the first gen of the first run of the first experiment
+        if(run_num == 0 && experiment_num == 0 && gen == 0) {
+            gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
+            gen_interaction_data_filename = experiment_results_folder_path + "\\interactions";
+            try{ // create folders
+                Files.createDirectories(Paths.get(gen_strategy_data_filename));
+                Files.createDirectories(Paths.get(gen_interaction_data_filename));
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+            writeStrategies();
         }
 
-        if(save_pop){ // user wants to record initial pop into strategies .csv file
-            writeStrategies(data_filename_prefix + "Strategies.csv");
-        }
 
-        // initialise neighbourhoods
+
+
+            // initialise neighbourhoods
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
                 Player player = grid.get(i).get(j);
@@ -522,25 +534,31 @@ public class Alg1 extends Thread{
             calculateStats(); // calculate the avg p and p SD of the pop
 
             // record extra data for the first run of the first experiment
-            if(run_num == 0 && experiment_num == 0){
+            if(run_num == 0 && experiment_num == 0 && gen % 1000 == 0){
 //            if(!experiment_series && runs == 1){
 
                 // record the avg p and p SD of the gen that just ended
                 System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
 //                writePerGenData(data_filename_prefix + "PerGenData.csv");
-                writePerGenData(experiment_results_folder_path + "\\PerGenData.csv");
+                writeExperimentData();
+
+                writeStrategies();
+
+                writeInteractionData();
+
+
 
                 // record interaction data according to the interaction data record rate
-                if(gen % interaction_data_record_rate == 0){
-                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-                }
+//                if(gen + 1 % interaction_data_record_rate == 0){
+//                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+//                }
 
-                if(gen==data_gen){ // at end of data gen, record lots of extra info
-                    System.out.println("Recording detailed data for gen "+data_gen+"...");
-                    writeStrategies(data_filename_prefix + "Strategies.csv");
-                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-                }
+//                if(gen==data_gen){ // at end of data gen, record lots of extra info
+//                    System.out.println("Recording detailed data for gen "+data_gen+"...");
+////                    writeStrategies(data_filename_prefix + "Strategies.csv");
+//                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+//                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+//                }
             }
 
             reset(); // reset certain player attributes
@@ -575,31 +593,31 @@ public class Alg1 extends Thread{
 
 
 
-    /**
-     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
-     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
-     */
-    public void initSavedDGPop() {
-        try {
-            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-            String line;
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                String[] row_contents = line.split(",");
-                ArrayList<Player> row = new ArrayList<>();
-                for (int j = 0; j < row_contents.length; j++) {
-                    row.add(new Player(
-                            Double.parseDouble(row_contents[i]),
-                            0,
-                            leeway2));
-                }
-                i++;
-                grid.add(row);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    /**
+//     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
+//     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
+//     */
+//    public void initSavedDGPop() {
+//        try {
+//            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+//            String line;
+//            int i = 0;
+//            while ((line = br.readLine()) != null) {
+//                String[] row_contents = line.split(",");
+//                ArrayList<Player> row = new ArrayList<>();
+//                for (int j = 0; j < row_contents.length; j++) {
+//                    row.add(new Player(
+//                            Double.parseDouble(row_contents[i]),
+//                            0,
+//                            leeway2));
+//                }
+//                i++;
+//                grid.add(row);
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 
     /**
@@ -644,7 +662,6 @@ public class Alg1 extends Thread{
                         " %-10s |" +//varying
                         " %-9s |" +//variation
                         " %-7s |" +//num exp
-                        " %-9s |" +//data gen
                         " %-6s |" +//neigh
                         " %-8s |" +//sel
                         " %-9s |" +//sel noise
@@ -676,7 +693,6 @@ public class Alg1 extends Thread{
                 ,"varying"
                 ,"variation"
                 ,"num exp"
-                ,"data gen"
                 ,"neigh"
                 ,"sel"
                 ,"sel noise"
@@ -717,7 +733,6 @@ public class Alg1 extends Thread{
             System.out.printf("| %-10s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
             System.out.printf("| %-7s ", settings[config_index++]); //num exp
-            System.out.printf("| %-9s ", settings[config_index++]); //data gen
             System.out.printf("| %-6s ", settings[config_index++]); //neigh
             System.out.printf("| %-8s ", settings[config_index++]); //sel
             System.out.printf("| %-9s ", settings[config_index++]); //sel noise
@@ -794,14 +809,6 @@ public class Alg1 extends Thread{
         }
         config_index+=3;
 
-        // data gen
-        if(!settings[config_index].equals("")){
-            data_gen = Integer.parseInt(settings[config_index]);
-        } else{
-            data_gen = -1; // if no data gen value given, assign -1 to nullify the variable's effect
-        }
-        config_index++;
-
         // neigh
         neighbourhood_type = settings[config_index++];
 
@@ -858,7 +865,7 @@ public class Alg1 extends Thread{
 
         // you could ask the user how often they want to record interaction data. alternatively,
         // it could be a column of the config file.
-        interaction_data_record_rate = gens; // by default, do not collect interaction data
+//        interaction_data_record_rate = gens; // by default, do not collect interaction data
     }
 
     public static void printTableBorder(){
@@ -1107,8 +1114,11 @@ public class Alg1 extends Thread{
      * - Separate the data into columns: gen number, avg p and SD for that gen<br>
      * - Create a line chart with the data.<br>
      */
-    public void writePerGenData(String filename){
+    public void writeExperimentData(){
         try{
+            // setup file writer
+//            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+            String filename = experiment_results_folder_path + "\\" + "experiment_data.csv";
             if(gen == 0){ // apply headings to file before writing data
                 fw = new FileWriter(filename, false); // append set to false means writing mode.
                 fw.append("gen"
@@ -1212,8 +1222,9 @@ public class Alg1 extends Thread{
     /**
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
      */
-    public void writeStrategies(String filename){
+    public void writeStrategies(){
         try{
+            String filename = gen_strategy_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
                 for(int j=0;j<row.size();j++){
@@ -1242,8 +1253,9 @@ public class Alg1 extends Thread{
     /**
      * Tracks how many successful interactions the players had (this gen).
      */
-    public void writeInteractionData(String filename){
+    public void writeInteractionData(){
         try{
+            String filename = gen_interaction_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             for(ArrayList<Player> row:grid){
                 for(int j=0;j<row.size();j++){
