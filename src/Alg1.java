@@ -33,14 +33,14 @@ public class Alg1 extends Thread{
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates which generation is currently running.
     static double DCF = 0.0;// distance cost factor
-
+    static String initial_settings = "";// stores initial experimentation settings
 
     // fields related to experiment series
     static boolean experiment_series;//indicates whether to run experiment or experiment series where a parameter is varied
     static String varying_parameter;//indicates which parameter will be varied in an experiment series
     static double variation;//indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
     static int num_experiments;//indicates the number of experiments to occur in the series
-    static int experiment_number = 0;//tracks which experiment is taking place at any given time during a series
+    static int experiment_num = 0;//tracks which experiment is taking place at any given time during a series
     static List<String> possible_varying_parameters //redundant but useful as it illustrates to me the indices of the parameters available to be varied
             = new ArrayList<>(List.of(
                     "runs" //0
@@ -59,6 +59,7 @@ public class Alg1 extends Thread{
                     , "u" //8
                     , "delta" //9
             ));
+    static int run_num; // tracks which of the runs is currently executing
 
 
     // fields related to I/O operations
@@ -81,6 +82,7 @@ public class Alg1 extends Thread{
     static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
+    static String series_data_filename;
 
 
     // fields related to edge weight learning (EWL)
@@ -112,13 +114,8 @@ public class Alg1 extends Thread{
 
 
 
-
-
-
-
-
     /**
-     * The main method calls other methods in order to execute the program.
+     * Main method of Java program.
       */
     public static void main(String[] args) {
         setupEnvironment();
@@ -159,35 +156,275 @@ public class Alg1 extends Thread{
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
 
+
+
     /**
-     * Method used in main().<br>
-     * Asks the user a binary question, receiving a boolean answer.
+     * Allows for the running of multiple experiments, i.e. the running of a series of
+     * experiments, i.e. the running of an experiment series.
      */
-    public static boolean binaryQuestion(String question){
-        boolean answer = false;
-        boolean keep_looping = true;
-        do{
-            System.out.printf(question);
-            switch(scanner.nextInt()){
-                case 0 ->keep_looping = false; // 0 => no/false
-                case 1 -> { // 1 => yes/true
-                    answer = true;
-                    keep_looping = false;
+    public static void experimentSeries(){
+        System.out.println();
+        printInitialSettings();
+
+        // store initial value of varying parameter
+        ArrayList<Double> various_amounts = new ArrayList<>();
+        switch(varying_parameter){
+            case"runs"->various_amounts.add((double)runs);
+            case"gens"->various_amounts.add((double)gens);
+            case"rows"->various_amounts.add((double)rows);
+            case"EPR"->various_amounts.add((double)EPR);
+            case"ROC"->various_amounts.add(ROC);
+            case"leeway1"->various_amounts.add(leeway1);
+            case"leeway2"->various_amounts.add(leeway2);
+            case"leeway3"->various_amounts.add(leeway3);
+            case"leeway4"->various_amounts.add(leeway4);
+            case"leeway5"->various_amounts.add(leeway5);
+            case"leeway6"->various_amounts.add(leeway6);
+            case"leeway7"->various_amounts.add(leeway7);
+//            case"w"->various_amounts.add(w);
+//            case"approach_noise"->various_amounts.add(approach_noise);
+            case"u"->various_amounts.add(u);
+            case"delta"->various_amounts.add(delta);
+        }
+
+        // run experiment series
+        for(int i=0;i<num_experiments;i++){
+
+            // helps user keep track of the current value of the varying parameter
+            System.out.println("\n===================\n" +
+                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
+
+            experiment(); // run an experiment
+
+            switch(varying_parameter){ // change the value of the varying parameter
+                case "runs"->{
+                    runs+=(int)variation;
+                    various_amounts.add((double)runs);
                 }
-                default ->System.out.println("ERROR: select a valid option");
+                case "gens"->{
+                    gens+=(int)variation;
+                    various_amounts.add((double)gens);
+                }
+                case "rows"->{
+                    rows+=(int)variation;
+                    columns+=(int)variation;
+                    N += (int) (variation * variation);
+                    various_amounts.add((double)rows);
+                }
+                case "EPR"->{
+                    EPR+=(int)variation;
+                    various_amounts.add((double)EPR);
+                }
+                case "ROC"->{
+                    ROC+=variation;
+                    various_amounts.add(ROC);
+                }
+                case "leeway1"->{
+                    leeway1+=variation;
+                    various_amounts.add(leeway1);
+                }
+                case "leeway2"->{
+                    leeway2+=variation;
+                    various_amounts.add(leeway2);
+                }
+                case "leeway3"->{
+                    leeway3+=variation;
+                    various_amounts.add(leeway3);
+                }
+                case "leeway4"->{
+                    leeway4+=variation;
+                    various_amounts.add(leeway4);
+                }
+                case "leeway5"->{
+                    leeway5+=variation;
+                    various_amounts.add(leeway5);
+                }
+                case "leeway6"->{
+                    leeway6+=variation;
+                    various_amounts.add(leeway6);
+                }
+                case "leeway7"->{
+                    leeway7+=variation;
+                    various_amounts.add(leeway7);
+                }
+                case "w"->{
+                    w+=variation;
+                    various_amounts.add(w);
+                }
+                case "approach noise"->{
+                    approach_noise+=variation;
+                    various_amounts.add(approach_noise);
+                }
+                case "u"->{
+                    u+=variation;
+                    various_amounts.add(u);
+                }
+                case "delta"->{
+                    delta+=variation;
+                    various_amounts.add(delta);
+                }
             }
-        } while(keep_looping);
-        return answer;
+
+
+
+            // informs user what the varying parameter's value was
+            System.out.println("NOTE: End of "+varying_parameter+"="+DF4.format(various_amounts.get(i))+"."
+                    +"\n===================");
+        }
+
+        // display a summary of the series in the console
+        String summary = "";
+        try{
+//            br = new BufferedReader(new FileReader(data_filename_prefix+"Data.csv"));
+            br = new BufferedReader(new FileReader(series_data_filename));
+            String line;
+            line = br.readLine(); // purposely ignore the row of headings
+            int i=0; // indicates which index of the row we are currently on
+            while((line=br.readLine()) != null){
+                String[] row_contents = line.split(",");
+                summary += "experiment="+row_contents[0];
+                summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
+                summary += "\tp SD="+DF4.format(Double.parseDouble(row_contents[2]));
+                summary += "\t";
+                summary+=varying_parameter+"=";
+                summary += DF4.format(various_amounts.get(i));
+                i++;
+                summary += "\n";
+            }
+            br.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        System.out.println("\nInitial settings: ");
+        printInitialSettings(); // print initial experimentation settings for comparison
+        System.out.println();
+        System.out.println(summary);
     }
 
 
 
 
 
+    /**
+     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
+     */
+    public static void experiment(){
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
+        }
+
+        // stats to be tracked
+        double mean_avg_p_of_experiment = 0;
+        double[] avg_p_values_of_experiment = new double[runs];
+        double sd_avg_p_of_experiment = 0;
+
+        // perform the experiment multiple times
+        for(run_num = 0; run_num < runs; run_num++){
+            Alg1 run = new Alg1(); // one run of the algorithm
+            run.start(); // start the run
+            mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
+            avg_p_values_of_experiment[run_num] = run.avg_p;
+
+            // display the avg p of the pop at the end of the run
+            System.out.println("avg p of run "+run_num
+                    +" of experiment "+experiment_num
+                    +": "+DF4.format(run.avg_p));
+        }
+
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
+        }
+
+        // calculate stats
+        mean_avg_p_of_experiment /= runs;
+        for(int i=0;i<runs;i++){
+            sd_avg_p_of_experiment +=
+                    Math.pow(avg_p_values_of_experiment[i] - mean_avg_p_of_experiment, 2);
+        }
+        sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
+
+        // display stats to user in console
+        System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
+                +" avg p SD="+DF4.format(sd_avg_p_of_experiment));
+
+        // write experiment data (results and settings) to a .csv data file.
+        try{
+//            String filename = data_filename_prefix + "Data.csv";
+            series_data_filename = experiment_results_folder_path + "\\SeriesData.csv";
+            if(experiment_num == 0){ // write column headings
+                fw = new FileWriter(series_data_filename, false);
+                fw.append("exp num");
+                fw.append(",mean avg p");
+                fw.append(",avg p SD");
+                fw.append(",runs");
+                fw.append(",gens");
+                fw.append(",neighbourhood");
+                fw.append(",N");
+                fw.append(",EWT");
+                fw.append(",EWLC");
+                fw.append(",EWLF");
+                fw.append(",EPR");
+                fw.append(",ROC");
+                fw.append(",leeway1");
+                fw.append(",leeway2");
+                fw.append(",leeway3");
+                fw.append(",leeway4");
+                fw.append(",leeway5");
+                fw.append(",leeway6");
+                fw.append(",leeway7");
+//                fw.append(",selection");
+//                fw.append(",w");
+//                fw.append(",evolution");
+//                fw.append(",approach noise");
+                fw.append(",mutation");
+                fw.append(",u");
+                fw.append(",delta");
+            } else {
+                fw = new FileWriter(series_data_filename, true);
+            }
+            fw.append("\n" + experiment_num); // write row data
+            fw.append("," + DF4.format(mean_avg_p_of_experiment));
+            fw.append("," + DF4.format(sd_avg_p_of_experiment));
+            fw.append("," + runs);
+            fw.append("," + gens);
+//            fw.append("," + Player.getNeighbourhoodType());
+            fw.append("," + neighbourhood_type);
+            fw.append("," + N);
+            fw.append("," + EWT);
+            fw.append("," + EWLC);
+            fw.append("," + EWLF);
+            fw.append("," + EPR);
+            fw.append("," + ROC);
+            fw.append("," + DF4.format(leeway1));
+            fw.append("," + DF4.format(leeway2));
+            fw.append("," + DF4.format(leeway3));
+            fw.append("," + DF4.format(leeway4));
+            fw.append("," + DF4.format(leeway5));
+            fw.append("," + DF4.format(leeway6));
+            fw.append("," + DF4.format(leeway7));
+//            fw.append("," + selection_method);
+//            fw.append("," + DF4.format(w));
+//            fw.append("," + evolution_method);
+//            fw.append("," + DF4.format(approach_noise));
+            fw.append("," + mutation_method);
+            fw.append("," + DF4.format(u));
+            fw.append("," + DF4.format(delta));
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+
+
+        experiment_num++; // move on to the next experiment in the series
+    }
+
 
     /**
      * Method for running the core algorithm at the heart of the program.
      */
+    @Override
     public void start(){
         if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
             initSavedDGPop();
@@ -282,31 +519,85 @@ public class Alg1 extends Thread{
                 }
             }
 
+            calculateStats(); // calculate the avg p and p SD of the pop
 
-            // opportunity to collect intricate data
+            // record extra data for the first run of the first experiment
+            if(run_num == 0 && experiment_num == 0){
 //            if(!experiment_series && runs == 1){
-//
-//                // record the avg p and p SD of the gen that just ended
-//                calculateStats();
-//                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+
+                // record the avg p and p SD of the gen that just ended
+                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
 //                writePerGenData(data_filename_prefix + "PerGenData.csv");
-//
-//                // record interaction data according to the interaction data record rate
-//                if(gen % interaction_data_record_rate == 0){
-//                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-//                }
-//
-//                if(gen==data_gen){ // at end of data gen, record lots of extra info
-//                    System.out.println("Recording detailed data for gen "+data_gen+"...");
-//                    writeStrategies(data_filename_prefix + "Strategies.csv");
-//                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-//                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-//                }
-//            }
+                writePerGenData(experiment_results_folder_path + "\\PerGenData.csv");
+
+                // record interaction data according to the interaction data record rate
+                if(gen % interaction_data_record_rate == 0){
+                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
+                }
+
+                if(gen==data_gen){ // at end of data gen, record lots of extra info
+                    System.out.println("Recording detailed data for gen "+data_gen+"...");
+                    writeStrategies(data_filename_prefix + "Strategies.csv");
+                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
+                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
+                }
+            }
 
             reset(); // reset certain player attributes
-            calculateStats(); // record the avg p and p SD of the pop
             gen++; // move on to the next generation
+        }
+    }
+
+
+    /**
+     * Initialises a lattice grid population of players with randomly generated strategies.
+     */
+    public void initRandomPop(){
+        for (int i = 0; i < rows; i++) {
+            ArrayList<Player> row = new ArrayList<>();
+            for (int j = 0; j < columns; j++) {
+                Player new_player = null;
+                switch(game){
+                    case"UG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            ThreadLocalRandom.current().nextDouble(),
+                            leeway2);
+                    case"DG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            0.0,
+                            leeway2);
+                }
+                row.add(new_player);
+            }
+            grid.add(row);
+        }
+    }
+
+
+
+    /**
+     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
+     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
+     */
+    public void initSavedDGPop() {
+        try {
+            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+            String line;
+            int i = 0;
+            while ((line = br.readLine()) != null) {
+                String[] row_contents = line.split(",");
+                ArrayList<Player> row = new ArrayList<>();
+                for (int j = 0; j < row_contents.length; j++) {
+                    row.add(new Player(
+                            Double.parseDouble(row_contents[i]),
+                            0,
+                            leeway2));
+                }
+                i++;
+                grid.add(row);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -572,195 +863,35 @@ public class Alg1 extends Thread{
 
     public static void printTableBorder(){
         System.out.printf(
-            "=======================================================" +
-            "=======================================================" +
-            "=======================================================" +
-            "=======================================================" +
-            "=======================================================" +
-            "=======================================================" +
-            "%n");
+                "=======================================================" +
+                        "=======================================================" +
+                        "=======================================================" +
+                        "=======================================================" +
+                        "=======================================================" +
+                        "=======================================================" +
+                        "%n");
     }
-
-
-
-
-
 
 
     /**
-     * Initialises a lattice grid population of players with randomly generated strategies.
+     * Method used in main().<br>
+     * Asks the user a binary question, receiving a boolean answer.
      */
-    public void initRandomPop(){
-        for (int i = 0; i < rows; i++) {
-            ArrayList<Player> row = new ArrayList<>();
-            for (int j = 0; j < columns; j++) {
-                Player new_player = null;
-                switch(game){
-                    case"UG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            ThreadLocalRandom.current().nextDouble(),
-                            leeway2);
-                    case"DG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            0.0,
-                            leeway2);
+    public static boolean binaryQuestion(String question){
+        boolean answer = false;
+        boolean keep_looping = true;
+        do{
+            System.out.printf(question);
+            switch(scanner.nextInt()){
+                case 0 ->keep_looping = false; // 0 => no/false
+                case 1 -> { // 1 => yes/true
+                    answer = true;
+                    keep_looping = false;
                 }
-                row.add(new_player);
+                default ->System.out.println("ERROR: select a valid option");
             }
-            grid.add(row);
-        }
-    }
-
-
-
-    /**
-     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
-     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
-     */
-    public void initSavedDGPop() {
-        try {
-            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-            String line;
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                String[] row_contents = line.split(",");
-                ArrayList<Player> row = new ArrayList<>();
-                for (int j = 0; j < row_contents.length; j++) {
-                    row.add(new Player(
-                            Double.parseDouble(row_contents[i]),
-                            0,
-                            leeway2));
-                }
-                i++;
-                grid.add(row);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
-
-
-
-
-    /**
-     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
-     */
-    public static void experiment(){
-        if(!experiment_series){
-            System.out.println();
-            printInitialSettings();
-        }
-
-        // stats to be tracked
-        double mean_avg_p_of_experiment = 0;
-        double[] avg_p_values_of_experiment = new double[runs];
-        double sd_avg_p_of_experiment = 0;
-
-        // perform the experiment multiple times
-        for(int i=0;i<runs;i++){
-            Alg1 run = new Alg1(); // one run of the algorithm
-            run.start(); // start the run
-            mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
-            avg_p_values_of_experiment[i] = run.avg_p;
-
-            // display the final avg p of the pop of the run
-            System.out.println("avg p of run "+i+" of experiment "+experiment_number+": "+DF4.format(run.avg_p));
-        }
-
-        // calculate stats
-        mean_avg_p_of_experiment /= runs;
-        for(int i=0;i<runs;i++){
-            sd_avg_p_of_experiment+=Math.pow(avg_p_values_of_experiment[i]-mean_avg_p_of_experiment,2);
-        }
-        sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
-
-        if(!experiment_series){
-            System.out.println();
-            printInitialSettings();
-        }
-
-        // display stats to user in console
-        System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
-                +" avg p SD="+DF4.format(sd_avg_p_of_experiment));
-
-
-
-        // write experiment data (results and settings) to a .csv data file.
-        try{
-
-
-//            String filename = data_filename_prefix + "Data.csv";
-            String filename = experiment_results_folder_path + "\\SeriesData.csv";
-
-
-            if(experiment_number == 0){ // write column headings
-                fw = new FileWriter(filename, false);
-                fw.append("exp num");
-                fw.append(",mean avg p");
-                fw.append(",avg p SD");
-                fw.append(",runs");
-                fw.append(",gens");
-                fw.append(",neighbourhood");
-                fw.append(",N");
-                fw.append(",EWT");
-                fw.append(",EWLC");
-                fw.append(",EWLF");
-                fw.append(",EPR");
-                fw.append(",ROC");
-                fw.append(",leeway1");
-                fw.append(",leeway2");
-                fw.append(",leeway3");
-                fw.append(",leeway4");
-                fw.append(",leeway5");
-                fw.append(",leeway6");
-                fw.append(",leeway7");
-//                fw.append(",selection");
-//                fw.append(",w");
-//                fw.append(",evolution");
-//                fw.append(",approach noise");
-                fw.append(",mutation");
-                fw.append(",u");
-                fw.append(",delta");
-            } else {
-                fw = new FileWriter(filename, true);
-            }
-            fw.append("\n" + experiment_number); // write row data
-            fw.append("," + DF4.format(mean_avg_p_of_experiment));
-            fw.append("," + DF4.format(sd_avg_p_of_experiment));
-            fw.append("," + runs);
-            fw.append("," + gens);
-//            fw.append("," + Player.getNeighbourhoodType());
-            fw.append("," + neighbourhood_type);
-            fw.append("," + N);
-            fw.append("," + EWT);
-            fw.append("," + EWLC);
-            fw.append("," + EWLF);
-            fw.append("," + EPR);
-            fw.append("," + ROC);
-            fw.append("," + DF4.format(leeway1));
-            fw.append("," + DF4.format(leeway2));
-            fw.append("," + DF4.format(leeway3));
-            fw.append("," + DF4.format(leeway4));
-            fw.append("," + DF4.format(leeway5));
-            fw.append("," + DF4.format(leeway6));
-            fw.append("," + DF4.format(leeway7));
-//            fw.append("," + selection_method);
-//            fw.append("," + DF4.format(w));
-//            fw.append("," + evolution_method);
-//            fw.append("," + DF4.format(approach_noise));
-            fw.append("," + mutation_method);
-            fw.append("," + DF4.format(u));
-            fw.append("," + DF4.format(delta));
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-
-
-        experiment_number++; // move on to the next experiment in the series
+        } while(keep_looping);
+        return answer;
     }
 
 
@@ -772,167 +903,16 @@ public class Alg1 extends Thread{
 
 
 
-    /**
-     * Allows for the running of multiple experiments, i.e. the running of a series of
-     * experiments, i.e. the running of an experiment series.
-     */
-    public static void experimentSeries(){
-        System.out.println();
-        printInitialSettings();
-
-        // store initial value of varying parameter
-        ArrayList<Double> various_amounts = new ArrayList<>();
-        switch(varying_parameter){
-            case"runs"->various_amounts.add((double)runs);
-            case"gens"->various_amounts.add((double)gens);
-            case"rows"->various_amounts.add((double)rows);
-            case"EPR"->various_amounts.add((double)EPR);
-            case"ROC"->various_amounts.add(ROC);
-            case"leeway1"->various_amounts.add(leeway1);
-            case"leeway2"->various_amounts.add(leeway2);
-            case"leeway3"->various_amounts.add(leeway3);
-            case"leeway4"->various_amounts.add(leeway4);
-            case"leeway5"->various_amounts.add(leeway5);
-            case"leeway6"->various_amounts.add(leeway6);
-            case"leeway7"->various_amounts.add(leeway7);
-//            case"w"->various_amounts.add(w);
-//            case"approach_noise"->various_amounts.add(approach_noise);
-            case"u"->various_amounts.add(u);
-            case"delta"->various_amounts.add(delta);
-        }
 
 
 
 
-        // run experiment series
-        for(int i=0;i<num_experiments;i++){
-
-            // helps user keep track of the current value of the varying parameter
-            System.out.println("\n===================\n" +
-                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
-
-            experiment(); // run an experiment
-
-            switch(varying_parameter){ // change the value of the varying parameter
-                case "runs"->{
-                    runs+=(int)variation;
-                    various_amounts.add((double)runs);
-                }
-                case "gens"->{
-                    gens+=(int)variation;
-                    various_amounts.add((double)gens);
-                }
-                case "rows"->{
-                    rows+=(int)variation;
-                    columns+=(int)variation;
-                    N += (int) (variation * variation);
-                    various_amounts.add((double)rows);
-                }
-                case "EPR"->{
-                    EPR+=(int)variation;
-                    various_amounts.add((double)EPR);
-                }
-                case "ROC"->{
-                    ROC+=variation;
-                    various_amounts.add(ROC);
-                }
-                case "leeway1"->{
-                    leeway1+=variation;
-                    various_amounts.add(leeway1);
-                }
-                case "leeway2"->{
-                    leeway2+=variation;
-                    various_amounts.add(leeway2);
-                }
-                case "leeway3"->{
-                    leeway3+=variation;
-                    various_amounts.add(leeway3);
-                }
-                case "leeway4"->{
-                    leeway4+=variation;
-                    various_amounts.add(leeway4);
-                }
-                case "leeway5"->{
-                    leeway5+=variation;
-                    various_amounts.add(leeway5);
-                }
-                case "leeway6"->{
-                    leeway6+=variation;
-                    various_amounts.add(leeway6);
-                }
-                case "leeway7"->{
-                    leeway7+=variation;
-                    various_amounts.add(leeway7);
-                }
-                case "w"->{
-                    w+=variation;
-                    various_amounts.add(w);
-                }
-                case "approach noise"->{
-                    approach_noise+=variation;
-                    various_amounts.add(approach_noise);
-                }
-                case "u"->{
-                    u+=variation;
-                    various_amounts.add(u);
-                }
-                case "delta"->{
-                    delta+=variation;
-                    various_amounts.add(delta);
-                }
-            }
-
-
-
-
-
-
-            // informs user what the varying parameter's value was
-            System.out.println("NOTE: End of "+varying_parameter+"="+DF4.format(various_amounts.get(i))+"."
-                    +"\n===================");
-        }
-
-        // display a summary of the series in the console
-        String summary = "";
-        try{
-            br = new BufferedReader(new FileReader(data_filename_prefix+"Data.csv"));
-            String line;
-            line = br.readLine(); // purposely ignore the row of headings
-            int i=0; // indicates which index of the row we are currently on
-            while((line=br.readLine()) != null){
-                String[] row_contents = line.split(",");
-                summary += "experiment="+row_contents[0];
-                summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
-                summary += "\tp SD="+DF4.format(Double.parseDouble(row_contents[2]));
-                summary += "\t";
-                summary+=varying_parameter+"=";
-                summary += DF4.format(various_amounts.get(i));
-                i++;
-                summary += "\n";
-            }
-            br.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-        System.out.println("\nInitial settings: ");
-        printInitialSettings(); // print initial experimentation settings for comparison
-        System.out.println();
-        System.out.println(summary);
-    }
-
-
-
-
-
-
-    // stores initial experimentation settings
-    static String initial_settings = "";
 
     /**
      * Collects initial settings into a string.
      */
     public static void setInitialSettings(){
-        if(experiment_series && experiment_number == 0){ // if at start of series
+        if(experiment_series && experiment_num == 0){ // if at start of series
             initial_settings += "Experiment series ("+desc+")" +
                     " varying "+varying_parameter+
                     " by "+variation+
