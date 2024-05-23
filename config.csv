@@ -1,5 +1,2 @@
-game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,num exp,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,desc
-DG,4,10000,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.1,leeway7,0.1,15,VN,WRW,,avg score,NSI,copy,,,0.0,0.0,leeway7 test
-DG,250,10000,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.1,leeway7,0.1,15,VN,WRW,,avg score,NSI,copy,,,0.0,0.0,leeway7 series
-DG,10,10001,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,ROC,-0.02,6,VN,WRW,,avg score,NSI,copy,,,0.0,0.0,test series
-DG,1,10001,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,VN,WRW,,avg score,NSI,copy,,,0.0,0.0,test experiment
+game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,num exp,neigh,sel,sel noise,PPM,ASD,evo,evo noise,mut,u,delta,data rate,desc
+DG,1,10001,5,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,VN,WRW,,avg score,NSI,copy,,,0.0,0.0,2500,test experiment

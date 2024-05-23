@@ -231,6 +231,7 @@ public class Player {
         this.score=score;
     }
     private double average_score; // average score of this player this gen
+    public double getAverageScore(){return average_score;}
     private static String ASD = ""; // average score denominator
     public static String getASD(){return ASD;}
     public static void setASD(String s){ASD=s;}
@@ -462,6 +463,34 @@ public class Player {
 
 
 
+    // mean of edge weights belonging to the player
+    private double mean_self_edge_weight = 0.0;
+    public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
+    public void calculateMeanSelfEdgeWeight(){
+        mean_self_edge_weight = 0.0;
+        for(int i = 0; i < edge_weights.length; i++){
+            mean_self_edge_weight += edge_weights[i];
+        }
+        mean_self_edge_weight /= edge_weights.length;
+    }
+
+    /**
+     * mean of edge weights belonging to the player's neighbour that are directed at the player.<br>
+     * function assumes all players have same number of edge weights i.e. same num of neighbours.
+     */
+    private double mean_neighbour_edge_weight = 0.0;
+    public double getMeanNeighbourEdgeWeight(){return mean_self_edge_weight;}
+    public void calculateMeanNeighbourEdgeWeight(){
+        mean_neighbour_edge_weight = 0.0;
+        for(int i = 0; i < neighbourhood.size(); i++) {
+            Player neighbour = neighbourhood.get(i);
+            mean_neighbour_edge_weight += neighbour.edge_weights[findMeInMyNeighboursNeighbourhood(neighbour)];
+        }
+        mean_neighbour_edge_weight /= edge_weights.length;
+    }
+
+
+
 
 
 
@@ -508,20 +537,7 @@ public class Player {
     }
 
 
-    /**
-     * Returns the index of the player x in the neighbourhood of a neighbour.
-     */
-    public int findXInNeighboursNeighbourhood(Player neighbour){
-        int index = 0; // by default, assign index to 0.
-        for (int l = 0; l < neighbour.neighbourhood.size(); l++) {
-            Player y = neighbour.neighbourhood.get(l);
-            if (id == y.getId()) {
-                index = l;
-            }
-        }
 
-        return index;
-    }
 
 
     /**
@@ -549,13 +565,26 @@ public class Player {
         double sum = calculateOwnConnections();
         for(int k=0;k<neighbourhood.size();k++) {
             Player y = neighbourhood.get(k);
-            sum += y.edge_weights[findXInNeighboursNeighbourhood(y)];
+            sum += y.edge_weights[findMeInMyNeighboursNeighbourhood(y)];
         }
 
         return sum;
     }
 
+    /**
+     * Returns the index of the player x in the neighbourhood of a neighbour.
+     */
+    public int findMeInMyNeighboursNeighbourhood(Player neighbour){
+        int index = 0; // by default, assign index to 0.
+        for (int l = 0; l < neighbour.neighbourhood.size(); l++) {
+            Player y = neighbour.neighbourhood.get(l);
+            if (id == y.getId()) {
+                index = l;
+            }
+        }
 
+        return index;
+    }
 
 
 
@@ -752,4 +781,11 @@ public class Player {
         double new_q = ThreadLocalRandom.current().nextDouble(q - delta, q + delta);
         setStrategy(new_p,new_q);
     }
+
+
+
+
+
+
+
 }

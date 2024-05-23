@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,6 +84,8 @@ public class Alg1 extends Thread{
     static String series_data_filename;
     static String gen_strategy_data_filename;
     static String gen_interaction_data_filename;
+    static int data_rate; // determines how often generational data is recorded, if applicable.
+    static String gen_detailed_grid_filename;
 
 
     // fields related to edge weight learning (EWL)
@@ -435,10 +438,12 @@ public class Alg1 extends Thread{
         // record extra data for the first gen of the first run of the first experiment
         if(run_num == 0 && experiment_num == 0 && gen == 0) {
             gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
-            gen_interaction_data_filename = experiment_results_folder_path + "\\interactions";
+//            gen_interaction_data_filename = experiment_results_folder_path + "\\interactions";
+            gen_detailed_grid_filename = experiment_results_folder_path + "\\detailed_grid";
             try{ // create folders
                 Files.createDirectories(Paths.get(gen_strategy_data_filename));
-                Files.createDirectories(Paths.get(gen_interaction_data_filename));
+//                Files.createDirectories(Paths.get(gen_interaction_data_filename));
+                Files.createDirectories(Paths.get(gen_detailed_grid_filename));
             }catch(IOException e){
                 e.printStackTrace();
             }
@@ -531,20 +536,20 @@ public class Alg1 extends Thread{
                 }
             }
 
-            calculateStats(); // calculate the avg p and p SD of the pop
+            calculateOverallStats(); // calculate the avg p and p SD of the pop
+            calculateAverageEdgeWeights();
 
             // record extra data for the first run of the first experiment
-            if(run_num == 0 && experiment_num == 0 && gen % 1000 == 0){
+            if(run_num == 0 && experiment_num == 0 && gen % data_rate == 0){
 //            if(!experiment_series && runs == 1){
 
                 // record the avg p and p SD of the gen that just ended
                 System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
 //                writePerGenData(data_filename_prefix + "PerGenData.csv");
                 writeExperimentData();
-
                 writeStrategies();
-
-                writeInteractionData();
+//                writeInteractionData();
+                writeDetailedGrid();
 
 
 
@@ -561,10 +566,21 @@ public class Alg1 extends Thread{
 //                }
             }
 
-            reset(); // reset certain player attributes
+            prepare(); // prepare for next generation
             gen++; // move on to the next generation
         }
     }
+
+
+    public void calculateAverageEdgeWeights(){
+        for(ArrayList<Player> row:grid){
+            for(Player player: row){
+                player.calculateMeanSelfEdgeWeight();
+                player.calculateMeanNeighbourEdgeWeight();
+            }
+        }
+    }
+
 
 
     /**
@@ -672,6 +688,7 @@ public class Alg1 extends Thread{
                         " %-6s |" +//mut
                         " %-6s |" +//u
                         " %-6s |" +//delta
+                        " %-9s |" +//data rate (same length as gens)
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
@@ -702,6 +719,7 @@ public class Alg1 extends Thread{
                 ,"evo noise"
                 ,"mut"
                 ,"u"
+                ,"data rate"
                 ,"delta");
         printTableBorder();
 
@@ -742,6 +760,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-9s ", settings[config_index++]); //evo noise
             System.out.printf("| %-6s ", settings[config_index++]); //mut
             System.out.printf("| %-6s ", settings[config_index++]); //u
+            System.out.printf("| %-6s ", settings[config_index++]); //delta
             System.out.printf("| %-6s ", settings[config_index++]); //delta
             System.out.printf("| %s ", settings[config_index]); //desc
 
@@ -841,6 +860,9 @@ public class Alg1 extends Thread{
             }
         }
         config_index+=3;
+
+        //data rate
+        data_rate = Integer.parseInt(settings[config_index++]);
 
         //desc
         desc = settings[config_index];
@@ -991,6 +1013,7 @@ public class Alg1 extends Thread{
     /**
      * Assigns adjacent neighbours to the player in a 2D square lattice grid with respect
      * to the von Neumann or Moore neighbourhood type.
+     * von Neumann neighbourhood order: [right player, left player, above player, below player]
      * @param player is the player having their neighbourhood assigned.
      * @param y is the y coordinate of the player which represents the row they are in.
      * @param x is the x coordinate of the player which represents the column they are in.
@@ -1051,7 +1074,7 @@ public class Alg1 extends Thread{
      * Calculate the average value of p and the standard deviation of p across the population
      * at the current generation.
      */
-    public void calculateStats(){
+    public void calculateOverallStats(){
         // calculate avg p
         avg_p = 0.0;
         for(ArrayList<Player> row: grid){
@@ -1074,10 +1097,11 @@ public class Alg1 extends Thread{
 
 
     /**
+     * Prepare program for the next generation.<br>
      * For each player in the population, some attributes are reset in preparation
      * for the upcoming generation.
      */
-    public void reset(){
+    public void prepare(){
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 player.setScore(0);
@@ -1226,20 +1250,27 @@ public class Alg1 extends Thread{
         try{
             String filename = gen_strategy_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
-            for(ArrayList<Player> row:grid){
-                for(int j=0;j<row.size();j++){
-                    Player player = row.get(j);
-
-                    // write strategy.
-                    fw.append(DF4.format(player.getP()));
-
-
-                    if(j+1<row.size()){
-                        fw.append(",");
+            String s = "";
+            for(int y = rows - 1; y >= 0; y--){
+                for(int x = 0; x < columns; x++){
+                    s += DF4.format(grid.get(y).get(x).getP());
+                    if(x + 1 < columns){
+                        s += ",";
                     }
                 }
-                fw.append("\n");
+
+
+//                for(int j=row.size()-1;j>0;j--){
+//                    Player player = row.get(j);
+//                    s += DF4.format(player.getP());
+//                    if(j - 1 > row.size()){
+//                        s += ",";
+//                    }
+//                }
+
+                s += "\n";
             }
+            fw.append(s);
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -1247,30 +1278,82 @@ public class Alg1 extends Thread{
     }
 
 
-
+    /**
+     * Writes how many successful interactions the players had (this gen).
+     */
+//    public void writeInteractionData(){
+//        try{
+//            String filename = gen_interaction_data_filename + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename, false);
+//            for(ArrayList<Player> row:grid){
+//                for(int j=0;j<row.size();j++){
+//                    Player x = row.get(j);
+//
+//                    // write number of successful interactions this gen.
+//                    fw.append(Integer.toString(x.getNSI()));
+//
+//
+//                    if(j+1<row.size()){
+//                        fw.append(",");
+//                    }
+//                }
+//                fw.append("\n");
+//            }
+//            fw.close();
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+//    }
 
 
     /**
-     * Tracks how many successful interactions the players had (this gen).
+     * Writes a detailed grid of smaller grids representing a cluster of the population.<br>
+     * Smaller grids are 4x4 each.<br>
+     * Big grid consists of 3x3 of smaller grids. In total, big grid is 12x12.<br>
+     * Assumes von Neumann neighbourhood type.
      */
-    public void writeInteractionData(){
+    public void writeDetailedGrid(){
         try{
-            String filename = gen_interaction_data_filename + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename, false);
-            for(ArrayList<Player> row:grid){
-                for(int j=0;j<row.size();j++){
-                    Player x = row.get(j);
+            String filename = gen_detailed_grid_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename);
+            String string = "";
 
-                    // write number of successful interactions this gen.
-                    fw.append(Integer.toString(x.getNSI()));
+            String[] substrings = new String[12];
+            int i = 0;
 
+            for(int y = 2; y >= 0; y--){
+                for(int x = 0; x <= 2; x++){
 
-                    if(j+1<row.size()){
-                        fw.append(",");
-                    }
+                    Player current = grid.get(y).get(x);
+                    double[] edge_weights = current.getEdgeWeights();
+                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
+                    substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
+                    substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
+                    substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
+                    substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
+
                 }
-                fw.append("\n");
+
+                i += 4;
+
+//                    s += DF4.format(grid.get(y1).get(x1).getP());
+//                    if(x1 + 1 < columns){
+//                        s += ",";
+//                    }
+//                }
+//                s += "\n";
             }
+
+//            s += ","+grid.get(0).get(0).getEdgeWeights()[2]+","+ grid.get(0).get(0).getNeighbourhood().get(2).getEdgeWeights()[3]+",\n";
+//            s += grid.get(0).get(0).getNeighbourhood().get(1).getEdgeWeights()[0]+","+DF4.format(grid.get(0).get(0).getP())+","+DF4.format(grid.get(0).get(0).getAverageScore())+","+grid.get(0).get(0).getEdgeWeights()[0]+"\n";
+//            s += grid.get(0).get(0).getEdgeWeights()[1]+","+DF4.format(avg_EW)+",,"+grid.get(0).get(0).getEdgeWeights()[0]+grid.get(0).get(0).getNeighbourhood().get(0).getEdgeWeights()[1]+"\n";
+//            s += ","+grid.get(0).get(0).getNeighbourhood().get(3).getEdgeWeights()[2]+","+ grid.get(0).get(0).getEdgeWeights()[3]+",\n";
+
+            for(int j=0;j<substrings.length;j++){
+                string += substrings[j];
+            }
+
+            fw.append(string);
             fw.close();
         }catch(IOException e){
             e.printStackTrace();
@@ -1278,4 +1361,21 @@ public class Alg1 extends Thread{
     }
 
 
+    /**
+     * Finds a player given the integer ID parameter.
+     * @param ID of the player to find
+     * @return player object with the given ID
+     */
+    public Player findPlayerByID(int ID){
+        Player player = null;
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<columns;j++){
+                if(ID == grid.get(i).get(j).getId()){
+                    player = grid.get(i).get(j);
+                }
+            }
+        }
+
+        return player;
+    }
 }
