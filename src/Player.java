@@ -21,6 +21,8 @@ public class Player {
 
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
     public static DecimalFormat getDF1() { return DF1; }
+    private static final DecimalFormat DF2 = new DecimalFormat("0.00");
+    public static DecimalFormat getDF2(){return DF2;}
     private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
     public static DecimalFormat getDF4(){
         return DF4;
@@ -461,9 +463,9 @@ public class Player {
     }
 
 
-
-
-    // mean of edge weights belonging to the player
+    /**
+     * mean of edge weights belonging to the player
+     */
     private double mean_self_edge_weight = 0.0;
     public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
     public void calculateMeanSelfEdgeWeight(){
@@ -476,10 +478,11 @@ public class Player {
 
     /**
      * mean of edge weights belonging to the player's neighbour that are directed at the player.<br>
-     * function assumes all players have same number of edge weights i.e. same num of neighbours.
+     * function assumes all players have same number of edge weights and neighbours. <br>
+     * otherwise the function does not signify much.
      */
     private double mean_neighbour_edge_weight = 0.0;
-    public double getMeanNeighbourEdgeWeight(){return mean_self_edge_weight;}
+    public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
     public void calculateMeanNeighbourEdgeWeight(){
         mean_neighbour_edge_weight = 0.0;
         for(int i = 0; i < neighbourhood.size(); i++) {
@@ -520,7 +523,7 @@ public class Player {
         player_desc += " neighbourhood=[";
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            player_desc += neighbour.id + " (" + DF4.format(edge_weights[i]) + ")";
+            player_desc += neighbour.id + " (" + DF2.format(edge_weights[i]) + ")";
             if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
                 player_desc +=", ";
             }
@@ -572,18 +575,21 @@ public class Player {
     }
 
     /**
-     * Returns the index of the player x in the neighbourhood of a neighbour.
+     * Returns the index of this player in the neighbourhood of their neighbour.<br>
+     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
      */
-    public int findMeInMyNeighboursNeighbourhood(Player neighbour){
-        int index = 0; // by default, assign index to 0.
-        for (int l = 0; l < neighbour.neighbourhood.size(); l++) {
-            Player y = neighbour.neighbourhood.get(l);
-            if (id == y.getId()) {
-                index = l;
+    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
+        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
+        int my_id = id;
+        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
+            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
+            if (my_id == neighbours_neighbour.id) {
+                my_index_in_neighbours_neighbourhood = i;
+                break;
             }
         }
 
-        return index;
+        return my_index_in_neighbours_neighbourhood;
     }
 
 

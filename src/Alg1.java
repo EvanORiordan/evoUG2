@@ -74,6 +74,7 @@ public class Alg1 extends Thread{
     static boolean save_pop = false;
     static boolean use_saved_pop = false;
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
+    static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc;//description of experiment from config file
     static LocalDateTime timestamp;
@@ -285,7 +286,7 @@ public class Alg1 extends Thread{
                 String[] row_contents = line.split(",");
                 summary += "experiment="+row_contents[0];
                 summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
-                summary += "\tp SD="+DF4.format(Double.parseDouble(row_contents[2]));
+                summary += "\tavg p SD="+DF4.format(Double.parseDouble(row_contents[2]));
                 summary += "\t";
                 summary+=varying_parameter+"=";
                 summary += DF4.format(various_amounts.get(i));
@@ -1318,40 +1319,108 @@ public class Alg1 extends Thread{
             fw = new FileWriter(filename);
             String string = "";
 
+//            String[] substrings = new String[12];
+
+//            String[][] substrings = new String[3][4];
+
+//            int i = 0;
+
+//            for(int y = 2; y >= 0; y--){
+//                for(int x = 0; x <= 2; x++){
+//
+//                    Player current = grid.get(y).get(x);
+//                    double[] edge_weights = current.getEdgeWeights();
+//                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
+//                    substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
+//                    substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
+//                    substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
+//                    substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
+//
+//
+//
+//                }
+//
+////                i += 4;
+//
+//            }
+
+
+//            String[][] substrings = new String[3][4];
+//            for(int i=0;i<3;i++){ // for each small grid in the big grid
+//                for(int j=0;j<4;j++){ // for each row of this small grid
+//                    for(int y = 2; y >= 0; y--) { // access y-1, y and y+1 of current player
+//                        for (int x = 0; x <= 2; x++) { // access x-1, x and x+1 of current player
+////                            substrings[i][j] += ","+
+//
+//                            Player current = grid.get(y).get(x);
+//                            double[] edge_weights = current.getEdgeWeights();
+//                            ArrayList<Player> neighbourhood = current.getNeighbourhood();
+//                            substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
+//                            substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
+//                            substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
+//                            substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
+//                        }
+//                    }
+//                }
+//            }
+
+
+
+//            String[] substrings = new String[12];
+//            int a=0;
+//            int b=0;
+//            for(int i=0;i<3;i++){
+//                for(int j=0;j<3;j++){
+//                    for(int y = 2; y >= 0; y--) { // access y-1, y and y+1 of current player
+//                        for (int x = 0; x <= 2; x++) { // access x-1, x and x+1 of current player
+//                            substrings[a][b] +=
+//                        }
+//                    }
+//                }
+//            }
+//            for(int i=0;i<substrings.length;i++){
+//                string += substrings[i];
+//            }
+
+
+
+
             String[] substrings = new String[12];
-            int i = 0;
-
-            for(int y = 2; y >= 0; y--){
-                for(int x = 0; x <= 2; x++){
-
+            for(int i=0;i<substrings.length;i++){
+                substrings[i] = "";
+            }
+            int a=0;
+            for(int y = 2; y >= 0; y--) {
+                for (int x = 0; x <= 2; x++) {
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-                    substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
-                    substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
-                    substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
-                    substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
-
+                    substrings[a] += " ,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+", ";
+                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
+                    substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
+                    substrings[a+3] += " ,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+", ";
+                    if(x + 1 <= 2){
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += ",";
+                        }
+//                        substrings[a] += ",";
+//                        substrings[a+1] += ",";
+//                        substrings[a+2] += ",";
+//                        substrings[a+3] += ",";
+                    } else {
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += "\n";
+                        }
+                    }
                 }
-
-                i += 4;
-
-//                    s += DF4.format(grid.get(y1).get(x1).getP());
-//                    if(x1 + 1 < columns){
-//                        s += ",";
-//                    }
-//                }
-//                s += "\n";
+                a += 4;
+            }
+            for(int i=0;i<substrings.length;i++){
+                string += substrings[i];
             }
 
-//            s += ","+grid.get(0).get(0).getEdgeWeights()[2]+","+ grid.get(0).get(0).getNeighbourhood().get(2).getEdgeWeights()[3]+",\n";
-//            s += grid.get(0).get(0).getNeighbourhood().get(1).getEdgeWeights()[0]+","+DF4.format(grid.get(0).get(0).getP())+","+DF4.format(grid.get(0).get(0).getAverageScore())+","+grid.get(0).get(0).getEdgeWeights()[0]+"\n";
-//            s += grid.get(0).get(0).getEdgeWeights()[1]+","+DF4.format(avg_EW)+",,"+grid.get(0).get(0).getEdgeWeights()[0]+grid.get(0).get(0).getNeighbourhood().get(0).getEdgeWeights()[1]+"\n";
-//            s += ","+grid.get(0).get(0).getNeighbourhood().get(3).getEdgeWeights()[2]+","+ grid.get(0).get(0).getEdgeWeights()[3]+",\n";
 
-            for(int j=0;j<substrings.length;j++){
-                string += substrings[j];
-            }
+
 
             fw.append(string);
             fw.close();
