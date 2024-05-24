@@ -21,6 +21,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * DG Algorithm.<br>
  */
 public class Alg1 extends Thread{
+
     // fields related to the game environment
     static String game; // what game is being played
     static int rows; // how many rows in the square grid
@@ -35,6 +36,7 @@ public class Alg1 extends Thread{
     int gen = 0; // indicates which generation is currently running.
     static double DCF = 0.0;// distance cost factor
     static String initial_settings = "";// stores initial experimentation settings
+
 
     // fields related to experiment series
     static boolean experiment_series;//indicates whether to run experiment or experiment series where a parameter is varied
@@ -67,26 +69,19 @@ public class Alg1 extends Thread{
     static FileWriter fw;
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
-//    static String data_filename_prefix = "csv_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
-//    static String interaction_data_filename_prefix="csv_data\\interactions_data\\"+Thread.currentThread().getStackTrace()[1].getClassName();
-//    static int interaction_data_record_rate = 0; // by default, do not collect interaction data
     static String config_filename = "config.csv";
-    static boolean save_pop = false;
-    static boolean use_saved_pop = false;
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc;//description of experiment from config file
-    static LocalDateTime timestamp;
-    static String timestamp_string;
+    static String start_timestamp_string;
     static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
     static String gen_strategy_data_filename;
-    static String gen_interaction_data_filename;
-    static int data_rate; // determines how often generational data is recorded, if applicable.
     static String gen_detailed_grid_filename;
+    static int data_rate; // determines how often generational data is recorded, if applicable.
 
 
     // fields related to edge weight learning (EWL)
@@ -123,38 +118,31 @@ public class Alg1 extends Thread{
       */
     public static void main(String[] args) {
         setupEnvironment();
-
         setInitialSettings();
-
-        // mark the beginning of the algorithm's runtime
-        timestamp = LocalDateTime.now();
-        timestamp_string = timestamp.getYear()
-                +"-"+timestamp.getMonthValue()
-                +"-"+timestamp.getDayOfMonth()
-                +"_"+timestamp.getHour()
-                +"-"+timestamp.getMinute()
-                +"-"+timestamp.getSecond();
-        experiment_results_folder_path = data_folder_path+"\\"+timestamp_string;
-        try { // set up results folder
-            Files.createDirectories(Paths.get(experiment_results_folder_path));
+        LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
+        start_timestamp_string = start_timestamp.getYear()
+                +"-"+start_timestamp.getMonthValue()
+                +"-"+start_timestamp.getDayOfMonth()
+                +"_"+start_timestamp.getHour()
+                +"-"+start_timestamp.getMinute()
+                +"-"+start_timestamp.getSecond();
+        experiment_results_folder_path = data_folder_path+"\\"+start_timestamp_string;
+        try {
+            Files.createDirectories(Paths.get(experiment_results_folder_path)); // create results storage folder
         }catch(IOException e){
             e.printStackTrace();
         }
-        Instant start = Instant.now();
-        System.out.println("Starting timestamp: "+timestamp);
-
+        System.out.println("Starting timestamp: "+start_timestamp);
         if(experiment_series){
             experimentSeries(); // run an experiment series
         } else {
             experiment(); // run a single experiment
         }
-
-        // mark the end of the algorithm's runtime
-        timestamp = LocalDateTime.now();
-        System.out.println("Ending timestamp: "+timestamp);
-        Instant finish = Instant.now();
-        long secondsElapsed = Duration.between(start, finish).toSeconds();
-        long minutesElapsed = Duration.between(start, finish).toMinutes();
+        LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
+        System.out.println("Finishing timestamp: "+finish_timestamp);
+        Duration duration = Duration.between(start_timestamp, finish_timestamp);
+        long secondsElapsed = duration.toSeconds();
+        long minutesElapsed = duration.toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
     }
 
@@ -168,8 +156,8 @@ public class Alg1 extends Thread{
         System.out.println();
         printInitialSettings();
 
-        // store initial value of varying parameter
-        ArrayList<Double> various_amounts = new ArrayList<>();
+
+        ArrayList<Double> various_amounts = new ArrayList<>(); // stores initial value of varying parameter
         switch(varying_parameter){
             case"runs"->various_amounts.add((double)runs);
             case"gens"->various_amounts.add((double)gens);
@@ -196,9 +184,9 @@ public class Alg1 extends Thread{
             System.out.println("\n===================\n" +
                     "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
 
-            experiment(); // run an experiment
+            experiment(); // run an experiment of the series
 
-            switch(varying_parameter){ // change the value of the varying parameter
+            switch(varying_parameter){ // after experiment, change the value of the varying parameter
                 case "runs"->{
                     runs+=(int)variation;
                     various_amounts.add((double)runs);
@@ -267,9 +255,7 @@ public class Alg1 extends Thread{
                 }
             }
 
-
-
-            // informs user what the varying parameter's value was
+            // inform user what the varying parameter's value was
             System.out.println("NOTE: End of "+varying_parameter+"="+DF4.format(various_amounts.get(i))+"."
                     +"\n===================");
         }
@@ -277,10 +263,9 @@ public class Alg1 extends Thread{
         // display a summary of the series in the console
         String summary = "";
         try{
-//            br = new BufferedReader(new FileReader(data_filename_prefix+"Data.csv"));
             br = new BufferedReader(new FileReader(series_data_filename));
             String line;
-            line = br.readLine(); // purposely ignore the row of headings
+            br.readLine(); // purposely ignore the row of headings
             int i=0; // indicates which index of the row we are currently on
             while((line=br.readLine()) != null){
                 String[] row_contents = line.split(",");
@@ -321,9 +306,9 @@ public class Alg1 extends Thread{
         double[] avg_p_values_of_experiment = new double[runs];
         double sd_avg_p_of_experiment = 0;
 
-        // perform the experiment multiple times
+        // perform/run the experiment multiple times if applicable
         for(run_num = 0; run_num < runs; run_num++){
-            Alg1 run = new Alg1(); // one run of the algorithm
+            Alg1 run = new Alg1(); // represents one run of the experiment
             run.start(); // start the run
             mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
             avg_p_values_of_experiment[run_num] = run.avg_p;
@@ -339,7 +324,7 @@ public class Alg1 extends Thread{
             printInitialSettings();
         }
 
-        // calculate stats
+        // calculate stats of experiment
         mean_avg_p_of_experiment /= runs;
         for(int i=0;i<runs;i++){
             sd_avg_p_of_experiment +=
@@ -351,9 +336,8 @@ public class Alg1 extends Thread{
         System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
                 +" avg p SD="+DF4.format(sd_avg_p_of_experiment));
 
-        // write experiment data (results and settings) to a .csv data file.
+        // write experiment data, including results and settings, to a .csv data file.
         try{
-//            String filename = data_filename_prefix + "Data.csv";
 //            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
             if(experiment_num == 0){ // write column headings
@@ -435,26 +419,13 @@ public class Alg1 extends Thread{
 //        }
         initRandomPop();
 
-
-        // record extra data for the first gen of the first run of the first experiment
+        //at the first gen of the first run of the first experiment, create result storage folders and record strategies
         if(run_num == 0 && experiment_num == 0 && gen == 0) {
-            gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
-//            gen_interaction_data_filename = experiment_results_folder_path + "\\interactions";
-            gen_detailed_grid_filename = experiment_results_folder_path + "\\detailed_grid";
-            try{ // create folders
-                Files.createDirectories(Paths.get(gen_strategy_data_filename));
-//                Files.createDirectories(Paths.get(gen_interaction_data_filename));
-                Files.createDirectories(Paths.get(gen_detailed_grid_filename));
-            }catch(IOException e){
-                e.printStackTrace();
-            }
+            createFolders();
             writeStrategies();
         }
 
-
-
-
-            // initialise neighbourhoods
+        // initialise neighbourhoods
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
                 Player player = grid.get(i).get(j);
@@ -474,18 +445,16 @@ public class Alg1 extends Thread{
 
         // players begin playing the game
         while(gen != gens) { // algorithm stops once this condition is reached
-            // playing phase
+            // playing phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     switch(game){
                         case"UG","DG"->{
                             switch(EWT){
-                                case"1"->player.playUG1(); // EW affects probability to interact
-                                case"2"->player.playUG2(); // EW affects payoff calculation
+                                case"1"->player.playUG1();
+                                case"2"->player.playUG2();
                             }
                         }
-
-
 //                        case"PD"->player.playPD();
 //                        case"IG"->player.playIG();
 //                        case"TG"->player.playTG();
@@ -494,14 +463,16 @@ public class Alg1 extends Thread{
                 }
             }
 
-            // edge weight learning phase
+            // edge weight learning phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
                 }
             }
 
-            // selection and evolution occur every EPR gens. each player in the grid tries to evolve.
+            // evolution phase of generation.
+            // occurs every EPR generations.
+            // consists of selection, evolution and mutation, if applicable.
             if((gen + 1) % EPR == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
@@ -540,37 +511,34 @@ public class Alg1 extends Thread{
             calculateOverallStats(); // calculate the avg p and p SD of the pop
             calculateAverageEdgeWeights();
 
-            // record extra data for the first run of the first experiment
+            // record extra data at the end of the first run of the first experiment every data_rate generations
             if(run_num == 0 && experiment_num == 0 && gen % data_rate == 0){
-//            if(!experiment_series && runs == 1){
-
-                // record the avg p and p SD of the gen that just ended
-                System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
-//                writePerGenData(data_filename_prefix + "PerGenData.csv");
+                if(!experiment_series){ // if not a series, display basic stats every data_rate generations
+                    System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                }
                 writeExperimentData();
                 writeStrategies();
-//                writeInteractionData();
                 writeDetailedGrid();
-
-
-
-                // record interaction data according to the interaction data record rate
-//                if(gen + 1 % interaction_data_record_rate == 0){
-//                    writeInteractionData(interaction_data_filename_prefix + "Gen" + gen);
-//                }
-
-//                if(gen==data_gen){ // at end of data gen, record lots of extra info
-//                    System.out.println("Recording detailed data for gen "+data_gen+"...");
-////                    writeStrategies(data_filename_prefix + "Strategies.csv");
-//                    writeOwnConnections(data_filename_prefix + "OwnConnections.csv");
-//                    writeAllConnections(data_filename_prefix + "AllConnections.csv");
-//                }
             }
 
             prepare(); // prepare for next generation
             gen++; // move on to the next generation
         }
     }
+
+
+    public void createFolders(){
+        gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
+        gen_detailed_grid_filename = experiment_results_folder_path + "\\detailed_grid";
+        try{ // create folders
+            Files.createDirectories(Paths.get(gen_strategy_data_filename));
+            Files.createDirectories(Paths.get(gen_detailed_grid_filename));
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        writeStrategies();
+    }
+
 
 
     public void calculateAverageEdgeWeights(){
@@ -641,18 +609,18 @@ public class Alg1 extends Thread{
      * This function loads in a configuration of settings from a .csv file, allowing the user to assign the values they want to the environmental parameters.
      */
     public static void setupEnvironment(){
-        ArrayList<String> configurations = new ArrayList<>(); // stores configurations
-        try{ // load the configs from the file
+        // load configurations
+        ArrayList<String> configurations = new ArrayList<>(); // stores configs
+        try{
             br = new BufferedReader(new FileReader(config_filename));
             String line; // initialise String to store rows of data
-            line = br.readLine(); // purposely ignore the row of headings
+            br.readLine(); // purposely ignore the row of headings
             while((line = br.readLine()) != null){
                 configurations.add(line);
             }
         } catch(IOException e){
             e.printStackTrace();
         }
-
 
         // display intro and config table headings
         System.out.printf("=========================================%n");
@@ -724,14 +692,11 @@ public class Alg1 extends Thread{
                 ,"delta");
         printTableBorder();
 
-
-
         // display config table rows
         int config_index;
         for(int i=0;i<configurations.size();i++){
             String[] settings = configurations.get(i).split(",");
             config_index = 0;
-
             System.out.printf("%-6d ", i); //config
             System.out.printf("| %-4s ", settings[config_index++]); //game
             System.out.printf("| %-6s ", settings[config_index++]); //runs
@@ -764,13 +729,9 @@ public class Alg1 extends Thread{
             System.out.printf("| %-6s ", settings[config_index++]); //delta
             System.out.printf("| %-6s ", settings[config_index++]); //delta
             System.out.printf("| %s ", settings[config_index]); //desc
-
-
             System.out.println();
         }
         printTableBorder();
-
-
 
         // ask user which config they want to use
         System.out.println("Which config would you like to use? (int)");
@@ -785,7 +746,8 @@ public class Alg1 extends Thread{
             }
         }while(!config_found);
 
-        // apply the config
+
+        // proceed to apply the selected config...
         String[] settings = configurations.get(config_num).split(",");
         config_index = 0;
 
@@ -869,26 +831,10 @@ public class Alg1 extends Thread{
         desc = settings[config_index];
 
 
+        // by default, set prize per game to 1.0.
+        // the gross value of the prize does not matter as long as, in general, average score is used as a metric instead of raw score.
+        Player.setGrossPrize(1.0);
 
-
-
-
-        // enable these lines if you want to use these features.
-        // ask user if they want to save the initial pop (so that it can be used again)
-//        save_pop = binaryQuestion("save initial pop? (0: no, 1: yes)");
-        // ask user if they want to use the pop saved in the strategies .csv file
-//        use_saved_pop = binaryQuestion("use saved pop? (0: no, 1: yes)");
-
-
-        Player.setGrossPrize(1.0); // set prize per game to 1.0; makes no diff if bigger or smaller
-
-
-
-
-
-        // you could ask the user how often they want to record interaction data. alternatively,
-        // it could be a column of the config file.
-//        interaction_data_record_rate = gens; // by default, do not collect interaction data
     }
 
     public static void printTableBorder(){
@@ -901,41 +847,6 @@ public class Alg1 extends Thread{
                         "=======================================================" +
                         "%n");
     }
-
-
-    /**
-     * Method used in main().<br>
-     * Asks the user a binary question, receiving a boolean answer.
-     */
-    public static boolean binaryQuestion(String question){
-        boolean answer = false;
-        boolean keep_looping = true;
-        do{
-            System.out.printf(question);
-            switch(scanner.nextInt()){
-                case 0 ->keep_looping = false; // 0 => no/false
-                case 1 -> { // 1 => yes/true
-                    answer = true;
-                    keep_looping = false;
-                }
-                default ->System.out.println("ERROR: select a valid option");
-            }
-        } while(keep_looping);
-        return answer;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     /**
@@ -998,14 +909,13 @@ public class Alg1 extends Thread{
         }
     }
 
+
     /**
      * Prints initial experimentation settings.
      */
     public static void printInitialSettings(){
         System.out.println(initial_settings);
     }
-
-
 
 
 
@@ -1076,7 +986,7 @@ public class Alg1 extends Thread{
      * at the current generation.
      */
     public void calculateOverallStats(){
-        // calculate avg p
+        // calculate average p
         avg_p = 0.0;
         for(ArrayList<Player> row: grid){
             for(Player player: row){
@@ -1126,10 +1036,6 @@ public class Alg1 extends Thread{
 
 
 
-
-
-
-
     /**
      * Allows for the visualisation of the avg p of a run with respect to gens, with gens on x-axis
      * and avg p on y-axis. Now also collects standard deviation (SD) data.<br>
@@ -1141,7 +1047,6 @@ public class Alg1 extends Thread{
      */
     public void writeExperimentData(){
         try{
-            // setup file writer
 //            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             String filename = experiment_results_folder_path + "\\" + "experiment_data.csv";
             if(gen == 0){ // apply headings to file before writing data
@@ -1153,9 +1058,7 @@ public class Alg1 extends Thread{
                 );
                 fw.close();
             }
-
-            // write the data
-            fw = new FileWriter(filename, true); // append set to true means append mode.
+            fw = new FileWriter(filename, true);
             fw.append(gen + "");
             fw.append("," + DF4.format(avg_p));
             fw.append("," + DF4.format(p_SD));
@@ -1166,82 +1069,6 @@ public class Alg1 extends Thread{
         }
     }
 
-
-
-
-
-
-
-
-    /**
-     * Writes the population to a .csv file in the form of a square grid of values in [0.0, 4.0].
-     * Each value in the grid represents the sum of connections (edge weights) belonging to the
-     * player in that position.<br>
-     * This value represents how trusting the player is of their neighbours. If a player x has a 0 on
-     * this grid, x must have a higher p value than their neighbours and depending on the ROC, they
-     * have had a greater value of p for some time. If x has a 4, x must have the lowest p value in
-     * their neighbourhood.<br>
-     * This method also calculates the average sum of a player's own weights.
-     */
-    public void writeOwnConnections(String filename){
-        double avg_own_connections = 0;
-        try{
-            fw = new FileWriter(filename, false);
-            for(ArrayList<Player> row:grid){
-                for(int j=0;j<row.size();j++){
-                    Player x = row.get(j);
-                    double sum = x.calculateOwnConnections();
-                    avg_own_connections += sum;
-                    fw.append(DF4.format(sum));
-                    if(j+1<row.size()){
-                        fw.append(",");
-                    }
-                }
-                fw.append("\n");
-            }
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-
-
-        // print avg own connections
-        avg_own_connections /= N;
-        System.out.println("avg own connections="+DF4.format(avg_own_connections));
-    }
-
-
-    /**
-     * Write sum of connections of a player and the weights associated with them.<br>
-     *
-     * This method also calculates the average sum of a player's associated weights.<br>
-     */
-    public void writeAllConnections(String filename){
-        double avg_all_connections = 0;
-        try{
-            fw = new FileWriter(filename, false);
-            for(ArrayList<Player> row:grid){
-                for(int j=0;j<row.size();j++){
-                    Player x = row.get(j);
-                    double sum = x.calculateAllConnections();
-                    avg_all_connections += sum;
-                    fw.append(DF4.format(sum));
-                    if(j+1<row.size()){
-                        fw.append(",");
-                    }
-                }
-                fw.append("\n");
-            }
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-
-
-        // print avg all connections
-        avg_all_connections /= N;
-        System.out.println("avg all connections="+DF4.format(avg_all_connections));
-    }
 
 
     /**
@@ -1259,16 +1086,6 @@ public class Alg1 extends Thread{
                         s += ",";
                     }
                 }
-
-
-//                for(int j=row.size()-1;j>0;j--){
-//                    Player player = row.get(j);
-//                    s += DF4.format(player.getP());
-//                    if(j - 1 > row.size()){
-//                        s += ",";
-//                    }
-//                }
-
                 s += "\n";
             }
             fw.append(s);
@@ -1278,33 +1095,6 @@ public class Alg1 extends Thread{
         }
     }
 
-
-    /**
-     * Writes how many successful interactions the players had (this gen).
-     */
-//    public void writeInteractionData(){
-//        try{
-//            String filename = gen_interaction_data_filename + "\\gen" + gen + ".csv";
-//            fw = new FileWriter(filename, false);
-//            for(ArrayList<Player> row:grid){
-//                for(int j=0;j<row.size();j++){
-//                    Player x = row.get(j);
-//
-//                    // write number of successful interactions this gen.
-//                    fw.append(Integer.toString(x.getNSI()));
-//
-//
-//                    if(j+1<row.size()){
-//                        fw.append(",");
-//                    }
-//                }
-//                fw.append("\n");
-//            }
-//            fw.close();
-//        }catch(IOException e){
-//            e.printStackTrace();
-//        }
-//    }
 
 
     /**
@@ -1318,73 +1108,6 @@ public class Alg1 extends Thread{
             String filename = gen_detailed_grid_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
-
-//            String[] substrings = new String[12];
-
-//            String[][] substrings = new String[3][4];
-
-//            int i = 0;
-
-//            for(int y = 2; y >= 0; y--){
-//                for(int x = 0; x <= 2; x++){
-//
-//                    Player current = grid.get(y).get(x);
-//                    double[] edge_weights = current.getEdgeWeights();
-//                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
-//                    substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
-//                    substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
-//                    substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
-//                    substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
-//
-//
-//
-//                }
-//
-////                i += 4;
-//
-//            }
-
-
-//            String[][] substrings = new String[3][4];
-//            for(int i=0;i<3;i++){ // for each small grid in the big grid
-//                for(int j=0;j<4;j++){ // for each row of this small grid
-//                    for(int y = 2; y >= 0; y--) { // access y-1, y and y+1 of current player
-//                        for (int x = 0; x <= 2; x++) { // access x-1, x and x+1 of current player
-////                            substrings[i][j] += ","+
-//
-//                            Player current = grid.get(y).get(x);
-//                            double[] edge_weights = current.getEdgeWeights();
-//                            ArrayList<Player> neighbourhood = current.getNeighbourhood();
-//                            substrings[i] += ","+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",\n";
-//                            substrings[i+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF4.format(current.getP())+","+DF4.format(current.getAverageScore())+","+edge_weights[0]+"\n";
-//                            substrings[i+2] += current.getEdgeWeights()[1]+","+DF4.format(current.getMeanSelfEdgeWeight())+","+DF4.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1]+"\n";
-//                            substrings[i+3] += ","+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",\n";
-//                        }
-//                    }
-//                }
-//            }
-
-
-
-//            String[] substrings = new String[12];
-//            int a=0;
-//            int b=0;
-//            for(int i=0;i<3;i++){
-//                for(int j=0;j<3;j++){
-//                    for(int y = 2; y >= 0; y--) { // access y-1, y and y+1 of current player
-//                        for (int x = 0; x <= 2; x++) { // access x-1, x and x+1 of current player
-//                            substrings[a][b] +=
-//                        }
-//                    }
-//                }
-//            }
-//            for(int i=0;i<substrings.length;i++){
-//                string += substrings[i];
-//            }
-
-
-
-
             String[] substrings = new String[12];
             for(int i=0;i<substrings.length;i++){
                 substrings[i] = "";
@@ -1418,16 +1141,13 @@ public class Alg1 extends Thread{
             for(int i=0;i<substrings.length;i++){
                 string += substrings[i];
             }
-
-
-
-
             fw.append(string);
             fw.close();
         }catch(IOException e){
             e.printStackTrace();
         }
     }
+
 
 
     /**

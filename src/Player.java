@@ -119,12 +119,10 @@ public class Player {
     }
 
     /**
-     * Play the UG where for each neighbour y in player x's neighbourhood, x proposes/dictates
-     * to them if the weight of y's
-     * edge to x, which represents y's likelihood of receiving from x, is greater than a
-     * randomly generated double between 0 and 1.<br>
-     * Note: When the EW is 1.0, the game always occurs. Since EWs initialise at 1.0,
-     * if EWL is not occurring, games should and do always take place.
+     * Ultimatum game where edge weights affects probability to interact.<br>
+     * The greater the weight, the greater the likelihood of the player being pointed at of interacting
+     * with the owner of the edge.<br>
+     * If EWL is disabled, this function defaults to the standard ultimatum game.
      */
     public void playUG1(){
         for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
@@ -147,7 +145,8 @@ public class Player {
     }
 
     /**
-     * UG where edge weight is factored into payoff calculation.
+     * Ultimatum Game where edge weights are applied as a factor in payoff calculation.<br>
+     * If EWL is disabled, this function defaults to the standard ultimatum game.
      */
     public void playUG2(){
         for(Player neighbour: neighbourhood){
@@ -167,14 +166,14 @@ public class Player {
 
 
     /**
-     * Standard UG where the player proposes to the responder.
+     * Standard ultimatum Game where the player proposes to the responder.
      * @param responder
      */
     public void UG(double net_prize, Player responder){
         if(p >= responder.q){
-            successfulInteraction(net_prize, responder);
+            successfulInteraction(net_prize, responder); // responder accepts proposal
         } else {
-            unsuccessfulInteraction(responder);
+            unsuccessfulInteraction(responder); // responder rejects proposal
         }
     }
 
@@ -215,9 +214,6 @@ public class Player {
     private int NSR = 0; // num successful receptions
     public void setNI(int i){
         NI=i;
-    }
-    public int getNSI(){
-        return NSI;
     }
     public void setNSI(int i){
         NSI=i;
@@ -318,14 +314,15 @@ public class Player {
     }
 
     /**
-     * Function used during EWL().<br>
-     * Calculates the total amount of leeway to be given by the player to the neighbour.
      * @param neighbour
      * @param i
      * @param leeway1
      * @param leeway3
      * @param leeway4
-     * @return total leeway
+     * @param leeway5
+     * @param leeway6
+     * @param leeway7
+     * @return total leeway to be given by the player to the neighbour during edge weight learning
      */
     public double calculateTotalLeeway(Player neighbour,
                                        int i,
@@ -476,6 +473,7 @@ public class Player {
         mean_self_edge_weight /= edge_weights.length;
     }
 
+
     /**
      * mean of edge weights belonging to the player's neighbour that are directed at the player.<br>
      * function assumes all players have same number of edge weights and neighbours. <br>
@@ -492,7 +490,23 @@ public class Player {
         mean_neighbour_edge_weight /= edge_weights.length;
     }
 
+    /**
+     * Returns the index of this player in the neighbourhood of their neighbour.<br>
+     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
+     */
+    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
+        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
+        int my_id = id;
+        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
+            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
+            if (my_id == neighbours_neighbour.id) {
+                my_index_in_neighbours_neighbourhood = i;
+                break;
+            }
+        }
 
+        return my_index_in_neighbours_neighbourhood;
+    }
 
 
 
@@ -538,60 +552,6 @@ public class Player {
 
         return player_desc;
     }
-
-
-
-
-
-    /**
-     * Returns the sum of own connections of the player
-      */
-    public double calculateOwnConnections(){
-        double sum = 0.0;
-        for(int i=0;i<edge_weights.length;i++){
-            sum += edge_weights[i];
-        }
-
-        return sum;
-    }
-
-
-    /**
-     * Returns the sum of all associated connections of the player.<br>
-     * How to find weights of neighbour edges associated with player x:<br>
-     * - Loop through x's neighbourhood;<br>
-     * - For each neighbour y of x, find x's index within y's neighbourhood;<br>
-     * - Use the index to find the weight of the edge from y to x;<br>
-     * - Add the weight to the sum.<br>
-     */
-    public double calculateAllConnections(){
-        double sum = calculateOwnConnections();
-        for(int k=0;k<neighbourhood.size();k++) {
-            Player y = neighbourhood.get(k);
-            sum += y.edge_weights[findMeInMyNeighboursNeighbourhood(y)];
-        }
-
-        return sum;
-    }
-
-    /**
-     * Returns the index of this player in the neighbourhood of their neighbour.<br>
-     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
-     */
-    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
-        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
-        int my_id = id;
-        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
-            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
-            if (my_id == neighbours_neighbour.id) {
-                my_index_in_neighbours_neighbourhood = i;
-                break;
-            }
-        }
-
-        return my_index_in_neighbours_neighbourhood;
-    }
-
 
 
 
@@ -787,11 +747,5 @@ public class Player {
         double new_q = ThreadLocalRandom.current().nextDouble(q - delta, q + delta);
         setStrategy(new_p,new_q);
     }
-
-
-
-
-
-
 
 }
