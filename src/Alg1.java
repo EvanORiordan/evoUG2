@@ -44,24 +44,6 @@ public class Alg1 extends Thread{
     static double variation;//indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
     static int num_experiments;//indicates the number of experiments to occur in the series
     static int experiment_num = 0;//tracks which experiment is taking place at any given time during a series
-    static List<String> possible_varying_parameters //redundant but useful as it illustrates to me the indices of the parameters available to be varied
-            = new ArrayList<>(List.of(
-                    "runs" //0
-                    , "gens" //1
-                    , "rows" //2
-                    , "EPR" //3
-                    , "ROC" //4
-                    , "leeway1" //5
-                    , "leeway2" // 10
-                    , "leeway3" // 11
-                    , "leeway4" // 12
-                    , "leeway5" // 13
-                    , "leeway6" // 14
-                    , "sel noise" //6
-                    , "evo noise" //7
-                    , "u" //8
-                    , "delta" //9
-            ));
     static int run_num; // tracks which of the runs is currently executing
 
 
