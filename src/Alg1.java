@@ -115,6 +115,7 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
         System.out.println("Starting timestamp: "+start_timestamp);
+        System.out.println("Experiment results folder path: " + experiment_results_folder_path);
         if(experiment_series){
             experimentSeries(); // run an experiment series
         } else {
@@ -126,6 +127,7 @@ public class Alg1 extends Thread{
         long secondsElapsed = duration.toSeconds();
         long minutesElapsed = duration.toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
+        System.out.println("Experiment results folder path: " + experiment_results_folder_path);
     }
 
 
@@ -639,7 +641,7 @@ public class Alg1 extends Thread{
                         " %-6s |" +//mut
                         " %-6s |" +//u
                         " %-6s |" +//delta
-                        " %-9s |" +//data rate (same length as gens)
+                        " %-9s |" +//data rate
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
@@ -670,8 +672,8 @@ public class Alg1 extends Thread{
                 ,"evo noise"
                 ,"mut"
                 ,"u"
-                ,"data rate"
-                ,"delta");
+                ,"delta"
+                ,"data rate");
         printTableBorder();
 
         // display config table rows
@@ -709,7 +711,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-6s ", settings[config_index++]); //mut
             System.out.printf("| %-6s ", settings[config_index++]); //u
             System.out.printf("| %-6s ", settings[config_index++]); //delta
-            System.out.printf("| %-6s ", settings[config_index++]); //delta
+            System.out.printf("| %-9s ", settings[config_index++]); //data rate
             System.out.printf("| %s ", settings[config_index]); //desc
             System.out.println();
         }
@@ -1100,10 +1102,20 @@ public class Alg1 extends Thread{
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-                    substrings[a] += " ,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+", ";
+
+
+//                    substrings[a] += " ,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+", ";
+//                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
+//                    substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
+//                    substrings[a+3] += " ,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+", ";
+
+
+                    substrings[a] += "0.0,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",0.0";
                     substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
                     substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
-                    substrings[a+3] += " ,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+", ";
+                    substrings[a+3] += "0.0,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",0.0";
+
+
                     if(x + 1 <= 2){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
