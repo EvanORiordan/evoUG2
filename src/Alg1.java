@@ -23,8 +23,8 @@ public class Alg1 extends Thread{
     static String game; // what game is being played
     static int rows; // how many rows in the square grid
     static int columns; // how many rows in the square grid
-    static int N; // population size.
-    static int gens; // how many generations occur per experiment run.
+    static int N; // population size
+    static int gens; // how many generations occur per experiment run. (technically, the number of gens will be this + 1 since first gen is gen number 0)
     static int runs; // how many times this experiment will be run.
     static String neighbourhood_type; // indicates the type of neighbourhood being enforced
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice grid containing the population.
@@ -61,7 +61,7 @@ public class Alg1 extends Thread{
     static String series_data_filename;
     static String gen_strategy_data_filename;
     static String gen_detailed_grid_filename;
-    static int data_rate; // determines how often generational data is recorded, if applicable.
+    static int data_rate; // determines how often generational data is recorded. if 0, do not record data.
 
 
     // fields related to edge weight learning (EWL)
@@ -113,7 +113,6 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
         System.out.println("Starting timestamp: "+start_timestamp);
-        System.out.println("Experiment results folder path: " + experiment_results_folder_path);
         if(experiment_series){
             experimentSeries(); // run an experiment series
         } else {
@@ -125,7 +124,7 @@ public class Alg1 extends Thread{
         long secondsElapsed = duration.toSeconds();
         long minutesElapsed = duration.toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
-        System.out.println("Experiment results folder path: " + experiment_results_folder_path);
+        System.out.println("Experiment results folder path: \n" + experiment_results_folder_path);
     }
 
 
@@ -402,7 +401,7 @@ public class Alg1 extends Thread{
         initRandomPop();
 
         //at the first gen of the first run of the first experiment, create result storage folders and record strategies
-        if(run_num == 0 && experiment_num == 0 && gen == 0) {
+        if(data_rate != 0 && run_num == 0 && experiment_num == 0 && gen == 0) {
             createFolders();
             writeStrategies();
         }
@@ -426,7 +425,7 @@ public class Alg1 extends Thread{
         }
 
         // players begin playing the game
-        while(gen != gens) { // algorithm stops once this condition is reached
+        while(gen <= gens) { // algorithm stops once this condition is reached
             // playing phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
@@ -455,7 +454,7 @@ public class Alg1 extends Thread{
             // evolution phase of generation.
             // occurs every EPR generations.
             // consists of selection, evolution and mutation, if applicable.
-            if((gen + 1) % EPR == 0) {
+            if(gen % EPR == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
 
@@ -493,15 +492,16 @@ public class Alg1 extends Thread{
             calculateOverallStats(); // calculate the avg p and p SD of the pop
             calculateAverageEdgeWeights();
 
-            // record extra data at the end of the first run of the first experiment every data_rate generations
-            if(run_num == 0 && experiment_num == 0 && gen % data_rate == 0){
-                if(!experiment_series){ // if not a series, display basic stats every data_rate generations
+            // record generational data every data_rate generations of the end of the first run of the first experiment.
+            if(data_rate != 0){
+                if(run_num == 0 && experiment_num == 0 && gen % data_rate == 0){
                     System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                    writeExperimentData();
+                    writeStrategies();
+                    writeDetailedGrid();
                 }
-                writeExperimentData();
-                writeStrategies();
-                writeDetailedGrid();
             }
+
 
             prepare(); // prepare for next generation
             gen++; // move on to the next generation
@@ -509,6 +509,9 @@ public class Alg1 extends Thread{
     }
 
 
+    /**
+     * Create folders to store generational data.
+     */
     public void createFolders(){
         gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
         gen_detailed_grid_filename = experiment_results_folder_path + "\\detailed_grid";
@@ -518,7 +521,7 @@ public class Alg1 extends Thread{
         }catch(IOException e){
             e.printStackTrace();
         }
-        writeStrategies();
+
     }
 
 
@@ -839,7 +842,7 @@ public class Alg1 extends Thread{
             initial_settings += "Experiment series ("+desc+")" +
                     " varying "+varying_parameter+
                     " by "+variation+
-                    " between " + num_experiments+" experiments. ";
+                    " between " + num_experiments+" experiments: ";
         } else if(!experiment_series){
             initial_settings += "Experiment: ";
         }
