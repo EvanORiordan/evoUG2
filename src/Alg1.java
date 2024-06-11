@@ -1,11 +1,8 @@
 import java.io.*;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -57,7 +54,8 @@ public class Alg1 extends Thread{
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc;//description of experiment from config file
     static String start_timestamp_string;
-    static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
+//    static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
+    static String project_path = Paths.get("").toAbsolutePath().toString();
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
@@ -1085,45 +1083,34 @@ public class Alg1 extends Thread{
      * Writes a detailed grid of smaller grids representing a cluster of the population.<br>
      * Smaller grids are 4x4 each.<br>
      * Big grid consists of 3x3 of smaller grids. In total, big grid is 12x12.<br>
-     * Assumes von Neumann neighbourhood type.
+     * Assumes von Neumann neighbourhood type and rows=columns.
      */
     public void writeDetailedGrid(){
         try{
             String filename = gen_detailed_grid_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
-            String[] substrings = new String[12];
+            String[] substrings = new String[(rows * 4)];
             for(int i=0;i<substrings.length;i++){
                 substrings[i] = "";
             }
             int a=0;
-            for(int y = 2; y >= 0; y--) {
-                for (int x = 0; x <= 2; x++) {
+//            for(int y = 2; y >= 0; y--) {
+            for(int y = rows - 1; y >= 0; y--) {
+//                for (int x = 0; x <= 2; x++) {
+                for (int x = 0; x < columns; x++) {
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-
-
-//                    substrings[a] += " ,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+", ";
-//                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
-//                    substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
-//                    substrings[a+3] += " ,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+", ";
-
-
                     substrings[a] += "0.0,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",0.0";
                     substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
                     substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
                     substrings[a+3] += "0.0,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",0.0";
-
-
-                    if(x + 1 <= 2){
+//                    if(x + 1 <= 2){
+                    if(x + 1 < columns){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
                         }
-//                        substrings[a] += ",";
-//                        substrings[a+1] += ",";
-//                        substrings[a+2] += ",";
-//                        substrings[a+3] += ",";
                     } else {
                         for(int b=a;b<a+4;b++){
                             substrings[b] += "\n";
