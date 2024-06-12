@@ -112,6 +112,7 @@ public class Alg1 extends Thread{
         }catch(IOException e){
             e.printStackTrace();
         }
+        printExperimentResultsFolderPath();
         System.out.println("Starting timestamp: "+start_timestamp);
         if(experiment_series){
             experimentSeries(); // run an experiment series
@@ -124,7 +125,7 @@ public class Alg1 extends Thread{
         long secondsElapsed = duration.toSeconds();
         long minutesElapsed = duration.toMinutes();
         System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
-        System.out.println("Experiment results folder path: \n" + experiment_results_folder_path);
+        printExperimentResultsFolderPath();
     }
 
 
@@ -900,6 +901,12 @@ public class Alg1 extends Thread{
      */
     public static void printInitialSettings(){
         System.out.println(initial_settings);
+    }
+
+
+
+    public static void printExperimentResultsFolderPath(){
+        System.out.println("Experiment results folder path: \n" + experiment_results_folder_path);
     }
 
 
