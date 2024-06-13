@@ -2,3 +2,9 @@ game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway
 DG,1,10000,30,1,p,ROC,6,0.2,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0,0,100,test experiment
 DG,10,10,30,1,p,ROC,6,0.2,0,0,0,0,0,0,0,EPR,1,8,VN,WRW,,NSI,copy,,,0,0,0,test series
 DG,100,10000,30,1,avgscore,ROC,1,0.2,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 3
+DG,100,10000,30,1,avgscore,avgscoreAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 4
+DG,100,10000,30,1,avgscore,avgscoreEAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 5
+DG,100,10000,30,1,p,avgscoreAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 6
+DG,100,10000,30,1,p,avgscoreEAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 7
+DG,100,10000,30,1,avgscore,pAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 8
+DG,100,10000,30,1,avgscore,pEAD,1,0,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 9

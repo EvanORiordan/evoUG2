@@ -276,7 +276,7 @@ public class Player {
     /**
      * Edge weight learning method.
      * @param EWLC is the condition used to determine whether positive, negative or no edge weight learning will occur.
-     * @param EWLF is the formula used to calculate the amount of edge weight adjustment.
+     * @param EWLF is the formula used to calculate the amount of edge weight learning.
      * @param ROC is the rate of change of edge weights
      * @param leeway1 is the leeway allowed by the player to their neighbours
      * @param leeway3 is a factor used to calculate the player's edge weight leeway with the neighbour
@@ -372,13 +372,6 @@ public class Player {
                     option = 1;
                 }
             }
-            case"score"->{ // compare scores
-                if (neighbour.score < score + total_leeway){
-                    option = 0;
-                } else if (neighbour.score > score + total_leeway){
-                    option = 1;
-                }
-            }
             case"avgscore"->{ // compare average scores
                 if (neighbour.average_score < average_score + total_leeway){
                     option = 0;
@@ -387,52 +380,29 @@ public class Player {
                 }
             }
         }
+
         return option;
     }
 
     /**
-     * Calculate amount of edge weight learning to be applied to the edge.
+     * Calculate amount of edge weight learning to be applied to the weight of the edge.
      * @param EWLF
      * @param neighbour
      * @param ROC
      */
     public double calculateLearning(String EWLF, Player neighbour, double ROC){
-        double adjustment = 0;
+        double learning = 0;
         switch(EWLF){
-            case"ROC"->adjustment = applyROC(ROC);
-            case"pAD"->adjustment = apply_p_AD(neighbour);
-            case"pEAD"->adjustment = apply_p_EAD(neighbour);
-            case"avgscoreAD"->adjustment = apply_avg_score_AD(neighbour);
-            case"avgscoreEAD"->adjustment = apply_avg_score_EAD(neighbour);
+            case"ROC"->         learning = ROC;
+            case"pAD"->         learning = Math.abs(neighbour.p - p);
+            case"pEAD"->        learning = Math.exp(Math.abs(neighbour.p - p));
+            case"avgscoreAD"->  learning = Math.abs(neighbour.average_score - average_score);
+            case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour.average_score - average_score));
         }
 
-        return adjustment;
+        return learning;
     }
 
-    // rate of change
-    public double applyROC(double ROC){
-        return ROC;
-    }
-
-    // absolute difference of proposal value
-    public double apply_p_AD(Player neighbour){
-        return Math.abs(neighbour.p - p);
-    }
-
-    // exponential absolute difference of proposal value
-    public double apply_p_EAD(Player neighbour){
-        return Math.exp(Math.abs(neighbour.p - p));
-    }
-
-    // exponential absolute difference of average score
-    public double apply_avg_score_AD(Player neighbour){
-        return Math.abs(neighbour.average_score - average_score);
-    }
-
-    // exponential absolute difference of average score
-    public double apply_avg_score_EAD(Player neighbour){
-        return Math.exp(Math.abs(neighbour.average_score - average_score));
-    }
 
 
     /**
