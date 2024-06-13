@@ -69,7 +69,7 @@ public class Player {
     private double local_leeway; // inherent leeway of the player
     /**
      * Constructor method for instantiating a Player object.<br>
-     * Since this is the DG, make sure to pass 0.0 to q.<br>
+     * Since this is the DG, make sure to pass 0 to q.<br>
      * @param p is the proposal value of the player
      * @param q is the acceptance threshold value of the player
      * @param leeway2 is a factor used to calculate the player's local leeway
@@ -233,9 +233,6 @@ public class Player {
     private static String ASD = ""; // average score denominator determines how average score is calculated
     public static String getASD(){return ASD;}
     public static void setASD(String s){ASD=s;}
-//    private static String PPM; // player performance metric governing selection
-//    public static String getPPM(){return PPM;}
-//    public static void setPPM(String s){PPM=s;}
 
     /**
      * Update the status of the player after having played, including score and average score.
@@ -300,13 +297,13 @@ public class Player {
             int option = checkEWLC(EWLC, neighbour, total_leeway);
             if(option == 0){ // positive edge weight learning
                 edge_weights[i] += calculateLearning(EWLF, neighbour, ROC);
-                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0.0,1.0]
+                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
                     edge_weights[i] = 1.0;
                 }
             } else if (option == 1){ // negative edge weight learning
                 edge_weights[i] -= calculateLearning(EWLF, neighbour, ROC);
-                if(edge_weights[i] < 0.0){ // ensure edge weight resides within [0.0,1.0]
-                    edge_weights[i] = 0.0;
+                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
+                    edge_weights[i] = 0;
                 }
             }
             // if option equals 2, no edge weight learning occurs
@@ -382,7 +379,7 @@ public class Player {
                     option = 1;
                 }
             }
-            case"avg score"->{ // compare average scores
+            case"avgscore"->{ // compare average scores
                 if (neighbour.average_score < average_score + total_leeway){
                     option = 0;
                 } else if (neighbour.average_score > average_score + total_leeway){
@@ -400,13 +397,13 @@ public class Player {
      * @param ROC
      */
     public double calculateLearning(String EWLF, Player neighbour, double ROC){
-        double adjustment = 0.0;
+        double adjustment = 0;
         switch(EWLF){
             case"ROC"->adjustment = applyROC(ROC);
-            case"p AD"->adjustment = apply_p_AD(neighbour);
-            case"p EAD"->adjustment = apply_p_EAD(neighbour);
-            case"avg score AD"->adjustment = apply_avg_score_AD(neighbour);
-            case"avg score EAD"->adjustment = apply_avg_score_EAD(neighbour);
+            case"pAD"->adjustment = apply_p_AD(neighbour);
+            case"pEAD"->adjustment = apply_p_EAD(neighbour);
+            case"avgscoreAD"->adjustment = apply_avg_score_AD(neighbour);
+            case"avgscoreEAD"->adjustment = apply_avg_score_EAD(neighbour);
         }
 
         return adjustment;
@@ -441,10 +438,10 @@ public class Player {
     /**
      * mean of edge weights belonging to the player
      */
-    private double mean_self_edge_weight = 0.0;
+    private double mean_self_edge_weight = 0;
     public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
     public void calculateMeanSelfEdgeWeight(){
-        mean_self_edge_weight = 0.0;
+        mean_self_edge_weight = 0;
         for(int i = 0; i < edge_weights.length; i++){
             mean_self_edge_weight += edge_weights[i];
         }
@@ -457,10 +454,10 @@ public class Player {
      * function assumes all players have same number of edge weights and neighbours. <br>
      * otherwise the function does not signify much.
      */
-    private double mean_neighbour_edge_weight = 0.0;
+    private double mean_neighbour_edge_weight = 0;
     public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
     public void calculateMeanNeighbourEdgeWeight(){
-        mean_neighbour_edge_weight = 0.0;
+        mean_neighbour_edge_weight = 0;
         for(int i = 0; i < neighbourhood.size(); i++) {
             Player neighbour = neighbourhood.get(i);
             mean_neighbour_edge_weight += neighbour.edge_weights[findMeInMyNeighboursNeighbourhood(neighbour)];
@@ -507,13 +504,6 @@ public class Player {
             }
         }
         player_desc+=" score="+DF4.format(score); // score
-
-
-//        switch(PPM){
-//            case"avg score"->player_desc+=" ("+DF4.format(average_score)+")"; // avg score
-//        }
-
-
         player_desc+=" ("+DF4.format(average_score)+")"; // avg score
 
 
@@ -555,7 +545,7 @@ public class Player {
     /**
      * Evolution method where child's strategy gets closer to, i.e. approaches, parent's strategy.
      * The amount by which the child's strategy approaches the parent's is a randomly generated
-     * double between 0.0 and the approach limit.<br>
+     * double between 0 and the approach limit.<br>
      * Evolution does not take place if the parent and the child are the same player.<br>
      * The greater the noise, the greater the approach is.<br>
      */
@@ -588,23 +578,13 @@ public class Player {
     public Player weightedRouletteWheelSelection(){
         Player parent = this; // by default, the child is the parent
         double[] parent_scores = new double[neighbourhood.size()];
-        double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
+        double total_parent_score = 0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
-
-
-//            switch(PPM){
-//                case"score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).score - score);
-//                case"avg score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).average_score-average_score);
-//            }
-
-
             parent_scores[i] = Math.exp(neighbourhood.get(i).average_score-average_score);
-
-
             total_parent_score += parent_scores[i];
         }
         total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
-        double parent_score_tally = 0.0; // helps us count through the parent scores up to the total
+        double parent_score_tally = 0; // helps us count through the parent scores up to the total
 
         // the first parent score to be greater than this double is the winner.
         // if no neighbour's parent score wins, the child wins.
@@ -633,51 +613,14 @@ public class Player {
         for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
             Player neighbour = neighbourhood.get(i);
             Player best = neighbourhood.get(best_index);
-
-
-//            switch(PPM){
-//                case"score"->{
-//                    if(neighbour.score > best.score){
-//                        best_index=i;
-//                    }
-//                }
-//                case"avg score"->{
-//                    if(neighbour.average_score > best.average_score){
-//                        best_index=i;
-//                    }
-//                }
-//            }
-
-
             if(neighbour.average_score > best.average_score){
                 best_index=i;
             }
-
-
         }
-
-        // did the highest scoring neighbour score higher than child? if not, select child as parent
         parent = neighbourhood.get(best_index);
-
-
-//        switch(PPM){
-//            case"score"->{
-//                if(parent.score <= score){
-//                    parent = this;
-//                }
-//            }
-//            case"avg score"->{
-//                if(parent.average_score <= average_score){
-//                    parent = this;
-//                }
-//            }
-//        }
-
-
         if(parent.average_score <= average_score){
             parent = this;
         }
-
 
         return parent;
     }
@@ -694,17 +637,7 @@ public class Player {
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-
-
-//            switch(PPM){
-//                case"score"->effective_payoffs[i] = Math.exp(w * neighbour.score);
-//                case"avg score"->effective_payoffs[i] = Math.exp(w * neighbour.average_score);
-//            }
-
-
             effective_payoffs[i] = Math.exp(w * neighbour.average_score);
-
-
         }
         double best_effective_payoff = effective_payoffs[0];
         int index = 0;

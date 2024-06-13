@@ -26,20 +26,20 @@ public class Alg1 extends Thread{
     static int N; // population size
     static int gens; // how many generations occur per experiment run. (technically, the number of gens will be this + 1 since first gen is gen number 0)
     static int runs; // how many times this experiment will be run.
-    static String neighbourhood_type; // indicates the type of neighbourhood being enforced
-    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice grid containing the population.
+    static String neigh; // indicates the type of neighbourhood being enforced
+    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates which generation is currently running.
-    static double DCF = 0.0;// distance cost factor
+    static double DCF = 0;// distance cost factor
     static String initial_settings = "";// stores initial experimentation settings
 
 
     // fields related to experiment series
     static boolean experiment_series;//indicates whether to run experiment or experiment series where a parameter is varied
-    static String varying_parameter;//indicates which parameter will be varied in an experiment series
+    static String varying;//indicates which parameter will be varied in an experiment series
     static double variation;//indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-    static int num_experiments;//indicates the number of experiments to occur in the series
+    static int numexp;//indicates the number of experiments to occur in the series
     static int experiment_num = 0;//tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
 
@@ -54,14 +54,13 @@ public class Alg1 extends Thread{
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc;//description of experiment from config file
     static String start_timestamp_string;
-//    static String project_path = "C:\\Users\\Evan O'Riordan\\IdeaProjects\\evoUG2";
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
     static String gen_strategy_data_filename;
     static String gen_detailed_grid_filename;
-    static int data_rate; // determines how often generational data is recorded. if 0, do not record data.
+    static int datarate; // determines how often generational data is recorded. if 0, do not record data.
 
 
     // fields related to edge weight learning (EWL)
@@ -69,24 +68,24 @@ public class Alg1 extends Thread{
     static String EWLC; // edge weight learning condition
     static String EWLF; // edge weight learning formula
     static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
-    static double ROC = 0.0; // EW rate of change
-    static double leeway1 = 0.0; // defines global leeway affecting all players.
-    static double leeway2 = 0.0; // defines bounds of interval that local leeway is generated from.
-    static double leeway3 = 0.0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
-    static double leeway4 = 0.0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
-    static double leeway5 = 0.0; // defines factor used in calculation of leeway given wrt neighbour p.
-    static double leeway6 = 0.0; // defines bounds of interval that random leeway is generated from.
-    static double leeway7 = 0.0; // defines avg score comparison leeway factor.
+    static double ROC = 0; // rate of edge weight change per edge weight learning call
+    static double leeway1 = 0; // defines global leeway affecting all players.
+    static double leeway2 = 0; // defines bounds of interval that local leeway is generated from.
+    static double leeway3 = 0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
+    static double leeway4 = 0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
+    static double leeway5 = 0; // defines factor used in calculation of leeway given wrt neighbour p.
+    static double leeway6 = 0; // defines bounds of interval that random leeway is generated from.
+    static double leeway7 = 0; // defines avg score comparison leeway factor.
 
 
     // fields related to evolution, selection, mutation
-    static String evolution_method; // indicates which evolution function to call
-    static double approach_noise; // affected by evo noise
-    static String selection_method; // indicates which selection function to call
-    static double w; // affected by sel noise
-    static String mutation_method; // indicates which mutation function to call
-    static double u; // represents mutation rate
-    static double delta; // represents mutation noise
+    static String evo; // indicates which evolution function to call
+    static double evonoise = 0; // noise affecting evolution
+    static String sel; // indicates which selection function to call
+    static double selnoise = 0; // noise affecting selection
+    static String mut; // indicates which mutation function to call
+    static double mutrate = 0;
+    static double mutamount = 0;
 
 
 
@@ -140,7 +139,7 @@ public class Alg1 extends Thread{
 
 
         ArrayList<Double> various_amounts = new ArrayList<>(); // stores initial value of varying parameter
-        switch(varying_parameter){
+        switch(varying){
             case"runs"->various_amounts.add((double)runs);
             case"gens"->various_amounts.add((double)gens);
             case"rows"->various_amounts.add((double)rows);
@@ -153,22 +152,22 @@ public class Alg1 extends Thread{
             case"leeway5"->various_amounts.add(leeway5);
             case"leeway6"->various_amounts.add(leeway6);
             case"leeway7"->various_amounts.add(leeway7);
-//            case"w"->various_amounts.add(w);
-//            case"approach_noise"->various_amounts.add(approach_noise);
-            case"u"->various_amounts.add(u);
-            case"delta"->various_amounts.add(delta);
+            case"selnoise"->various_amounts.add(selnoise);
+            case"evonoise"->various_amounts.add(evonoise);
+            case"mutrate"->various_amounts.add(mutrate);
+            case"mutamount"->various_amounts.add(mutamount);
         }
 
         // run experiment series
-        for(int i=0;i<num_experiments;i++){
+        for(int i=0;i<numexp;i++){
 
             // helps user keep track of the current value of the varying parameter
             System.out.println("\n===================\n" +
-                    "NOTE: Start of experiment "+i+": "+varying_parameter+"="+DF4.format(various_amounts.get(i))+".");
+                    "NOTE: Start of experiment "+i+": "+varying+"="+DF4.format(various_amounts.get(i))+".");
 
             experiment(); // run an experiment of the series
 
-            switch(varying_parameter){ // after experiment, change the value of the varying parameter
+            switch(varying){ // after experiment, change the value of the varying parameter
                 case "runs"->{
                     runs+=(int)variation;
                     various_amounts.add((double)runs);
@@ -219,26 +218,26 @@ public class Alg1 extends Thread{
                     leeway7+=variation;
                     various_amounts.add(leeway7);
                 }
-                case "w"->{
-                    w+=variation;
-                    various_amounts.add(w);
+                case "selnoise"->{
+                    selnoise+=variation;
+                    various_amounts.add(selnoise);
                 }
-                case "approach noise"->{
-                    approach_noise+=variation;
-                    various_amounts.add(approach_noise);
+                case "evonoise"->{
+                    evonoise+=variation;
+                    various_amounts.add(evonoise);
                 }
-                case "u"->{
-                    u+=variation;
-                    various_amounts.add(u);
+                case "mutrate"->{
+                    mutrate+=variation;
+                    various_amounts.add(mutrate);
                 }
-                case "delta"->{
-                    delta+=variation;
-                    various_amounts.add(delta);
+                case "mutamount"->{
+                    mutamount+=variation;
+                    various_amounts.add(mutamount);
                 }
             }
 
             // inform user what the varying parameter's value was
-            System.out.println("NOTE: End of "+varying_parameter+"="+DF4.format(various_amounts.get(i))+"."
+            System.out.println("NOTE: End of "+varying+"="+DF4.format(various_amounts.get(i))+"."
                     +"\n===================");
         }
 
@@ -255,7 +254,7 @@ public class Alg1 extends Thread{
                 summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
                 summary += "\tavg p SD="+DF4.format(Double.parseDouble(row_contents[2]));
                 summary += "\t";
-                summary+=varying_parameter+"=";
+                summary+=varying+"=";
                 summary += DF4.format(various_amounts.get(i));
                 i++;
                 summary += "\n";
@@ -335,21 +334,47 @@ public class Alg1 extends Thread{
                 fw.append(",EWLC");
                 fw.append(",EWLF");
                 fw.append(",EPR");
-                fw.append(",ROC");
-                fw.append(",leeway1");
-                fw.append(",leeway2");
-                fw.append(",leeway3");
-                fw.append(",leeway4");
-                fw.append(",leeway5");
-                fw.append(",leeway6");
-                fw.append(",leeway7");
-//                fw.append(",selection");
-//                fw.append(",w");
-//                fw.append(",evolution");
-//                fw.append(",approach noise");
-                fw.append(",mutation");
-                fw.append(",u");
-                fw.append(",delta");
+                if(ROC != 0){
+                    fw.append(",ROC");
+                }
+                if(leeway1 != 0){
+                    fw.append(",leeway1");
+                }
+                if(leeway2 != 0){
+                    fw.append(",leeway2");
+                }
+                if(leeway3 != 0){
+                    fw.append(",leeway3");
+                }
+                if(leeway4 != 0){
+                    fw.append(",leeway4");
+                }
+                if(leeway5 != 0){
+                    fw.append(",leeway5");
+                }
+                if(leeway6 != 0){
+                    fw.append(",leeway6");
+                }
+                if(leeway7 != 0){
+                    fw.append(",leeway7");
+                }
+                fw.append(",selection");
+                if(selnoise != 0){
+                    fw.append(",selnoise");
+                }
+                fw.append(",evolution");
+                if(evonoise != 0){
+                    fw.append(",evonoise");
+                }
+                if(!mut.isEmpty()){
+                    fw.append(",mutation");
+                }
+                if(mutrate != 0){
+                    fw.append(",mutrate");
+                }
+                if(mutamount != 0){
+                    fw.append(",mutamount");
+                }
             } else {
                 fw = new FileWriter(series_data_filename, true);
             }
@@ -358,28 +383,56 @@ public class Alg1 extends Thread{
             fw.append("," + DF4.format(sd_avg_p_of_experiment));
             fw.append("," + runs);
             fw.append("," + gens);
-//            fw.append("," + Player.getNeighbourhoodType());
-            fw.append("," + neighbourhood_type);
+            fw.append("," + neigh);
             fw.append("," + N);
             fw.append("," + EWT);
             fw.append("," + EWLC);
             fw.append("," + EWLF);
             fw.append("," + EPR);
-            fw.append("," + ROC);
-            fw.append("," + DF4.format(leeway1));
-            fw.append("," + DF4.format(leeway2));
-            fw.append("," + DF4.format(leeway3));
-            fw.append("," + DF4.format(leeway4));
-            fw.append("," + DF4.format(leeway5));
-            fw.append("," + DF4.format(leeway6));
-            fw.append("," + DF4.format(leeway7));
-//            fw.append("," + selection_method);
-//            fw.append("," + DF4.format(w));
-//            fw.append("," + evolution_method);
-//            fw.append("," + DF4.format(approach_noise));
-            fw.append("," + mutation_method);
-            fw.append("," + DF4.format(u));
-            fw.append("," + DF4.format(delta));
+            if(ROC != 0){
+                fw.append("," + ROC);
+            }
+            if(leeway1 != 0){
+                fw.append("," + DF4.format(leeway1));
+            }
+
+            if(leeway2 != 0){
+                fw.append("," + DF4.format(leeway2));
+            }
+
+            if(leeway3 != 0){
+                fw.append("," + DF4.format(leeway3));
+            }
+
+            if(leeway4 != 0){
+                fw.append("," + DF4.format(leeway4));
+            }
+            if(leeway5 != 0){
+                fw.append("," + DF4.format(leeway5));
+            }
+            if(leeway6 != 0){
+                fw.append("," + DF4.format(leeway6));
+            }
+            if(leeway7 != 0){
+                fw.append("," + DF4.format(leeway7));
+            }
+            fw.append("," + sel);
+            if(selnoise != 0){
+                fw.append("," + DF4.format(selnoise));
+            }
+            fw.append("," + evo);
+            if(evonoise != 0){
+                fw.append("," + DF4.format(evonoise));
+            }
+            if(!mut.isEmpty()){
+                fw.append("," + mut);
+            }
+            if(mutrate != 0){
+                fw.append("," + DF4.format(mutrate));
+            }
+            if(mutamount != 0){
+                fw.append("," + DF4.format(mutamount));
+            }
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -394,6 +447,7 @@ public class Alg1 extends Thread{
      */
     @Override
     public void start(){
+        // no need to remove these comments since they act as a reminder as to things we might work on in later research.
 //        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
 //            initSavedDGPop();
 //        } else { // user wants to randomly generate a population
@@ -401,8 +455,8 @@ public class Alg1 extends Thread{
 //        }
         initRandomPop();
 
-        //at the first gen of the first run of the first experiment, create result storage folders and record strategies
-        if(data_rate != 0 && run_num == 0 && experiment_num == 0 && gen == 0) {
+        // at the first gen of the first run of the first experiment, create result storage folders and record strategies
+        if(datarate != 0 && run_num == 0 && experiment_num == 0 && gen == 0) {
             createFolders();
             writeStrategies();
         }
@@ -411,7 +465,7 @@ public class Alg1 extends Thread{
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
                 Player player = grid.get(i).get(j);
-                switch(neighbourhood_type){
+                switch(neigh){
                     case"VN","M"->assignAdjacentNeighbours(player, i, j);
                     case"random"->assignRandomNeighbours(player, 3);
                 }
@@ -437,6 +491,9 @@ public class Alg1 extends Thread{
                                 case"2"->player.playUG2();
                             }
                         }
+
+
+                        // reminder of something we might work on in later research
 //                        case"PD"->player.playPD();
 //                        case"IG"->player.playIG();
 //                        case"TG"->player.playTG();
@@ -461,28 +518,28 @@ public class Alg1 extends Thread{
 
                         // select parent
                         Player parent = null;
-                        switch(selection_method){
+                        switch(sel){
                             case "WRW" -> parent = player.weightedRouletteWheelSelection();
                             case "best" -> parent = player.bestSelection();
-                            case "variable" -> parent = player.variableSelection(w);
+                            case "variable" -> parent = player.variableSelection(selnoise);
                         }
 
                         // evolve child
-                        switch (evolution_method) {
+                        switch (evo) {
                             case "copy" -> player.copyEvolution(parent);
-                            case "approach" -> player.approachEvolution(parent, approach_noise);
+                            case "approach" -> player.approachEvolution(parent, evonoise);
                         }
 
                         // mutate child
-                        switch (mutation_method){
+                        switch (mut){
                             case "global" -> {
-                                if(player.mutationCheck(u)){
+                                if(player.mutationCheck(mutrate)){
                                     player.globalMutation();
                                 }
                             }
                             case "local" -> {
-                                if(player.mutationCheck(u)){
-                                    player.localMutation(delta);
+                                if(player.mutationCheck(mutrate)){
+                                    player.localMutation(mutamount);
                                 }
                             }
                         }
@@ -493,9 +550,9 @@ public class Alg1 extends Thread{
             calculateOverallStats(); // calculate the avg p and p SD of the pop
             calculateAverageEdgeWeights();
 
-            // record generational data every data_rate generations of the end of the first run of the first experiment.
-            if(data_rate != 0){
-                if(run_num == 0 && experiment_num == 0 && gen % data_rate == 0){
+            // record generational data every datarate generations of the end of the first run of the first experiment.
+            if(datarate != 0){
+                if(run_num == 0 && experiment_num == 0 && gen % datarate == 0){
                     System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                     writeExperimentData();
                     writeStrategies();
@@ -553,7 +610,7 @@ public class Alg1 extends Thread{
                             leeway2);
                     case"DG"->new_player = new Player(
                             ThreadLocalRandom.current().nextDouble(),
-                            0.0,
+                            0,
                             leeway2);
                 }
                 row.add(new_player);
@@ -563,7 +620,7 @@ public class Alg1 extends Thread{
     }
 
 
-
+    // reminder of something we might work on in later research.
 //    /**
 //     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
 //     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
@@ -620,7 +677,7 @@ public class Alg1 extends Thread{
                         " %-4s |" +//rows
                         " %-3s |" +//EWT
                         " %-9s |" +//EWLC
-                        " %-13s |" +//EWLF
+                        " %-11s |" +//EWLF
                         " %-3s |" +//EPR
                         " %-6s |" +//ROC
                         " %-7s |" +//leeway1
@@ -630,20 +687,19 @@ public class Alg1 extends Thread{
                         " %-7s |" +//leeway5
                         " %-7s |" +//leeway6
                         " %-7s |" +//leeway7
-                        " %-10s |" +//varying
+                        " %-9s |" +//varying
                         " %-9s |" +//variation
-                        " %-7s |" +//num exp
-                        " %-6s |" +//neigh
+                        " %-6s |" +//numexp
+                        " %-5s |" +//neigh
                         " %-8s |" +//sel
-                        " %-9s |" +//sel noise
-//                        " %-9s |" +//PPM
+                        " %-8s |" +//selnoise
                         " %-3s |" +//ASD
                         " %-8s |" +//evo
-                        " %-9s |" +//evo noise
+                        " %-8s |" +//evonoise
                         " %-6s |" +//mut
-                        " %-6s |" +//u
-                        " %-6s |" +//delta
-                        " %-9s |" +//data rate
+                        " %-7s |" +//mutrate
+                        " %-9s |" +//mutamount
+                        " %-8s |" +//datarate
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
@@ -664,18 +720,17 @@ public class Alg1 extends Thread{
                 ,"leeway7"
                 ,"varying"
                 ,"variation"
-                ,"num exp"
+                ,"numexp"
                 ,"neigh"
                 ,"sel"
-                ,"sel noise"
-//                ,"PPM"
+                ,"selnoise"
                 ,"ASD"
                 ,"evo"
-                ,"evo noise"
+                ,"evonoise"
                 ,"mut"
-                ,"u"
-                ,"delta"
-                ,"data rate");
+                ,"mutrate"
+                ,"mutamount"
+                ,"datarate");
         printTableBorder();
 
         // display config table rows
@@ -690,7 +745,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-4s ", settings[config_index++]); //rows
             System.out.printf("| %-3s ", settings[config_index++]); //EWT
             System.out.printf("| %-9s ", settings[config_index++]); //EWLC
-            System.out.printf("| %-13s ", settings[config_index++]); //EWLF
+            System.out.printf("| %-11s ", settings[config_index++]); //EWLF
             System.out.printf("| %-3s ", settings[config_index++]); //EPR
             System.out.printf("| %-6s ", settings[config_index++]); //ROC
             System.out.printf("| %-7s ", settings[config_index++]); //leeway1
@@ -700,20 +755,19 @@ public class Alg1 extends Thread{
             System.out.printf("| %-7s ", settings[config_index++]); //leeway5
             System.out.printf("| %-7s ", settings[config_index++]); //leeway6
             System.out.printf("| %-7s ", settings[config_index++]); //leeway7
-            System.out.printf("| %-10s ", settings[config_index++]); //varying
+            System.out.printf("| %-9s ", settings[config_index++]); //varying
             System.out.printf("| %-9s ", settings[config_index++]); //variation
-            System.out.printf("| %-7s ", settings[config_index++]); //num exp
-            System.out.printf("| %-6s ", settings[config_index++]); //neigh
+            System.out.printf("| %-6s ", settings[config_index++]); //numexp
+            System.out.printf("| %-5s ", settings[config_index++]); //neigh
             System.out.printf("| %-8s ", settings[config_index++]); //sel
-            System.out.printf("| %-9s ", settings[config_index++]); //sel noise
-//            System.out.printf("| %-9s ", settings[config_index++]); //PPM
+            System.out.printf("| %-8s ", settings[config_index++]); //selnoise
             System.out.printf("| %-3s ", settings[config_index++]); //ASD
             System.out.printf("| %-8s ", settings[config_index++]); //evo
-            System.out.printf("| %-9s ", settings[config_index++]); //evo noise
+            System.out.printf("| %-8s ", settings[config_index++]); //evonoise
             System.out.printf("| %-6s ", settings[config_index++]); //mut
-            System.out.printf("| %-6s ", settings[config_index++]); //u
-            System.out.printf("| %-6s ", settings[config_index++]); //delta
-            System.out.printf("| %-9s ", settings[config_index++]); //data rate
+            System.out.printf("| %-7s ", settings[config_index++]); //mutrate
+            System.out.printf("| %-9s ", settings[config_index++]); //mutamount
+            System.out.printf("| %-8s ", settings[config_index++]); //datarate
             System.out.printf("| %s ", settings[config_index]); //desc
             System.out.println();
         }
@@ -754,7 +808,7 @@ public class Alg1 extends Thread{
         columns = rows;
         N = rows * columns;
 
-        // EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7
+        // EWL parameters: EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7
         EWT = settings[config_index++];
         EWLC = settings[config_index++];
         EWLF = settings[config_index++];
@@ -768,58 +822,47 @@ public class Alg1 extends Thread{
         leeway6=Double.parseDouble(settings[config_index++]);
         leeway7=Double.parseDouble(settings[config_index++]);
 
-        // varying,variation,num exp
+        // experiment series parameters: varying,variation,num exp
         if(!settings[config_index].equals("")) {
-            varying_parameter = settings[config_index];
+            varying = settings[config_index];
             experiment_series = true;
             variation = Double.parseDouble(settings[config_index+1]);
-            num_experiments = Integer.parseInt(settings[config_index+2]);
+            numexp = Integer.parseInt(settings[config_index+2]);
         }
         config_index+=3;
 
         // neigh
-        neighbourhood_type = settings[config_index++];
+        neigh = settings[config_index++];
 
-        //sel,sel noise,ASD
-        selection_method=settings[config_index];
+        // selection parameters: sel,selnoise,ASD
+        sel=settings[config_index];
         switch(settings[config_index]){
-            case"variable"->w=Double.parseDouble(settings[config_index+1]);
+            case"variable"->selnoise=Double.parseDouble(settings[config_index+1]);
         }
-
-
-//        Player.setPPM(settings[config_index+2]);
-//        switch(Player.getPPM()){
-//            case"avg score"->Player.setASD(settings[config_index+3]);
-//        }
-//        config_index+=4;
-
-
         Player.setASD(settings[config_index+2]);
         config_index+=3;
 
-
-
-        // evo,evo noise
-        evolution_method=settings[config_index];
+        // evolution parameters: evo,evonoise
+        evo=settings[config_index];
         switch(settings[config_index]){
-            case"approach"->approach_noise=Double.parseDouble(settings[config_index+1]);
+            case"approach"->evonoise=Double.parseDouble(settings[config_index+1]);
         }
         config_index+=2;
 
-        // mut,u,delta
-        mutation_method = settings[config_index];
-        switch(mutation_method){
+        // mutation parameters: mut,mutrate,mutamount
+        mut = settings[config_index];
+        switch(mut){
             case"global","local"->{
-                u=Double.parseDouble(settings[config_index+1]);
-                switch(mutation_method){
-                    case"local"->delta=Double.parseDouble(settings[config_index+2]);
+                mutrate=Double.parseDouble(settings[config_index+1]);
+                switch(mut){
+                    case"local"->mutamount=Double.parseDouble(settings[config_index+2]);
                 }
             }
         }
         config_index+=3;
 
-        //data rate
-        data_rate = Integer.parseInt(settings[config_index++]);
+        //datarate
+        datarate = Integer.parseInt(settings[config_index++]);
 
         //desc
         desc = settings[config_index];
@@ -849,9 +892,9 @@ public class Alg1 extends Thread{
     public static void setInitialSettings(){
         if(experiment_series && experiment_num == 0){ // if at start of series
             initial_settings += "Experiment series ("+desc+")" +
-                    " varying "+varying_parameter+
+                    " varying "+varying+
                     " by "+variation+
-                    " between " + num_experiments+" experiments: ";
+                    " between " + numexp+" experiments: ";
         } else if(!experiment_series){
             initial_settings += "Experiment: ";
         }
@@ -879,32 +922,22 @@ public class Alg1 extends Thread{
             initial_settings+=", leeway6="+leeway6;
         if(leeway7 != 0)
             initial_settings+=", leeway7="+leeway7;
-        initial_settings+=", "+neighbourhood_type+" neigh";
-//        s+=", "+selection_method+" sel";
-//        switch(selection_method){
-//            case"variable"->s+=", w="+w;
-//        }
-
-
-//        initial_settings+=", PPM="+Player.getPPM();
-//        switch(Player.getPPM()){
-//            case"avg score"->initial_settings+=", ASD="+Player.getASD();
-//        }
-
-
+        initial_settings+=", "+neigh+" neigh";
+        initial_settings+=", "+sel+" sel";
+        switch(sel){
+            case"variable"->initial_settings+=", selnoise="+selnoise;
+        }
         initial_settings+=", ASD="+Player.getASD();
-
-
-//        s+=", "+evolution_method+" evo";
-//        switch(evolution_method){
-//            case"approach"->s+=", approach noise="+approach_noise;
-//        }
-        switch(mutation_method){
+        initial_settings+=", "+evo+" evo";
+        switch(evo){
+            case"approach"->initial_settings+=", evonoise="+evonoise;
+        }
+        switch(mut){
             case"local","global"->{
-                initial_settings+=", "+mutation_method+" mut";
-                initial_settings+=", u="+DF4.format(u);
-                switch(mutation_method){
-                    case"local"->initial_settings+=", delta="+DF4.format(delta);
+                initial_settings+=", "+mut+" mut";
+                initial_settings+=", mutrate="+DF4.format(mutrate);
+                switch(mut){
+                    case"local"->initial_settings+=", mutamount="+DF4.format(mutamount);
                 }
             }
         }
@@ -951,7 +984,7 @@ public class Alg1 extends Thread{
         neighbourhood.add(grid.get(y_plus_one).get(x)); // neighbour at y+1 i.e. above
         neighbourhood.add(grid.get(y_minus_one).get(x)); // neighbour at y-1 i.e. below
 
-        if(neighbourhood_type.equals("M")){
+        if(neigh.equals("M")){
             neighbourhood.add(grid.get(y_plus_one).get(x_plus_one)); // neighbour at (x+1,y+1)
             neighbourhood.add(grid.get(y_minus_one).get(x_plus_one)); // neighbour at (x+1,y-1)
             neighbourhood.add(grid.get(y_minus_one).get(x_minus_one)); // neighbour at (x-1,y-1)
@@ -994,7 +1027,7 @@ public class Alg1 extends Thread{
      */
     public void calculateOverallStats(){
         // calculate average p
-        avg_p = 0.0;
+        avg_p = 0;
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 avg_p+=player.getP();
@@ -1003,7 +1036,7 @@ public class Alg1 extends Thread{
         avg_p /= N;
 
         // calculate p SD
-        p_SD = 0.0;
+        p_SD = 0;
         for(ArrayList<Player> row: grid){
             for(Player player: row){
                 p_SD += Math.pow(player.getP() - avg_p, 2);
@@ -1127,10 +1160,10 @@ public class Alg1 extends Thread{
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-                    substrings[a] += "0.0,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",0.0";
+                    substrings[a] += "0,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",0";
                     substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
                     substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
-                    substrings[a+3] += "0.0,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",0.0";
+                    substrings[a+3] += "0,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",0";
 //                    if(x + 1 <= 2){
                     if(x + 1 < columns){
                         for(int b=a;b<a+4;b++){

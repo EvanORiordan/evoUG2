@@ -1,6 +1,4 @@
-game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,num exp,neigh,sel,sel noise,ASD,evo,evo noise,mut,u,delta,data rate,desc
-DG,1,10000,30,1,p,ROC,6,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,VN,WRW,,NSI,copy,,,0.0,0.0,100,test experiment
-DG,100,10000,30,1,p,ROC,1,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,EPR,1,7,VN,WRW,,NSI,copy,,,0.0,0.0,0,approach 0
-DG,100,10000,30,1,p,p AD,1,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,EPR,1,7,VN,WRW,,NSI,copy,,,0.0,0.0,0,approach 1
-DG,100,10000,30,1,p,p EAD,1,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,EPR,1,7,VN,WRW,,NSI,copy,,,0.0,0.0,0,approach 2
-DG,100,10000,30,1,avg score,p EAD,1,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,EPR,1,7,VN,WRW,,NSI,copy,,,0.0,0.0,0,approach 3
+game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutamount,datarate,desc
+DG,1,10000,30,1,p,ROC,6,0.2,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0,0,100,test experiment
+DG,10,10,30,1,p,ROC,6,0.2,0,0,0,0,0,0,0,EPR,1,8,VN,WRW,,NSI,copy,,,0,0,0,test series
+DG,100,10000,30,1,avgscore,ROC,1,0.2,0,0,0,0,0,0,0,EPR,1,7,VN,WRW,,NSI,copy,,,0,0,0,approach 3
