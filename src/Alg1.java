@@ -636,7 +636,7 @@ public class Alg1 extends Thread{
                         " %-6s |" +//neigh
                         " %-8s |" +//sel
                         " %-9s |" +//sel noise
-                        " %-9s |" +//PPM
+//                        " %-9s |" +//PPM
                         " %-3s |" +//ASD
                         " %-8s |" +//evo
                         " %-9s |" +//evo noise
@@ -668,7 +668,7 @@ public class Alg1 extends Thread{
                 ,"neigh"
                 ,"sel"
                 ,"sel noise"
-                ,"PPM"
+//                ,"PPM"
                 ,"ASD"
                 ,"evo"
                 ,"evo noise"
@@ -706,7 +706,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-6s ", settings[config_index++]); //neigh
             System.out.printf("| %-8s ", settings[config_index++]); //sel
             System.out.printf("| %-9s ", settings[config_index++]); //sel noise
-            System.out.printf("| %-9s ", settings[config_index++]); //PPM
+//            System.out.printf("| %-9s ", settings[config_index++]); //PPM
             System.out.printf("| %-3s ", settings[config_index++]); //ASD
             System.out.printf("| %-8s ", settings[config_index++]); //evo
             System.out.printf("| %-9s ", settings[config_index++]); //evo noise
@@ -780,16 +780,24 @@ public class Alg1 extends Thread{
         // neigh
         neighbourhood_type = settings[config_index++];
 
-        //sel,sel noise,PPM,ASD
+        //sel,sel noise,ASD
         selection_method=settings[config_index];
         switch(settings[config_index]){
             case"variable"->w=Double.parseDouble(settings[config_index+1]);
         }
-        Player.setPPM(settings[config_index+2]);
-        switch(Player.getPPM()){
-            case"avg score"->Player.setASD(settings[config_index+3]);
-        }
-        config_index+=4;
+
+
+//        Player.setPPM(settings[config_index+2]);
+//        switch(Player.getPPM()){
+//            case"avg score"->Player.setASD(settings[config_index+3]);
+//        }
+//        config_index+=4;
+
+
+        Player.setASD(settings[config_index+2]);
+        config_index+=3;
+
+
 
         // evo,evo noise
         evolution_method=settings[config_index];
@@ -876,10 +884,17 @@ public class Alg1 extends Thread{
 //        switch(selection_method){
 //            case"variable"->s+=", w="+w;
 //        }
-        initial_settings+=", PPM="+Player.getPPM();
-        switch(Player.getPPM()){
-            case"avg score"->initial_settings+=", ASD="+Player.getASD();
-        }
+
+
+//        initial_settings+=", PPM="+Player.getPPM();
+//        switch(Player.getPPM()){
+//            case"avg score"->initial_settings+=", ASD="+Player.getASD();
+//        }
+
+
+        initial_settings+=", ASD="+Player.getASD();
+
+
 //        s+=", "+evolution_method+" evo";
 //        switch(evolution_method){
 //            case"approach"->s+=", approach noise="+approach_noise;

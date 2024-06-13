@@ -230,12 +230,12 @@ public class Player {
     }
     private double average_score; // $\overline{\Pi}$: average score of this player (this gen)
     public double getAverageScore(){return average_score;}
-    private static String ASD = ""; // average score denominator
+    private static String ASD = ""; // average score denominator determines how average score is calculated
     public static String getASD(){return ASD;}
     public static void setASD(String s){ASD=s;}
-    private static String PPM; // player performance metric
-    public static String getPPM(){return PPM;}
-    public static void setPPM(String s){PPM=s;}
+//    private static String PPM; // player performance metric governing selection
+//    public static String getPPM(){return PPM;}
+//    public static void setPPM(String s){PPM=s;}
 
     /**
      * Update the status of the player after having played, including score and average score.
@@ -507,9 +507,15 @@ public class Player {
             }
         }
         player_desc+=" score="+DF4.format(score); // score
-        switch(PPM){
-            case"avg score"->player_desc+=" ("+DF4.format(average_score)+")"; // avg score
-        }
+
+
+//        switch(PPM){
+//            case"avg score"->player_desc+=" ("+DF4.format(average_score)+")"; // avg score
+//        }
+
+
+        player_desc+=" ("+DF4.format(average_score)+")"; // avg score
+
 
         // document neighbourhood and EWs
         player_desc += " neighbourhood=[";
@@ -584,10 +590,17 @@ public class Player {
         double[] parent_scores = new double[neighbourhood.size()];
         double total_parent_score = 0.0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
-            switch(PPM){
-                case"score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).score - score);
-                case"avg score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).average_score-average_score);
-            }
+
+
+//            switch(PPM){
+//                case"score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).score - score);
+//                case"avg score"-> parent_scores[i]=Math.exp(neighbourhood.get(i).average_score-average_score);
+//            }
+
+
+            parent_scores[i] = Math.exp(neighbourhood.get(i).average_score-average_score);
+
+
             total_parent_score += parent_scores[i];
         }
         total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
@@ -620,34 +633,51 @@ public class Player {
         for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
             Player neighbour = neighbourhood.get(i);
             Player best = neighbourhood.get(best_index);
-            switch(PPM){
-                case"score"->{
-                    if(neighbour.score > best.score){
-                        best_index=i;
-                    }
-                }
-                case"avg score"->{
-                    if(neighbour.average_score > best.average_score){
-                        best_index=i;
-                    }
-                }
+
+
+//            switch(PPM){
+//                case"score"->{
+//                    if(neighbour.score > best.score){
+//                        best_index=i;
+//                    }
+//                }
+//                case"avg score"->{
+//                    if(neighbour.average_score > best.average_score){
+//                        best_index=i;
+//                    }
+//                }
+//            }
+
+
+            if(neighbour.average_score > best.average_score){
+                best_index=i;
             }
+
+
         }
 
         // did the highest scoring neighbour score higher than child? if not, select child as parent
         parent = neighbourhood.get(best_index);
-        switch(PPM){
-            case"score"->{
-                if(parent.score <= score){
-                    parent = this;
-                }
-            }
-            case"avg score"->{
-                if(parent.average_score <= average_score){
-                    parent = this;
-                }
-            }
+
+
+//        switch(PPM){
+//            case"score"->{
+//                if(parent.score <= score){
+//                    parent = this;
+//                }
+//            }
+//            case"avg score"->{
+//                if(parent.average_score <= average_score){
+//                    parent = this;
+//                }
+//            }
+//        }
+
+
+        if(parent.average_score <= average_score){
+            parent = this;
         }
+
 
         return parent;
     }
@@ -664,10 +694,17 @@ public class Player {
         double[] effective_payoffs = new double[neighbourhood.size()];
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            switch(PPM){
-                case"score"->effective_payoffs[i] = Math.exp(w * neighbour.score);
-                case"avg score"->effective_payoffs[i] = Math.exp(w * neighbour.average_score);
-            }
+
+
+//            switch(PPM){
+//                case"score"->effective_payoffs[i] = Math.exp(w * neighbour.score);
+//                case"avg score"->effective_payoffs[i] = Math.exp(w * neighbour.average_score);
+//            }
+
+
+            effective_payoffs[i] = Math.exp(w * neighbour.average_score);
+
+
         }
         double best_effective_payoff = effective_payoffs[0];
         int index = 0;
