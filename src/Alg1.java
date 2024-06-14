@@ -254,7 +254,7 @@ public class Alg1 extends Thread{
                 summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
                 summary += "\tavg p SD="+DF4.format(Double.parseDouble(row_contents[2]));
                 summary += "\t";
-                summary+=varying+"=";
+                summary += varying+"=";
                 summary += DF4.format(various_amounts.get(i));
                 i++;
                 summary += "\n";
@@ -321,118 +321,95 @@ public class Alg1 extends Thread{
         try{
 //            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
-            if(experiment_num == 0){ // write column headings
+            String s="";
+
+            // write column headings
+            if(experiment_num == 0){
                 fw = new FileWriter(series_data_filename, false);
-                fw.append("exp num");
-                fw.append(",mean avg p");
-                fw.append(",avg p SD");
-                fw.append(",runs");
-                fw.append(",gens");
-                fw.append(",neighbourhood");
-                fw.append(",N");
-                fw.append(",EWT");
-                fw.append(",EWLC");
-                fw.append(",EWLF");
-                fw.append(",EPR");
-                if(ROC != 0){
-                    fw.append(",ROC");
-                }
-                if(leeway1 != 0){
-                    fw.append(",leeway1");
-                }
-                if(leeway2 != 0){
-                    fw.append(",leeway2");
-                }
-                if(leeway3 != 0){
-                    fw.append(",leeway3");
-                }
-                if(leeway4 != 0){
-                    fw.append(",leeway4");
-                }
-                if(leeway5 != 0){
-                    fw.append(",leeway5");
-                }
-                if(leeway6 != 0){
-                    fw.append(",leeway6");
-                }
-                if(leeway7 != 0){
-                    fw.append(",leeway7");
-                }
-                fw.append(",selection");
-                if(selnoise != 0){
-                    fw.append(",selnoise");
-                }
-                fw.append(",evolution");
-                if(evonoise != 0){
-                    fw.append(",evonoise");
-                }
-                if(!mut.isEmpty()){
-                    fw.append(",mutation");
-                }
-                if(mutrate != 0){
-                    fw.append(",mutrate");
-                }
-                if(mutamount != 0){
-                    fw.append(",mutamount");
-                }
+                s+="exp num";
+                s+=",mean avg p";
+                s+=",avg p SD";
+                s+=",runs";
+                s+=",gens";
+                s+=",neigh";
+                s+=",N";
+                s+=",EWT";
+                s+=",EWLC";
+                s+=",EWLF";
+                s+=",EPR";
+                if(ROC!=0)
+                    s+=",ROC";
+                if(leeway1!=0)
+                    s+=",leeway1";
+                if(leeway2!=0)
+                    s+=",leeway2";
+                if(leeway3!=0)
+                    s+=",leeway3";
+                if(leeway4!=0)
+                    s+=",leeway4";
+                if(leeway5!=0)
+                    s+=",leeway5";
+                if(leeway6!=0)
+                    s+=",leeway6";
+                if(leeway7!=0)
+                    s+=",leeway7";
+                s+=",sel";
+                if(selnoise != 0)
+                    s+=",selnoise";
+                s+=",evo";
+                if(evonoise != 0)
+                    s+=",evonoise";
+                if(!mut.isEmpty())
+                    s+=",mut";
+                if(mutrate != 0)
+                    s+=",mutrate";
+                if(mutamount != 0)
+                    s+=",mutamount";
             } else {
                 fw = new FileWriter(series_data_filename, true);
             }
-            fw.append("\n" + experiment_num); // write row data
-            fw.append("," + DF4.format(mean_avg_p_of_experiment));
-            fw.append("," + DF4.format(sd_avg_p_of_experiment));
-            fw.append("," + runs);
-            fw.append("," + gens);
-            fw.append("," + neigh);
-            fw.append("," + N);
-            fw.append("," + EWT);
-            fw.append("," + EWLC);
-            fw.append("," + EWLF);
-            fw.append("," + EPR);
-            if(ROC != 0){
-                fw.append("," + ROC);
-            }
-            if(leeway1 != 0){
-                fw.append("," + DF4.format(leeway1));
-            }
 
-            if(leeway2 != 0){
-                fw.append("," + DF4.format(leeway2));
-            }
-
-            if(leeway3 != 0){
-                fw.append("," + DF4.format(leeway3));
-            }
-
-            if(leeway4 != 0){
-                fw.append("," + DF4.format(leeway4));
-            }
-            if(leeway5 != 0){
-                fw.append("," + DF4.format(leeway5));
-            }
-            if(leeway6 != 0){
-                fw.append("," + DF4.format(leeway6));
-            }
-            if(leeway7 != 0){
-                fw.append("," + DF4.format(leeway7));
-            }
-            fw.append("," + sel);
-            if(selnoise != 0){
-                fw.append("," + DF4.format(selnoise));
-            }
-            fw.append("," + evo);
-            if(evonoise != 0){
-                fw.append("," + DF4.format(evonoise));
-            }
-            if(!mut.isEmpty()){
-                fw.append("," + mut);
-            }
-            if(mutrate != 0){
-                fw.append("," + DF4.format(mutrate));
-            }
-            if(mutamount != 0){
-                fw.append("," + DF4.format(mutamount));
-            }
+            // write row data
+            s+="\n" + experiment_num;
+            s+="," + DF4.format(mean_avg_p_of_experiment);
+            s+="," + DF4.format(sd_avg_p_of_experiment);
+            s+="," + runs;
+            s+="," + gens;
+            s+="," + neigh;
+            s+="," + N;
+            s+="," + EWT;
+            s+="," + EWLC;
+            s+="," + EWLF;
+            s+="," + EPR;
+            if(ROC != 0)
+                s+="," + ROC;
+            if(leeway1 != 0)
+                s+="," + DF4.format(leeway1);
+            if(leeway2 != 0)
+                s+="," + DF4.format(leeway2);
+            if(leeway3 != 0)
+                s+="," + DF4.format(leeway3);
+            if(leeway4 != 0)
+                s+="," + DF4.format(leeway4);
+            if(leeway5 != 0)
+                s+="," + DF4.format(leeway5);
+            if(leeway6 != 0)
+                s+="," + DF4.format(leeway6);
+            if(leeway7 != 0)
+                s+="," + DF4.format(leeway7);
+            s+="," + sel;
+            if(selnoise != 0)
+                s+="," + DF4.format(selnoise);
+            s+="," + evo;
+            if(evonoise != 0)
+                s+="," + DF4.format(evonoise);
+            if(!mut.isEmpty())
+                s+="," + mut;
+            if(mutrate != 0)
+                s+="," + DF4.format(mutrate);
+            if(mutamount != 0)
+                s+="," + DF4.format(mutamount);
+            fw.append(s);
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -1089,20 +1066,20 @@ public class Alg1 extends Thread{
         try{
 //            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             String filename = experiment_results_folder_path + "\\" + "experiment_data.csv";
+            String s="";
             if(gen == 0){ // apply headings to file before writing data
                 fw = new FileWriter(filename, false); // append set to false means writing mode.
-                fw.append("gen"
-                        + ",avg p"
-                        + ",p SD"
-                        + "\n"
-                );
-                fw.close();
+                s+="gen";
+                s+=",avg p";
+                s+=",p SD";
+                s+="\n";
             }
             fw = new FileWriter(filename, true);
-            fw.append(gen + "");
-            fw.append("," + DF4.format(avg_p));
-            fw.append("," + DF4.format(p_SD));
-            fw.append("\n");
+            s+=gen;
+            s+=","+DF4.format(avg_p);
+            s+=","+DF4.format(p_SD);
+            s+="\n";
+            fw.append(s);
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
@@ -1153,18 +1130,27 @@ public class Alg1 extends Thread{
                 substrings[i] = "";
             }
             int a=0;
-//            for(int y = 2; y >= 0; y--) {
             for(int y = rows - 1; y >= 0; y--) {
-//                for (int x = 0; x <= 2; x++) {
                 for (int x = 0; x < columns; x++) {
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-                    substrings[a] += "0,"+edge_weights[2]+","+ neighbourhood.get(2).getEdgeWeights()[3]+",0";
-                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","+DF2.format(current.getP())+","+DF2.format(current.getAverageScore())+","+edge_weights[0];
-                    substrings[a+2] += current.getEdgeWeights()[1]+","+DF2.format(current.getMeanSelfEdgeWeight())+","+DF2.format(current.getMeanNeighbourEdgeWeight())+","+neighbourhood.get(0).getEdgeWeights()[1];
-                    substrings[a+3] += "0,"+neighbourhood.get(3).getEdgeWeights()[2]+","+ edge_weights[3]+",0";
-//                    if(x + 1 <= 2){
+                    substrings[a] += "0,"
+                            +edge_weights[2]+","
+                            +neighbourhood.get(2).getEdgeWeights()[3]+","
+                            +"0";
+                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
+                            +DF2.format(current.getP())+","
+                            +DF2.format(current.getAverageScore())+","
+                            +edge_weights[0];
+                    substrings[a+2] += current.getEdgeWeights()[1]+","
+                            +DF2.format(current.getMeanSelfEdgeWeight())+","
+                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
+                            +neighbourhood.get(0).getEdgeWeights()[1];
+                    substrings[a+3] += "0,"
+                            +neighbourhood.get(3).getEdgeWeights()[2]+","
+                            +edge_weights[3]+","
+                            +"0";
                     if(x + 1 < columns){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
