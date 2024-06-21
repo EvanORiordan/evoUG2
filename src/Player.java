@@ -13,10 +13,10 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Player {
 
-    private static int count = 0; // class-wide attribute that helps assign player id
-    private final int id; // each player has a unique id i.e. position
-    public int getId(){
-        return id;
+    private static int count = 0; // class-wide attribute that helps assign player ID
+    private final int ID; // each player has a unique ID i.e. position
+    public int getID(){
+        return ID;
     }
 
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
@@ -75,7 +75,7 @@ public class Player {
      * @param leeway2 is a factor used to calculate the player's local leeway
      */
     public Player(double p, double q, double leeway2){
-        id=count++; // assign this player's id
+        ID=count++; // assign this player's ID
         setP(p); // assign p value
         setQ(q); // assign q value
         old_p=p;
@@ -101,9 +101,14 @@ public class Player {
         gross_prize=d;
     }
 
-    private ArrayList<Player> neighbourhood = new ArrayList<>(); // this player's neighbourhood
+    private ArrayList<Player> neighbourhood = new ArrayList<>(); // the player's neighbourhood
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
+    }
+
+    private int[] neighbour_IDs; // array of the IDs of the player's neighbour
+    public void setNeighbourIDs(int[] arr){
+        neighbour_IDs=arr;
     }
 
     /**
@@ -129,7 +134,7 @@ public class Player {
             Player neighbour = neighbourhood.get(i);
             for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
                 Player neighbours_neighbour = neighbour.neighbourhood.get(j);
-                if(neighbours_neighbour.id == id){ // find EW of y associated with x
+                if(neighbours_neighbour.ID == ID){ // find EW of y associated with x
                     double edge_weight = neighbour.edge_weights[j];
                     double random_double = ThreadLocalRandom.current().nextDouble();
                     if(edge_weight > random_double){ // x has EW% probability of success
@@ -152,7 +157,7 @@ public class Player {
         for(Player neighbour: neighbourhood){
             for(int j=0;j<neighbour.neighbourhood.size();j++){
                 Player neighbours_neighbour = neighbour.neighbourhood.get(j);
-                if(neighbours_neighbour.id == id) {
+                if(neighbours_neighbour.ID == ID) {
                     UG(neighbour.edge_weights[j] * gross_prize, neighbour);
                     break;
                 }
@@ -182,8 +187,8 @@ public class Player {
      * @param responder
      */
     public void successfulInteraction(double net_prize, Player responder){
-        updateStats(net_prize - (net_prize * p), true);
-        responder.updateStats(net_prize * p, false);
+        updateStats(net_prize - (net_prize * p), true, responder.ID);
+        responder.updateStats(net_prize * p, false, ID);
     }
 
     /**
@@ -191,36 +196,29 @@ public class Player {
      * @param responder
      */
     public void unsuccessfulInteraction(Player responder){
-        updateStats(0, true);
-        responder.updateStats(0, false);
+        updateStats(0, true, responder.ID);
+        responder.updateStats(0, false, ID);
     }
 
 
 
 
-
-
-
-    /**
-     * NI: how many interactions the player had this gen.<br>
-     * NSI: how many successful interactions the player had. A successful interaction is an
-     * interaction where the game was played and payoff was earned.<br>
-     * NSD: how many successful interaction the player had as dictator.<br>
-     * NSR: how many successful interaction the player had as recipient.<br>
-     */
-    private int NI = 0;  // num interaction
-    private int NSI = 0; // num successful interactions
-    private int NSP = 0; // num successful proposals
-    private int NSR = 0; // num successful receptions
+    private int NI = 0;  // num interactions (NI) player had
     public void setNI(int i){
         NI=i;
     }
+    private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
     public void setNSI(int i){
         NSI=i;
     }
+    private int[] NSI_per_neighbour = {0,0,0,0};
+    public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
+    public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
+    private int NSP = 0; // num successful proposals (NSP)
     public void setNSP(int i){
         NSP=i;
     }
+    private int NSR = 0; // num successful receptions (NSR)
     public void setNSR(int i){
         NSR=i;
     }
@@ -237,11 +235,22 @@ public class Player {
     /**
      * Update the status of the player after having played, including score and average score.
      */
-    public void updateStats(double payoff, boolean proposer){
+    public void updateStats(double payoff, boolean proposer, int neighbour_ID){
         score+=payoff;
         NI++;
         if(payoff > 0){ // check if the interaction was successful i.e. if any payoff was received.
             NSI++;
+
+
+            // update NSI with neighbour
+            for(int i=0;i<neighbourhood.size();i++){
+                if(neighbourhood.get(i).getID() == neighbour_ID){
+                    NSI_per_neighbour[i]++;
+                    break;
+                }
+            }
+
+
             if(proposer){
                 NSP++;
             } else{
@@ -441,10 +450,10 @@ public class Player {
      */
     public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
         int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
-        int my_id = id;
+        int my_id = ID;
         for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
             Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
-            if (my_id == neighbours_neighbour.id) {
+            if (my_id == neighbours_neighbour.ID) {
                 my_index_in_neighbours_neighbourhood = i;
                 break;
             }
@@ -462,7 +471,7 @@ public class Player {
 
         // document key player attributes
         String player_desc = "";
-        player_desc += "id="+id;
+        player_desc += "ID="+ID;
         switch(game){
             case"UG","DG"->{
                 player_desc += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
@@ -477,16 +486,20 @@ public class Player {
         player_desc+=" ("+DF4.format(average_score)+")"; // avg score
 
 
-        // document neighbourhood and EWs
+        // document EW and NSI per neighbour
         player_desc += " neighbourhood=[";
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            player_desc += neighbour.id + " (" + DF2.format(edge_weights[i]) + ")";
+            player_desc += "("
+                    + neighbour.ID + ", " // ID
+                    + DF2.format(edge_weights[i]) + ", " // EW
+                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
             if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
                 player_desc +=", ";
             }
         }
         player_desc +="]";
+
 
         // document interaction stats
         player_desc += " NI="+ NI;
@@ -520,7 +533,7 @@ public class Player {
      * The greater the noise, the greater the approach is.<br>
      */
     public void approachEvolution(Player parent, double approach_noise){
-        if(parent.id != id){
+        if(parent.ID != ID){
             double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
             if(parent.old_p < p){ // if parent's p is lower, reduce p; else, increase p
                 approach *= -1;

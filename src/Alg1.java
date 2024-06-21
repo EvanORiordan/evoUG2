@@ -58,8 +58,9 @@ public class Alg1 extends Thread{
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
-    static String gen_strategy_data_filename;
-    static String gen_detailed_grid_filename;
+    static String gen_p_data_filename;
+    static String gen_EW_data_filename;
+    static String gen_NSI_data_filename;
     static int datarate; // determines how often generational data is recorded. if 0, do not record data.
 
 
@@ -435,7 +436,7 @@ public class Alg1 extends Thread{
         // at the first gen of the first run of the first experiment, create result storage folders and record strategies
         if(datarate != 0 && run_num == 0 && experiment_num == 0 && gen == 0) {
             createFolders();
-            writeStrategies();
+            writepData();
         }
 
         // initialise neighbourhoods
@@ -524,21 +525,22 @@ public class Alg1 extends Thread{
                 }
             }
 
-            calculateOverallStats(); // calculate the avg p and p SD of the pop
+            calculateOverallStats();
             calculateAverageEdgeWeights();
 
             // record generational data every datarate generations of the end of the first run of the first experiment.
             if(datarate != 0){
                 if(run_num == 0 && experiment_num == 0 && gen % datarate == 0){
-                    System.out.println("avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                    System.out.println("gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                     writeExperimentData();
-                    writeStrategies();
-                    writeDetailedGrid();
+                    writepData();
+                    writeEWData();
+                    writeNSIData();
                 }
             }
 
 
-            prepare(); // prepare for next generation
+            prepare();
             gen++; // move on to the next generation
         }
     }
@@ -548,11 +550,13 @@ public class Alg1 extends Thread{
      * Create folders to store generational data.
      */
     public void createFolders(){
-        gen_strategy_data_filename = experiment_results_folder_path + "\\strategies";
-        gen_detailed_grid_filename = experiment_results_folder_path + "\\detailed_grid";
+        gen_p_data_filename = experiment_results_folder_path + "\\p_data";
+        gen_EW_data_filename = experiment_results_folder_path + "\\EW_data";
+        gen_NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{ // create folders
-            Files.createDirectories(Paths.get(gen_strategy_data_filename));
-            Files.createDirectories(Paths.get(gen_detailed_grid_filename));
+            Files.createDirectories(Paths.get(gen_p_data_filename));
+            Files.createDirectories(Paths.get(gen_EW_data_filename));
+            Files.createDirectories(Paths.get(gen_NSI_data_filename));
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -967,6 +971,14 @@ public class Alg1 extends Thread{
             neighbourhood.add(grid.get(y_minus_one).get(x_minus_one)); // neighbour at (x-1,y-1)
             neighbourhood.add(grid.get(y_plus_one).get(x_minus_one)); // neighbour at (x-1,y+1)
         }
+
+        int[] arr = new int[4];
+        for(int i=0;i<player.getNeighbourhood().size();i++){
+            arr[i] = player.getNeighbourhood().get(i).getID();
+        }
+
+        player.setNeighbourIDs(arr);
+
     }
 
 
@@ -992,7 +1004,6 @@ public class Alg1 extends Thread{
             grid.get(col).get(row).getNeighbourhood().add(player);
         }
     }
-
 
 
 
@@ -1046,6 +1057,7 @@ public class Alg1 extends Thread{
                         }
                     }
                 }
+                player.setNSIPerNeighbour(new int[]{0,0,0,0});
             }
         }
     }
@@ -1091,9 +1103,9 @@ public class Alg1 extends Thread{
     /**
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
      */
-    public void writeStrategies(){
+    public void writepData(){
         try{
-            String filename = gen_strategy_data_filename + "\\gen" + gen + ".csv";
+            String filename = gen_p_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y = rows - 1; y >= 0; y--){
@@ -1115,14 +1127,12 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Writes a detailed grid of smaller grids representing a cluster of the population.<br>
-     * Smaller grids are 4x4 each.<br>
-     * Big grid consists of 3x3 of smaller grids. In total, big grid is 12x12.<br>
+     * Uses EW data to write a grid of 4x4 sub-grids into a .csv file.<br>
      * Assumes von Neumann neighbourhood type and rows=columns.
      */
-    public void writeDetailedGrid(){
+    public void writeEWData(){
         try{
-            String filename = gen_detailed_grid_filename + "\\gen" + gen + ".csv";
+            String filename = gen_EW_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
             String[] substrings = new String[(rows * 4)];
@@ -1135,17 +1145,40 @@ public class Alg1 extends Thread{
                     Player current = grid.get(y).get(x);
                     double[] edge_weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
+
+
+                    // EW health of player is equal to sum of edge weights divided by num edge weights.
+                    // this is equivalent to mean self edge weight plus mean neighbour edge weight divided by 2.
+                    double EW_health = (current.getMeanSelfEdgeWeight() + current.getMeanNeighbourEdgeWeight()) / 2;
+
+
                     substrings[a] += "0,"
                             +edge_weights[2]+","
                             +neighbourhood.get(2).getEdgeWeights()[3]+","
                             +"0";
                     substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
-                            +DF2.format(current.getP())+","
-                            +DF2.format(current.getAverageScore())+","
+
+
+//                            +DF2.format(current.getP())+","
+//                            +DF2.format(current.getAverageScore())+","
+
+
+                            +DF2.format(EW_health)+","
+                            +DF2.format(EW_health)+","
+
+
                             +edge_weights[0];
                     substrings[a+2] += current.getEdgeWeights()[1]+","
-                            +DF2.format(current.getMeanSelfEdgeWeight())+","
-                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
+
+
+//                            +DF2.format(current.getMeanSelfEdgeWeight())+","
+//                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
+
+
+                            +DF2.format(EW_health)+","
+                            +DF2.format(EW_health)+","
+
+
                             +neighbourhood.get(0).getEdgeWeights()[1];
                     substrings[a+3] += "0,"
                             +neighbourhood.get(3).getEdgeWeights()[2]+","
@@ -1175,8 +1208,74 @@ public class Alg1 extends Thread{
 
 
 
+
     /**
-     * Finds a player given the integer ID parameter.
+     * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
+     * Assumes von Neumann neighbourhood type and rows=columns.
+     */
+    public void writeNSIData(){
+        try{
+            String filename = gen_NSI_data_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename);
+            String string = "";
+            String[] substrings = new String[(rows * 4)];
+            for(int i=0;i<substrings.length;i++){
+                substrings[i] = "";
+            }
+            int a=0;
+            for(int y = rows - 1; y >= 0; y--) {
+                for (int x = 0; x < columns; x++) {
+                    Player current = grid.get(y).get(x);
+                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
+                    substrings[a] += "0,"
+                            +NSI_per_neighbour[2]+","
+                            +NSI_per_neighbour[2]+","
+                            +"0";
+                    substrings[a+1] += NSI_per_neighbour[1]+","
+                            +"0,"
+                            +"0,"
+                            +NSI_per_neighbour[0];
+                    substrings[a+2] += NSI_per_neighbour[1]+","
+                            +"0,"
+                            +"0,"
+                            +NSI_per_neighbour[0];
+                    substrings[a+3] += "0,"
+                            +NSI_per_neighbour[3]+","
+                            +NSI_per_neighbour[3]+","
+                            +"0";
+                    if(x + 1 < columns){
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += ",";
+                        }
+                    } else {
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += "\n";
+                        }
+                    }
+                }
+                a += 4;
+            }
+            for(int i=0;i<substrings.length;i++){
+                string += substrings[i];
+            }
+            fw.append(string);
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds a player given the integer ID parameter.<br>
+     * Currently not used.
      * @param ID of the player to find
      * @return player object with the given ID
      */
@@ -1184,8 +1283,9 @@ public class Alg1 extends Thread{
         Player player = null;
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
-                if(ID == grid.get(i).get(j).getId()){
+                if(ID == grid.get(i).get(j).getID()){
                     player = grid.get(i).get(j);
+                    break;
                 }
             }
         }
