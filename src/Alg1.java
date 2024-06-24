@@ -1227,6 +1227,18 @@ public class Alg1 extends Thread{
                 for (int x = 0; x < columns; x++) {
                     Player current = grid.get(y).get(x);
                     int[] NSI_per_neighbour = current.getNSIPerNeighbour();
+
+
+//                    TESTING TO SEE IF ITS EVER 0
+//                    for(int i: NSI_per_neighbour){
+//                        if(i == 0.0){
+//                            System.out.println("hello");
+//                        }
+//                    }
+
+
+
+
                     substrings[a] += "0,"
                             +NSI_per_neighbour[2]+","
                             +NSI_per_neighbour[2]+","

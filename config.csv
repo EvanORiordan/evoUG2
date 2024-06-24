@@ -1,4 +1,2 @@
 game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutamount,datarate,desc
-DG,1,20000,10,1,p,ROC,100,0.0001,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0,0,100,test experiment
-DG,1,20000,10,1,p,ROC,100,0.01,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0,0,100,test experiment
-DG,1,20000,10,1,p,ROC,100,0.01,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0.1,0.01,100,test experiment
+DG,1,20000,5,1,p,ROC,100,0.0001,0,0,0,0,0,0,0,,,,VN,WRW,,NSI,copy,,,0,0,100,test experiment
