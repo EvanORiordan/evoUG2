@@ -33,6 +33,9 @@ public class Alg1 extends Thread{
     int gen = 0; // indicates which generation is currently running.
     static double DCF = 0;// distance cost factor
     static String initial_settings = "";// stores initial experimentation settings
+    static int injgen = -1; // injection gen: indicates when strategy injection will occur
+    static double injp = 0.0; // injection p: indicates p value to be injected
+    static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
 
 
     // fields related to experiment series
@@ -157,6 +160,7 @@ public class Alg1 extends Thread{
             case"evonoise"->various_amounts.add(evonoise);
             case"mutrate"->various_amounts.add(mutrate);
             case"mutamount"->various_amounts.add(mutamount);
+//            case"inj"
         }
 
         // run experiment series
@@ -1303,5 +1307,23 @@ public class Alg1 extends Thread{
         }
 
         return player;
+    }
+
+
+
+
+
+
+
+    /**
+     * Injects a cluster of players in the population with a given strategy.
+     * Assumes square lattice population.
+     */
+    public void injectStrategyCluster(double new_strategy, int cluster_size){
+        for(int i=0;i<cluster_size;i++){
+            for(int j=0;j<cluster_size;j++){
+                grid.get(i).get(j).setP(new_strategy);
+            }
+        }
     }
 }
