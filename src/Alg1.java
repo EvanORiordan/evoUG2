@@ -33,7 +33,7 @@ public class Alg1 extends Thread{
     int gen = 0; // indicates which generation is currently running.
     static double DCF = 0;// distance cost factor
     static String initial_settings = "";// stores initial experimentation settings
-    static int injgen = -1; // injection gen: indicates when strategy injection will occur
+    static int injgen; // injection gen: indicates when strategy injection will occur
     static double injp = 0.0; // injection p: indicates p value to be injected
     static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
 
@@ -45,6 +45,7 @@ public class Alg1 extends Thread{
     static int numexp;//indicates the number of experiments to occur in the series
     static int experiment_num = 0;//tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
+    static ArrayList<Double> various_amounts;
 
 
     // fields related to I/O operations
@@ -65,6 +66,8 @@ public class Alg1 extends Thread{
     static String gen_EW_data_filename;
     static String gen_NSI_data_filename;
     static int datarate; // determines how often generational data is recorded. if 0, do not record data.
+    static String[] settings;
+    static int CI; // config index: facilitates construction of config table
 
 
     // fields related to edge weight learning (EWL)
@@ -142,7 +145,7 @@ public class Alg1 extends Thread{
         printInitialSettings();
 
 
-        ArrayList<Double> various_amounts = new ArrayList<>(); // stores initial value of varying parameter
+        various_amounts = new ArrayList<>(); // stores initial value of varying parameter
         switch(varying){
             case"runs"->various_amounts.add((double)runs);
             case"gens"->various_amounts.add((double)gens);
@@ -160,7 +163,9 @@ public class Alg1 extends Thread{
             case"evonoise"->various_amounts.add(evonoise);
             case"mutrate"->various_amounts.add(mutrate);
             case"mutamount"->various_amounts.add(mutamount);
-//            case"inj"
+            case"injgen"->various_amounts.add((double)injgen);
+            case"injp"->various_amounts.add(injp);
+            case"injsize"->various_amounts.add((double)injsize);
         }
 
         // run experiment series
@@ -238,6 +243,18 @@ public class Alg1 extends Thread{
                 case "mutamount"->{
                     mutamount+=variation;
                     various_amounts.add(mutamount);
+                }
+                case "injgen"->{
+                    injgen += (int) variation;
+                    various_amounts.add((double) injgen);
+                }
+                case "injp"->{
+                    injp += variation;
+                    various_amounts.add(injp);
+                }
+                case "injsize"->{
+                    injsize += (int) variation;
+                    various_amounts.add((double) injsize);
                 }
             }
 
@@ -339,37 +356,29 @@ public class Alg1 extends Thread{
                 s+=",neigh";
                 s+=",N";
                 s+=",EWT";
-                s+=",EWLC";
-                s+=",EWLF";
+                s+=(EWLC.isEmpty())?"":",EWLC";
+                s+=(EWLF.isEmpty())?"":",EWLF";
                 s+=",EPR";
-                if(ROC!=0)
-                    s+=",ROC";
-                if(leeway1!=0)
-                    s+=",leeway1";
-                if(leeway2!=0)
-                    s+=",leeway2";
-                if(leeway3!=0)
-                    s+=",leeway3";
-                if(leeway4!=0)
-                    s+=",leeway4";
-                if(leeway5!=0)
-                    s+=",leeway5";
-                if(leeway6!=0)
-                    s+=",leeway6";
-                if(leeway7!=0)
-                    s+=",leeway7";
+                s+=(ROC==0)?"":",ROC";
+                s+=(leeway1==0)?"":",leeway1";
+                s+=(leeway2==0)?"":",leeway2";
+                s+=(leeway3==0)?"":",leeway3";
+                s+=(leeway4==0)?"":",leeway4";
+                s+=(leeway5==0)?"":",leeway5";
+                s+=(leeway6==0)?"":",leeway6";
+                s+=(leeway7==0)?"":",leeway7";
                 s+=",sel";
-                if(selnoise != 0)
-                    s+=",selnoise";
+                s+=(selnoise==0)?"":",selnoise";
                 s+=",evo";
-                if(evonoise != 0)
-                    s+=",evonoise";
-                if(!mut.isEmpty())
-                    s+=",mut";
-                if(mutrate != 0)
-                    s+=",mutrate";
-                if(mutamount != 0)
-                    s+=",mutamount";
+                s+=(evonoise==0)?"":",evonoise";
+                s+=(mut.isEmpty())?"":",mut";
+                s+=(mutrate==0)?"":",mutrate";
+                s+=(mutamount==0)?"":",mutamount";
+                s+=(injgen==-1)?"":",injgen";
+                s+=(injp==0)?"":",injp";
+                s+=(injsize==0)?"":",injsize";
+
+
             } else {
                 fw = new FileWriter(series_data_filename, true);
             }
@@ -382,38 +391,28 @@ public class Alg1 extends Thread{
             s+="," + gens;
             s+="," + neigh;
             s+="," + N;
-            s+="," + EWT;
-            s+="," + EWLC;
-            s+="," + EWLF;
-            s+="," + EPR;
-            if(ROC != 0)
-                s+="," + ROC;
-            if(leeway1 != 0)
-                s+="," + DF4.format(leeway1);
-            if(leeway2 != 0)
-                s+="," + DF4.format(leeway2);
-            if(leeway3 != 0)
-                s+="," + DF4.format(leeway3);
-            if(leeway4 != 0)
-                s+="," + DF4.format(leeway4);
-            if(leeway5 != 0)
-                s+="," + DF4.format(leeway5);
-            if(leeway6 != 0)
-                s+="," + DF4.format(leeway6);
-            if(leeway7 != 0)
-                s+="," + DF4.format(leeway7);
-            s+="," + sel;
-            if(selnoise != 0)
-                s+="," + DF4.format(selnoise);
-            s+="," + evo;
-            if(evonoise != 0)
-                s+="," + DF4.format(evonoise);
-            if(!mut.isEmpty())
-                s+="," + mut;
-            if(mutrate != 0)
-                s+="," + DF4.format(mutrate);
-            if(mutamount != 0)
-                s+="," + DF4.format(mutamount);
+            s+=","+EWT;
+            s+=(EWLC.isEmpty())?"":","+EWLC;
+            s+=(EWLF.isEmpty())?"":","+EWLF;
+            s+=","+EPR;
+            s+=(ROC==0)?"":","+ROC;
+            s+=(leeway1==0)?"":","+leeway1;
+            s+=(leeway2==0)?"":","+leeway2;
+            s+=(leeway3==0)?"":","+leeway3;
+            s+=(leeway4==0)?"":","+leeway4;
+            s+=(leeway5==0)?"":","+leeway5;
+            s+=(leeway6==0)?"":","+leeway6;
+            s+=(leeway7==0)?"":","+leeway7;
+            s+=","+sel;
+            s+=(selnoise==0)?"":","+selnoise;
+            s+=","+evo;
+            s+=(evonoise==0)?"":","+evonoise;
+            s+=(mut.isEmpty())?"":","+mut;
+            s+=(mutrate==0)?"":","+mutrate;
+            s+=(mutamount==0)?"":","+mutamount;
+            s+=(injsize==-1)?"":","+injgen;
+            s+=(injp==0)?"":","+injp;
+            s+=(injsize==0)?"":","+injsize;
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -463,6 +462,12 @@ public class Alg1 extends Thread{
 
         // players begin playing the game
         while(gen <= gens) { // algorithm stops once this condition is reached
+
+            // injection phase
+            if(gen == injgen){
+                injectStrategyCluster(injp, injsize);
+            }
+
             // playing phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
@@ -685,6 +690,9 @@ public class Alg1 extends Thread{
                         " %-7s |" +//mutrate
                         " %-9s |" +//mutamount
                         " %-8s |" +//datarate
+                        " %-9s |" +//injgen
+                        " %-6s |" +//injp
+                        " %-7s |" +//injsize
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
@@ -715,45 +723,51 @@ public class Alg1 extends Thread{
                 ,"mut"
                 ,"mutrate"
                 ,"mutamount"
-                ,"datarate");
+                ,"datarate"
+                ,"injgen"
+                ,"injp"
+                ,"injsize"
+        );
         printTableBorder();
 
         // display config table rows
-        int config_index;
         for(int i=0;i<configurations.size();i++){
-            String[] settings = configurations.get(i).split(",");
-            config_index = 0;
+            settings = configurations.get(i).split(",");
+            CI = 0; // reset to 0 for each config
             System.out.printf("%-6d ", i); //config
-            System.out.printf("| %-4s ", settings[config_index++]); //game
-            System.out.printf("| %-6s ", settings[config_index++]); //runs
-            System.out.printf("| %-9s ", settings[config_index++]); //gens
-            System.out.printf("| %-4s ", settings[config_index++]); //rows
-            System.out.printf("| %-3s ", settings[config_index++]); //EWT
-            System.out.printf("| %-9s ", settings[config_index++]); //EWLC
-            System.out.printf("| %-11s ", settings[config_index++]); //EWLF
-            System.out.printf("| %-3s ", settings[config_index++]); //EPR
-            System.out.printf("| %-6s ", settings[config_index++]); //ROC
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway1
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway2
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway3
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway4
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway5
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway6
-            System.out.printf("| %-7s ", settings[config_index++]); //leeway7
-            System.out.printf("| %-9s ", settings[config_index++]); //varying
-            System.out.printf("| %-9s ", settings[config_index++]); //variation
-            System.out.printf("| %-6s ", settings[config_index++]); //numexp
-            System.out.printf("| %-5s ", settings[config_index++]); //neigh
-            System.out.printf("| %-8s ", settings[config_index++]); //sel
-            System.out.printf("| %-8s ", settings[config_index++]); //selnoise
-            System.out.printf("| %-3s ", settings[config_index++]); //ASD
-            System.out.printf("| %-8s ", settings[config_index++]); //evo
-            System.out.printf("| %-8s ", settings[config_index++]); //evonoise
-            System.out.printf("| %-6s ", settings[config_index++]); //mut
-            System.out.printf("| %-7s ", settings[config_index++]); //mutrate
-            System.out.printf("| %-9s ", settings[config_index++]); //mutamount
-            System.out.printf("| %-8s ", settings[config_index++]); //datarate
-            System.out.printf("| %s ", settings[config_index]); //desc
+            System.out.printf("| %-4s ", settings[CI++]); //game
+            System.out.printf("| %-6s ", settings[CI++]); //runs
+            System.out.printf("| %-9s ", settings[CI++]); //gens
+            System.out.printf("| %-4s ", settings[CI++]); //rows
+            System.out.printf("| %-3s ", settings[CI++]); //EWT
+            System.out.printf("| %-9s ", settings[CI++]); //EWLC
+            System.out.printf("| %-11s ", settings[CI++]); //EWLF
+            System.out.printf("| %-3s ", settings[CI++]); //EPR
+            System.out.printf("| %-6s ", settings[CI++]); //ROC
+            System.out.printf("| %-7s ", settings[CI++]); //leeway1
+            System.out.printf("| %-7s ", settings[CI++]); //leeway2
+            System.out.printf("| %-7s ", settings[CI++]); //leeway3
+            System.out.printf("| %-7s ", settings[CI++]); //leeway4
+            System.out.printf("| %-7s ", settings[CI++]); //leeway5
+            System.out.printf("| %-7s ", settings[CI++]); //leeway6
+            System.out.printf("| %-7s ", settings[CI++]); //leeway7
+            System.out.printf("| %-9s ", settings[CI++]); //varying
+            System.out.printf("| %-9s ", settings[CI++]); //variation
+            System.out.printf("| %-6s ", settings[CI++]); //numexp
+            System.out.printf("| %-5s ", settings[CI++]); //neigh
+            System.out.printf("| %-8s ", settings[CI++]); //sel
+            System.out.printf("| %-8s ", settings[CI++]); //selnoise
+            System.out.printf("| %-3s ", settings[CI++]); //ASD
+            System.out.printf("| %-8s ", settings[CI++]); //evo
+            System.out.printf("| %-8s ", settings[CI++]); //evonoise
+            System.out.printf("| %-6s ", settings[CI++]); //mut
+            System.out.printf("| %-7s ", settings[CI++]); //mutrate
+            System.out.printf("| %-9s ", settings[CI++]); //mutamount
+            System.out.printf("| %-8s ", settings[CI++]); //datarate
+            System.out.printf("| %-9s ", settings[CI++]); //injgen
+            System.out.printf("| %-6s ", settings[CI++]); //injp
+            System.out.printf("| %-7s ", settings[CI++]); //injsize
+            System.out.printf("| %s ", settings[CI]); //desc
             System.out.println();
         }
         printTableBorder();
@@ -772,92 +786,54 @@ public class Alg1 extends Thread{
         }while(!config_found);
 
 
-        // proceed to apply the selected config...
-        String[] settings = configurations.get(config_num).split(",");
-        config_index = 0;
-
-        // game
-        game = settings[config_index++];
+        // start applying the config
+        settings = configurations.get(config_num).split(",");
+        CI = 0;
+        game = settings[CI++];
         Player.setGame(game);
-
-        // runs
-        runs = Integer.parseInt(settings[config_index++]);
-
-        // gens
-        gens = Integer.parseInt(settings[config_index++]);
-
-        // rows
-        rows = Integer.parseInt(settings[config_index++]);
-
-        // square topology by default
-        columns = rows;
+        runs = Integer.parseInt(settings[CI++]);
+        gens = Integer.parseInt(settings[CI++]);
+        rows = Integer.parseInt(settings[CI++]);
+        columns = rows; // square lattice
         N = rows * columns;
-
-        // EWL parameters: EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7
-        EWT = settings[config_index++];
-        EWLC = settings[config_index++];
-        EWLF = settings[config_index++];
-        EPR=Integer.parseInt(settings[config_index++]);
-        ROC=Double.parseDouble(settings[config_index++]);
-        leeway1=Double.parseDouble(settings[config_index++]);
-        leeway2=Double.parseDouble(settings[config_index++]);
-        leeway3=Double.parseDouble(settings[config_index++]);
-        leeway4=Double.parseDouble(settings[config_index++]);
-        leeway5=Double.parseDouble(settings[config_index++]);
-        leeway6=Double.parseDouble(settings[config_index++]);
-        leeway7=Double.parseDouble(settings[config_index++]);
-
-        // experiment series parameters: varying,variation,num exp
-        if(!settings[config_index].equals("")) {
-            varying = settings[config_index];
-            experiment_series = true;
-            variation = Double.parseDouble(settings[config_index+1]);
-            numexp = Integer.parseInt(settings[config_index+2]);
-        }
-        config_index+=3;
-
-        // neigh
-        neigh = settings[config_index++];
-
-        // selection parameters: sel,selnoise,ASD
-        sel=settings[config_index];
-        switch(settings[config_index]){
-            case"variable"->selnoise=Double.parseDouble(settings[config_index+1]);
-        }
-        Player.setASD(settings[config_index+2]);
-        config_index+=3;
-
-        // evolution parameters: evo,evonoise
-        evo=settings[config_index];
-        switch(settings[config_index]){
-            case"approach"->evonoise=Double.parseDouble(settings[config_index+1]);
-        }
-        config_index+=2;
-
-        // mutation parameters: mut,mutrate,mutamount
-        mut = settings[config_index];
-        switch(mut){
-            case"global","local"->{
-                mutrate=Double.parseDouble(settings[config_index+1]);
-                switch(mut){
-                    case"local"->mutamount=Double.parseDouble(settings[config_index+2]);
-                }
-            }
-        }
-        config_index+=3;
-
-        //datarate
-        datarate = Integer.parseInt(settings[config_index++]);
-
-        //desc
-        desc = settings[config_index];
-
-
-        // by default, set prize per game to 1.0.
-        // the gross value of the prize does not matter as long as, in general, average score is used as a metric instead of raw score.
-        Player.setGrossPrize(1.0);
-
+        EWT = settings[CI++];
+        EWLC = settings[CI++];
+        EWLF = settings[CI++];
+        EPR=Integer.parseInt(settings[CI++]);
+        ROC=applySettingDouble();
+        leeway1=applySettingDouble();
+        leeway2=applySettingDouble();
+        leeway3=applySettingDouble();
+        leeway4=applySettingDouble();
+        leeway5=applySettingDouble();
+        leeway6=applySettingDouble();
+        leeway7=applySettingDouble();
+        varying=settings[CI++];
+        experiment_series=(varying.equals(""))?false:true; // varying param indicates whether series or not
+        variation=applySettingDouble();
+        numexp=applySettingInt();
+        neigh=settings[CI++];
+        sel=settings[CI++];
+        selnoise=applySettingDouble();
+        Player.setASD(settings[CI++]);
+        evo=settings[CI++];
+        evonoise=applySettingDouble();
+        mut=settings[CI++];
+        mutrate=applySettingDouble();
+        mutamount=applySettingDouble();
+        datarate=applySettingInt();
+        injgen=applySettingInt(); // set to -1 to prevent injection
+        if(injgen>gens)
+            System.out.println("NOTE: injgen > gens so no injection");
+        injp=applySettingDouble();
+        injsize=applySettingInt();
+        desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
+        Player.setGrossPrize(1.0); // default prize per game. this amount doesnt matter since fitness metric is AVG score rather than score.
     }
+
+
+
+
 
     public static void printTableBorder(){
         System.out.printf(
@@ -867,8 +843,12 @@ public class Alg1 extends Thread{
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
+                        "=======================================================" +
                         "%n");
     }
+
+
+
 
 
     /**
@@ -925,6 +905,11 @@ public class Alg1 extends Thread{
                     case"local"->initial_settings+=", mutamount="+DF4.format(mutamount);
                 }
             }
+        }
+        if(injgen>-1){
+            initial_settings+=", injgen="+injgen;
+            initial_settings+=", injp="+injp;
+            initial_settings+=", injsize="+injsize;
         }
     }
 
@@ -1312,9 +1297,6 @@ public class Alg1 extends Thread{
 
 
 
-
-
-
     /**
      * Injects a cluster of players in the population with a given strategy.
      * Assumes square lattice population.
@@ -1325,5 +1307,31 @@ public class Alg1 extends Thread{
                 grid.get(i).get(j).setP(new_strategy);
             }
         }
+    }
+
+
+    /**
+     * applySettingDouble() and applySettingInt() apply the value obtained from the config file to the
+     * parameter in question.
+     */
+    public static double applySettingDouble(){
+        double x;
+        if(settings[CI].equals("")){
+            x=0;
+            CI++;
+        }else{
+            x=Double.parseDouble(settings[CI++]);
+        }
+        return x;
+    }
+    public static int applySettingInt(){
+        int x;
+        if(settings[CI].equals("")){
+            x=0;
+            CI++;
+        }else{
+            x=Integer.parseInt(settings[CI++]);
+        }
+        return x;
     }
 }
