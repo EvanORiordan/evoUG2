@@ -30,7 +30,7 @@ public class Alg1 extends Thread{
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
-    int gen = 0; // indicates which generation is currently running.
+    int gen = 1; // indicates which generation is currently running.
     static double DCF = 0;// distance cost factor
     static String initial_settings = "";// stores initial experimentation settings
     static int injgen; // injection gen: indicates when strategy injection will occur
@@ -43,7 +43,7 @@ public class Alg1 extends Thread{
     static String varying;//indicates which parameter will be varied in an experiment series
     static double variation;//indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
     static int numexp;//indicates the number of experiments to occur in the series
-    static int experiment_num = 0;//tracks which experiment is taking place at any given time during a series
+    static int experiment_num = 1;//tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
 
@@ -306,11 +306,11 @@ public class Alg1 extends Thread{
 
         // stats to be tracked
         double mean_avg_p_of_experiment = 0;
-        double[] avg_p_values_of_experiment = new double[runs];
+        double[] avg_p_values_of_experiment = new double[runs + 1];
         double sd_avg_p_of_experiment = 0;
 
         // perform/run the experiment multiple times if applicable
-        for(run_num = 0; run_num < runs; run_num++){
+        for(run_num = 1; run_num <= runs; run_num++){
             Alg1 run = new Alg1(); // represents one run of the experiment
             run.start(); // start the run
             mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
@@ -346,7 +346,7 @@ public class Alg1 extends Thread{
             String s="";
 
             // write column headings
-            if(experiment_num == 0){
+            if(experiment_num == 1){
                 fw = new FileWriter(series_data_filename, false);
                 s+="exp num";
                 s+=",mean avg p";
@@ -437,9 +437,11 @@ public class Alg1 extends Thread{
         initRandomPop();
 
         // at the first gen of the first run of the first experiment, create result storage folders and record strategies
-        if(datarate != 0 && run_num == 0 && experiment_num == 0 && gen == 0) {
+        if(datarate != 0
+                && run_num == 1
+                && experiment_num == 1
+                && gen == 1) {
             createFolders();
-            writepData();
         }
 
         // initialise neighbourhoods
@@ -539,7 +541,9 @@ public class Alg1 extends Thread{
 
             // record generational data every datarate generations of the end of the first run of the first experiment.
             if(datarate != 0){
-                if(run_num == 0 && experiment_num == 0 && gen % datarate == 0){
+                if(run_num == 1
+                        && experiment_num == 1
+                        && gen % datarate == 0){
                     System.out.println("gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                     writeExperimentData();
                     writepData();
@@ -822,7 +826,7 @@ public class Alg1 extends Thread{
         mutrate=applySettingDouble();
         mutamount=applySettingDouble();
         datarate=applySettingInt();
-        injgen=applySettingInt(); // set to -1 to prevent injection
+        injgen=applySettingInt(); // set to 0 to prevent injection
         if(injgen>gens)
             System.out.println("NOTE: injgen > gens so no injection");
         injp=applySettingDouble();
@@ -855,7 +859,7 @@ public class Alg1 extends Thread{
      * Collects initial settings into a string.
      */
     public static void setInitialSettings(){
-        if(experiment_series && experiment_num == 0){ // if at start of series
+        if(experiment_series && experiment_num == 1){ // if at start of series
             initial_settings += "Experiment series ("+desc+")" +
                     " varying "+varying+
                     " by "+variation+
@@ -1068,7 +1072,7 @@ public class Alg1 extends Thread{
 //            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             String filename = experiment_results_folder_path + "\\" + "experiment_data.csv";
             String s="";
-            if(gen == 0){ // apply headings to file before writing data
+            if(gen == 1){ // apply headings to file before writing data
                 fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
                 s+=",avg p";
