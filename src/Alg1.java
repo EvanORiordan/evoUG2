@@ -173,7 +173,7 @@ public class Alg1 extends Thread{
 
             // helps user keep track of the current value of the varying parameter
             System.out.println("\n===================\n" +
-                    "NOTE: Start of experiment "+i+": "+varying+"="+DF4.format(various_amounts.get(i))+".");
+                    "NOTE: Start of experiment "+experiment_num+": "+varying+"="+DF4.format(various_amounts.get(i))+".");
 
             experiment(); // run an experiment of the series
 

@@ -407,6 +407,10 @@ public class Player {
             case"pEAD"->        learning = Math.exp(Math.abs(neighbour.p - p));
             case"avgscoreAD"->  learning = Math.abs(neighbour.average_score - average_score);
             case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour.average_score - average_score));
+
+
+            case"pAD2"->learning=Math.pow(Math.abs(neighbour.p - p), 2);
+            case"pAD3"->learning=Math.pow(Math.abs(neighbour.p - p), 3);
         }
 
         return learning;
@@ -474,10 +478,12 @@ public class Player {
         player_desc += "ID="+ID;
         switch(game){
             case"UG","DG"->{
-                player_desc += " p=" + DF4.format(p) + " ("+DF4.format(old_p) + ")"; // document p and old p
+                player_desc += " p=" + DF4.format(p) // p
+                        + " ("+DF4.format(old_p) + ")"; // old p
                 switch(game){
                     case"UG"-> {
-                        player_desc += " q=" + DF4.format(q) + " (" + DF4.format(old_q) + ")"; // document q and old q
+                        player_desc += " q=" + DF4.format(q) // q
+                                + " (" + DF4.format(old_q) + ")"; // old q
                     }
                 }
             }
@@ -491,8 +497,8 @@ public class Player {
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             player_desc += "("
-                    + neighbour.ID + ", " // ID
-                    + DF2.format(edge_weights[i]) + ", " // EW
+                    + neighbour.ID + ", " // neighbour ID
+                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
                     + NSI_per_neighbour[i] + ")"; // NSI with neighbour
             if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
                 player_desc +=", ";
