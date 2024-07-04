@@ -101,7 +101,7 @@ public class Player {
         gross_prize=d;
     }
 
-    private ArrayList<Player> neighbourhood = new ArrayList<>(); // the player's neighbourhood
+    private ArrayList<Player> neighbourhood = new ArrayList<>(); // contains player's neighbours
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }

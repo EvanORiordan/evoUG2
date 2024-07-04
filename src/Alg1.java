@@ -374,7 +374,7 @@ public class Alg1 extends Thread{
                 s+=(mut.isEmpty())?"":",mut";
                 s+=(mutrate==0)?"":",mutrate";
                 s+=(mutamount==0)?"":",mutamount";
-                s+=(injgen==-1)?"":",injgen";
+                s+=(injgen==0)?"":",injgen";
                 s+=(injp==0)?"":",injp";
                 s+=(injsize==0)?"":",injsize";
 
@@ -410,7 +410,7 @@ public class Alg1 extends Thread{
             s+=(mut.isEmpty())?"":","+mut;
             s+=(mutrate==0)?"":","+mutrate;
             s+=(mutamount==0)?"":","+mutamount;
-            s+=(injsize==-1)?"":","+injgen;
+            s+=(injgen==0)?"":","+injgen;
             s+=(injp==0)?"":","+injp;
             s+=(injsize==0)?"":","+injsize;
             fw.append(s);
@@ -910,7 +910,7 @@ public class Alg1 extends Thread{
                 }
             }
         }
-        if(injgen>-1){
+        if(injgen > 0){
             initial_settings+=", injgen="+injgen;
             initial_settings+=", injp="+injp;
             initial_settings+=", injsize="+injsize;
