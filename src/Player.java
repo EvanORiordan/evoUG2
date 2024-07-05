@@ -260,6 +260,10 @@ public class Player {
         switch(ASD){
             case"NI"->average_score = score / NI;
             case"NSI"->average_score = score / NSI;
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
         }
     }
 
@@ -388,6 +392,7 @@ public class Player {
                     option = 1;
                 }
             }
+            default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }
 
         return option;
@@ -407,10 +412,10 @@ public class Player {
             case"pEAD"->        learning = Math.exp(Math.abs(neighbour.p - p));
             case"avgscoreAD"->  learning = Math.abs(neighbour.average_score - average_score);
             case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour.average_score - average_score));
+            case"pAD2"->        learning=Math.pow(Math.abs(neighbour.p - p), 2);
+            case"pAD3"->        learning=Math.pow(Math.abs(neighbour.p - p), 3);
 
-
-            case"pAD2"->learning=Math.pow(Math.abs(neighbour.p - p), 2);
-            case"pAD3"->learning=Math.pow(Math.abs(neighbour.p - p), 3);
+            default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }
 
         return learning;
@@ -564,7 +569,7 @@ public class Player {
      * parent is exponentially affected. If a parent is not selected, the child is selected as parent
      * by default.<br>
      */
-    public Player weightedRouletteWheelSelection(){
+    public Player rouletteWheelSelection(){
         Player parent = this; // by default, the child is the parent
         double[] parent_scores = new double[neighbourhood.size()];
         double total_parent_score = 0; // track the sum of the "parent scores" of the neighbourhood

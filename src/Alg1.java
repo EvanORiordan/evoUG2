@@ -91,8 +91,8 @@ public class Alg1 extends Thread{
     static String sel; // indicates which selection function to call
     static double selnoise = 0; // noise affecting selection
     static String mut; // indicates which mutation function to call
-    static double mutrate = 0;
-    static double mutamount = 0;
+    static double mutrate = 0; // probability of mutation
+    static double mutbound = 0; // affects amount of mutation
 
 
 
@@ -162,7 +162,7 @@ public class Alg1 extends Thread{
             case"selnoise"->various_amounts.add(selnoise);
             case"evonoise"->various_amounts.add(evonoise);
             case"mutrate"->various_amounts.add(mutrate);
-            case"mutamount"->various_amounts.add(mutamount);
+            case"mutbound"->various_amounts.add(mutbound);
             case"injgen"->various_amounts.add((double)injgen);
             case"injp"->various_amounts.add(injp);
             case"injsize"->various_amounts.add((double)injsize);
@@ -240,9 +240,9 @@ public class Alg1 extends Thread{
                     mutrate+=variation;
                     various_amounts.add(mutrate);
                 }
-                case "mutamount"->{
-                    mutamount+=variation;
-                    various_amounts.add(mutamount);
+                case "mutbound"->{
+                    mutbound+=variation;
+                    various_amounts.add(mutbound);
                 }
                 case "injgen"->{
                     injgen += (int) variation;
@@ -373,7 +373,7 @@ public class Alg1 extends Thread{
                 s+=(evonoise==0)?"":",evonoise";
                 s+=(mut.isEmpty())?"":",mut";
                 s+=(mutrate==0)?"":",mutrate";
-                s+=(mutamount==0)?"":",mutamount";
+                s+=(mutbound==0)?"":",mutbound";
                 s+=(injgen==0)?"":",injgen";
                 s+=(injp==0)?"":",injp";
                 s+=(injsize==0)?"":",injsize";
@@ -409,7 +409,7 @@ public class Alg1 extends Thread{
             s+=(evonoise==0)?"":","+evonoise;
             s+=(mut.isEmpty())?"":","+mut;
             s+=(mutrate==0)?"":","+mutrate;
-            s+=(mutamount==0)?"":","+mutamount;
+            s+=(mutbound==0)?"":","+mutbound;
             s+=(injgen==0)?"":","+injgen;
             s+=(injp==0)?"":","+injp;
             s+=(injsize==0)?"":","+injsize;
@@ -451,6 +451,10 @@ public class Alg1 extends Thread{
                 switch(neigh){
                     case"VN","M"->assignAdjacentNeighbours(player, i, j);
                     case"random"->assignRandomNeighbours(player, 3);
+                    default -> {
+                        System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
+                        Runtime.getRuntime().exit(0);
+                    }
                 }
             }
         }
@@ -475,9 +479,12 @@ public class Alg1 extends Thread{
                 for(Player player: row){
                     switch(game){
                         case"UG","DG"->{
+
+                            // beware that the ultimatum/dictator game played is affected by the type of edge weight used
                             switch(EWT){
                                 case"1"->player.playUG1();
                                 case"2"->player.playUG2();
+                                default -> System.out.println("[NOTE] No edge weight learning configured.");
                             }
                         }
 
@@ -487,6 +494,10 @@ public class Alg1 extends Thread{
 //                        case"IG"->player.playIG();
 //                        case"TG"->player.playTG();
 //                        case"PGG"->player.playPGG();
+
+                        default -> {
+                            System.out.println("[ERROR] No game configured. Exiting...");
+                        }
                     }
                 }
             }
@@ -508,15 +519,23 @@ public class Alg1 extends Thread{
                         // select parent
                         Player parent = null;
                         switch(sel){
-                            case "WRW" -> parent = player.weightedRouletteWheelSelection();
+                            case "RW" -> parent = player.rouletteWheelSelection();
                             case "best" -> parent = player.bestSelection();
                             case "variable" -> parent = player.variableSelection(selnoise);
+                            default -> {
+                                System.out.println("[ERROR] Invalid selection function configured. Exiting...");
+                                Runtime.getRuntime().exit(0);
+                            }
                         }
 
                         // evolve child
                         switch (evo) {
                             case "copy" -> player.copyEvolution(parent);
                             case "approach" -> player.approachEvolution(parent, evonoise);
+                            default -> {
+                                System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
+                                Runtime.getRuntime().exit(0);
+                            }
                         }
 
                         // mutate child
@@ -528,7 +547,7 @@ public class Alg1 extends Thread{
                             }
                             case "local" -> {
                                 if(player.mutationCheck(mutrate)){
-                                    player.localMutation(mutamount);
+                                    player.localMutation(mutbound);
                                 }
                             }
                         }
@@ -692,7 +711,7 @@ public class Alg1 extends Thread{
                         " %-8s |" +//evonoise
                         " %-6s |" +//mut
                         " %-7s |" +//mutrate
-                        " %-9s |" +//mutamount
+                        " %-9s |" +//mutbound
                         " %-8s |" +//datarate
                         " %-9s |" +//injgen
                         " %-6s |" +//injp
@@ -726,7 +745,7 @@ public class Alg1 extends Thread{
                 ,"evonoise"
                 ,"mut"
                 ,"mutrate"
-                ,"mutamount"
+                ,"mutbound"
                 ,"datarate"
                 ,"injgen"
                 ,"injp"
@@ -766,7 +785,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-8s ", settings[CI++]); //evonoise
             System.out.printf("| %-6s ", settings[CI++]); //mut
             System.out.printf("| %-7s ", settings[CI++]); //mutrate
-            System.out.printf("| %-9s ", settings[CI++]); //mutamount
+            System.out.printf("| %-9s ", settings[CI++]); //mutbound
             System.out.printf("| %-8s ", settings[CI++]); //datarate
             System.out.printf("| %-9s ", settings[CI++]); //injgen
             System.out.printf("| %-6s ", settings[CI++]); //injp
@@ -796,14 +815,30 @@ public class Alg1 extends Thread{
         game = settings[CI++];
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
+        if(runs < 1){
+            System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
         gens = Integer.parseInt(settings[CI++]);
+        if(gens < 1){
+            System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
         rows = Integer.parseInt(settings[CI++]);
+        if(rows < 1){
+            System.out.println("[ERROR] Invalid number of rows configured. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
         columns = rows; // square lattice
         N = rows * columns;
         EWT = settings[CI++];
         EWLC = settings[CI++];
         EWLF = settings[CI++];
         EPR=Integer.parseInt(settings[CI++]);
+        if(EPR < 1){
+            System.out.println("[ERROR] Invalid evolution phase rate configured. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
         ROC=applySettingDouble();
         leeway1=applySettingDouble();
         leeway2=applySettingDouble();
@@ -824,7 +859,7 @@ public class Alg1 extends Thread{
         evonoise=applySettingDouble();
         mut=settings[CI++];
         mutrate=applySettingDouble();
-        mutamount=applySettingDouble();
+        mutbound=applySettingDouble();
         datarate=applySettingInt();
         injgen=applySettingInt(); // set to 0 to prevent injection
         if(injgen>gens)
@@ -906,7 +941,7 @@ public class Alg1 extends Thread{
                 initial_settings+=", "+mut+" mut";
                 initial_settings+=", mutrate="+DF4.format(mutrate);
                 switch(mut){
-                    case"local"->initial_settings+=", mutamount="+DF4.format(mutamount);
+                    case"local"->initial_settings+=", mutbound="+DF4.format(mutbound);
                 }
             }
         }
