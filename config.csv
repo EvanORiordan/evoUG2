@@ -15,3 +15,8 @@ DG,200,10000,50,1,avgscore,avgscoreAD,1,,,,,,,,,EPR,1,7,VN,WRW,,NI,copy,,,,,,,,,
 DG,200,10000,50,1,avgscore,avgscoreAD,8,,,,,,,,,EPR,1,7,VN,WRW,,NI,copy,,,,,,,,,higher EPR
 DG,1,10000,50,1,p,ROC,6,0.2,,,,,,,,,,,VN,RW,,NI,copy,,local,0.001,0.001,100,,,,testing mutation
 DG,200,10000,50,1,p,ROC,6,0.2,,,,,,,,mutrate,0.001,20,VN,RW,,NI,copy,,local,0.001,0.001,100,,,,mutation
+DG,200,10000,50,1,p,ROC,1,0.2,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 1 p ROC
+DG,200,10000,50,1,p,pAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 2 p pAD
+DG,200,10000,50,1,p,pEAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 3 p pEAD
+DG,200,10000,50,1,avgscore,ROC,1,0.2,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 4 avgscore ROC
+DG,200,10000,50,1,avgscore,avgscoreEAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 5 avgscore avgscoreEAD

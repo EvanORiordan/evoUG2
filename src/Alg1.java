@@ -112,7 +112,7 @@ public class Alg1 extends Thread{
                 +"_"+start_timestamp.getHour()
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
-        experiment_results_folder_path = data_folder_path+"\\"+start_timestamp_string;
+        experiment_results_folder_path = data_folder_path+"\\"+start_timestamp_string+" "+desc;
         try {
             Files.createDirectories(Paths.get(experiment_results_folder_path)); // create results storage folder
         }catch(IOException e){
