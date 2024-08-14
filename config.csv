@@ -1,4 +1,4 @@
-game,runs,gens,rows,EWT,EWLC,EWLF,EPR,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,datarate,injgen,injp,injsize,desc
+game,runs,iters,rows,EWT,EWLC,EWLF,ER,ROC,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,datarate,injiter,injp,injsize,desc
 DG,1,10000,10,1,,,100,,,,,,,,,,,,VN,WRW,,NSI,copy,,,,,,-1,,,test minimum settings
 DG,10,10000,10,1,p,ROC,100,0.01,1,2,3,4,5,6,7,ROC,0.001,10,VN,WRW,,NSI,copy,,local,0.1,0.01,,5001,0.1,5,test maximum settings
 DG,1,10000,20,1,p,ROC,6,0.2,,,,,,,,,,,VN,WRW,,NSI,copy,,,,,100,,,,test
@@ -16,7 +16,16 @@ DG,200,10000,50,1,avgscore,avgscoreAD,8,,,,,,,,,EPR,1,7,VN,WRW,,NI,copy,,,,,,,,,
 DG,1,10000,50,1,p,ROC,6,0.2,,,,,,,,,,,VN,RW,,NI,copy,,local,0.001,0.001,100,,,,testing mutation
 DG,200,10000,50,1,p,ROC,6,0.2,,,,,,,,mutrate,0.001,20,VN,RW,,NI,copy,,local,0.001,0.001,100,,,,mutation
 DG,200,10000,50,1,p,ROC,1,0.2,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 1 p ROC
+DG,1,10000,50,1,p,ROC,10,0.2,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,approach 1 gen data config
 DG,200,10000,50,1,p,pAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 2 p pAD
+DG,1,10000,50,1,p,pAD,10,,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,approach 2 gen data config
+DG,200,10000,50,1,p,pAD,11,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,p pAD higher EPR
+DG,200,10000,50,1,p,pAD,12,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,p pAD higher EPR
 DG,200,10000,50,1,p,pEAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 3 p pEAD
+DG,1,10000,50,1,p,pEAD,10,,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,approach 3 gen data config
 DG,200,10000,50,1,avgscore,ROC,1,0.2,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 4 avgscore ROC
+DG,1,10000,50,1,avgscore,ROC,10,0.2,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,approach 4 gen data config
 DG,200,10000,50,1,avgscore,avgscoreEAD,1,,,,,,,,,EPR,1,10,VN,RW,,NI,copy,,,,,100,,,,approach 5 avgscore avgscoreEAD
+DG,1,10000,50,1,avgscore,avgscoreEAD,10,,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,approach 5 gen data config
+DG,200,10000,50,1,p,ROC,1,1.0,,,,,,,,EPR,1,4,VN,RW,,NI,copy,,,,,,,,,high ROC
+DG,1,10000,50,1,p,pAD,10,,,,,,,,,,,,VN,RW,,NI,copy,,,,,100,,,,test

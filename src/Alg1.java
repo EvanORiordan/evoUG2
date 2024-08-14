@@ -24,16 +24,17 @@ public class Alg1 extends Thread{
     static int rows; // how many rows in the square grid
     static int columns; // how many rows in the square grid
     static int N; // population size
-    static int gens; // how many generations occur per experiment run. (technically, the number of gens will be this + 1 since first gen is gen number 0)
+    static int iters; // how many iterations occur per experiment run
     static int runs; // how many times this experiment will be run.
     static String neigh; // indicates the type of neighbourhood being enforced
     ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
-    int gen = 1; // indicates which generation is currently running.
-    static double DCF = 0;// distance cost factor
-    static String initial_settings = "";// stores initial experimentation settings
-    static int injgen; // injection gen: indicates when strategy injection will occur
+    int gen = 0; // indicates current generation. marks the progression of evo.
+    int iter = 1; // indicates current iteration. each gen is made up of ER iters.
+//    static double DCF = 0; // distance cost factor
+    static String initial_settings = ""; // stores initial experimentation settings
+    static int injiter; // injection iteration: indicates when strategy injection will occur
     static double injp = 0.0; // injection p: indicates p value to be injected
     static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
 
@@ -56,25 +57,25 @@ public class Alg1 extends Thread{
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
-    static String desc;//description of experiment from config file
+    static String desc; //description of experiment
     static String start_timestamp_string;
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String data_folder_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
-    static String gen_p_data_filename;
-    static String gen_EW_data_filename;
-    static String gen_NSI_data_filename;
-    static int datarate; // determines how often generational data is recorded. if 0, do not record data.
+    static String p_data_filename;
+    static String EW_data_filename;
+    static String NSI_data_filename;
+    static int datarate; // determines how often individual data is recorded. if 0, data is not recorded.
     static String[] settings;
-    static int CI; // config index: facilitates construction of config table
+    static int CI; // config index: facilitates construction of table of configs
 
 
     // fields related to edge weight learning (EWL)
     static String EWT; // edge weight type
     static String EWLC; // edge weight learning condition
     static String EWLF; // edge weight learning formula
-    static int EPR = 1; // evolution phase rate: how often evolution phases occur e.g. if 5, then evo phase occurs every 5 gens
+    static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
     static double ROC = 0; // rate of edge weight change per edge weight learning call
     static double leeway1 = 0; // defines global leeway affecting all players.
     static double leeway2 = 0; // defines bounds of interval that local leeway is generated from.
@@ -119,6 +120,14 @@ public class Alg1 extends Thread{
             e.printStackTrace();
         }
         printExperimentResultsFolderPath();
+
+
+        // create result data folders
+        if(datarate != 0) {
+            createFolders();
+        }
+
+
         System.out.println("Starting timestamp: "+start_timestamp);
         if(experiment_series){
             experimentSeries(); // run an experiment series
@@ -148,9 +157,9 @@ public class Alg1 extends Thread{
         various_amounts = new ArrayList<>(); // stores initial value of varying parameter
         switch(varying){
             case"runs"->various_amounts.add((double)runs);
-            case"gens"->various_amounts.add((double)gens);
+            case"iters"->various_amounts.add((double)iters);
             case"rows"->various_amounts.add((double)rows);
-            case"EPR"->various_amounts.add((double)EPR);
+            case"ER"->various_amounts.add((double)ER);
             case"ROC"->various_amounts.add(ROC);
             case"leeway1"->various_amounts.add(leeway1);
             case"leeway2"->various_amounts.add(leeway2);
@@ -163,7 +172,7 @@ public class Alg1 extends Thread{
             case"evonoise"->various_amounts.add(evonoise);
             case"mutrate"->various_amounts.add(mutrate);
             case"mutbound"->various_amounts.add(mutbound);
-            case"injgen"->various_amounts.add((double)injgen);
+            case"injiter"->various_amounts.add((double)injiter);
             case"injp"->various_amounts.add(injp);
             case"injsize"->various_amounts.add((double)injsize);
         }
@@ -182,9 +191,9 @@ public class Alg1 extends Thread{
                     runs+=(int)variation;
                     various_amounts.add((double)runs);
                 }
-                case "gens"->{
-                    gens+=(int)variation;
-                    various_amounts.add((double)gens);
+                case "iters"->{
+                    iters+=(int)variation;
+                    various_amounts.add((double)iters);
                 }
                 case "rows"->{
                     rows+=(int)variation;
@@ -192,9 +201,9 @@ public class Alg1 extends Thread{
                     N += (int) (variation * variation);
                     various_amounts.add((double)rows);
                 }
-                case "EPR"->{
-                    EPR+=(int)variation;
-                    various_amounts.add((double)EPR);
+                case "ER"->{
+                    ER+=(int)variation;
+                    various_amounts.add((double)ER);
                 }
                 case "ROC"->{
                     ROC+=variation;
@@ -244,9 +253,9 @@ public class Alg1 extends Thread{
                     mutbound+=variation;
                     various_amounts.add(mutbound);
                 }
-                case "injgen"->{
-                    injgen += (int) variation;
-                    various_amounts.add((double) injgen);
+                case "injiter"->{
+                    injiter += (int) variation;
+                    various_amounts.add((double) injiter);
                 }
                 case "injp"->{
                     injp += variation;
@@ -352,13 +361,13 @@ public class Alg1 extends Thread{
                 s+=",mean avg p";
                 s+=",avg p SD";
                 s+=",runs";
-                s+=",gens";
+                s+=",iters";
                 s+=",neigh";
                 s+=",N";
                 s+=",EWT";
                 s+=(EWLC.isEmpty())?"":",EWLC";
                 s+=(EWLF.isEmpty())?"":",EWLF";
-                s+=",EPR";
+                s+=",ER";
                 s+=(ROC==0)?"":",ROC";
                 s+=(leeway1==0)?"":",leeway1";
                 s+=(leeway2==0)?"":",leeway2";
@@ -374,7 +383,7 @@ public class Alg1 extends Thread{
                 s+=(mut.isEmpty())?"":",mut";
                 s+=(mutrate==0)?"":",mutrate";
                 s+=(mutbound==0)?"":",mutbound";
-                s+=(injgen==0)?"":",injgen";
+                s+=(injiter==0)?"":",injiter";
                 s+=(injp==0)?"":",injp";
                 s+=(injsize==0)?"":",injsize";
 
@@ -388,13 +397,13 @@ public class Alg1 extends Thread{
             s+="," + DF4.format(mean_avg_p_of_experiment);
             s+="," + DF4.format(sd_avg_p_of_experiment);
             s+="," + runs;
-            s+="," + gens;
+            s+="," + iters;
             s+="," + neigh;
             s+="," + N;
             s+=","+EWT;
             s+=(EWLC.isEmpty())?"":","+EWLC;
             s+=(EWLF.isEmpty())?"":","+EWLF;
-            s+=","+EPR;
+            s+=","+ER;
             s+=(ROC==0)?"":","+ROC;
             s+=(leeway1==0)?"":","+leeway1;
             s+=(leeway2==0)?"":","+leeway2;
@@ -410,7 +419,7 @@ public class Alg1 extends Thread{
             s+=(mut.isEmpty())?"":","+mut;
             s+=(mutrate==0)?"":","+mutrate;
             s+=(mutbound==0)?"":","+mutbound;
-            s+=(injgen==0)?"":","+injgen;
+            s+=(injiter==0)?"":","+injiter;
             s+=(injp==0)?"":","+injp;
             s+=(injsize==0)?"":","+injsize;
             fw.append(s);
@@ -436,13 +445,13 @@ public class Alg1 extends Thread{
 //        }
         initRandomPop();
 
-        // at the first gen of the first run of the first experiment, create result storage folders and record strategies
-        if(datarate != 0
-                && run_num == 1
-                && experiment_num == 1
-                && gen == 1) {
-            createFolders();
-        }
+        // during the first generation of the first run of the first experiment, create result storage folders and record strategies
+//        if(datarate != 0
+//                && run_num == 1
+//                && experiment_num == 1
+//                && gen == 0) {
+//            createFolders();
+//        }
 
         // initialise neighbourhoods
         for(int i=0;i<rows;i++){
@@ -467,10 +476,10 @@ public class Alg1 extends Thread{
         }
 
         // players begin playing the game
-        while(gen <= gens) { // algorithm stops once this condition is reached
+        while(iter <= iters) { // algorithm stops once this condition is reached
 
             // injection phase
-            if(gen == injgen){
+            if(iter == injiter){
                 injectStrategyCluster(injp, injsize);
             }
 
@@ -510,9 +519,9 @@ public class Alg1 extends Thread{
             }
 
             // evolution phase of generation.
-            // occurs every EPR generations.
+            // occurs every ER iterations.
             // consists of selection, evolution and mutation, if applicable.
-            if(gen % EPR == 0) {
+            if(iter % ER == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player player : row) {
 
@@ -553,17 +562,24 @@ public class Alg1 extends Thread{
                         }
                     }
                 }
+                gen++; // move on to the next generation
             }
 
             calculateOverallStats();
             calculateAverageEdgeWeights();
 
-            // record generational data every datarate generations of the end of the first run of the first experiment.
+            // periodically record individual data
+//            if(datarate != 0 && gen != 0){
             if(datarate != 0){
-                if(run_num == 1
-                        && experiment_num == 1
-                        && gen % datarate == 0){
-                    System.out.println("gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                if(run_num == 1 // if first run
+                        && experiment_num == 1 // if first experiment
+//                        && gen % datarate == 0
+//                        && iter % gen == datarate
+//                        && (iter % ER) % datarate == 0
+//                        && iter % ER == 0
+                        && iter % (ER * datarate) == 0 // datarate determines whether this gen should have its data recorded
+                ){
+                    System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                     writeExperimentData();
                     writepData();
                     writeEWData();
@@ -573,22 +589,24 @@ public class Alg1 extends Thread{
 
 
             prepare();
-            gen++; // move on to the next generation
+            iter++; // move on to the next iteration
         }
     }
 
 
+
     /**
-     * Create folders to store generational data.
+     * Create folders to store data.
      */
-    public void createFolders(){
-        gen_p_data_filename = experiment_results_folder_path + "\\p_data";
-        gen_EW_data_filename = experiment_results_folder_path + "\\EW_data";
-        gen_NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
+//    public void createFolders(){
+    public static void createFolders(){
+        p_data_filename = experiment_results_folder_path + "\\p_data";
+        EW_data_filename = experiment_results_folder_path + "\\EW_data";
+        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{ // create folders
-            Files.createDirectories(Paths.get(gen_p_data_filename));
-            Files.createDirectories(Paths.get(gen_EW_data_filename));
-            Files.createDirectories(Paths.get(gen_NSI_data_filename));
+            Files.createDirectories(Paths.get(p_data_filename));
+            Files.createDirectories(Paths.get(EW_data_filename));
+            Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -596,7 +614,9 @@ public class Alg1 extends Thread{
     }
 
 
-
+    /**
+     * Calculates the average edge weight of the player and their neighbours.
+     */
     public void calculateAverageEdgeWeights(){
         for(ArrayList<Player> row:grid){
             for(Player player: row){
@@ -661,8 +681,9 @@ public class Alg1 extends Thread{
 //    }
 
 
+
     /**
-     * This function loads in a configuration of settings from a .csv file, allowing the user to assign the values they want to the environmental parameters.
+     * Loads in a configuration of settings from the config file, allowing the user to choose the values of the environmental parameters.
      */
     public static void setupEnvironment(){
         // load configurations
@@ -686,12 +707,12 @@ public class Alg1 extends Thread{
         System.out.printf("%-6s |" +//config
                         " %-4s |" +//game
                         " %-6s |" +//runs
-                        " %-9s |" +//gens
+                        " %-9s |" +//iters
                         " %-4s |" +//rows
                         " %-3s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
-                        " %-3s |" +//EPR
+                        " %-3s |" +//ER
                         " %-6s |" +//ROC
                         " %-7s |" +//leeway1
                         " %-7s |" +//leeway2
@@ -713,19 +734,19 @@ public class Alg1 extends Thread{
                         " %-7s |" +//mutrate
                         " %-9s |" +//mutbound
                         " %-8s |" +//datarate
-                        " %-9s |" +//injgen
+                        " %-9s |" +//injiter
                         " %-6s |" +//injp
                         " %-7s |" +//injsize
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
                 ,"runs"
-                ,"gens"
+                ,"iters"
                 ,"rows"
                 ,"EWT"
                 ,"EWLC"
                 ,"EWLF"
-                ,"EPR"
+                ,"ER"
                 ,"ROC"
                 ,"leeway1"
                 ,"leeway2"
@@ -747,7 +768,7 @@ public class Alg1 extends Thread{
                 ,"mutrate"
                 ,"mutbound"
                 ,"datarate"
-                ,"injgen"
+                ,"injiter"
                 ,"injp"
                 ,"injsize"
         );
@@ -760,12 +781,12 @@ public class Alg1 extends Thread{
             System.out.printf("%-6d ", i); //config
             System.out.printf("| %-4s ", settings[CI++]); //game
             System.out.printf("| %-6s ", settings[CI++]); //runs
-            System.out.printf("| %-9s ", settings[CI++]); //gens
+            System.out.printf("| %-9s ", settings[CI++]); //iters
             System.out.printf("| %-4s ", settings[CI++]); //rows
             System.out.printf("| %-3s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
-            System.out.printf("| %-3s ", settings[CI++]); //EPR
+            System.out.printf("| %-3s ", settings[CI++]); //ER
             System.out.printf("| %-6s ", settings[CI++]); //ROC
             System.out.printf("| %-7s ", settings[CI++]); //leeway1
             System.out.printf("| %-7s ", settings[CI++]); //leeway2
@@ -787,7 +808,7 @@ public class Alg1 extends Thread{
             System.out.printf("| %-7s ", settings[CI++]); //mutrate
             System.out.printf("| %-9s ", settings[CI++]); //mutbound
             System.out.printf("| %-8s ", settings[CI++]); //datarate
-            System.out.printf("| %-9s ", settings[CI++]); //injgen
+            System.out.printf("| %-9s ", settings[CI++]); //injiter
             System.out.printf("| %-6s ", settings[CI++]); //injp
             System.out.printf("| %-7s ", settings[CI++]); //injsize
             System.out.printf("| %s ", settings[CI]); //desc
@@ -819,8 +840,8 @@ public class Alg1 extends Thread{
             System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        gens = Integer.parseInt(settings[CI++]);
-        if(gens < 1){
+        iters = Integer.parseInt(settings[CI++]);
+        if(iters < 1){
             System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
@@ -834,9 +855,9 @@ public class Alg1 extends Thread{
         EWT = settings[CI++];
         EWLC = settings[CI++];
         EWLF = settings[CI++];
-        EPR=Integer.parseInt(settings[CI++]);
-        if(EPR < 1){
-            System.out.println("[ERROR] Invalid evolution phase rate configured. Exiting...");
+        ER=Integer.parseInt(settings[CI++]);
+        if(ER < 1){
+            System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
         ROC=applySettingDouble();
@@ -861,9 +882,9 @@ public class Alg1 extends Thread{
         mutrate=applySettingDouble();
         mutbound=applySettingDouble();
         datarate=applySettingInt();
-        injgen=applySettingInt(); // set to 0 to prevent injection
-        if(injgen>gens)
-            System.out.println("NOTE: injgen > gens so no injection");
+        injiter=applySettingInt(); // set to 0 to prevent injection
+        if(injiter>iters)
+            System.out.println("NOTE: injiter > iters so no injection");
         injp=applySettingDouble();
         injsize=applySettingInt();
         desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
@@ -871,9 +892,9 @@ public class Alg1 extends Thread{
     }
 
 
-
-
-
+    /**
+     * Prints the border of the table of configurations.
+     */
     public static void printTableBorder(){
         System.out.printf(
                 "=======================================================" +
@@ -904,12 +925,12 @@ public class Alg1 extends Thread{
         }
         initial_settings+=game;
         initial_settings+=", "+runs+" runs";
-        initial_settings+=", "+gens+" gens";
+        initial_settings+=", "+iters+" iters";
         initial_settings+=", "+rows+" rows";
         initial_settings+=", EWT="+EWT;
         initial_settings+=", EWLC="+EWLC;
         initial_settings+=", EWLF="+EWLF;
-        initial_settings+=", EPR="+EPR;
+        initial_settings+=", ER="+ER;
         if(ROC != 0)
             initial_settings+=", ROC="+ROC;
         if(leeway1 != 0)
@@ -945,8 +966,8 @@ public class Alg1 extends Thread{
                 }
             }
         }
-        if(injgen > 0){
-            initial_settings+=", injgen="+injgen;
+        if(injiter > 0){
+            initial_settings+=", injiter="+injiter;
             initial_settings+=", injp="+injp;
             initial_settings+=", injsize="+injsize;
         }
@@ -961,7 +982,9 @@ public class Alg1 extends Thread{
     }
 
 
-
+    /**
+     * Prints path of experiment results folder.
+     */
     public static void printExperimentResultsFolderPath(){
         System.out.println("Experiment results folder path: \n" + experiment_results_folder_path);
     }
@@ -1094,8 +1117,10 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Allows for the visualisation of the avg p of a run with respect to gens, with gens on x-axis
-     * and avg p on y-axis. Now also collects standard deviation (SD) data.<br>
+     * Allows for the visualisation of the avg p of a run with respect to iteration.<br>
+     * iteration on x-axis.<br>
+     * avg p on y-axis.<br>
+     * collects standard deviation (SD) data.<br>
      * <br>Steps:<br>
      * - Export the data of a single run to a .csv file<br>
      * - Import the .csv data into an Excel sheet<br>
@@ -1105,9 +1130,9 @@ public class Alg1 extends Thread{
     public void writeExperimentData(){
         try{
 //            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
-            String filename = experiment_results_folder_path + "\\" + "experiment_data.csv";
+            String filename = experiment_results_folder_path + "\\" + "avg_p_data.csv";
             String s="";
-            if(gen == 1){ // apply headings to file before writing data
+            if(gen == 0){ // apply headings to file before writing data
                 fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
                 s+=",avg p";
@@ -1133,7 +1158,7 @@ public class Alg1 extends Thread{
      */
     public void writepData(){
         try{
-            String filename = gen_p_data_filename + "\\gen" + gen + ".csv";
+            String filename = p_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y = rows - 1; y >= 0; y--){
@@ -1160,7 +1185,7 @@ public class Alg1 extends Thread{
      */
     public void writeEWData(){
         try{
-            String filename = gen_EW_data_filename + "\\gen" + gen + ".csv";
+            String filename = EW_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
             String[] substrings = new String[(rows * 4)];
@@ -1243,7 +1268,7 @@ public class Alg1 extends Thread{
      */
     public void writeNSIData(){
         try{
-            String filename = gen_NSI_data_filename + "\\gen" + gen + ".csv";
+            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
             String[] substrings = new String[(rows * 4)];
