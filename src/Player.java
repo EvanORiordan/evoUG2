@@ -297,6 +297,8 @@ public class Player {
     public void EWL(String EWLC,
                     String EWLF,
                     double ROC,
+                    double alpha,
+                    double beta,
                     double leeway1,
                     double leeway3,
                     double leeway4,
@@ -307,14 +309,14 @@ public class Player {
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
             double total_leeway = calculateTotalLeeway(neighbour, i, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
-            int option = checkEWLC(EWLC, neighbour, total_leeway);
+            int option = checkEWLC(EWLC, neighbour, alpha, beta, total_leeway);
             if(option == 0){ // positive edge weight learning
-                edge_weights[i] += calculateLearning(EWLF, neighbour, ROC);
+                edge_weights[i] += calculateLearning(EWLF, neighbour, ROC, alpha, beta);
                 if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
                     edge_weights[i] = 1.0;
                 }
             } else if (option == 1){ // negative edge weight learning
-                edge_weights[i] -= calculateLearning(EWLF, neighbour, ROC);
+                edge_weights[i] -= calculateLearning(EWLF, neighbour, ROC, alpha, beta);
                 if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
                     edge_weights[i] = 0;
                 }
@@ -375,7 +377,7 @@ public class Player {
      * @param total_leeway is the leeway being given to the neighbour by the edge's owner
      * @return 0 for positive edge weight learning, 1 for negative, 2 for none
      */
-    public int checkEWLC(String EWLC, Player neighbour, double total_leeway) {
+    public int checkEWLC(String EWLC, Player neighbour, double alpha, double beta, double total_leeway) {
         int option = 2;
         switch(EWLC){
             case"p"->{ // compare proposal values
@@ -392,6 +394,14 @@ public class Player {
                     option = 1;
                 }
             }
+            case"AB"->{ // compare alpha-beta rating
+                double AB_rating1 = ((alpha * p) + (beta * average_score)) / (alpha + beta);
+                double AB_rating2 = ((alpha * neighbour.p) + (beta * neighbour.average_score)) / (alpha + beta);
+                if(AB_rating1 < AB_rating2)
+                    option = 0;
+                else if(AB_rating1 > AB_rating2)
+                    option = 1;
+            }
             default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }
 
@@ -404,7 +414,7 @@ public class Player {
      * @param neighbour
      * @param ROC
      */
-    public double calculateLearning(String EWLF, Player neighbour, double ROC){
+    public double calculateLearning(String EWLF, Player neighbour, double ROC, double alpha, double beta){
         double learning = 0;
         switch(EWLF){
             case"ROC"->         learning = ROC;
@@ -414,6 +424,8 @@ public class Player {
             case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour.average_score - average_score));
             case"pAD2"->        learning=Math.pow(Math.abs(neighbour.p - p), 2);
             case"pAD3"->        learning=Math.pow(Math.abs(neighbour.p - p), 3);
+            case"AB"->          learning=Math.abs((((alpha * p) + (beta * average_score)) / (alpha + beta))
+                    - (((alpha * neighbour.p) + (beta * neighbour.average_score)) / (alpha + beta)));
 
             default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }

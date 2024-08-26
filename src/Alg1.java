@@ -77,6 +77,12 @@ public class Alg1 extends Thread{
     static String EWLF; // edge weight learning formula
     static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
     static double ROC = 0; // rate of edge weight change per edge weight learning call
+
+
+    static double alpha = 0;
+    static double beta = 0;
+
+
     static double leeway1 = 0; // defines global leeway affecting all players.
     static double leeway2 = 0; // defines bounds of interval that local leeway is generated from.
     static double leeway3 = 0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
@@ -514,7 +520,7 @@ public class Alg1 extends Thread{
             // edge weight learning phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.EWL(EWLC, EWLF, ROC, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
+                    player.EWL(EWLC, EWLF, ROC, alpha, beta, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
                 }
             }
 
@@ -714,6 +720,12 @@ public class Alg1 extends Thread{
                         " %-11s |" +//EWLF
                         " %-3s |" +//ER
                         " %-6s |" +//ROC
+
+
+                        " %-6s |" +//alpha
+                        " %-6s |" +//beta
+
+
                         " %-7s |" +//leeway1
                         " %-7s |" +//leeway2
                         " %-7s |" +//leeway3
@@ -748,6 +760,12 @@ public class Alg1 extends Thread{
                 ,"EWLF"
                 ,"ER"
                 ,"ROC"
+
+
+                ,"alpha"
+                ,"beta"
+
+
                 ,"leeway1"
                 ,"leeway2"
                 ,"leeway3"
@@ -788,6 +806,12 @@ public class Alg1 extends Thread{
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
             System.out.printf("| %-3s ", settings[CI++]); //ER
             System.out.printf("| %-6s ", settings[CI++]); //ROC
+
+
+            System.out.printf("| %-6s ", settings[CI++]); //alpha
+            System.out.printf("| %-6s ", settings[CI++]); //beta
+
+
             System.out.printf("| %-7s ", settings[CI++]); //leeway1
             System.out.printf("| %-7s ", settings[CI++]); //leeway2
             System.out.printf("| %-7s ", settings[CI++]); //leeway3
@@ -861,6 +885,12 @@ public class Alg1 extends Thread{
             Runtime.getRuntime().exit(0);
         }
         ROC=applySettingDouble();
+
+
+        alpha=applySettingDouble();
+        beta=applySettingDouble();
+
+
         leeway1=applySettingDouble();
         leeway2=applySettingDouble();
         leeway3=applySettingDouble();
@@ -933,6 +963,14 @@ public class Alg1 extends Thread{
         initial_settings+=", ER="+ER;
         if(ROC != 0)
             initial_settings+=", ROC="+ROC;
+
+
+        if(alpha != 0)
+            initial_settings+=", alpha="+alpha;
+        if(beta != 0)
+            initial_settings+=", beta="+beta;
+
+
         if(leeway1 != 0)
             initial_settings+=", leeway1="+leeway1;
         if(leeway2 != 0)
