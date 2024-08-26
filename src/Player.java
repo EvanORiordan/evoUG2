@@ -167,9 +167,6 @@ public class Player {
 
 
 
-
-
-
     /**
      * Standard ultimatum Game where the player proposes to the responder.
      * @param responder
@@ -181,6 +178,7 @@ public class Player {
             unsuccessfulInteraction(responder); // responder rejects proposal
         }
     }
+
 
     /**
      * Method for updating player statistics after a successful interaction.
@@ -701,5 +699,94 @@ public class Player {
         double new_q = ThreadLocalRandom.current().nextDouble(q - delta, q + delta);
         setStrategy(new_p,new_q);
     }
+
+
+
+
+
+
+
+
+
+
+    // ================= PD =================
+
+    private String[] strategiesPD = {"C","D","A","TFT"};
+
+    private String strategyPD = "";
+
+
+    public void PD(double T, double R, double P, double S, double l, Player partner){
+        if(strategyPD.equals("C") && partner.strategyPD.equals("C")){
+            score += R;
+            partner.score += R;
+        } else if(strategyPD.equals("C") && partner.strategyPD.equals("D")){
+            score += S;
+            partner.score += T;
+        }else if(strategyPD.equals("D") && partner.strategyPD.equals("C")){
+            score += T;
+            partner.score += S;
+        }else if(strategyPD.equals("D") && partner.strategyPD.equals("D")){
+            score += P;
+            partner.score += P;
+        }else if(strategyPD.equals("A") || partner.strategyPD.equals("A")){
+            score += l;
+            partner.score += l;
+        }
+        NI++;
+        partner.NI++;
+        average_score = score / NI;
+        partner.average_score = partner.score / partner.NI;
+    }
+
+
+
+
+
+
+//    public void play() {
+//        switch (EWT) {
+//            case "1" -> {
+//                for (int i = 0; i < neighbourhood.size(); i++) {
+//                    Player neighbour = neighbourhood.get(i);
+//                    for (int j = 0; j < neighbour.neighbourhood.size(); j++) {
+//                        Player neighbours_neighbour = neighbour.neighbourhood.get(j);
+//                        if (neighbours_neighbour.ID == ID) {
+//                            double edge_weight = neighbour.edge_weights[j];
+//                            double random_double = ThreadLocalRandom.current().nextDouble();
+//                            if (edge_weight > random_double) {
+//                                UG(gross_prize, neighbour);
+//                            } else {
+//                                unsuccessfulInteraction(neighbour);
+//                            }
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//            case "2" ->{
+////                for(Player neighbour: neighbourhood){
+//                for(int i=0;i<neighbourhood.size();i++){
+//                    Player neighbour = neighbourhood.get(i);
+//                    for(int j=0;j<neighbour.neighbourhood.size();j++){
+//                        Player neighbours_neighbour = neighbour.neighbourhood.get(j);
+//                        if(neighbours_neighbour.ID == ID) {
+//                            switch(game){
+//                                case"UG","DG"->{
+//                                    UG(neighbour.edge_weights[j] * gross_prize, neighbour);
+//                                }
+//                                case"PD"->{
+//                                    PD(T, R, P, S, l, neighbour);
+//                                }
+//                            }
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+
 
 }

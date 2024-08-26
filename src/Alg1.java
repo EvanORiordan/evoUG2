@@ -37,6 +37,11 @@ public class Alg1 extends Thread{
     static int injiter; // injection iteration: indicates when strategy injection will occur
     static double injp = 0.0; // injection p: indicates p value to be injected
     static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
+    static double T; // PD: temptation to defect
+    static double R; // PD: reward for mutual coopeation
+    static double P; // PD: punishment for mutual defection
+    static double S; // PD: sucker's payoff for cooperating with a defector
+    static double l; // loner's payoff
 
 
     // fields related to experiment series
@@ -504,8 +509,9 @@ public class Alg1 extends Thread{
                         }
 
 
-                        // reminder of something we might work on in later research
-//                        case"PD"->player.playPD();
+//                        case"PD"->player.playPD(T, R, P, S, l);
+
+
 //                        case"IG"->player.playIG();
 //                        case"TG"->player.playTG();
 //                        case"PGG"->player.playPGG();
