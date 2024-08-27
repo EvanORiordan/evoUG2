@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -42,6 +43,7 @@ public class Alg1 extends Thread{
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
+    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
 
 
     // fields related to experiment series
@@ -497,36 +499,46 @@ public class Alg1 extends Thread{
             // playing phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    switch(game){
-                        case"UG","DG"->{
+                    play(player);
 
-                            // beware that the ultimatum/dictator game played is affected by the type of edge weight used
-                            switch(EWT){
-                                case"1"->player.playUG1();
-                                case"2"->player.playUG2();
-                                default -> System.out.println("[NOTE] No edge weight learning configured.");
-                            }
-                        }
-
-
-//                        case"PD"->player.playPD(T, R, P, S, l);
-
-
-//                        case"IG"->player.playIG();
-//                        case"TG"->player.playTG();
-//                        case"PGG"->player.playPGG();
-
-                        default -> {
-                            System.out.println("[ERROR] No game configured. Exiting...");
-                        }
-                    }
+//
+//
+////                    switch(game){
+////                        case"UG","DG"->{
+////
+////                            // beware that the ultimatum/dictator game played is affected by the type of edge weight used
+////                            switch(EWT){
+////                                case"1"->player.playUG1();
+////                                case"2"->player.playUG2();
+////                                default -> System.out.println("[NOTE] No edge weight learning configured.");
+////                            }
+////                        }
+//
+//
+////                        case"PD"->player.playPD(T, R, P, S, l);
+//
+//
+////                        case"IG"->player.playIG();
+////                        case"TG"->player.playTG();
+////                        case"PGG"->player.playPGG();
+//
+//                        default -> {
+//                            System.out.println("[ERROR] No game configured. Exiting...");
+//                        }
+//                    }
                 }
             }
 
             // edge weight learning phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-                    player.EWL(EWLC, EWLF, ROC, alpha, beta, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
+//                    player.EWL(EWLC, EWLF, ROC, alpha, beta, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
+
+
+                    EWL(player);
+
+
+
                 }
             }
 
@@ -604,6 +616,320 @@ public class Alg1 extends Thread{
             iter++; // move on to the next iteration
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public void play(Player player) {
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int ID = player.getID();
+
+        // find players
+        for(int i = 0; i < neighbourhood.size(); i++){
+            Player neighbour = neighbourhood.get(i);
+            ArrayList <Player> neighbour_neighbourhood = neighbour.getNeighbourhood();
+            for (int j = 0; j < neighbour_neighbourhood.size(); j++) {
+                Player neighbours_neighbour = neighbour_neighbourhood.get(j);
+                int neighbours_neighbour_ID = neighbours_neighbour.getID();
+                if (neighbours_neighbour_ID == ID) {
+                    double[] neighbour_edge_weights = neighbour.getEdgeWeights();
+                    double edge_weight = neighbour_edge_weights[j];
+
+                    // play game
+                    switch(EWT){
+                        case"1"->{
+                            double random_double = ThreadLocalRandom.current().nextDouble();
+                            if(edge_weight > random_double){
+                                switch (game){
+                                    case"UG","DG"->{
+                                        UG(gross_prize_UG, player, neighbour);
+                                    }
+                                    case"PD"->{
+                                        System.out.println("hello");
+                                    }
+                                }
+                            } else{ // if interaction did not successfully occur, avg score decreases.
+//                                unsuccessfulInteraction(neighbour);
+//                                updateStatsUG(player, 0, ?);
+                            }
+                            break;
+                        }
+                        case"2"->{
+                            switch(game){
+                                case"UG","DG"->{
+                                    UG(neighbour_edge_weights[j] * gross_prize_UG, player, neighbour);
+                                }
+                                case"PD"->{
+                                    PD(neighbour);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+
+
+
+
+    public void UG(double net_prize, Player proposer, Player responder){
+        double proposer_p = proposer.getP();
+        double responder_q = responder.getQ();
+
+
+        if(proposer_p >= responder_q){
+//            successfulUGInteraction(net_prize, responder); // responder accepts proposal
+
+//            updateStatsUG(proposer, net_prize - (net_prize * p), true, responder.ID);
+//            updateStatsUG(responder, net_prize * p, false, ID);
+        } else {
+//            unsuccessfulUGInteraction(responder); // responder rejects proposal
+
+//            updateStatsUG(player, 0, true, responder.ID);
+//            updateStatsUG(responder, false, ID);
+        }
+    }
+
+//    public void successfulUGInteraction(double net_prize, Player responder){
+//        updateStatsUG(net_prize - (net_prize * p), true, responder.ID);
+//        responder.updateStatsUG(net_prize * p, false, ID);
+//    }
+//
+//    public void unsuccessfulUGInteraction(Player responder){
+//        updateStatsUG(0, true, responder.ID);
+//        responder.updateStatsUG(0, false, ID);
+//    }
+
+    /**
+     * Update the status of the player after having played, including score and average score.
+     */
+    public void updateStatsUG(Player player, double payoff, int neighbour_ID){
+        player.setAvgScore(player.getAvgScore() + payoff);
+        player.setNI(player.getNI() + 1);
+        if(payoff > 0){
+
+        }
+
+
+
+//        if(payoff > 0){ // check if the interaction was successful i.e. if any payoff was received.
+//            NSI++;
+//
+//
+//            // update NSI with neighbour
+//            for(int i=0;i<neighbourhood.size();i++){
+//                if(neighbourhood.get(i).getID() == neighbour_ID){
+//                    NSI_per_neighbour[i]++;
+//                    break;
+//                }
+//            }
+//
+//
+//            if(proposer){
+//                NSP++;
+//            } else{
+//                NSR++;
+//            }
+//        }
+//        switch(ASD){
+//            case"NI"->avg_score = score / NI;
+//            case"NSI"->avg_score = score / NSI;
+//            default -> {
+//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+//                Runtime.getRuntime().exit(0);
+//            }
+//        }
+    }
+
+
+
+
+
+
+
+    public void PD(Player partner){
+//        if(strategyPD.equals("C") && partner.strategyPD.equals("C")){
+//            score += R;
+//            partner.score += R;
+//        } else if(strategyPD.equals("C") && partner.strategyPD.equals("D")){
+//            score += S;
+//            partner.score += T;
+//        }else if(strategyPD.equals("D") && partner.strategyPD.equals("C")){
+//            score += T;
+//            partner.score += S;
+//        }else if(strategyPD.equals("D") && partner.strategyPD.equals("D")){
+//            score += P;
+//            partner.score += P;
+//        }else if(strategyPD.equals("A") || partner.strategyPD.equals("A")){
+//            score += l;
+//            partner.score += l;
+//        }
+//        NI++;
+//        partner.NI++;
+//        avg_score = score / NI;
+//        partner.avg_score = partner.score / partner.NI;
+    }
+
+
+
+
+
+    public void EWL(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        for(int i = 0; i < neighbourhood.size(); i++){
+            Player neighbour = neighbourhood.get(i);
+            double total_leeway = calculateTotalLeeway(player, neighbour, i);
+            int option = checkEWLC(player, neighbour, total_leeway);
+            double[] edge_weights = player.getEdgeWeights();
+            if(option == 0){ // positive edge weight learning
+                edge_weights[i] += calculateLearning(player, neighbour);
+                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
+                    edge_weights[i] = 1.0;
+                }
+            } else if (option == 1){ // negative edge weight learning
+                edge_weights[i] -= calculateLearning(player, neighbour);
+                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
+                    edge_weights[i] = 0;
+                }
+            }
+            // if option equals 2, no edge weight learning occurs
+        }
+    }
+
+
+    /**
+     * @param neighbour
+     * @param i index pointing to edge weight of player corresponding to neighbour
+     * @return total leeway to be given by the player to the neighbour during edge weight learning
+     */
+    public double calculateTotalLeeway(Player player, Player neighbour, int i) {
+        double[] edge_weights = player.getEdgeWeights();
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = player.getAvgScore();
+        double local_leeway = player.getLocalLeeway();
+
+
+        double global_leeway = leeway1;
+        double edge_weight_leeway = edge_weights[i] * leeway3;
+        double p_comparison_leeway = (neighbour_p - p) * leeway4;
+        double p_leeway = neighbour_p * leeway5;
+        double random_leeway;
+        if(leeway6 == 0){
+            random_leeway = 0;
+        } else{
+            random_leeway = ThreadLocalRandom.current().nextDouble(-leeway6, leeway6);
+        }
+        double avg_score_comparison_leeway = (avg_score - neighbour_avg_score) * leeway7;
+
+        double total_leeway = global_leeway
+                + local_leeway
+                + edge_weight_leeway
+                + p_comparison_leeway
+                + p_leeway
+                + random_leeway
+                + avg_score_comparison_leeway;
+
+        return total_leeway;
+    }
+
+    /**
+     * Checks the edge weight learning condition to determine what kind of edge weight
+     * learning should occur, if any.
+     *
+     * @param neighbour is the neighbour being pointed at by the edge
+     * @param total_leeway is the leeway being given to the neighbour by the edge's owner
+     * @return 0 for positive edge weight learning, 1 for negative, 2 for none
+     */
+    public int checkEWLC(Player player, Player neighbour, double total_leeway) {
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = neighbour.getAvgScore();
+
+
+        int option = 2;
+        switch(EWLC){
+
+            case"p"->{ // compare proposal values
+                if (neighbour_p + total_leeway > p){
+                    option = 0;
+                } else if (neighbour_p + total_leeway < p){
+                    option = 1;
+                }
+            }
+
+            case"avgscore"->{ // compare average scores
+                if (neighbour_avg_score < avg_score + total_leeway){
+                    option = 0;
+                } else if (neighbour_avg_score > avg_score + total_leeway){
+                    option = 1;
+                }
+            }
+
+            case"AB"->{ // compare alpha-beta rating
+                double AB_rating1 = ((alpha * p) + (beta * avg_score)) / (alpha + beta);
+                double AB_rating2 = ((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta);
+                if(AB_rating1 < AB_rating2)
+                    option = 0;
+                else if(AB_rating1 > AB_rating2)
+                    option = 1;
+            }
+            default->System.out.println("[NOTE] No edge weight learning condition configured.");
+        }
+
+        return option;
+    }
+
+    /**
+     * Calculate amount of edge weight learning to be applied to the weight of the edge.
+     */
+    public double calculateLearning(Player player, Player neighbour){
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = neighbour.getAvgScore();
+
+
+        double learning = 0;
+        switch(EWLF){
+            case"ROC"->         learning = ROC;
+            case"pAD"->         learning = Math.abs(neighbour_p - p);
+            case"pEAD"->        learning = Math.exp(Math.abs(neighbour_p - p));
+            case"avgscoreAD"->  learning = Math.abs(neighbour_avg_score - avg_score);
+            case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour_avg_score - avg_score));
+            case"pAD2"->        learning=Math.pow(Math.abs(neighbour_p - p), 2);
+            case"pAD3"->        learning=Math.pow(Math.abs(neighbour_p - p), 3);
+            case"AB"->          learning=Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta))
+                    - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
+
+            default->System.out.println("[NOTE] No edge weight learning condition configured.");
+        }
+
+        return learning;
+    }
+
+
+
+
+
+
 
 
 
@@ -924,7 +1250,7 @@ public class Alg1 extends Thread{
         injp=applySettingDouble();
         injsize=applySettingInt();
         desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
-        Player.setGrossPrize(1.0); // default prize per game. this amount doesnt matter since fitness metric is AVG score rather than score.
+//        Player.setGrossPrize(1.0); // default prize per game. this amount doesnt matter since fitness metric is AVG score rather than score.
     }
 
 
