@@ -44,6 +44,7 @@ public class Alg1 extends Thread{
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
     static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
+    static String ASD; // average score denominator: determines how average score is calculated
 
 
     // fields related to experiment series
@@ -366,89 +367,7 @@ public class Alg1 extends Thread{
         System.out.println("mean avg p="+DF4.format(experiment_mean_avg_p)
                 +" avg p SD="+DF4.format(experiment_SD_avg_p));
 
-
-
         writeSeriesData();
-
-//        // write experiment data, including results and settings, to a .csv data file.
-//        try{
-////            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
-//            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
-//            String s="";
-//
-//            // write column headings
-//            if(experiment_num == 1){
-//                fw = new FileWriter(series_data_filename, false);
-//                s+="exp num";
-//                s+=",mean avg p";
-//                s+=",avg p SD";
-//                s+=",runs";
-//                s+=",iters";
-//                s+=",neigh";
-//                s+=",N";
-//                s+=",EWT";
-//                s+=(EWLC.isEmpty())?"":",EWLC";
-//                s+=(EWLF.isEmpty())?"":",EWLF";
-//                s+=",ER";
-//                s+=(ROC==0)?"":",ROC";
-//                s+=(leeway1==0)?"":",leeway1";
-//                s+=(leeway2==0)?"":",leeway2";
-//                s+=(leeway3==0)?"":",leeway3";
-//                s+=(leeway4==0)?"":",leeway4";
-//                s+=(leeway5==0)?"":",leeway5";
-//                s+=(leeway6==0)?"":",leeway6";
-//                s+=(leeway7==0)?"":",leeway7";
-//                s+=",sel";
-//                s+=(selnoise==0)?"":",selnoise";
-//                s+=",evo";
-//                s+=(evonoise==0)?"":",evonoise";
-//                s+=(mut.isEmpty())?"":",mut";
-//                s+=(mutrate==0)?"":",mutrate";
-//                s+=(mutbound==0)?"":",mutbound";
-//                s+=(injiter==0)?"":",injiter";
-//                s+=(injp==0)?"":",injp";
-//                s+=(injsize==0)?"":",injsize";
-//
-//
-//            } else {
-//                fw = new FileWriter(series_data_filename, true);
-//            }
-//
-//            // write row data
-//            s+="\n" + experiment_num;
-//            s+="," + DF4.format(experiment_mean_avg_p);
-//            s+="," + DF4.format(experiment_SD_avg_p);
-//            s+="," + runs;
-//            s+="," + iters;
-//            s+="," + neigh;
-//            s+="," + N;
-//            s+=","+EWT;
-//            s+=(EWLC.isEmpty())?"":","+EWLC;
-//            s+=(EWLF.isEmpty())?"":","+EWLF;
-//            s+=","+ER;
-//            s+=(ROC==0)?"":","+ROC;
-//            s+=(leeway1==0)?"":","+leeway1;
-//            s+=(leeway2==0)?"":","+leeway2;
-//            s+=(leeway3==0)?"":","+leeway3;
-//            s+=(leeway4==0)?"":","+leeway4;
-//            s+=(leeway5==0)?"":","+leeway5;
-//            s+=(leeway6==0)?"":","+leeway6;
-//            s+=(leeway7==0)?"":","+leeway7;
-//            s+=","+sel;
-//            s+=(selnoise==0)?"":","+selnoise;
-//            s+=","+evo;
-//            s+=(evonoise==0)?"":","+evonoise;
-//            s+=(mut.isEmpty())?"":","+mut;
-//            s+=(mutrate==0)?"":","+mutrate;
-//            s+=(mutbound==0)?"":","+mutbound;
-//            s+=(injiter==0)?"":","+injiter;
-//            s+=(injp==0)?"":","+injp;
-//            s+=(injsize==0)?"":","+injsize;
-//            fw.append(s);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//        }
 
         experiment_num++; // move on to the next experiment in the series
     }
@@ -488,7 +407,8 @@ public class Alg1 extends Thread{
         // initialise edge weights
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
-                grid.get(i).get(j).initialiseEdgeWeights();
+//                grid.get(i).get(j).initialiseEdgeWeights();
+                initialiseEdgeWeights(grid.get(i).get(j));
             }
         }
 
@@ -635,9 +555,11 @@ public class Alg1 extends Thread{
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         int ID = player.getID();
 
-        // find players
+        // find partner
         for(int i = 0; i < neighbourhood.size(); i++){
             Player neighbour = neighbourhood.get(i);
+
+            // partner finds player
             ArrayList <Player> neighbour_neighbourhood = neighbour.getNeighbourhood();
             for (int j = 0; j < neighbour_neighbourhood.size(); j++) {
                 Player neighbours_neighbour = neighbour_neighbourhood.get(j);
@@ -656,14 +578,14 @@ public class Alg1 extends Thread{
                                         UG(gross_prize_UG, player, neighbour);
                                     }
                                     case"PD"->{
-                                        System.out.println("hello");
+//                                        PD(player, neighbour);
                                     }
                                 }
-                            } else{ // if interaction did not successfully occur, avg score decreases.
-//                                unsuccessfulInteraction(neighbour);
-//                                updateStatsUG(player, 0, ?);
+                            } else{
+                                int neighbour_ID = neighbour.getID();
+                                updateStatsUG(player, 0, neighbour_ID, true);
+                                updateStatsUG(neighbour, 0, ID, false);
                             }
-                            break;
                         }
                         case"2"->{
                             switch(game){
@@ -676,8 +598,8 @@ public class Alg1 extends Thread{
                             }
                         }
                     }
+                    break;
                 }
-                break;
             }
         }
     }
@@ -689,70 +611,57 @@ public class Alg1 extends Thread{
     public void UG(double net_prize, Player proposer, Player responder){
         double proposer_p = proposer.getP();
         double responder_q = responder.getQ();
+        int proposer_ID = proposer.getID();
+        int responder_ID = responder.getID();
 
-
-        if(proposer_p >= responder_q){
-//            successfulUGInteraction(net_prize, responder); // responder accepts proposal
-
-//            updateStatsUG(proposer, net_prize - (net_prize * p), true, responder.ID);
-//            updateStatsUG(responder, net_prize * p, false, ID);
-        } else {
-//            unsuccessfulUGInteraction(responder); // responder rejects proposal
-
-//            updateStatsUG(player, 0, true, responder.ID);
-//            updateStatsUG(responder, false, ID);
+        if(proposer_p >= responder_q){ // accept
+            double proposer_payoff = net_prize - (net_prize * proposer_p);
+            double responder_payoff = net_prize * proposer_p;
+            updateStatsUG(proposer, proposer_payoff, responder_ID, true);
+            updateStatsUG(responder, responder_payoff, proposer.getID(), false);
+        } else { // reject
+            updateStatsUG(proposer, 0, responder_ID, true);
+            updateStatsUG(responder, 0, proposer_ID, false);
         }
     }
 
-//    public void successfulUGInteraction(double net_prize, Player responder){
-//        updateStatsUG(net_prize - (net_prize * p), true, responder.ID);
-//        responder.updateStatsUG(net_prize * p, false, ID);
-//    }
-//
-//    public void unsuccessfulUGInteraction(Player responder){
-//        updateStatsUG(0, true, responder.ID);
-//        responder.updateStatsUG(0, false, ID);
-//    }
 
-    /**
-     * Update the status of the player after having played, including score and average score.
-     */
-    public void updateStatsUG(Player player, double payoff, int neighbour_ID){
-        player.setAvgScore(player.getAvgScore() + payoff);
-        player.setNI(player.getNI() + 1);
+
+    public void updateStatsUG(Player player, double payoff, int partner_ID, boolean proposer){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        double score = player.getScore();
+        int NI = player.getNI();
+        int NSI = player.getNSI();
+        int NSP = player.getNSP();
+        int NSR = player.getNSR();
+
+        player.setScore(score + payoff);
+        player.setNI(NI + 1);
         if(payoff > 0){
-
+            player.setNSI(NSI + 1);
+            for(int i = 0; i < neighbourhood.size(); i++){
+                if(neighbourhood.get(i).getID() == partner_ID){
+                    player.getNSIPerNeighbour()[i]++;
+                    break;
+                }
+            }
+            if(proposer)
+                player.setNSP(NSP + 1);
+            else
+                player.setNSR(NSR + 1);
         }
+        score = player.getScore();
+        NI = player.getNI();
+        NSI = player.getNSI();
+        switch (ASD){
+            case "NI" -> player.setAvgScore(score / NI);
+            case "NSI" -> player.setAvgScore(score / NSI);
 
-
-
-//        if(payoff > 0){ // check if the interaction was successful i.e. if any payoff was received.
-//            NSI++;
-//
-//
-//            // update NSI with neighbour
-//            for(int i=0;i<neighbourhood.size();i++){
-//                if(neighbourhood.get(i).getID() == neighbour_ID){
-//                    NSI_per_neighbour[i]++;
-//                    break;
-//                }
-//            }
-//
-//
-//            if(proposer){
-//                NSP++;
-//            } else{
-//                NSR++;
-//            }
-//        }
-//        switch(ASD){
-//            case"NI"->avg_score = score / NI;
-//            case"NSI"->avg_score = score / NSI;
-//            default -> {
-//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-//                Runtime.getRuntime().exit(0);
-//            }
-//        }
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
+        }
     }
 
 
@@ -785,6 +694,21 @@ public class Alg1 extends Thread{
     }
 
 
+
+
+
+
+
+
+
+    public void initialiseEdgeWeights(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        player.setEdgeWeights(new double[neighbourhood.size()]);
+        double[] edge_weights = player.getEdgeWeights();
+        for(int i = 0; i < neighbourhood.size(); i++){
+            edge_weights[i] = 1.0;
+        }
+    }
 
 
 
@@ -890,7 +814,7 @@ public class Alg1 extends Thread{
                 else if(AB_rating1 > AB_rating2)
                     option = 1;
             }
-            default->System.out.println("[NOTE] No edge weight learning condition configured.");
+//            default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }
 
         return option;
@@ -917,8 +841,6 @@ public class Alg1 extends Thread{
             case"pAD3"->        learning=Math.pow(Math.abs(neighbour_p - p), 3);
             case"AB"->          learning=Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta))
                     - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
-
-            default->System.out.println("[NOTE] No edge weight learning condition configured.");
         }
 
         return learning;
@@ -1051,12 +973,8 @@ public class Alg1 extends Thread{
                         " %-11s |" +//EWLF
                         " %-3s |" +//ER
                         " %-6s |" +//ROC
-
-
                         " %-6s |" +//alpha
                         " %-6s |" +//beta
-
-
                         " %-7s |" +//leeway1
                         " %-7s |" +//leeway2
                         " %-7s |" +//leeway3
@@ -1091,12 +1009,8 @@ public class Alg1 extends Thread{
                 ,"EWLF"
                 ,"ER"
                 ,"ROC"
-
-
                 ,"alpha"
                 ,"beta"
-
-
                 ,"leeway1"
                 ,"leeway2"
                 ,"leeway3"
@@ -1137,12 +1051,8 @@ public class Alg1 extends Thread{
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
             System.out.printf("| %-3s ", settings[CI++]); //ER
             System.out.printf("| %-6s ", settings[CI++]); //ROC
-
-
             System.out.printf("| %-6s ", settings[CI++]); //alpha
             System.out.printf("| %-6s ", settings[CI++]); //beta
-
-
             System.out.printf("| %-7s ", settings[CI++]); //leeway1
             System.out.printf("| %-7s ", settings[CI++]); //leeway2
             System.out.printf("| %-7s ", settings[CI++]); //leeway3
@@ -1236,7 +1146,8 @@ public class Alg1 extends Thread{
         neigh=settings[CI++];
         sel=settings[CI++];
         selnoise=applySettingDouble();
-        Player.setASD(settings[CI++]);
+//        Player.setASD(settings[CI++]);
+        ASD=settings[CI++];
         evo=settings[CI++];
         evonoise=applySettingDouble();
         mut=settings[CI++];
@@ -1321,7 +1232,8 @@ public class Alg1 extends Thread{
         switch(sel){
             case"variable"->initial_settings+=", selnoise="+selnoise;
         }
-        initial_settings+=", ASD="+Player.getASD();
+//        initial_settings+=", ASD="+Player.getASD();
+        initial_settings+=", ASD="+ASD;
         initial_settings+=", "+evo+" evo";
         switch(evo){
             case"approach"->initial_settings+=", evonoise="+evonoise;

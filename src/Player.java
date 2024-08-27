@@ -125,6 +125,7 @@ public class Player {
     public double[] getEdgeWeights(){
         return edge_weights;
     }
+    public void setEdgeWeights(double[] d){edge_weights=d;}
 
     /**
      * Ultimatum game where edge weights affects probability to interact.<br>
@@ -184,6 +185,7 @@ public class Player {
         NI=i;
     }
     private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
+    public int getNSI(){return NSI;}
     public void setNSI(int i){
         NSI=i;
     }
@@ -191,23 +193,23 @@ public class Player {
     public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
     public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
     private int NSP = 0; // num successful proposals (NSP)
+    public int getNSP(){return NSP;}
     public void setNSP(int i){
         NSP=i;
     }
     private int NSR = 0; // num successful receptions (NSR)
+    public int getNSR(){return NSR;}
     public void setNSR(int i){
         NSR=i;
     }
     private double score; // total accumulated payoff i.e. fitness
+    public double getScore(){return score;}
     public void setScore(double score){
         this.score=score;
     }
     private double avg_score; // $\overline{\Pi}$: average score of this player (this gen)
     public double getAvgScore(){return avg_score;}
     public void setAvgScore(double d){avg_score=d;}
-    private static String ASD = ""; // average score denominator: determines how average score is calculated
-    public static String getASD(){return ASD;}
-    public static void setASD(String s){ASD=s;}
 
 
 
@@ -216,15 +218,8 @@ public class Player {
 
 
 
-    /**
-     * Initialise the player's edge weights.
-     */
-    public void initialiseEdgeWeights() {
-        edge_weights = new double[neighbourhood.size()];
-        for(int i=0;i<neighbourhood.size();i++){
-            edge_weights[i] = 1.0; // initialise edge weight at 1.0
-        }
-    }
+
+
 
 
 
@@ -471,7 +466,7 @@ public class Player {
         // document interaction stats
         player_desc += " NI="+ NI;
         player_desc += " NSI="+ NSI;
-        player_desc += " NSD="+ NSP;
+        player_desc += " NSP="+ NSP;
         player_desc += " NSR="+ NSR;
 
         return player_desc;
@@ -526,14 +521,14 @@ public class Player {
      * by default.<br>
      */
     public Player rouletteWheelSelection(){
-        Player parent = this; // by default, the child is the parent
+        Player parent = this; // the default parent is the child
         double[] parent_scores = new double[neighbourhood.size()];
         double total_parent_score = 0; // track the sum of the "parent scores" of the neighbourhood
         for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
             parent_scores[i] = Math.exp(neighbourhood.get(i).avg_score-avg_score);
             total_parent_score += parent_scores[i];
         }
-        total_parent_score += 1.0; // effectively this gives the child a slot on their own roulette
+        total_parent_score += 1.0; // places child's pocket onto the roulette wheel
         double parent_score_tally = 0; // helps us count through the parent scores up to the total
 
         // the first parent score to be greater than this double is the winner.
