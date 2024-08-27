@@ -56,6 +56,11 @@ public class Alg1 extends Thread{
     static ArrayList<Double> various_amounts;
 
 
+    // fields related to individual experiments
+    static double experiment_mean_avg_p;
+    static double experiment_SD_avg_p;
+
+
     // fields related to I/O operations
     static FileWriter fw;
     static BufferedReader br;
@@ -327,16 +332,16 @@ public class Alg1 extends Thread{
         }
 
         // stats to be tracked
-        double mean_avg_p_of_experiment = 0;
-        double[] avg_p_values_of_experiment = new double[runs + 1];
-        double sd_avg_p_of_experiment = 0;
+        experiment_mean_avg_p = 0;
+        double[] experiment_avg_p_values = new double[runs + 1];
+        experiment_SD_avg_p = 0;
 
         // perform/run the experiment multiple times if applicable
         for(run_num = 1; run_num <= runs; run_num++){
             Alg1 run = new Alg1(); // represents one run of the experiment
             run.start(); // start the run
-            mean_avg_p_of_experiment += run.avg_p; // tally the mean avg p of the experiment
-            avg_p_values_of_experiment[run_num] = run.avg_p;
+            experiment_mean_avg_p += run.avg_p; // tally the mean avg p of the experiment
+            experiment_avg_p_values[run_num] = run.avg_p;
 
             // display the avg p of the pop at the end of the run
             System.out.println("avg p of run "+run_num
@@ -350,96 +355,100 @@ public class Alg1 extends Thread{
         }
 
         // calculate stats of experiment
-        mean_avg_p_of_experiment /= runs;
+        experiment_mean_avg_p /= runs;
         for(int i=0;i<runs;i++){
-            sd_avg_p_of_experiment +=
-                    Math.pow(avg_p_values_of_experiment[i] - mean_avg_p_of_experiment, 2);
+            experiment_SD_avg_p +=
+                    Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
         }
-        sd_avg_p_of_experiment = Math.pow(sd_avg_p_of_experiment / runs, 0.5);
+        experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
 
         // display stats to user in console
-        System.out.println("mean avg p="+DF4.format(mean_avg_p_of_experiment)
-                +" avg p SD="+DF4.format(sd_avg_p_of_experiment));
-
-        // write experiment data, including results and settings, to a .csv data file.
-        try{
-//            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
-            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
-            String s="";
-
-            // write column headings
-            if(experiment_num == 1){
-                fw = new FileWriter(series_data_filename, false);
-                s+="exp num";
-                s+=",mean avg p";
-                s+=",avg p SD";
-                s+=",runs";
-                s+=",iters";
-                s+=",neigh";
-                s+=",N";
-                s+=",EWT";
-                s+=(EWLC.isEmpty())?"":",EWLC";
-                s+=(EWLF.isEmpty())?"":",EWLF";
-                s+=",ER";
-                s+=(ROC==0)?"":",ROC";
-                s+=(leeway1==0)?"":",leeway1";
-                s+=(leeway2==0)?"":",leeway2";
-                s+=(leeway3==0)?"":",leeway3";
-                s+=(leeway4==0)?"":",leeway4";
-                s+=(leeway5==0)?"":",leeway5";
-                s+=(leeway6==0)?"":",leeway6";
-                s+=(leeway7==0)?"":",leeway7";
-                s+=",sel";
-                s+=(selnoise==0)?"":",selnoise";
-                s+=",evo";
-                s+=(evonoise==0)?"":",evonoise";
-                s+=(mut.isEmpty())?"":",mut";
-                s+=(mutrate==0)?"":",mutrate";
-                s+=(mutbound==0)?"":",mutbound";
-                s+=(injiter==0)?"":",injiter";
-                s+=(injp==0)?"":",injp";
-                s+=(injsize==0)?"":",injsize";
+        System.out.println("mean avg p="+DF4.format(experiment_mean_avg_p)
+                +" avg p SD="+DF4.format(experiment_SD_avg_p));
 
 
-            } else {
-                fw = new FileWriter(series_data_filename, true);
-            }
 
-            // write row data
-            s+="\n" + experiment_num;
-            s+="," + DF4.format(mean_avg_p_of_experiment);
-            s+="," + DF4.format(sd_avg_p_of_experiment);
-            s+="," + runs;
-            s+="," + iters;
-            s+="," + neigh;
-            s+="," + N;
-            s+=","+EWT;
-            s+=(EWLC.isEmpty())?"":","+EWLC;
-            s+=(EWLF.isEmpty())?"":","+EWLF;
-            s+=","+ER;
-            s+=(ROC==0)?"":","+ROC;
-            s+=(leeway1==0)?"":","+leeway1;
-            s+=(leeway2==0)?"":","+leeway2;
-            s+=(leeway3==0)?"":","+leeway3;
-            s+=(leeway4==0)?"":","+leeway4;
-            s+=(leeway5==0)?"":","+leeway5;
-            s+=(leeway6==0)?"":","+leeway6;
-            s+=(leeway7==0)?"":","+leeway7;
-            s+=","+sel;
-            s+=(selnoise==0)?"":","+selnoise;
-            s+=","+evo;
-            s+=(evonoise==0)?"":","+evonoise;
-            s+=(mut.isEmpty())?"":","+mut;
-            s+=(mutrate==0)?"":","+mutrate;
-            s+=(mutbound==0)?"":","+mutbound;
-            s+=(injiter==0)?"":","+injiter;
-            s+=(injp==0)?"":","+injp;
-            s+=(injsize==0)?"":","+injsize;
-            fw.append(s);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+        writeSeriesData();
+
+//        // write experiment data, including results and settings, to a .csv data file.
+//        try{
+////            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+//            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
+//            String s="";
+//
+//            // write column headings
+//            if(experiment_num == 1){
+//                fw = new FileWriter(series_data_filename, false);
+//                s+="exp num";
+//                s+=",mean avg p";
+//                s+=",avg p SD";
+//                s+=",runs";
+//                s+=",iters";
+//                s+=",neigh";
+//                s+=",N";
+//                s+=",EWT";
+//                s+=(EWLC.isEmpty())?"":",EWLC";
+//                s+=(EWLF.isEmpty())?"":",EWLF";
+//                s+=",ER";
+//                s+=(ROC==0)?"":",ROC";
+//                s+=(leeway1==0)?"":",leeway1";
+//                s+=(leeway2==0)?"":",leeway2";
+//                s+=(leeway3==0)?"":",leeway3";
+//                s+=(leeway4==0)?"":",leeway4";
+//                s+=(leeway5==0)?"":",leeway5";
+//                s+=(leeway6==0)?"":",leeway6";
+//                s+=(leeway7==0)?"":",leeway7";
+//                s+=",sel";
+//                s+=(selnoise==0)?"":",selnoise";
+//                s+=",evo";
+//                s+=(evonoise==0)?"":",evonoise";
+//                s+=(mut.isEmpty())?"":",mut";
+//                s+=(mutrate==0)?"":",mutrate";
+//                s+=(mutbound==0)?"":",mutbound";
+//                s+=(injiter==0)?"":",injiter";
+//                s+=(injp==0)?"":",injp";
+//                s+=(injsize==0)?"":",injsize";
+//
+//
+//            } else {
+//                fw = new FileWriter(series_data_filename, true);
+//            }
+//
+//            // write row data
+//            s+="\n" + experiment_num;
+//            s+="," + DF4.format(experiment_mean_avg_p);
+//            s+="," + DF4.format(experiment_SD_avg_p);
+//            s+="," + runs;
+//            s+="," + iters;
+//            s+="," + neigh;
+//            s+="," + N;
+//            s+=","+EWT;
+//            s+=(EWLC.isEmpty())?"":","+EWLC;
+//            s+=(EWLF.isEmpty())?"":","+EWLF;
+//            s+=","+ER;
+//            s+=(ROC==0)?"":","+ROC;
+//            s+=(leeway1==0)?"":","+leeway1;
+//            s+=(leeway2==0)?"":","+leeway2;
+//            s+=(leeway3==0)?"":","+leeway3;
+//            s+=(leeway4==0)?"":","+leeway4;
+//            s+=(leeway5==0)?"":","+leeway5;
+//            s+=(leeway6==0)?"":","+leeway6;
+//            s+=(leeway7==0)?"":","+leeway7;
+//            s+=","+sel;
+//            s+=(selnoise==0)?"":","+selnoise;
+//            s+=","+evo;
+//            s+=(evonoise==0)?"":","+evonoise;
+//            s+=(mut.isEmpty())?"":","+mut;
+//            s+=(mutrate==0)?"":","+mutrate;
+//            s+=(mutbound==0)?"":","+mutbound;
+//            s+=(injiter==0)?"":","+injiter;
+//            s+=(injp==0)?"":","+injp;
+//            s+=(injsize==0)?"":","+injsize;
+//            fw.append(s);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
 
         experiment_num++; // move on to the next experiment in the series
     }
@@ -456,15 +465,10 @@ public class Alg1 extends Thread{
 //        } else { // user wants to randomly generate a population
 //            initRandomPop();
 //        }
+
+
         initRandomPop();
 
-        // during the first generation of the first run of the first experiment, create result storage folders and record strategies
-//        if(datarate != 0
-//                && run_num == 1
-//                && experiment_num == 1
-//                && gen == 0) {
-//            createFolders();
-//        }
 
         // initialise neighbourhoods
         for(int i=0;i<rows;i++){
@@ -593,18 +597,13 @@ public class Alg1 extends Thread{
             calculateAverageEdgeWeights();
 
             // periodically record individual data
-//            if(datarate != 0 && gen != 0){
             if(datarate != 0){
                 if(run_num == 1 // if first run
                         && experiment_num == 1 // if first experiment
-//                        && gen % datarate == 0
-//                        && iter % gen == datarate
-//                        && (iter % ER) % datarate == 0
-//                        && iter % ER == 0
                         && iter % (ER * datarate) == 0 // datarate determines whether this gen should have its data recorded
                 ){
                     System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
-                    writeExperimentData();
+                    writeAvgpData();
                     writepData();
                     writeEWData();
                     writeNSIData();
@@ -1486,6 +1485,96 @@ public class Alg1 extends Thread{
 
 
 
+
+    public static void writeSeriesData(){
+        // write experiment data, including results and settings, to a .csv data file.
+        try{
+//            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
+            String s="";
+
+            // write column headings
+            if(experiment_num == 1){
+                fw = new FileWriter(series_data_filename, false);
+                s+="exp num";
+                s+=",mean avg p";
+                s+=",avg p SD";
+                s+=",runs";
+                s+=",iters";
+                s+=",neigh";
+                s+=",N";
+                s+=",EWT";
+                s+=(EWLC.isEmpty())?"":",EWLC";
+                s+=(EWLF.isEmpty())?"":",EWLF";
+                s+=",ER";
+                s+=(ROC==0)?"":",ROC";
+                s+=(leeway1==0)?"":",leeway1";
+                s+=(leeway2==0)?"":",leeway2";
+                s+=(leeway3==0)?"":",leeway3";
+                s+=(leeway4==0)?"":",leeway4";
+                s+=(leeway5==0)?"":",leeway5";
+                s+=(leeway6==0)?"":",leeway6";
+                s+=(leeway7==0)?"":",leeway7";
+                s+=",sel";
+                s+=(selnoise==0)?"":",selnoise";
+                s+=",evo";
+                s+=(evonoise==0)?"":",evonoise";
+                s+=(mut.isEmpty())?"":",mut";
+                s+=(mutrate==0)?"":",mutrate";
+                s+=(mutbound==0)?"":",mutbound";
+                s+=(injiter==0)?"":",injiter";
+                s+=(injp==0)?"":",injp";
+                s+=(injsize==0)?"":",injsize";
+
+
+            } else {
+                fw = new FileWriter(series_data_filename, true);
+            }
+
+            // write row data
+            s+="\n" + experiment_num;
+            s+="," + DF4.format(experiment_mean_avg_p);
+            s+="," + DF4.format(experiment_SD_avg_p);
+            s+="," + runs;
+            s+="," + iters;
+            s+="," + neigh;
+            s+="," + N;
+            s+=","+EWT;
+            s+=(EWLC.isEmpty())?"":","+EWLC;
+            s+=(EWLF.isEmpty())?"":","+EWLF;
+            s+=","+ER;
+            s+=(ROC==0)?"":","+ROC;
+            s+=(leeway1==0)?"":","+leeway1;
+            s+=(leeway2==0)?"":","+leeway2;
+            s+=(leeway3==0)?"":","+leeway3;
+            s+=(leeway4==0)?"":","+leeway4;
+            s+=(leeway5==0)?"":","+leeway5;
+            s+=(leeway6==0)?"":","+leeway6;
+            s+=(leeway7==0)?"":","+leeway7;
+            s+=","+sel;
+            s+=(selnoise==0)?"":","+selnoise;
+            s+=","+evo;
+            s+=(evonoise==0)?"":","+evonoise;
+            s+=(mut.isEmpty())?"":","+mut;
+            s+=(mutrate==0)?"":","+mutrate;
+            s+=(mutbound==0)?"":","+mutbound;
+            s+=(injiter==0)?"":","+injiter;
+            s+=(injp==0)?"":","+injp;
+            s+=(injsize==0)?"":","+injsize;
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
     /**
      * Allows for the visualisation of the avg p of a run with respect to iteration.<br>
      * iteration on x-axis.<br>
@@ -1497,7 +1586,7 @@ public class Alg1 extends Thread{
      * - Separate the data into columns: gen number, avg p and SD for that gen<br>
      * - Create a line chart with the data.<br>
      */
-    public void writeExperimentData(){
+    public void writeAvgpData(){
         try{
 //            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             String filename = experiment_results_folder_path + "\\" + "avg_p_data.csv";
