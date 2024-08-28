@@ -407,7 +407,6 @@ public class Alg1 extends Thread{
         // initialise edge weights
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++){
-//                grid.get(i).get(j).initialiseEdgeWeights();
                 initialiseEdgeWeights(grid.get(i).get(j));
             }
         }
@@ -424,45 +423,13 @@ public class Alg1 extends Thread{
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     play(player);
-
-//
-//
-////                    switch(game){
-////                        case"UG","DG"->{
-////
-////                            // beware that the ultimatum/dictator game played is affected by the type of edge weight used
-////                            switch(EWT){
-////                                case"1"->player.playUG1();
-////                                case"2"->player.playUG2();
-////                                default -> System.out.println("[NOTE] No edge weight learning configured.");
-////                            }
-////                        }
-//
-//
-////                        case"PD"->player.playPD(T, R, P, S, l);
-//
-//
-////                        case"IG"->player.playIG();
-////                        case"TG"->player.playTG();
-////                        case"PGG"->player.playPGG();
-//
-//                        default -> {
-//                            System.out.println("[ERROR] No game configured. Exiting...");
-//                        }
-//                    }
                 }
             }
 
             // edge weight learning phase of generation
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
-//                    player.EWL(EWLC, EWLF, ROC, alpha, beta, leeway1, leeway3, leeway4, leeway5, leeway6, leeway7);
-
-
                     EWL(player);
-
-
-
                 }
             }
 
@@ -471,14 +438,15 @@ public class Alg1 extends Thread{
             // consists of selection, evolution and mutation, if applicable.
             if(iter % ER == 0) {
                 for (ArrayList<Player> row : grid) {
-                    for (Player player : row) {
+                    for (Player child : row) {
 
                         // select parent
                         Player parent = null;
                         switch(sel){
-                            case "RW" -> parent = player.rouletteWheelSelection();
-                            case "best" -> parent = player.bestSelection();
-                            case "variable" -> parent = player.variableSelection(selnoise);
+//                            case "RW" -> parent = player.RWSelection();
+                            case "RW" -> parent = RWSelection(child);
+                            case "best" -> parent = child.bestSelection();
+                            case "variable" -> parent = child.variableSelection(selnoise);
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -487,8 +455,9 @@ public class Alg1 extends Thread{
 
                         // evolve child
                         switch (evo) {
-                            case "copy" -> player.copyEvolution(parent);
-                            case "approach" -> player.approachEvolution(parent, evonoise);
+//                            case "copy" -> player.copyEvolution(parent);
+                            case "copy" -> copyEvolution(child, parent);
+                            case "approach" -> child.approachEvolution(parent, evonoise);
                             default -> {
                                 System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -498,13 +467,13 @@ public class Alg1 extends Thread{
                         // mutate child
                         switch (mut){
                             case "global" -> {
-                                if(player.mutationCheck(mutrate)){
-                                    player.globalMutation();
+                                if(child.mutationCheck(mutrate)){
+                                    child.globalMutation();
                                 }
                             }
                             case "local" -> {
-                                if(player.mutationCheck(mutrate)){
-                                    player.localMutation(mutbound);
+                                if(child.mutationCheck(mutrate)){
+                                    child.localMutation(mutbound);
                                 }
                             }
                         }
@@ -578,7 +547,7 @@ public class Alg1 extends Thread{
                                         UG(gross_prize_UG, player, neighbour);
                                     }
                                     case"PD"->{
-//                                        PD(player, neighbour);
+                                        PD(player, neighbour);
                                     }
                                 }
                             } else{
@@ -593,7 +562,7 @@ public class Alg1 extends Thread{
                                     UG(neighbour_edge_weights[j] * gross_prize_UG, player, neighbour);
                                 }
                                 case"PD"->{
-                                    PD(neighbour);
+                                    PD(player, neighbour);
                                 }
                             }
                         }
@@ -668,32 +637,77 @@ public class Alg1 extends Thread{
 
 
 
+    public void PD(Player player, Player partner){
+        String strategy_PD = player.getStrategyPD();
+        String partner_strategy_PD = partner.getStrategyPD();
+        double score = player.getScore();
+        double partner_score = partner.getScore();
 
-
-    public void PD(Player partner){
-//        if(strategyPD.equals("C") && partner.strategyPD.equals("C")){
+        if(strategy_PD.equals("C") && partner_strategy_PD.equals("C")){
 //            score += R;
-//            partner.score += R;
-//        } else if(strategyPD.equals("C") && partner.strategyPD.equals("D")){
+//            partner_score += R;
+            updateStatsPD(player, R);
+            updateStatsPD(partner, R);
+        } else if(strategy_PD.equals("C") && partner_strategy_PD.equals("D")){
 //            score += S;
-//            partner.score += T;
-//        }else if(strategyPD.equals("D") && partner.strategyPD.equals("C")){
+//            partner_score += T;
+            updateStatsPD(player, S);
+            updateStatsPD(partner, T);
+        }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("C")){
 //            score += T;
-//            partner.score += S;
-//        }else if(strategyPD.equals("D") && partner.strategyPD.equals("D")){
+//            partner_score += S;
+            updateStatsPD(player, T);
+            updateStatsPD(partner, S);
+        }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("D")){
 //            score += P;
-//            partner.score += P;
-//        }else if(strategyPD.equals("A") || partner.strategyPD.equals("A")){
+//            partner_score += P;
+            updateStatsPD(player, P);
+            updateStatsPD(partner, P);
+        }else if(strategy_PD.equals("A") || partner_strategy_PD.equals("A")){
 //            score += l;
-//            partner.score += l;
-//        }
+//            partner_score += l;
+            updateStatsPD(player, l);
+            updateStatsPD(partner, l);
+        }
 //        NI++;
 //        partner.NI++;
 //        avg_score = score / NI;
-//        partner.avg_score = partner.score / partner.NI;
+//        partner.avg_score = partner_score / partner.NI;
     }
 
 
+
+    public void updateStatsPD(Player player, double payoff){
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        double score = player.getScore();
+        int NI = player.getNI();
+        int NSI = player.getNSI();
+
+        player.setScore(score + payoff);
+        player.setNI(NI + 1);
+
+        // insert segment here for NSI per neighbour counting if you get EWT 2 working with PD.
+
+        score = player.getScore();
+        NI = player.getNI();
+//        NSI = player.getNSI();
+        switch(ASD){
+            case "NI" -> player.setScore(score / NI);
+            case "NSI" -> player.setScore(score / NSI);
+
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
+        }
+    }
+
+
+
+    // generic update stats method for all games?
+//    public void updateStats(Player player, double payoff){
+//
+//    }
 
 
 
@@ -845,6 +859,71 @@ public class Alg1 extends Thread{
 
         return learning;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Roulette Wheel (RW) Selection method compares fitness of child to neighbours. The
+     * fitter the neighbour, the greater the likelihood of them being selected as child's
+     * parent. If a parent is not selected, the child is selected as parent
+     * by default.<br>
+     */
+    public Player RWSelection(Player child){
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        int size = neighbourhood.size();
+        double fitness = child.getAvgScore(); // fitness equals avg score
+        Player parent = child; // default parent is child
+        double[] pockets = new double[size]; // pockets of roulette wheel
+        double roulette_total = 0; // total fitness exp diff
+
+        // allocate pockets
+        for(int i = 0 ; i < size; i++){
+            double neighbour_fitness = neighbourhood.get(i).getAvgScore();
+            pockets[i] = Math.exp(neighbour_fitness - fitness);
+            roulette_total += pockets[i];
+        }
+        roulette_total += 1.0; // allocate pocket to child
+
+        // fitter player ==> more likely to be selected
+        double tally = 0;
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        for(int j = 0; j < size; j++){
+            tally += pockets[j];
+            double percentile = tally / roulette_total;
+            if (random_double < percentile) {
+                parent = neighbourhood.get(j);
+                break;
+            }
+        }
+
+        return parent;
+    }
+
+
+
+
+
+    /**
+     * Evolution method where child wholly copies parent's strategy.
+     * @param parent is the parent the player is copying.
+     */
+    public void copyEvolution(Player player, Player parent){
+//        setStrategy(parent.old_p, parent.old_q);
+        double parent_old_p = parent.getOldP();
+        double parent_old_q = parent.getOldQ();
+        player.setStrategy(parent_old_p, parent_old_q);
+    }
+
+
 
 
 

@@ -45,6 +45,7 @@ public class Player {
         }
     }
     private double old_p; // p value held at beginning of gen to be inherited by children
+    public double getOldP(){return old_p;}
     public void setOldP(double old_p){
         this.old_p=old_p;
     }
@@ -59,6 +60,7 @@ public class Player {
         }
     }
     private double old_q; // q value held at beginning of gen to be inherited by children
+    public double getOldQ(){return old_q;}
     public void setOldQ(double old_q){
         this.old_q=old_q;
     }
@@ -477,13 +479,7 @@ public class Player {
 
 
 
-    /**
-     * Evolution method where child wholly copies parent's strategy.
-     * @param parent is the parent the player is copying.
-     */
-    public void copyEvolution(Player parent){
-        setStrategy(parent.old_p, parent.old_q);
-    }
+
 
 
 
@@ -514,37 +510,7 @@ public class Player {
 
 
 
-    /**
-     * Selection method where the child compares their score with their neighbours'. The
-     * greater the difference in score, the neighbour's probability of being selected as child's
-     * parent is exponentially affected. If a parent is not selected, the child is selected as parent
-     * by default.<br>
-     */
-    public Player rouletteWheelSelection(){
-        Player parent = this; // the default parent is the child
-        double[] parent_scores = new double[neighbourhood.size()];
-        double total_parent_score = 0; // track the sum of the "parent scores" of the neighbourhood
-        for(int i=0;i<neighbourhood.size();i++){ // calculate the parent scores of the neighbourhood
-            parent_scores[i] = Math.exp(neighbourhood.get(i).avg_score-avg_score);
-            total_parent_score += parent_scores[i];
-        }
-        total_parent_score += 1.0; // places child's pocket onto the roulette wheel
-        double parent_score_tally = 0; // helps us count through the parent scores up to the total
 
-        // the first parent score to be greater than this double is the winner.
-        // if no neighbour's parent score wins, the child wins.
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        for(int j=0;j<neighbourhood.size();j++){
-            parent_score_tally += parent_scores[j];
-            double percentile = parent_score_tally / total_parent_score;
-            if (random_double < percentile) {
-                parent = neighbourhood.get(j);
-                break;
-            }
-        }
-
-        return parent;
-    }
 
 
 
@@ -652,9 +618,10 @@ public class Player {
 
     // ================= PD =================
 
-    private String[] strategiesPD = {"C","D","A","TFT"};
+    private String[] strategies_PD = {"C","D","A","TFT"};
 
-    private String strategyPD = "";
+    private String strategy_PD = "";
+    public String getStrategyPD(){return strategy_PD;}
 
 
 
