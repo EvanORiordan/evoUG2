@@ -35,7 +35,7 @@ public class Alg1 extends Thread{
     int iter = 1; // indicates current iteration. each gen is made up of ER iters.
 //    static double DCF = 0; // distance cost factor
     static String initial_settings = ""; // stores initial experimentation settings
-    static int injiter; // injection iteration: indicates when strategy injection will occur
+    static int injiter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injp = 0.0; // injection p: indicates p value to be injected
     static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
     static double T; // PD: temptation to defect
@@ -48,11 +48,11 @@ public class Alg1 extends Thread{
 
 
     // fields related to experiment series
-    static boolean experiment_series;//indicates whether to run experiment or experiment series where a parameter is varied
-    static String varying;//indicates which parameter will be varied in an experiment series
-    static double variation;//indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-    static int numexp;//indicates the number of experiments to occur in the series
-    static int experiment_num = 1;//tracks which experiment is taking place at any given time during a series
+    static boolean experiment_series; //indicates whether to run experiment or experiment series where a parameter is varied
+    static String varying; //indicates which parameter will be varied in an experiment series
+    static double variation; //indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
+    static int numexp; //indicates the number of experiments to occur in the series
+    static int experiment_num = 1; //tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
 
@@ -79,7 +79,7 @@ public class Alg1 extends Thread{
     static String p_data_filename;
     static String EW_data_filename;
     static String NSI_data_filename;
-    static int datarate; // determines how often individual data is recorded. if 0, data is not recorded.
+    static int datarate; // factors into which gens have their data recorded. if 0, no gens are recorded.
     static String[] settings;
     static int CI; // config index: facilitates construction of table of configs
 
@@ -112,7 +112,7 @@ public class Alg1 extends Thread{
     static double selnoise = 0; // noise affecting selection
     static String mut; // indicates which mutation function to call
     static double mutrate = 0; // probability of mutation
-    static double mutbound = 0; // affects amount of mutation
+    static double mutbound = 0; // denotes max mutation possible
 
 
 
@@ -445,7 +445,7 @@ public class Alg1 extends Thread{
                         switch(sel){
                             case "RW" -> parent = RWSelection(child);
                             case "best" -> parent = bestSelection(child);
-                            case "Rand" -> parent = RandSelection(child, selnoise);
+                            case "Rand" -> parent = RandSelection(child);
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -454,10 +454,8 @@ public class Alg1 extends Thread{
 
                         // evolve child
                         switch (evo) {
-//                            case "copy" -> player.copyEvolution(parent);
                             case "copy" -> copyEvolution(child, parent);
-//                            case "approach" -> child.approachEvolution(parent, evonoise);
-                            case "approach" -> approachEvolution(child, parent, evonoise);
+                            case "approach" -> approachEvolution(child, parent);
                             default -> {
                                 System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -467,13 +465,13 @@ public class Alg1 extends Thread{
                         // mutate child
                         switch (mut){
                             case "global" -> {
-                                if(child.mutationCheck(mutrate)){
-                                    child.globalMutation();
+                                if(mutationCheck()){
+                                    globalMutation(child);
                                 }
                             }
                             case "local" -> {
-                                if(child.mutationCheck(mutrate)){
-                                    child.localMutation(mutbound);
+                                if(mutationCheck()){
+                                    localMutation(child);
                                 }
                             }
                         }
@@ -483,13 +481,13 @@ public class Alg1 extends Thread{
             }
 
             calculateOverallStats();
-            calculateAverageEdgeWeights();
+//            calculateAverageEdgeWeights();
 
             // periodically record individual data
             if(datarate != 0){
                 if(run_num == 1 // if first run
                         && experiment_num == 1 // if first experiment
-                        && iter % (ER * datarate) == 0 // datarate determines whether this gen should have its data recorded
+                        && iter % (ER * datarate) == 0 // record gen's data every x gens, where x=datarate
                 ){
                     System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
                     writeAvgpData();
@@ -943,35 +941,41 @@ public class Alg1 extends Thread{
 
     /**
      * Inspired by Rand et al. (2013) (rand2013evolution).<br>
-     * Child selects neighbour with highest "effective payoff".<br>
-     * w denotes intensity of selection.
+     * The greater w (intensity of selection) is,
+     * the more likely a fitter player is selected as child's parent.
+     * @param child
+     * @return parent player
      */
-    public Player RandSelection(Player child, double w){
-        ArrayList <Player> neighbourhood = child.getNeighbourhood();
-        int size = neighbourhood.size();
-        double avg_score = child.getAvgScore();
-        double effective_payoff = Math.exp(w * avg_score);
-        double parent_avg_score;
-        double parent_effective_payoff;
+    public Player RandSelection(Player child){
+        double w = selnoise;
+        double[] effective_payoffs = new double[N];
+        Player parent = null;
+        double total = 0.0;
+        double tally = 0.0;
 
-        // find neighbour with highest effective payoff
-        Player parent = neighbourhood.get(0);
-        for(int i = 1; i < size; i++){
-            Player neighbour = neighbourhood.get(i);
-            double neighbour_avg_score = neighbour.getAvgScore();
-            double neighbour_effective_payoff = Math.exp(w * neighbour_avg_score);
-            parent_avg_score = parent.getAvgScore();
-            parent_effective_payoff = Math.exp(w * parent_avg_score);
-            if(neighbour_effective_payoff > parent_effective_payoff){
-                parent = neighbour;
+        // calculate effective payoffs
+        for(int i = 0; i < rows; i++){
+            for(int j = 0; j < columns; j++){
+                Player player = grid.get(i).get(j);
+                double player_avg_score = player.getAvgScore();
+                double player_effective_payoff = Math.exp(w * player_avg_score);
+                effective_payoffs[(i * rows) + j] = player_effective_payoff;
+                total += player_effective_payoff;
             }
         }
 
-        // if parent effective payoff less than child, parent is child
-        parent_avg_score = parent.getAvgScore();
-        parent_effective_payoff = Math.exp(w * parent_avg_score);
-        if(parent_effective_payoff <= effective_payoff)
-            parent = child;
+        // fitter player ==> more likely to be selected
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        for(int i = 0; i < N; i++){
+            tally += effective_payoffs[i];
+            double percentile = tally / total;
+            if(random_double < percentile){
+                int parent_row = (int) Math.floor(i / rows);
+                int parent_col = i % rows;
+                parent = grid.get(parent_row).get(parent_col);
+                break;
+            }
+        }
 
         return parent;
     }
@@ -981,20 +985,30 @@ public class Alg1 extends Thread{
 
 
 
+    public void setStrategy(Player player, double p, double q){
+        player.setP(p);
+        player.setQ(q);
+    }
+
+
+
     /**
      * Evolution method where child wholly copies parent's strategy.
      * @param parent is the parent the player is copying.
      */
     public void copyEvolution(Player child, Player parent){
-//        setStrategy(parent.old_p, parent.old_q);
         double parent_old_p = parent.getOldP();
         double parent_old_q = parent.getOldQ();
-        child.setStrategy(parent_old_p, parent_old_q);
+        setStrategy(child, parent_old_p, parent_old_q);
     }
 
 
-
-    public void approachEvolution(Player child, Player parent, double approach_noise){
+    /**
+     * Use evo noise to move child strategy in direction of parent strategy.
+     * @param child
+     * @param parent
+     */
+    public void approachEvolution(Player child, Player parent){
         int ID = child.getID();
         int parent_ID = parent.getID();
         double p = child.getP();
@@ -1006,7 +1020,7 @@ public class Alg1 extends Thread{
         if(parent_ID != ID){
 
             // for attribute, if parent is lower, reduce child; else, increase.
-            double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
+            double approach = ThreadLocalRandom.current().nextDouble(evonoise);
             if(parent_old_p < p){
                 approach *= -1;
             }
@@ -1016,105 +1030,128 @@ public class Alg1 extends Thread{
             }
             double new_q = q + approach;
 
-            child.setStrategy(new_p, new_q);
+            setStrategy(child, new_p, new_q);
         }
     }
-
-
-
-
-
-
-
 
 
 
 
 
     /**
-     * Create folders to store data.
+     * Mutation rate parameter determines the probability for mutation to occur.
+     * @return boolean indicating whether mutation will occur
      */
-//    public void createFolders(){
-    public static void createFolders(){
-        p_data_filename = experiment_results_folder_path + "\\p_data";
-        EW_data_filename = experiment_results_folder_path + "\\EW_data";
-        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
-        try{ // create folders
-            Files.createDirectories(Paths.get(p_data_filename));
-            Files.createDirectories(Paths.get(EW_data_filename));
-            Files.createDirectories(Paths.get(NSI_data_filename));
-        }catch(IOException e){
-            e.printStackTrace();
-        }
+    public boolean mutationCheck(){
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        boolean mutation = random_double < mutrate;
 
+        return mutation;
     }
+
+
+
+    /**
+     * Inspired by Akdeniz and van Veelen (2023).
+     * Child's attributes are randomly and independently generated.
+     */
+    public void globalMutation(Player child){
+        double new_p = ThreadLocalRandom.current().nextDouble();
+        double new_q = ThreadLocalRandom.current().nextDouble();
+
+        setStrategy(child, new_p, new_q);
+    }
+
+
+
+    /**
+     * Inspired by Akdeniz and van Veelen (2023).
+     * Slight mutations are independently applied to child's attributes.
+     */
+    public void localMutation(Player child){
+        double p = child.getP();
+        double q = child.getQ();
+
+        double new_p = ThreadLocalRandom.current().nextDouble(p - mutbound, p + mutbound);
+        double new_q = ThreadLocalRandom.current().nextDouble(q - mutbound, q + mutbound);
+
+        setStrategy(child, new_p,new_q);
+    }
+
+
+
+
+
+
+//    public void calculateMeanSelfEdgeWeight(Player player){
+//        mean_self_edge_weight = 0;
+//        for(int i = 0; i < edge_weights.length; i++){
+//            mean_self_edge_weight += edge_weights[i];
+//        }
+//        mean_self_edge_weight /= edge_weights.length;
+//    }
+
 
 
     /**
      * Calculates the average edge weight of the player and their neighbours.
      */
-    public void calculateAverageEdgeWeights(){
-        for(ArrayList<Player> row:grid){
-            for(Player player: row){
-                player.calculateMeanSelfEdgeWeight();
-                player.calculateMeanNeighbourEdgeWeight();
-            }
-        }
-    }
+//    public void calculateAverageEdgeWeights(){
+//        for(ArrayList<Player> row:grid){
+//            for(Player player: row){
+//                player.calculateMeanSelfEdgeWeight();
+//                player.calculateMeanNeighbourEdgeWeight();
+//            }
+//        }
+//    }
+
+//    public void calculateMeanNeighbourEdgeWeight(){
+//        mean_neighbour_edge_weight = 0;
+//        for(int i = 0; i < neighbourhood.size(); i++) {
+//            Player neighbour = neighbourhood.get(i);
+//            mean_neighbour_edge_weight += neighbour.edge_weights[findMeInMyNeighboursNeighbourhood(neighbour)];
+//        }
+//        mean_neighbour_edge_weight /= edge_weights.length;
+//    }
+
 
 
 
     /**
-     * Initialises a lattice grid population of players with randomly generated strategies.
+     * Returns the index of this player in the neighbourhood of their neighbour.<br>
+     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
      */
-    public void initRandomPop(){
-        for (int i = 0; i < rows; i++) {
-            ArrayList<Player> row = new ArrayList<>();
-            for (int j = 0; j < columns; j++) {
-                Player new_player = null;
-                switch(game){
-                    case"UG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            ThreadLocalRandom.current().nextDouble(),
-                            leeway2);
-                    case"DG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            0,
-                            leeway2);
-                }
-                row.add(new_player);
-            }
-            grid.add(row);
-        }
-    }
-
-
-    // reminder of something we might work on in later research.
-//    /**
-//     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
-//     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
-//     */
-//    public void initSavedDGPop() {
-//        try {
-//            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-//            String line;
-//            int i = 0;
-//            while ((line = br.readLine()) != null) {
-//                String[] row_contents = line.split(",");
-//                ArrayList<Player> row = new ArrayList<>();
-//                for (int j = 0; j < row_contents.length; j++) {
-//                    row.add(new Player(
-//                            Double.parseDouble(row_contents[i]),
-//                            0,
-//                            leeway2));
-//                }
-//                i++;
-//                grid.add(row);
+//    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
+//        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
+//        int my_id = ID;
+//        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
+//            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
+//            if (my_id == neighbours_neighbour.ID) {
+//                my_index_in_neighbours_neighbourhood = i;
+//                break;
 //            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
 //        }
+//
+//        return my_index_in_neighbours_neighbourhood;
 //    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1317,13 +1354,12 @@ public class Alg1 extends Thread{
         leeway6=applySettingDouble();
         leeway7=applySettingDouble();
         varying=settings[CI++];
-        experiment_series=(varying.equals(""))?false:true; // varying param indicates whether series or not
+        experiment_series=(varying.equals(""))?false:true;
         variation=applySettingDouble();
         numexp=applySettingInt();
         neigh=settings[CI++];
         sel=settings[CI++];
         selnoise=applySettingDouble();
-//        Player.setASD(settings[CI++]);
         ASD=settings[CI++];
         evo=settings[CI++];
         evonoise=applySettingDouble();
@@ -1331,14 +1367,69 @@ public class Alg1 extends Thread{
         mutrate=applySettingDouble();
         mutbound=applySettingDouble();
         datarate=applySettingInt();
-        injiter=applySettingInt(); // set to 0 to prevent injection
+        injiter=applySettingInt();
         if(injiter>iters)
-            System.out.println("NOTE: injiter > iters so no injection");
+            System.out.println("NOTE: injiter > iters, therefore no injection will occur.");
         injp=applySettingDouble();
         injsize=applySettingInt();
         desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
-//        Player.setGrossPrize(1.0); // default prize per game. this amount doesnt matter since fitness metric is AVG score rather than score.
     }
+
+
+
+    /**
+     * Initialises a lattice grid population of players with randomly generated strategies.
+     */
+    public void initRandomPop(){
+        for (int i = 0; i < rows; i++) {
+            ArrayList<Player> row = new ArrayList<>();
+            for (int j = 0; j < columns; j++) {
+                Player new_player = null;
+                switch(game){
+                    case"UG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            ThreadLocalRandom.current().nextDouble(),
+                            leeway2);
+                    case"DG"->new_player = new Player(
+                            ThreadLocalRandom.current().nextDouble(),
+                            0,
+                            leeway2);
+                }
+                row.add(new_player);
+            }
+            grid.add(row);
+        }
+    }
+
+
+
+    // reminder of something we might work on in later research.
+//    /**
+//     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
+//     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
+//     */
+//    public void initSavedDGPop() {
+//        try {
+//            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
+//            String line;
+//            int i = 0;
+//            while ((line = br.readLine()) != null) {
+//                String[] row_contents = line.split(",");
+//                ArrayList<Player> row = new ArrayList<>();
+//                for (int j = 0; j < row_contents.length; j++) {
+//                    row.add(new Player(
+//                            Double.parseDouble(row_contents[i]),
+//                            0,
+//                            leeway2));
+//                }
+//                i++;
+//                grid.add(row);
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
 
 
     /**
@@ -1357,6 +1448,24 @@ public class Alg1 extends Thread{
     }
 
 
+
+    /**
+     * Create folders to store data.
+     */
+//    public void createFolders(){
+    public static void createFolders(){
+        p_data_filename = experiment_results_folder_path + "\\p_data";
+        EW_data_filename = experiment_results_folder_path + "\\EW_data";
+        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
+        try{ // create folders
+            Files.createDirectories(Paths.get(p_data_filename));
+            Files.createDirectories(Paths.get(EW_data_filename));
+            Files.createDirectories(Paths.get(NSI_data_filename));
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+
+    }
 
 
 
@@ -1461,19 +1570,18 @@ public class Alg1 extends Thread{
      */
     public void assignAdjacentNeighbours(Player player, int y, int x){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
+        int x_plus_one = (((x + 1) % rows) + rows) % rows;
+        int x_minus_one = (((x - 1) % rows) + rows) % rows;
+        int y_plus_one = (((y + 1) % rows) + rows) % rows;
+        int y_minus_one = (((y - 1) % rows) + rows) % rows;
 
-        int row_col_length = grid.size();
-
-        int x_plus_one = (((x + 1) % row_col_length) + row_col_length) % row_col_length;
-        int x_minus_one = (((x - 1) % row_col_length) + row_col_length) % row_col_length;
-        int y_plus_one = (((y + 1) % row_col_length) + row_col_length) % row_col_length;
-        int y_minus_one = (((y - 1) % row_col_length) + row_col_length) % row_col_length;
-
+        // add von neumann neighbours
         neighbourhood.add(grid.get(y).get(x_plus_one)); // neighbour at x+1 i.e. to the right
         neighbourhood.add(grid.get(y).get((x_minus_one))); // neighbour at x-1 i.e. to the left
         neighbourhood.add(grid.get(y_plus_one).get(x)); // neighbour at y+1 i.e. above
         neighbourhood.add(grid.get(y_minus_one).get(x)); // neighbour at y-1 i.e. below
 
+        // add moore neighbours
         if(neigh.equals("M")){
             neighbourhood.add(grid.get(y_plus_one).get(x_plus_one)); // neighbour at (x+1,y+1)
             neighbourhood.add(grid.get(y_minus_one).get(x_plus_one)); // neighbour at (x+1,y-1)
