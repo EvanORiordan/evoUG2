@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * University of Galway<br>
  *
  *
- * Player class for instantiating player objects.<br>
+ * Class for instantiating player objects with player information.<br>
  */
 public class Player {
 
@@ -129,47 +129,6 @@ public class Player {
     }
     public void setEdgeWeights(double[] d){edge_weights=d;}
 
-    /**
-     * Ultimatum game where edge weights affects probability to interact.<br>
-     * The greater the weight, the greater the likelihood of the player being pointed at of interacting
-     * with the owner of the edge.<br>
-     * If EWL is disabled, this function defaults to the standard ultimatum game.
-     */
-//    public void playUG1(){
-//        for(int i=0;i<neighbourhood.size();i++){ // loop through x's neighbourhood
-//            Player neighbour = neighbourhood.get(i);
-//            for(int j=0;j<neighbour.neighbourhood.size();j++){ // loop through y's neighbourhood
-//                Player neighbours_neighbour = neighbour.neighbourhood.get(j);
-//                if(neighbours_neighbour.ID == ID){ // find EW of y associated with x
-//                    double edge_weight = neighbour.edge_weights[j];
-//                    double random_double = ThreadLocalRandom.current().nextDouble();
-//                    if(edge_weight > random_double){ // x has EW% probability of success
-//                        UG(gross_prize, neighbour);
-//                    }
-//                    else{ // if interaction did not successfully occur, avg score decreases.
-//                        unsuccessfulInteraction(neighbour);
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//    }
-
-//    /**
-//     * Ultimatum Game where edge weights are applied as a factor in payoff calculation.<br>
-//     * If EWL is disabled, this function defaults to the standard ultimatum game.
-//     */
-//    public void playUG2(){
-//        for(Player neighbour: neighbourhood){
-//            for(int j=0;j<neighbour.neighbourhood.size();j++){
-//                Player neighbours_neighbour = neighbour.neighbourhood.get(j);
-//                if(neighbours_neighbour.ID == ID) {
-//                    UG(neighbour.edge_weights[j] * gross_prize, neighbour);
-//                    break;
-//                }
-//            }
-//        }
-//    }
 
 
 
@@ -483,28 +442,6 @@ public class Player {
 
 
 
-    /**
-     * Evolution method where child's strategy gets closer to, i.e. approaches, parent's strategy.
-     * The amount by which the child's strategy approaches the parent's is a randomly generated
-     * double between 0 and the approach limit.<br>
-     * Evolution does not take place if the parent and the child are the same player.<br>
-     * The greater the noise, the greater the approach is.<br>
-     */
-    public void approachEvolution(Player parent, double approach_noise){
-        if(parent.ID != ID){
-            double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
-            if(parent.old_p < p){ // if parent's p is lower, reduce p; else, increase p
-                approach *= -1;
-            }
-            double new_p = p + approach;
-
-            if(parent.old_q < q){
-                approach *= -1;
-            }
-            double new_q = q + approach;
-            setStrategy(new_p, new_q);
-        }
-    }
 
 
 
@@ -514,53 +451,13 @@ public class Player {
 
 
 
-    /**
-     * Selection method where child selects the highest scoring neighbour this gen as parent if
-     * that neighbour scored higher than the child.
-     */
-    public Player bestSelection(){
-        Player parent;
-        int best_index = 0;
-        for(int i=1;i<neighbourhood.size();i++){ // find the highest scoring neighbour
-            Player neighbour = neighbourhood.get(i);
-            Player best = neighbourhood.get(best_index);
-            if(neighbour.avg_score > best.avg_score){
-                best_index=i;
-            }
-        }
-        parent = neighbourhood.get(best_index);
-        if(parent.avg_score <= avg_score){
-            parent = this;
-        }
-
-        return parent;
-    }
 
 
 
-    /**
-     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
-     * Calculate effective payoffs of neighbours. Select highest as parent.<br>
-     * w represents the intensity of selection.
-     */
-    public Player variableSelection(double w){
-        Player parent;
-        double[] effective_payoffs = new double[neighbourhood.size()];
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            effective_payoffs[i] = Math.exp(w * neighbour.avg_score);
-        }
-        double best_effective_payoff = effective_payoffs[0];
-        int index = 0;
-        for(int j=1;j<effective_payoffs.length;j++){
-            if(effective_payoffs[j] > best_effective_payoff){
-                index = j;
-            }
-        }
-        parent = neighbourhood.get(index);
 
-        return parent;
-    }
+
+
+
 
 
 

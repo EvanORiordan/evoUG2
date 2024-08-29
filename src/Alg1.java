@@ -443,10 +443,9 @@ public class Alg1 extends Thread{
                         // select parent
                         Player parent = null;
                         switch(sel){
-//                            case "RW" -> parent = player.RWSelection();
                             case "RW" -> parent = RWSelection(child);
-                            case "best" -> parent = child.bestSelection();
-                            case "variable" -> parent = child.variableSelection(selnoise);
+                            case "best" -> parent = bestSelection(child);
+                            case "Rand" -> parent = RandSelection(child, selnoise);
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -457,7 +456,8 @@ public class Alg1 extends Thread{
                         switch (evo) {
 //                            case "copy" -> player.copyEvolution(parent);
                             case "copy" -> copyEvolution(child, parent);
-                            case "approach" -> child.approachEvolution(parent, evonoise);
+//                            case "approach" -> child.approachEvolution(parent, evonoise);
+                            case "approach" -> approachEvolution(child, parent, evonoise);
                             default -> {
                                 System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -910,18 +910,116 @@ public class Alg1 extends Thread{
 
 
 
+    /**
+     * Child selects highest scoring neighbour.
+     */
+    public Player bestSelection(Player child){
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        double avg_score = child.getAvgScore();
+        int size = neighbourhood.size();
+        double parent_avg_score;
+
+        // find highest scoring neighbour
+        Player parent = neighbourhood.get(0);
+        for(int i = 1; i < size; i++){
+            Player neighbour = neighbourhood.get(i);
+            double neighbour_avg_score = neighbour.getAvgScore();
+            parent_avg_score = parent.getAvgScore();
+            if(neighbour_avg_score > parent_avg_score){
+                parent = neighbour;
+            }
+        }
+
+        // if parent score less than child score, parent is child
+        parent_avg_score = parent.getAvgScore();
+        if(parent_avg_score <= avg_score){
+            parent = child;
+        }
+
+        return parent;
+    }
+
+
+
+    /**
+     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
+     * Child selects neighbour with highest "effective payoff".<br>
+     * w denotes intensity of selection.
+     */
+    public Player RandSelection(Player child, double w){
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        int size = neighbourhood.size();
+        double avg_score = child.getAvgScore();
+        double effective_payoff = Math.exp(w * avg_score);
+        double parent_avg_score;
+        double parent_effective_payoff;
+
+        // find neighbour with highest effective payoff
+        Player parent = neighbourhood.get(0);
+        for(int i = 1; i < size; i++){
+            Player neighbour = neighbourhood.get(i);
+            double neighbour_avg_score = neighbour.getAvgScore();
+            double neighbour_effective_payoff = Math.exp(w * neighbour_avg_score);
+            parent_avg_score = parent.getAvgScore();
+            parent_effective_payoff = Math.exp(w * parent_avg_score);
+            if(neighbour_effective_payoff > parent_effective_payoff){
+                parent = neighbour;
+            }
+        }
+
+        // if parent effective payoff less than child, parent is child
+        parent_avg_score = parent.getAvgScore();
+        parent_effective_payoff = Math.exp(w * parent_avg_score);
+        if(parent_effective_payoff <= effective_payoff)
+            parent = child;
+
+        return parent;
+    }
+
+
+
+
 
 
     /**
      * Evolution method where child wholly copies parent's strategy.
      * @param parent is the parent the player is copying.
      */
-    public void copyEvolution(Player player, Player parent){
+    public void copyEvolution(Player child, Player parent){
 //        setStrategy(parent.old_p, parent.old_q);
         double parent_old_p = parent.getOldP();
         double parent_old_q = parent.getOldQ();
-        player.setStrategy(parent_old_p, parent_old_q);
+        child.setStrategy(parent_old_p, parent_old_q);
     }
+
+
+
+    public void approachEvolution(Player child, Player parent, double approach_noise){
+        int ID = child.getID();
+        int parent_ID = parent.getID();
+        double p = child.getP();
+        double q = child.getQ();
+        double parent_old_p = parent.getOldP();
+        double parent_old_q = parent.getOldQ();
+
+        // do not approach evolve if parent is child
+        if(parent_ID != ID){
+
+            // for attribute, if parent is lower, reduce child; else, increase.
+            double approach = ThreadLocalRandom.current().nextDouble(approach_noise);
+            if(parent_old_p < p){
+                approach *= -1;
+            }
+            double new_p = p + approach;
+            if(parent_old_q < q){
+                approach *= -1;
+            }
+            double new_q = q + approach;
+
+            child.setStrategy(new_p, new_q);
+        }
+    }
+
 
 
 
@@ -1309,7 +1407,7 @@ public class Alg1 extends Thread{
         initial_settings+=", "+neigh+" neigh";
         initial_settings+=", "+sel+" sel";
         switch(sel){
-            case"variable"->initial_settings+=", selnoise="+selnoise;
+            case"Rand"->initial_settings+=", selnoise="+selnoise;
         }
 //        initial_settings+=", ASD="+Player.getASD();
         initial_settings+=", ASD="+ASD;
