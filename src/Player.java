@@ -13,62 +13,37 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Player {
 
+    // ===================================== Attributes =====================================
     private static int count = 0; // class-wide attribute that helps assign player ID
     private final int ID; // each player has a unique ID i.e. position
-    public int getID(){
-        return ID;
-    }
-
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
-    public static DecimalFormat getDF1() { return DF1; }
     private static final DecimalFormat DF2 = new DecimalFormat("0.00");
-    public static DecimalFormat getDF2(){return DF2;}
     private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
-    public static DecimalFormat getDF4(){
-        return DF4;
-    }
-
-    private static String game;
-    public static void setGame(String s){game=s;}
-
-
+    private static String game; // indicates what game player is playing
     private double p; // proposal value residing within [0,1]
-    public double getP(){
-        return p;
-    }
-    public void setP(double p){ // recall that p must lie within the range [0,1]
-        this.p=p;
-        if(this.p>1){
-            this.p=1;
-        } else if(this.p<0){
-            this.p=0;
-        }
-    }
     private double old_p; // p value held at beginning of gen to be inherited by children
-    public double getOldP(){return old_p;}
-    public void setOldP(double old_p){
-        this.old_p=old_p;
-    }
     private double q; // acceptance threshold value residing within [0,1]
-    public double getQ(){return q;}
-    public void setQ(double q){
-        this.q=q;
-        if(this.q>1){
-            this.q=1;
-        } else if(this.q<0){
-            this.q=0;
-        }
-    }
     private double old_q; // q value held at beginning of gen to be inherited by children
-    public double getOldQ(){return old_q;}
-    public void setOldQ(double old_q){
-        this.old_q=old_q;
-    }
-
+    private ArrayList<Player> neighbourhood = new ArrayList<>(); // contains player's neighbours
+    private int[] neighbour_IDs; // array of the IDs of the player's neighbour
+    private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
+    private int NI = 0;  // num interactions (NI) player had
+    private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
+    private int[] NSI_per_neighbour = {0,0,0,0};
+    private int NSP = 0; // num successful proposals (NSP)
+    private int NSR = 0; // num successful receptions (NSR)
+    private double score; // score of player ($\Pi$)
+    private double avg_score; // average score of player ($\overline{\Pi}$)
+    private double mean_self_edge_weight; // mean of edge weights from player to its neighbours
+    private double mean_neighbour_edge_weight; // mean of edge weights directed at player
+    private String[] strategies_PD = {"C","D","A","TFT"};
+    private String strategy_PD = "";
     private double local_leeway; // inherent leeway of the player
-    public double getLocalLeeway(){return local_leeway;}
 
 
+
+
+    // ===================================== Unique Functions =====================================
     /**
      * Constructor method for instantiating a Player object.<br>
      * Since this is the DG, make sure to pass 0 to q.<br>
@@ -93,138 +68,33 @@ public class Player {
 
 
 
-
-
-
-
-
-    private static double gross_prize; // the gross prize available in an interaction
-    public static void setGrossPrize(double d){
-        gross_prize=d;
-    }
-
-    private ArrayList<Player> neighbourhood = new ArrayList<>(); // contains player's neighbours
-    public ArrayList<Player> getNeighbourhood() {
-        return neighbourhood;
-    }
-
-    private int[] neighbour_IDs; // array of the IDs of the player's neighbour
-    public void setNeighbourIDs(int[] arr){
-        neighbour_IDs=arr;
-    }
-
     /**
-     * Stores edge weights belonging to the player.
-     * For each neighbour y of player x, e_xy denotes the edge from x to y.
-     * w_e_xy denotes the weight of e_xy probability of y dictating to x.
-     * w_e_xy lies within the interval [0,1].
-     * x controls w_e_xy i.e. the probability of x's neighbours getting to dictate to x.
-     */
-    private double[] edge_weights;
-    public double[] getEdgeWeights(){
-        return edge_weights;
+     * Augmented setter.
+     * p must reside within [0,1].
+      */
+    public void setP(double p){
+        this.p=p;
+        if(this.p>1){
+            this.p=1;
+        } else if(this.p<0){
+            this.p=0;
+        }
     }
-    public void setEdgeWeights(double[] d){edge_weights=d;}
-
-
-
-
-
-
-
-
-
-
-
-
-    private int NI = 0;  // num interactions (NI) player had
-    public int getNI(){return NI;}
-    public void setNI(int i){
-        NI=i;
-    }
-    private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
-    public int getNSI(){return NSI;}
-    public void setNSI(int i){
-        NSI=i;
-    }
-    private int[] NSI_per_neighbour = {0,0,0,0};
-    public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
-    public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
-    private int NSP = 0; // num successful proposals (NSP)
-    public int getNSP(){return NSP;}
-    public void setNSP(int i){
-        NSP=i;
-    }
-    private int NSR = 0; // num successful receptions (NSR)
-    public int getNSR(){return NSR;}
-    public void setNSR(int i){
-        NSR=i;
-    }
-    private double score; // total accumulated payoff i.e. fitness
-    public double getScore(){return score;}
-    public void setScore(double score){
-        this.score=score;
-    }
-    private double avg_score; // $\overline{\Pi}$: average score of this player (this gen)
-    public double getAvgScore(){return avg_score;}
-    public void setAvgScore(double d){avg_score=d;}
-
-
-
-
-
 
 
 
     /**
-     * mean of edge weights belonging to the player
+     * Augmented setter.
+     * q must reside within [0,1].
      */
-    private double mean_self_edge_weight = 0;
-    public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
-//    public void calculateMeanSelfEdgeWeight(){
-//        mean_self_edge_weight = 0;
-//        for(int i = 0; i < edge_weights.length; i++){
-//            mean_self_edge_weight += edge_weights[i];
-//        }
-//        mean_self_edge_weight /= edge_weights.length;
-//    }
-
-
-    /**
-     * mean of edge weights belonging to the player's neighbour that are directed at the player.<br>
-     * function assumes all players have same number of edge weights and neighbours. <br>
-     * otherwise the function does not signify much.
-     */
-    private double mean_neighbour_edge_weight = 0;
-    public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
-//    public void calculateMeanNeighbourEdgeWeight(){
-//        mean_neighbour_edge_weight = 0;
-//        for(int i = 0; i < neighbourhood.size(); i++) {
-//            Player neighbour = neighbourhood.get(i);
-//            mean_neighbour_edge_weight += neighbour.edge_weights[findMeInMyNeighboursNeighbourhood(neighbour)];
-//        }
-//        mean_neighbour_edge_weight /= edge_weights.length;
-//    }
-
-//    /**
-//     * Returns the index of this player in the neighbourhood of their neighbour.<br>
-//     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
-//     */
-//    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
-//        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
-//        int my_id = ID;
-//        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
-//            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
-//            if (my_id == neighbours_neighbour.ID) {
-//                my_index_in_neighbours_neighbourhood = i;
-//                break;
-//            }
-//        }
-//
-//        return my_index_in_neighbours_neighbourhood;
-//    }
-
-
+    public void setQ(double q){
+        this.q=q;
+        if(this.q>1){
+            this.q=1;
+        } else if(this.q<0){
+            this.q=0;
+        }
+    }
 
 
 
@@ -276,76 +146,67 @@ public class Player {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // ================= PD =================
-
-    private String[] strategies_PD = {"C","D","A","TFT"};
-
-    private String strategy_PD = "";
+    // ===================================== Generic Functions =====================================
+    public int getID(){
+        return ID;
+    }
+    public static DecimalFormat getDF1() { return DF1; }
+    public static DecimalFormat getDF2(){return DF2;}
+    public static DecimalFormat getDF4(){
+        return DF4;
+    }
+    public static void setGame(String s){game=s;}
+    public double getP(){
+        return p;
+    }
+    public double getOldP(){return old_p;}
+    public void setOldP(double old_p){
+        this.old_p=old_p;
+    }
+    public double getQ(){return q;}
+    public double getOldQ(){return old_q;}
+    public void setOldQ(double old_q){
+        this.old_q=old_q;
+    }
+    public double getLocalLeeway(){return local_leeway;}
+    public ArrayList<Player> getNeighbourhood() {
+        return neighbourhood;
+    }
+    public void setNeighbourIDs(int[] arr){
+        neighbour_IDs=arr;
+    }
+    public double[] getEdgeWeights(){
+        return edge_weights;
+    }
+    public void setEdgeWeights(double[] d){edge_weights=d;}
+    public int getNI(){return NI;}
+    public void setNI(int i){
+        NI=i;
+    }
+    public int getNSI(){return NSI;}
+    public void setNSI(int i){
+        NSI=i;
+    }
+    public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
+    public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
+    public int getNSP(){return NSP;}
+    public void setNSP(int i){
+        NSP=i;
+    }
+    public int getNSR(){return NSR;}
+    public void setNSR(int i){
+        NSR=i;
+    }
+    public double getScore(){return score;}
+    public void setScore(double score){
+        this.score=score;
+    }
+    public double getAvgScore(){return avg_score;}
+    public void setAvgScore(double d){avg_score=d;}
+    public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
+    public void setMeanSelfEdgeWeight(double d){mean_self_edge_weight=d;}
+    public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
+    public void setMeanNeighbourEdgeWeight(double d){mean_neighbour_edge_weight=d;}
     public String getStrategyPD(){return strategy_PD;}
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

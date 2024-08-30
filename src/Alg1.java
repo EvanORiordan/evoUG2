@@ -481,7 +481,7 @@ public class Alg1 extends Thread{
             }
 
             calculateOverallStats();
-//            calculateAverageEdgeWeights();
+            calculateAverageEdgeWeights();
 
             // periodically record individual data
             if(datarate != 0){
@@ -1083,73 +1083,75 @@ public class Alg1 extends Thread{
 
 
 
-//    public void calculateMeanSelfEdgeWeight(Player player){
-//        mean_self_edge_weight = 0;
-//        for(int i = 0; i < edge_weights.length; i++){
-//            mean_self_edge_weight += edge_weights[i];
-//        }
-//        mean_self_edge_weight /= edge_weights.length;
-//    }
+
+    public void calculateAverageEdgeWeights(){
+        for(ArrayList<Player> row:grid){
+            for(Player player: row){
+                calculateMeanSelfEdgeWeight(player);
+                calculateMeanNeighbourEdgeWeight(player);
+            }
+        }
+    }
+
+
+    public void calculateMeanSelfEdgeWeight(Player player){
+        double[] edge_weights = player.getEdgeWeights();
+        int length = edge_weights.length;
+        double mean_self_edge_weight = 0;
+
+        // calculate mean of edge weights from player to its neighbours
+        for(int i = 0; i < length; i++){
+            mean_self_edge_weight += edge_weights[i];
+        }
+        mean_self_edge_weight /= length;
+
+        player.setMeanSelfEdgeWeight(mean_self_edge_weight);
+    }
 
 
 
-    /**
-     * Calculates the average edge weight of the player and their neighbours.
-     */
-//    public void calculateAverageEdgeWeights(){
-//        for(ArrayList<Player> row:grid){
-//            for(Player player: row){
-//                player.calculateMeanSelfEdgeWeight();
-//                player.calculateMeanNeighbourEdgeWeight();
-//            }
-//        }
-//    }
+    public void calculateMeanNeighbourEdgeWeight(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int size = neighbourhood.size();
+        double mean_neighbour_edge_weight = 0;
 
-//    public void calculateMeanNeighbourEdgeWeight(){
-//        mean_neighbour_edge_weight = 0;
-//        for(int i = 0; i < neighbourhood.size(); i++) {
-//            Player neighbour = neighbourhood.get(i);
+        // calculate mean of edge weights directed at player
+        for(int i = 0; i < size; i++) {
+            Player neighbour = neighbourhood.get(i);
+            double[] edge_weights = neighbour.getEdgeWeights();
 //            mean_neighbour_edge_weight += neighbour.edge_weights[findMeInMyNeighboursNeighbourhood(neighbour)];
-//        }
-//        mean_neighbour_edge_weight /= edge_weights.length;
-//    }
+//            int x = 0; // PLACEHOLDER
+            int index = findPlayer(player, neighbour);
+            mean_neighbour_edge_weight += edge_weights[index];
+        }
+        mean_neighbour_edge_weight /= size;
 
+        player.setMeanNeighbourEdgeWeight(mean_neighbour_edge_weight);
+    }
 
 
 
     /**
-     * Returns the index of this player in the neighbourhood of their neighbour.<br>
-     * Assumes the player and the neighbour have the same number of neighbours and edge weights.
+     * Assume num player neighbours = num neighbour neighbours.<br>
+     * Return index corresponding to player within neighbours neighbourhood.
      */
-//    public int findMeInMyNeighboursNeighbourhood(Player my_neighbour){
-//        int my_index_in_neighbours_neighbourhood = 0; // by default, assign index to 0.
-//        int my_id = ID;
-//        for (int i = 0; i < my_neighbour.neighbourhood.size(); i++) {
-//            Player neighbours_neighbour = my_neighbour.neighbourhood.get(i);
-//            if (my_id == neighbours_neighbour.ID) {
-//                my_index_in_neighbours_neighbourhood = i;
-//                break;
-//            }
-//        }
-//
-//        return my_index_in_neighbours_neighbourhood;
-//    }
+    public int findPlayer(Player player, Player neighbour){
+        int index = 0;
+        int ID = player.getID();
+        ArrayList <Player> neighbourhood = neighbour.getNeighbourhood();
+        int size = neighbourhood.size();
 
+        for (int i = 0; i < size; i++) {
+            Player neighbours_neighbour = neighbourhood.get(i);
+            int neighbours_neighbour_ID = neighbours_neighbour.getID();
+            if (ID == neighbours_neighbour_ID) {
+                index = i;
+                break;
+            }
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return index;
+    }
 
 
 
@@ -1941,7 +1943,7 @@ public class Alg1 extends Thread{
 //                    TESTING TO SEE IF ITS EVER 0
 //                    for(int i: NSI_per_neighbour){
 //                        if(i == 0.0){
-//                            System.out.println("hello");
+//                            System.out.println("hello"); // can place breakpoint here
 //                        }
 //                    }
 
