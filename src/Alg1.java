@@ -731,18 +731,18 @@ public class Alg1 extends Thread{
             double total_leeway = calculateTotalLeeway(player, neighbour, i);
             int option = checkEWLC(player, neighbour, total_leeway);
             double[] edge_weights = player.getEdgeWeights();
-            if(option == 0){ // positive edge weight learning
+            if(option == 0){ // increase EW
                 edge_weights[i] += calculateLearning(player, neighbour);
                 if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
                     edge_weights[i] = 1.0;
                 }
-            } else if (option == 1){ // negative edge weight learning
+            } else if (option == 1){ // decrease EW
                 edge_weights[i] -= calculateLearning(player, neighbour);
                 if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
                     edge_weights[i] = 0;
                 }
             }
-            // if option equals 2, no edge weight learning occurs
+            // if option equals 2, no learning occurs
         }
     }
 
