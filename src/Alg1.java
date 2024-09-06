@@ -414,28 +414,26 @@ public class Alg1 extends Thread{
         // players begin playing the game
         while(iter <= iters) { // algorithm stops once this condition is reached
 
-            // injection phase
+            // injection
             if(iter == injiter){
                 injectStrategyCluster(injp, injsize);
             }
 
-            // playing phase of generation
+            // playing
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     play(player);
                 }
             }
 
-            // edge weight learning phase of generation
+            // edge weight learning
             for(ArrayList<Player> row: grid){
                 for(Player player: row){
                     EWL(player);
                 }
             }
 
-            // evolution phase of generation.
-            // occurs every ER iterations.
-            // consists of selection, evolution and mutation, if applicable.
+            // evolution (occurs every ER iterations; consists of sel, evo and mut funcs)
             if(iter % ER == 0) {
                 for (ArrayList<Player> row : grid) {
                     for (Player child : row) {
