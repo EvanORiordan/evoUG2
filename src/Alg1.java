@@ -337,7 +337,7 @@ public class Alg1 extends Thread{
         double[] experiment_avg_p_values = new double[runs + 1];
         experiment_SD_avg_p = 0;
 
-        // perform/run the experiment multiple times if applicable
+        // run the experiment x times
         for(run_num = 1; run_num <= runs; run_num++){
             Alg1 run = new Alg1(); // represents one run of the experiment
             run.start(); // start the run
