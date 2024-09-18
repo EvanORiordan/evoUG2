@@ -1,22 +1,8 @@
 game,runs,iters,rows,EWT,EWLC,EWLF,ER,ROC,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,datarate,injiter,injp,injsize,desc
-DG,1,10000,10,1,,,100,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,test minimum settings
-DG,10,10000,10,1,p,ROC,100,0.01,1.0,1.0,1,2,3,4,5,6,7,ROC,0.001,10,VN,RW,,NI,copy,,local,0.1,0.01,,5001,0.1,5,test maximum settings
-DG,1,10000,10,1,p,ROC,1,0.2,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,test
-DG,50,10000,10,1,p,ROC,1,0.2,,,,,,,,,,ER,1,6,VN,RW,,NI,copy,,,,,10,,,,test
-DG,50,10000,50,1,p,ROC,1,0.2,,,,,,,,,,ER,1,6,VN,RW,,NI,copy,,,,,10,,,,test
-DG,200,10000,50,1,p,ROC,1,0.2,,,,,,,,,,ER,1,6,VN,RW,,NI,copy,,,,,10,,,,test
-DG,200,10000,50,1,p,ROC,1,0.2,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p ROC
-DG,200,10000,10,1,p,ROC,1,0.2,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p ROC 10 rows
-DG,200,10000,50,1,p,pAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p pAD
-DG,200,10000,50,1,p,pEAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p pEAD
-DG,200,10000,50,1,p,avgscoreAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p avgscoreAD
-DG,200,10000,50,1,p,avgscoreEAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,p avgscoreEAD
-DG,200,10000,50,1,avgscore,ROC,1,0.2,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,avgscore ROC
-DG,200,10000,50,1,avgscore,pAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,avgscore pAD
-DG,200,10000,50,1,avgscore,pEAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,avgscore pEAD
-DG,200,10000,50,1,avgscore,avgscoreAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,avgscore avgscoreAD
-DG,200,10000,50,1,avgscore,avgscoreEAD,1,,,,,,,,,,,ER,1,10,VN,RW,,NI,copy,,,,,,,,,avgscore avgscoreEAD
-DG,100,10000,50,1,p,avgscoreAD,10,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,100 runs
-DG,200,10000,50,1,p,avgscoreAD,10,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,200 runs
-DG,300,10000,50,1,p,avgscoreAD,10,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,300 runs
-DG,50,10000,50,1,p,avgscoreAD,10,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,50 runs
+DG,1,10000,10,1,,,100,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,example of minimum settings
+DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,,,,VN,RW,,NI,copy,,,,,,,,,no local mut
+DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,,,,VN,RW,,NI,copy,,local,0.01,0.01,,,,,local mut
+DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.01,10,VN,RW,,NI,copy,,local,0.01,0.01,,,,,mutbound series
+DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,10,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
+DG,25,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,500,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
+DG,1,10000,5,1,p,pAD,5,,,,,,,,,,,,,,all,RW,,NI,copy,,,,,,,,,all neigh

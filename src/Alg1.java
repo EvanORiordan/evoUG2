@@ -396,11 +396,15 @@ public class Alg1 extends Thread{
                 switch(neigh){
                     case"VN","M"->assignAdjacentNeighbours(player, i, j);
                     case"random"->assignRandomNeighbours(player, 3);
+                    case"all"->assignAllNeighbours(player);
                     default -> {
                         System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                         Runtime.getRuntime().exit(0);
                     }
                 }
+
+                // initialise NSI per neighbour counters.
+                resetNSIPerNeighbour(player);
             }
         }
 
@@ -443,7 +447,7 @@ public class Alg1 extends Thread{
                         switch(sel){
                             case "RW" -> parent = RWSelection(child);
                             case "best" -> parent = bestSelection(child);
-                            case "Rand" -> parent = RandSelection(child);
+                            case "rand" -> parent = randSelection(child);
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -722,6 +726,12 @@ public class Alg1 extends Thread{
 
 
 
+
+
+
+
+
+
     public void EWL(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         for(int i = 0; i < neighbourhood.size(); i++){
@@ -944,7 +954,7 @@ public class Alg1 extends Thread{
      * @param child
      * @return parent player
      */
-    public Player RandSelection(Player child){
+    public Player randSelection(Player child){
         double w = selnoise;
         double[] effective_payoffs = new double[N];
         Player parent = null;
@@ -974,6 +984,7 @@ public class Alg1 extends Thread{
                 break;
             }
         }
+
 
         return parent;
     }
@@ -1050,7 +1061,6 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Inspired by Akdeniz and van Veelen (2023).
      * Child's attributes are randomly and independently generated.
      */
     public void globalMutation(Player child){
@@ -1063,7 +1073,6 @@ public class Alg1 extends Thread{
 
 
     /**
-     * Inspired by Akdeniz and van Veelen (2023).
      * Slight mutations are independently applied to child's attributes.
      */
     public void localMutation(Player child){
@@ -1624,6 +1633,32 @@ public class Alg1 extends Thread{
 
 
 
+    // assign all other players to neighbourhood
+    public void assignAllNeighbours(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int id = player.getID();
+        for(int i = 0; i < grid.size(); i++){
+            for(int j = 0; j < grid.get(0).size(); j++){
+                Player neighbour = grid.get(i).get(j);
+                int neighbour_id = neighbour.getID();
+                if(id != neighbour_id){
+                    neighbourhood.add(neighbour);
+                }
+            }
+        }
+    }
+
+
+
+    public void resetNSIPerNeighbour(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int size = neighbourhood.size();
+        player.setNSIPerNeighbour(new int[size]);
+        for(int i = 0; i < size; i++){
+            player.getNSIPerNeighbour()[i] = 0;
+        }
+    }
+
 
 
     /**
@@ -1674,7 +1709,13 @@ public class Alg1 extends Thread{
                         }
                     }
                 }
-                player.setNSIPerNeighbour(new int[]{0,0,0,0});
+//                player.setNSIPerNeighbour(new int[]{0,0,0,0});
+
+//                for(int i = 0; i < N - 1; i++){
+//                    player.getNSIPerNeighbour()[i] = 0;
+//                }
+
+                resetNSIPerNeighbour(player);
             }
         }
     }

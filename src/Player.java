@@ -29,7 +29,7 @@ public class Player {
     private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
     private int NI = 0;  // num interactions (NI) player had
     private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
-    private int[] NSI_per_neighbour = {0,0,0,0};
+    private int[] NSI_per_neighbour;
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
     private double score; // score of player ($\Pi$)
