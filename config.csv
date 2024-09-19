@@ -5,4 +5,4 @@ DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,,,,VN,RW,,NI,copy,,local,0.01,0.01,,,,,local 
 DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.01,10,VN,RW,,NI,copy,,local,0.01,0.01,,,,,mutbound series
 DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,10,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
 DG,25,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,500,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
-DG,1,10000,5,1,p,pAD,5,,,,,,,,,,,,,,all,RW,,NI,copy,,,,,,,,,all neigh
+DG,25,10000,10,1,p,pAD,5,,,,,,,,,,,,,,VN,crossover,,NI,crossover,,,,,10,,,,all neigh

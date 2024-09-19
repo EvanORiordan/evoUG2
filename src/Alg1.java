@@ -448,6 +448,7 @@ public class Alg1 extends Thread{
                             case "RW" -> parent = RWSelection(child);
                             case "best" -> parent = bestSelection(child);
                             case "rand" -> parent = randSelection(child);
+                            case "crossover" -> crossover(child);
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -458,6 +459,7 @@ public class Alg1 extends Thread{
                         switch (evo) {
                             case "copy" -> copyEvolution(child, parent);
                             case "approach" -> approachEvolution(child, parent);
+                            case "crossover" -> {} // do nothing; already completed above.
                             default -> {
                                 System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
@@ -987,6 +989,40 @@ public class Alg1 extends Thread{
 
 
         return parent;
+    }
+
+
+
+    // crossover where one child adopts midway point between two parent strategies.
+//    public void crossover(Player child, Player parent1, Player parent2){
+    public void crossover(Player child){
+
+        // how to select parents?
+
+        // select two fittest neighbours?
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        Player parent1 = child; // fittest neighbour
+        Player parent2 = child; // second-fittest neighbour
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            double neighbour_avg_score = neighbour.getAvgScore();
+            double parent2_avg_score = parent2.getAvgScore();
+            if(neighbour_avg_score > parent2_avg_score){
+                parent2 = neighbourhood.get(i);
+                parent2_avg_score = parent2.getAvgScore();
+                double parent1_avg_score = parent1.getAvgScore();
+                if(parent2_avg_score > parent1_avg_score){
+                    Player temp = parent1;
+                    parent1 = parent2;
+                    parent2 = temp;
+                }
+            }
+        }
+
+        double p1 = parent1.getP();
+        double p2 = parent2.getP();
+        double new_p = (p1 + p2) / 2;
+        child.setP(new_p);
     }
 
 
