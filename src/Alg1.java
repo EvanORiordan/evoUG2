@@ -394,8 +394,8 @@ public class Alg1 extends Thread{
             for(int j=0;j<columns;j++){
                 Player player = grid.get(i).get(j);
                 switch(neigh){
-                    case"VN","M"->assignAdjacentNeighbours(player, i, j);
-                    case"random"->assignRandomNeighbours(player, 3);
+                    case"VN","M","VN2","VN3"->assignAdjacentNeighbours(player, i, j);
+                    case"random"->assignRandomNeighbours(player, 4); // for now, manually assign size here.
                     case"all"->assignAllNeighbours(player);
                     default -> {
                         System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
@@ -807,12 +807,14 @@ public class Alg1 extends Thread{
         double neighbour_p = neighbour.getP();
         double avg_score = player.getAvgScore();
         double neighbour_avg_score = neighbour.getAvgScore();
+        double q = player.getQ();
+        double neighbour_q = neighbour.getQ();
 
 
         int option = 2;
         switch(EWLC){
 
-            case"p"->{ // compare proposal values
+            case"p"->{
                 if (neighbour_p + total_leeway > p){
                     option = 0;
                 } else if (neighbour_p + total_leeway < p){
@@ -820,7 +822,7 @@ public class Alg1 extends Thread{
                 }
             }
 
-            case"avgscore"->{ // compare average scores
+            case"avgscore"->{
                 if (neighbour_avg_score < avg_score + total_leeway){
                     option = 0;
                 } else if (neighbour_avg_score > avg_score + total_leeway){
@@ -828,7 +830,7 @@ public class Alg1 extends Thread{
                 }
             }
 
-            case"AB"->{ // compare alpha-beta rating
+            case"AB"->{
                 double AB_rating1 = ((alpha * p) + (beta * avg_score)) / (alpha + beta);
                 double AB_rating2 = ((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta);
                 if(AB_rating1 < AB_rating2)
@@ -836,7 +838,13 @@ public class Alg1 extends Thread{
                 else if(AB_rating1 > AB_rating2)
                     option = 1;
             }
-//            default->System.out.println("[NOTE] No edge weight learning condition configured.");
+
+            case"q"->{
+                if(neighbour_q > q)
+                    option = 0;
+                else if(neighbour_q < q)
+                    option = 1;
+            }
         }
 
         return option;
@@ -850,6 +858,8 @@ public class Alg1 extends Thread{
         double neighbour_p = neighbour.getP();
         double avg_score = player.getAvgScore();
         double neighbour_avg_score = neighbour.getAvgScore();
+        double q = player.getQ();
+        double neighbour_q = neighbour.getQ();
 
 
         double learning = 0;
@@ -859,10 +869,13 @@ public class Alg1 extends Thread{
             case"pEAD"->        learning = Math.exp(Math.abs(neighbour_p - p));
             case"avgscoreAD"->  learning = Math.abs(neighbour_avg_score - avg_score);
             case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour_avg_score - avg_score));
-            case"pAD2"->        learning=Math.pow(Math.abs(neighbour_p - p), 2);
-            case"pAD3"->        learning=Math.pow(Math.abs(neighbour_p - p), 3);
-            case"AB"->          learning=Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta))
-                    - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
+            case"pAD2"->        learning = Math.pow(Math.abs(neighbour_p - p), 2);
+            case"pAD3"->        learning = Math.pow(Math.abs(neighbour_p - p), 3);
+            case"AB"->          learning = Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta)) - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
+            case"qAD"->         learning = Math.abs(neighbour_q - q);
+            case"qEAD"->        learning = Math.exp(Math.abs(neighbour_q - q));
+            case"qAD2"->        learning = Math.pow(Math.abs(neighbour_q - q), 2);
+            case"qAD3"->        learning = Math.pow(Math.abs(neighbour_q - q), 3);
         }
 
         return learning;
@@ -1378,7 +1391,18 @@ public class Alg1 extends Thread{
         N = rows * columns;
         EWT = settings[CI++];
         EWLC = settings[CI++];
+        if(!EWLC.equals("p") && !EWLC.equals("avgscore"))
+            System.out.println("[NOTE] No edge weight learning condition configured.");
         EWLF = settings[CI++];
+        if(!EWLF.equals("ROC")
+                && !EWLF.equals("pAD")
+                && !EWLF.equals("pEAD")
+                && !EWLF.equals("avgscoreAD")
+                && !EWLF.equals("avgscoreEAD")
+                && !EWLF.equals("pAD2")
+                && !EWLF.equals("pAD3")
+                && !EWLF.equals("AB"))
+            System.out.println("[NOTE] No edge weight learning formula configured.");
         ER=Integer.parseInt(settings[CI++]);
         if(ER < 1){
             System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
@@ -1620,28 +1644,59 @@ public class Alg1 extends Thread{
         int y_plus_one = (((y + 1) % rows) + rows) % rows;
         int y_minus_one = (((y - 1) % rows) + rows) % rows;
 
+
         // add von neumann neighbours
         neighbourhood.add(grid.get(y).get(x_plus_one)); // neighbour at x+1 i.e. to the right
         neighbourhood.add(grid.get(y).get((x_minus_one))); // neighbour at x-1 i.e. to the left
         neighbourhood.add(grid.get(y_plus_one).get(x)); // neighbour at y+1 i.e. above
         neighbourhood.add(grid.get(y_minus_one).get(x)); // neighbour at y-1 i.e. below
 
-        // add moore neighbours
+
         if(neigh.equals("M")){
+            // add moore neighbours
             neighbourhood.add(grid.get(y_plus_one).get(x_plus_one)); // neighbour at (x+1,y+1)
             neighbourhood.add(grid.get(y_minus_one).get(x_plus_one)); // neighbour at (x+1,y-1)
             neighbourhood.add(grid.get(y_minus_one).get(x_minus_one)); // neighbour at (x-1,y-1)
             neighbourhood.add(grid.get(y_plus_one).get(x_minus_one)); // neighbour at (x-1,y+1)
+
+
+            // add range r neighbours
+            if(neigh.equals("VN2") || neigh.equals("VN3")){
+                int x_plus_two = (((x + 2) % rows) + rows) % rows;
+                int x_minus_two = (((x - 2) % rows) + rows) % rows;
+                int y_plus_two = (((y + 2) % rows) + rows) % rows;
+                int y_minus_two = (((y - 2) % rows) + rows) % rows;
+                neighbourhood.add(grid.get(y).get(x_plus_two));
+                neighbourhood.add(grid.get(y).get((x_minus_two)));
+                neighbourhood.add(grid.get(y_plus_two).get(x));
+                neighbourhood.add(grid.get(y_minus_two).get(x));
+
+//            if(neigh.equals("VN3")){
+//
+//            }
+            }
         }
 
+
+
+
+
+
         int[] arr = new int[4];
-        for(int i=0;i<player.getNeighbourhood().size();i++){
-            arr[i] = player.getNeighbourhood().get(i).getID();
+        for(int i=0;i<neighbourhood.size();i++){
+            arr[i] = neighbourhood.get(i).getID();
         }
 
         player.setNeighbourIDs(arr);
 
     }
+
+
+
+
+
+
+
 
 
     /**

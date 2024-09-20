@@ -6,3 +6,4 @@ DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.01,10,VN,RW,,NI,copy,,local,0.01,0
 DG,50,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,10,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
 DG,25,10000,10,1,p,pAD,5,,,,,,,,,,,mutbound,0.001,500,VN,RW,,NI,copy,,local,0.01,0.001,,,,,mutbound series
 DG,25,10000,10,1,p,pAD,5,,,,,,,,,,,,,,VN,crossover,,NI,crossover,,,,,10,,,,all neigh
+UG,1,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN2,RW,,NI,copy,,,,,,,,,UG
