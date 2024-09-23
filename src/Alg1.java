@@ -1634,94 +1634,14 @@ public class Alg1 extends Thread{
 
 
 
-
-
-    /**
-     * Assigns adjacent neighbours to the player in a 2D square lattice grid with respect
-     * to the von Neumann or Moore neighbourhood type.
-     * von Neumann neighbourhood order: [right player, left player, above player, below player].
-     * the integer value in VN2 denotes the range r.
-     * the integer value in M2 denotes the distance d.
-     * @param player is the player having their neighbourhood assigned.
-     * @param y is the y coordinate of the player which represents the row they are in.
-     * @param x is the x coordinate of the player which represents the column they are in.
-     */
-    public void assignAdjacentNeighbours(Player player, int y, int x){
-        ArrayList<Player> neighbourhood = player.getNeighbourhood();
-        int x_plus_one = (((x + 1) % rows) + rows) % rows;
-        int x_minus_one = (((x - 1) % rows) + rows) % rows;
-        int y_plus_one = (((y + 1) % columns) + columns) % columns;
-        int y_minus_one = (((y - 1) % columns) + columns) % columns;
-
-        // add VN neighbours
-        neighbourhood.add(grid.get(y).get(x_plus_one)); // neighbour at x+1 i.e. to the right
-        neighbourhood.add(grid.get(y).get((x_minus_one))); // neighbour at x-1 i.e. to the left
-        neighbourhood.add(grid.get(y_plus_one).get(x)); // neighbour at y+1 i.e. above
-        neighbourhood.add(grid.get(y_minus_one).get(x)); // neighbour at y-1 i.e. below
-
-        // add M neighbours
-        if(neigh.equals("M") || neigh.equals("VN2") || neigh.equals("M2") || neigh.equals("VN3")){
-            neighbourhood.add(grid.get(y_plus_one).get(x_plus_one)); // neighbour at (x+1,y+1)
-            neighbourhood.add(grid.get(y_minus_one).get(x_plus_one)); // neighbour at (x+1,y-1)
-            neighbourhood.add(grid.get(y_minus_one).get(x_minus_one)); // neighbour at (x-1,y-1)
-            neighbourhood.add(grid.get(y_plus_one).get(x_minus_one)); // neighbour at (x-1,y+1)
-
-            if(neigh.equals("VN2") || neigh.equals("M2") || neigh.equals("VN3")){
-                int x_plus_two = (((x + 2) % rows) + rows) % rows;
-                int x_minus_two = (((x - 2) % rows) + rows) % rows;
-                int y_plus_two = (((y + 2) % columns) + columns) % columns;
-                int y_minus_two = (((y - 2) % columns) + columns) % columns;
-
-                // add VN2 neighbours
-                neighbourhood.add(grid.get(y).get(x_plus_two));
-                neighbourhood.add(grid.get(y).get((x_minus_two)));
-                neighbourhood.add(grid.get(y_plus_two).get(x));
-                neighbourhood.add(grid.get(y_minus_two).get(x));
-
-                // add M2 neighbours
-                if(neigh.equals("M2") || neigh.equals("VN3")){
-                    neighbourhood.add(grid.get(y_plus_two).get(x_plus_two));
-                    neighbourhood.add(grid.get(y_minus_two).get(x_plus_two));
-                    neighbourhood.add(grid.get(y_minus_two).get(x_minus_two));
-                    neighbourhood.add(grid.get(y_plus_two).get(x_minus_two));
-
-                    if(neigh.equals("VN3")){
-                        int x_plus_three = (((x + 2) % rows) + rows) % rows;
-                        int x_minus_three = (((x - 2) % rows) + rows) % rows;
-                        int y_plus_three = (((y + 2) % columns) + columns) % columns;
-                        int y_minus_three = (((y - 2) % columns) + columns) % columns;
-
-                        // add VN3 neighbours
-                        neighbourhood.add(grid.get(y).get(x_plus_three));
-                        neighbourhood.add(grid.get(y).get((x_minus_three)));
-                        neighbourhood.add(grid.get(y_plus_three).get(x));
-                        neighbourhood.add(grid.get(y_minus_three).get(x));
-                    }
-                }
-            }
-        }
-
-
-
-
-
-        int size = neighbourhood.size();
-        int[] arr = new int[size];
-        for(int i=0;i<size;i++){
-            arr[i] = neighbourhood.get(i).getID();
-        }
-
-        player.setNeighbourIDs(arr);
-
-    }
-
-
-
     /**
      * All players within Manhattan distance r are added to player's neighbourhood.
+     * assumes 2D square lattice grid.
+     * order in which von neumann neighbourhood is assigned:
+     * [right player, left player, above player, below player].
      * @param player
-     * @param y
-     * @param x
+     * @param y y axis position
+     * @param x x axis position
      * @param r range of von neumann neighbourhood
      */
     public void assignVNNeighbours(Player player, int y, int x, int r){
@@ -1733,19 +1653,30 @@ public class Alg1 extends Thread{
             int y_plus = (((y + i) % columns) + columns) % columns;
             int y_minus = (((y - i) % columns) + columns) % columns;
 
+            // add VNr neighbours
             neighbourhood.add(grid.get(y).get(x_plus));     // (x + r,  y)
             neighbourhood.add(grid.get(y).get((x_minus)));  // (x - r,  y)
             neighbourhood.add(grid.get(y_plus).get(x));     // (x,      y + r)
             neighbourhood.add(grid.get(y_minus).get(x));    // (x,      y - r)
         }
+
+        // assign neighbour IDs
+        int size = neighbourhood.size();
+        int[] arr = new int[size];
+        for(int i=0;i<size;i++){
+            arr[i] = neighbourhood.get(i).getID();
+        }
+        player.setNeighbourIDs(arr);
     }
+
 
 
     /**
      * All players within Chebyshev distance d are added to the player's neighbourhood.
+     * assumes 2D square lattice grid.
      * @param player
-     * @param y
-     * @param x
+     * @param y y axis position
+     * @param x x axis position
      * @param d distance the moore neighbourhood spans
      */
     public void assignMNeighbours(Player player, int y, int x, int d){
@@ -1757,21 +1688,27 @@ public class Alg1 extends Thread{
             int y_plus = (((y + i) % columns) + columns) % columns;
             int y_minus = (((y - i) % columns) + columns) % columns;
 
-            // add VN neighbours
+            // add VNr neighbours
             neighbourhood.add(grid.get(y).get(x_plus));         // (x + d,  y)
             neighbourhood.add(grid.get(y).get((x_minus)));      // (x - d,  y)
             neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + d)
             neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - d)
 
-            // add M neighbours
+            // add Md neighbours
             neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + d)
             neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - d)
             neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - d)
             neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + d)
         }
 
+        // assign neighbour IDs
+        int size = neighbourhood.size();
+        int[] arr = new int[size];
+        for(int i=0;i<size;i++){
+            arr[i] = neighbourhood.get(i).getID();
+        }
+        player.setNeighbourIDs(arr);
     }
-
 
 
 
