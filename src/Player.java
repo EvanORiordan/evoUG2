@@ -24,7 +24,7 @@ public class Player {
     private double old_p; // p value held at beginning of gen to be inherited by children
     private double q; // acceptance threshold value residing within [0,1]
     private double old_q; // q value held at beginning of gen to be inherited by children
-    private ArrayList<Player> neighbourhood = new ArrayList<>(); // contains player's neighbours
+    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private int[] neighbour_IDs; // array of the IDs of the player's neighbour
     private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
     private int NI = 0;  // num interactions (NI) player had

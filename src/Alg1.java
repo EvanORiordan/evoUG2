@@ -393,15 +393,35 @@ public class Alg1 extends Thread{
         for(int i=0;i<rows;i++){
             for(int j=0;j<columns;j++) {
                 Player player = grid.get(i).get(j);
-                String[] split = neigh.split(" ");
-                String neigh_type = split[0];
-                int neigh_param1 = 0; // used to operate neighbourhood assignment funcs.
-                if (split.length > 1){
-                    neigh_param1 = Integer.parseInt(split[1]);
-                }
-                switch(neigh_type){
-                    case"VN","M"->assignAdjacentNeighbours(player, i, j, neigh_type, neigh_param1);
-                    case"random"->assignRandomNeighbours(player, neigh_param1);
+//                String[] split = neigh.split(" ");
+//                String neigh_type = split[0];
+////                int neigh_param1 = 0; // used to operate neighbourhood assignment funcs.
+//                int[] neigh_params = new int[split.length-1];
+//                for(int k=1;k<split.length;k++){
+//                    neigh_params[k] = Integer.parseInt(split[k]);
+//                }
+////                if (split.length > 1){
+////                    neigh_param1 = Integer.parseInt(split[1]);
+////                }
+
+                String[] neigh_params = neigh.split(" ");
+
+                switch(neigh_params[0]){
+//                switch(neigh_type){
+                    case"VN","M"->{
+                        String type = neigh_params[0];
+                        int distance = Integer.parseInt(neigh_params[1]);
+                        assignAdjacentNeighbours(player, i, j, type, distance);
+                    }
+                    case"randomUni"->{
+                        int size = Integer.parseInt(neigh_params[1]);
+//                        assignRandomNeighboursUni(player, size);
+                    }
+                    case"randomBi"->{
+                        int size = Integer.parseInt(neigh_params[1]);
+                        assignRandomNeighboursBi(player, size);
+                    }
+                    case"all"->assignAllNeighbours(player);
                     default -> {
                         System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                         Runtime.getRuntime().exit(0);
@@ -450,7 +470,7 @@ public class Alg1 extends Thread{
                         Player parent = null;
                         switch(sel){
                             case "RW" -> parent = RWSelection(child);
-                            case "best" -> parent = bestSelection(child);
+                            case "elitist" -> parent = bestSelection(child);
                             case "rand" -> parent = randSelection(child);
                             case "crossover" -> crossover(child);
                             default -> {
@@ -1765,14 +1785,34 @@ public class Alg1 extends Thread{
     }
 
 
+    /**
+     * Randomly assign uni-directional edges to player.
+     * @param player
+     * @param size
+     */
+    public void assignRandomNeighboursUni(Player player, int size){
+        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+
+        // randomly get neighbours
+        Set<Integer> rand_ints = new HashSet<>();
+        while(rand_ints.size() < size){
+            rand_ints.add(ThreadLocalRandom.current().nextInt(N));
+        }
+
+        for(int position: rand_ints){
+            int column = position / columns;
+            int row = position % rows;
+            neighbourhood.add(grid.get(column).get(row));
+        }
+    }
+
+
 
     /**
-     * Randomly assigns neighbours to the player. Does not assign the player as a neighbour of the
-     * neighbour i.e. the neighbour assignment is one-way i.e. the edges are directed.
-     * @param player is the player being assigned neighbours.
-     * @param size is the number of neighbours to be assigned to the player's neighbourhood.
+     * Randomly assign bidirectional edges to player.
+     * Neighbour must simultaneously receive edge to player.
      */
-    public void assignRandomNeighbours(Player player, int size){
+    public void assignRandomNeighboursBi(Player player, int size){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
         Set<Integer> rand_ints = new HashSet<>();
         while(rand_ints.size() < size){
