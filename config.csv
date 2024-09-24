@@ -1,3 +1,5 @@
 game,runs,iters,rows,EWT,EWLC,EWLF,ER,ROC,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,varying,variation,numexp,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,datarate,injiter,injp,injsize,desc
 DG,1,10000,10,1,,,100,,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,example of minimum settings
-UG,1,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,randomUni 4,RW,,NI,copy,,,,,,,,,UG
+UG,1,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,test
+UG,100,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,UG
+DG,100,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,DG
