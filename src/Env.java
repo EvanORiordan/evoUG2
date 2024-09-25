@@ -39,7 +39,8 @@ public class Env extends Thread{ // simulated game environment
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
-    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
+//    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
+    static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static String ASD; // average score denominator: determines how average score is calculated
 
 
@@ -542,38 +543,60 @@ public class Env extends Thread{ // simulated game environment
                 int neighbours_neighbour_ID = neighbours_neighbour.getID();
                 if (neighbours_neighbour_ID == ID) {
                     double[] neighbour_edge_weights = neighbour.getEdgeWeights();
-                    double edge_weight = neighbour_edge_weights[j];
+                    double neighbour_edge_weight = neighbour_edge_weights[j];
 
-                    // play game
-                    switch(EWT){
-                        case"1"->{
-                            double random_double = ThreadLocalRandom.current().nextDouble();
-                            if(edge_weight > random_double){
-                                switch (game){
-                                    case"UG","DG"->{
-                                        UG(gross_prize_UG, player, neighbour);
-                                    }
-                                    case"PD"->{
-                                        PD(player, neighbour);
-                                    }
-                                }
-                            } else{
-                                int neighbour_ID = neighbour.getID();
-                                updateStatsUG(player, 0, neighbour_ID, true);
-                                updateStatsUG(neighbour, 0, ID, false);
-                            }
-                        }
-                        case"2"->{
-                            switch(game){
-                                case"UG","DG"->{
-                                    UG(neighbour_edge_weights[j] * gross_prize_UG, player, neighbour);
-                                }
-                                case"PD"->{
-                                    PD(player, neighbour);
-                                }
-                            }
+//                    // play game
+//                    switch(EWT){
+//                        case"1"->{
+//                            double random_double = ThreadLocalRandom.current().nextDouble();
+//                            if(edge_weight > random_double){
+//                                switch (game){
+//                                    case"UG","DG"->{
+//                                        UG(gross_prize_UG, player, neighbour);
+//                                    }
+//                                    case"PD"->{
+//                                        PD(player, neighbour);
+//                                    }
+//                                }
+//                            } else{
+//                                int neighbour_ID = neighbour.getID();
+//                                updateStatsUG(player, 0, neighbour_ID, true);
+//                                updateStatsUG(neighbour, 0, ID, false);
+//                            }
+//                        }
+//                        case"2"->{
+//                            switch(game){
+//                                case"UG","DG"->{
+//                                    UG(neighbour_edge_weights[j] * gross_prize_UG, player, neighbour);
+//                                }
+//                                case"PD"->{
+//                                    PD(player, neighbour);
+//                                }
+//                            }
+//                        }
+//                    }
+
+
+                    boolean interact = true; // by default, interaction occurs.
+
+                    if(EWT.equals("1")){
+                        double random_double = ThreadLocalRandom.current().nextDouble();
+                        if(neighbour_edge_weight <= random_double){
+                            interact = false;
                         }
                     }
+
+                    if(interact){
+                        if(game.equals("UG") || game.equals("DG")){
+                            UG(player, neighbour, neighbour_edge_weight);
+                        } else if(game.equals("PD")){
+                            PD(player, neighbour, neighbour_edge_weight);
+                        }
+                    }
+
+
+
+
                     break;
                 }
             }
@@ -584,15 +607,23 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void UG(double net_prize, Player proposer, Player responder){
+//    public void UG(double net_prize, Player proposer, Player responder){
+    public void UG(Player proposer, Player responder, double responder_edge_weight){
         double proposer_p = proposer.getP();
         double responder_q = responder.getQ();
         int proposer_ID = proposer.getID();
         int responder_ID = responder.getID();
 
         if(proposer_p >= responder_q){ // accept
-            double proposer_payoff = net_prize - (net_prize * proposer_p);
-            double responder_payoff = net_prize * proposer_p;
+            double proposer_payoff = prize - (prize * proposer_p);
+            double responder_payoff = prize * proposer_p;
+
+            // apply EWT 2 if applicable
+            if(EWT.equals("2")){
+                proposer_payoff *= responder_edge_weight;
+                responder_payoff *= responder_edge_weight;
+            }
+
             updateStatsUG(proposer, proposer_payoff, responder_ID, true);
             updateStatsUG(responder, responder_payoff, proposer.getID(), false);
         } else { // reject
@@ -644,42 +675,67 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void PD(Player player, Player partner){
+//    public void PD(Player player, Player partner){
+    public void PD(Player player, Player partner, double partner_edge_weight){
         String strategy_PD = player.getStrategyPD();
         String partner_strategy_PD = partner.getStrategyPD();
-        double score = player.getScore();
-        double partner_score = partner.getScore();
+
+//        double score = player.getScore();
+//        double partner_score = partner.getScore();
+
+        double player_payoff = 0;
+        double partner_payoff = 0;
 
         if(strategy_PD.equals("C") && partner_strategy_PD.equals("C")){
 //            score += R;
 //            partner_score += R;
-            updateStatsPD(player, R);
-            updateStatsPD(partner, R);
+//            updateStatsPD(player, R);
+//            updateStatsPD(partner, R);
+            player_payoff = R;
+            partner_payoff = R;
         } else if(strategy_PD.equals("C") && partner_strategy_PD.equals("D")){
 //            score += S;
 //            partner_score += T;
-            updateStatsPD(player, S);
-            updateStatsPD(partner, T);
+//            updateStatsPD(player, S);
+//            updateStatsPD(partner, T);
+            player_payoff = S;
+            partner_payoff = T;
         }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("C")){
 //            score += T;
 //            partner_score += S;
-            updateStatsPD(player, T);
-            updateStatsPD(partner, S);
+//            updateStatsPD(player, T);
+//            updateStatsPD(partner, S);
+            player_payoff = T;
+            partner_payoff = S;
         }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("D")){
 //            score += P;
 //            partner_score += P;
-            updateStatsPD(player, P);
-            updateStatsPD(partner, P);
+//            updateStatsPD(player, P);
+//            updateStatsPD(partner, P);
+            player_payoff = P;
+            partner_payoff = P;
         }else if(strategy_PD.equals("A") || partner_strategy_PD.equals("A")){
 //            score += l;
 //            partner_score += l;
-            updateStatsPD(player, l);
-            updateStatsPD(partner, l);
+//            updateStatsPD(player, l);
+//            updateStatsPD(partner, l);
+            player_payoff = l;
+            partner_payoff = l;
         }
+
 //        NI++;
 //        partner.NI++;
 //        avg_score = score / NI;
 //        partner.avg_score = partner_score / partner.NI;
+
+        // apply EWT 2 if applicable
+        if(EWT.equals("2")){
+            player_payoff *= partner_edge_weight;
+            partner_payoff *= partner_edge_weight;
+        }
+
+        updateStatsPD(player, player_payoff);
+        updateStatsPD(partner, partner_payoff);
     }
 
 
@@ -694,6 +750,7 @@ public class Env extends Thread{ // simulated game environment
         player.setNI(NI + 1);
 
         // insert segment here for NSI per neighbour counting if you get EWT 2 working with PD.
+        // 25/9/24: ??? idk what above comment means.
 
         score = player.getScore();
         NI = player.getNI();
