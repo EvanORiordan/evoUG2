@@ -1,5 +1,4 @@
 import java.io.*;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -14,11 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * 02/10/2023<br>
  * School of Computer Science<br>
  * University of Galway<br>
- *
- *
- * DG Algorithm.<br>
  */
-public class Alg1 extends Thread{
+public class Env extends Thread{ // simulated game environment
 
     // fields related to the game environment
     static String game; // what game is being played
@@ -339,7 +335,7 @@ public class Alg1 extends Thread{
 
         // run the experiment x times
         for(run_num = 1; run_num <= runs; run_num++){
-            Alg1 run = new Alg1(); // represents one run of the experiment
+            Env run = new Env(); // represents one run of the experiment
             run.start(); // start the run
             experiment_mean_avg_p += run.avg_p; // tally the mean avg p of the experiment
             experiment_avg_p_values[run_num] = run.avg_p;
@@ -457,7 +453,7 @@ public class Alg1 extends Thread{
                             case "RW" -> parent = RWSelection(child);
                             case "elitist" -> parent = bestSelection(child);
                             case "rand" -> parent = randSelection(child);
-                            case "crossover" -> crossover(child);
+                            case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
                             default -> {
                                 System.out.println("[ERROR] Invalid selection function configured. Exiting...");
                                 Runtime.getRuntime().exit(0);
