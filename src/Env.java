@@ -42,9 +42,10 @@ public class Env extends Thread{ // simulated game environment
 //    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static String ASD; // average score denominator: determines how average score is calculated
+    double avg_q; // average acceptance threshold across population
 
 
-    // fields related to experiment series
+    // fields related to experiment statistics
     static boolean experiment_series; //indicates whether to run experiment or experiment series where a parameter is varied
     static String varying; //indicates which parameter will be varied in an experiment series
     static double variation; //indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
@@ -52,11 +53,10 @@ public class Env extends Thread{ // simulated game environment
     static int experiment_num = 1; //tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
-
-
-    // fields related to individual experiments
     static double experiment_mean_avg_p;
+    static double experiment_mean_avg_q;
     static double experiment_SD_avg_p;
+    static double experiment_SD_avg_q;
 
 
     // fields related to I/O operations
@@ -334,17 +334,41 @@ public class Env extends Thread{ // simulated game environment
         double[] experiment_avg_p_values = new double[runs + 1];
         experiment_SD_avg_p = 0;
 
-        // run the experiment x times
-        for(run_num = 1; run_num <= runs; run_num++){
-            Env run = new Env(); // represents one run of the experiment
-            run.start(); // start the run
-            experiment_mean_avg_p += run.avg_p; // tally the mean avg p of the experiment
-            experiment_avg_p_values[run_num] = run.avg_p;
 
-            // display the avg p of the pop at the end of the run
-            System.out.println("avg p of run "+run_num
-                    +" of experiment "+experiment_num
-                    +": "+DF4.format(run.avg_p));
+        experiment_mean_avg_q = 0;
+        double[] experiment_avg_q_values = new double[runs + 1];
+        experiment_SD_avg_q = 0;
+
+
+
+        // run experiment x times
+        for(run_num = 1; run_num <= runs; run_num++){
+            Env run = new Env(); // represents one run of experiment
+            run.start();
+
+            // collect data
+            experiment_mean_avg_p += run.avg_p;
+            experiment_avg_p_values[run_num] = run.avg_p;
+            experiment_mean_avg_q += run.avg_q;
+            experiment_avg_q_values[run_num] = run.avg_q;
+
+            // display run results (varies depending on game)
+            String output = "experiment "+experiment_num+" run "+run_num+": ";
+            if(game.equals("UG") || game.equals("DG")){
+//                output += "avg p of run "+run_num
+//                        +" of experiment "+experiment_num
+//                        +": "+DF4.format(run.avg_p);
+                output += "avg p=" + DF4.format(run.avg_p);
+                if(game.equals("UG")){
+                    output += "avg q="+DF4.format(run.avg_q);
+                }
+            }
+            // else if game is PD, then print number of C, D and A players...
+            System.out.println(output);
+
+//            System.out.println("avg p of run "+run_num
+//                    +" of experiment "+experiment_num
+//                    +": "+DF4.format(run.avg_p));
         }
 
         if(!experiment_series){
@@ -354,15 +378,29 @@ public class Env extends Thread{ // simulated game environment
 
         // calculate stats of experiment
         experiment_mean_avg_p /= runs;
+        experiment_mean_avg_q /= runs;
         for(int i=0;i<runs;i++){
-            experiment_SD_avg_p +=
-                    Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+            experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+            experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+
         }
         experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
+        experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
 
-        // display stats to user in console
-        System.out.println("mean avg p="+DF4.format(experiment_mean_avg_p)
-                +" avg p SD="+DF4.format(experiment_SD_avg_p));
+        // display experiment results (varies depending on game)
+        String output = "";
+        if(game.equals("UG") || game.equals("UG")){
+            output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
+                    + " avg p SD=" + DF4.format(experiment_SD_avg_p);
+            if(game.equals("UG")){
+                output += "mean avg q=" + DF4.format(experiment_mean_avg_q)
+                        + " avg q SD=" + DF4.format(experiment_SD_avg_q);
+            }
+        }
+        System.out.println(output);
+
+//        System.out.println("mean avg p="+DF4.format(experiment_mean_avg_p)
+//                +" avg p SD="+DF4.format(experiment_SD_avg_p));
 
         writeSeriesData();
 
@@ -545,6 +583,7 @@ public class Env extends Thread{ // simulated game environment
                     double[] neighbour_edge_weights = neighbour.getEdgeWeights();
                     double neighbour_edge_weight = neighbour_edge_weights[j];
 
+
 //                    // play game
 //                    switch(EWT){
 //                        case"1"->{
@@ -577,8 +616,49 @@ public class Env extends Thread{ // simulated game environment
 //                    }
 
 
-                    boolean interact = true; // by default, interaction occurs.
+//                    boolean interact = true; // by default, interaction occurs.
+//                    if(EWT.equals("1")){
+//                        double random_double = ThreadLocalRandom.current().nextDouble();
+//                        if(neighbour_edge_weight <= random_double){
+//                            interact = false;
+//                        }
+//                    }
+//
+//                    if(interact){
+//                        if(game.equals("UG") || game.equals("DG")){
+//                            UG(player, neighbour, neighbour_edge_weight);
+//                        } else if(game.equals("PD")){
+//                            PD(player, neighbour, neighbour_edge_weight);
+//                        }
+//                    }
 
+
+//                    if(EWT.equals("1")){
+//                        double random_double = ThreadLocalRandom.current().nextDouble();
+//                        if(neighbour_edge_weight <= random_double){
+//                            if(game.equals("UG") || game.equals("DG")){
+//                                UG(player, neighbour, neighbour_edge_weight);
+//                            } else if(game.equals("PD")){
+//                                PD(player, neighbour, neighbour_edge_weight);
+//                            }
+//                        }
+//                    }
+
+
+//                    if(EWT.equals("1")){
+//                        double random_double = ThreadLocalRandom.current().nextDouble();
+//                        if(neighbour_edge_weight <= random_double){
+//                            switch(game){
+//                                case"UG","DG"->UG(player, neighbour, neighbour_edge_weight);
+//                                case"PD"->PD(player, neighbour, neighbour_edge_weight);
+//                            }
+//                        }
+//                    }
+
+
+
+
+                    boolean interact = true; // by default, interaction occurs.
                     if(EWT.equals("1")){
                         double random_double = ThreadLocalRandom.current().nextDouble();
                         if(neighbour_edge_weight <= random_double){
@@ -587,14 +667,11 @@ public class Env extends Thread{ // simulated game environment
                     }
 
                     if(interact){
-                        if(game.equals("UG") || game.equals("DG")){
-                            UG(player, neighbour, neighbour_edge_weight);
-                        } else if(game.equals("PD")){
-                            PD(player, neighbour, neighbour_edge_weight);
+                        switch(game){
+                            case"UG","DG"->UG(player, neighbour, neighbour_edge_weight);
+                            case"PD"->PD(player, neighbour, neighbour_edge_weight);
                         }
                     }
-
-
 
 
                     break;
