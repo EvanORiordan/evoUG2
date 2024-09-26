@@ -43,6 +43,7 @@ public class Env extends Thread{ // simulated game environment
     static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static String ASD; // average score denominator: determines how average score is calculated
     double avg_q; // average acceptance threshold across population
+    double q_SD; // the standard deviation of q across the pop
 
 
     // fields related to experiment statistics
@@ -79,6 +80,7 @@ public class Env extends Thread{ // simulated game environment
     static int datarate; // factors into which gens have their data recorded. if 0, no gens are recorded.
     static String[] settings;
     static int CI; // config index: facilitates construction of table of configs
+    static String q_data_filename;
 
 
     // fields related to edge weight learning (EWL)
@@ -288,35 +290,42 @@ public class Env extends Thread{ // simulated game environment
                     +"\n===================");
         }
 
-        // display a summary of the series in the console
-        String summary = "";
-        try{
-            br = new BufferedReader(new FileReader(series_data_filename));
-            String line;
-            br.readLine(); // purposely ignore the row of headings
-            int i=0; // indicates which index of the row we are currently on
-            while((line=br.readLine()) != null){
-                String[] row_contents = line.split(",");
-                summary += "experiment="+row_contents[0];
-                summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
-                summary += "\tavg p SD="+DF4.format(Double.parseDouble(row_contents[2]));
-                summary += "\t";
-                summary += varying+"=";
-                summary += DF4.format(various_amounts.get(i));
-                i++;
-                summary += "\n";
-            }
-            br.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-        System.out.println("\nInitial settings: ");
-        printInitialSettings(); // print initial experimentation settings for comparison
-        System.out.println();
-        System.out.println(summary);
+
+        // 26/9/24: this segment is nice but is redundant...
+//        // display a summary of the series in the console
+//        String summary = "";
+//        try{
+//            br = new BufferedReader(new FileReader(series_data_filename));
+//            String line;
+//            br.readLine(); // purposely ignore the row of headings
+//            int i=0; // indicates which index of the row we are currently on
+//            while((line=br.readLine()) != null){
+//                String[] row_contents = line.split(",");
+//                summary += "experiment="+row_contents[0];
+//                if(game.equals("UG") || game.equals("DG")){
+//                    summary += "\tmean avg p="+DF4.format(Double.parseDouble(row_contents[1]));
+//                    summary += "\tavg p SD="+DF4.format(Double.parseDouble(row_contents[2]));
+//                    if(game.equals("UG")){
+//                        summary += "\tmean avg q="+DF4.format(Double.parseDouble(row_contents[1]));
+//                        summary += "\tavg q SD="+DF4.format(Double.parseDouble(row_contents[2]));
+//                    }
+//                }
+//
+//                summary += "\t";
+//                summary += varying+"=";
+//                summary += DF4.format(various_amounts.get(i));
+//                i++;
+//                summary += "\n";
+//            }
+//            br.close();
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+//        System.out.println("\nInitial settings: ");
+//        printInitialSettings(); // print initial experimentation settings for comparison
+//        System.out.println();
+//        System.out.println(summary);
     }
-
-
 
 
 
@@ -353,14 +362,14 @@ public class Env extends Thread{ // simulated game environment
             experiment_avg_q_values[run_num] = run.avg_q;
 
             // display run results (varies depending on game)
-            String output = "experiment "+experiment_num+" run "+run_num+": ";
+            String output = "experiment "+experiment_num+", run "+run_num+": ";
             if(game.equals("UG") || game.equals("DG")){
 //                output += "avg p of run "+run_num
 //                        +" of experiment "+experiment_num
 //                        +": "+DF4.format(run.avg_p);
                 output += "avg p=" + DF4.format(run.avg_p);
                 if(game.equals("UG")){
-                    output += "avg q="+DF4.format(run.avg_q);
+                    output += " avg q="+DF4.format(run.avg_q);
                 }
             }
             // else if game is PD, then print number of C, D and A players...
@@ -393,7 +402,7 @@ public class Env extends Thread{ // simulated game environment
             output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
                     + " avg p SD=" + DF4.format(experiment_SD_avg_p);
             if(game.equals("UG")){
-                output += "mean avg q=" + DF4.format(experiment_mean_avg_q)
+                output += " mean avg q=" + DF4.format(experiment_mean_avg_q)
                         + " avg q SD=" + DF4.format(experiment_SD_avg_q);
             }
         }
@@ -537,7 +546,15 @@ public class Env extends Thread{ // simulated game environment
                         && experiment_num == 1 // if first experiment
                         && iter % (ER * datarate) == 0 // record gen's data every x gens, where x=datarate
                 ){
-                    System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+//                    System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+                    String output = "";
+                    if(game.equals("UG") || game.equals("DG")){
+                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
+                        if(game.equals("UG")){
+                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
+                        }
+                    }
+                    System.out.println(output);
                     writeAvgpData();
                     writepData();
                     writeEWData();
@@ -845,17 +862,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // generic update stats method for all games?
-//    public void updateStats(Player player, double payoff){
-//
-//    }
-
-
-
-
-
-
-
     public void initialiseEdgeWeights(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         player.setEdgeWeights(new double[neighbourhood.size()]);
@@ -864,12 +870,6 @@ public class Env extends Thread{ // simulated game environment
             edge_weights[i] = 1.0;
         }
     }
-
-
-
-
-
-
 
 
 
@@ -1662,11 +1662,21 @@ public class Env extends Thread{ // simulated game environment
      */
 //    public void createFolders(){
     public static void createFolders(){
-        p_data_filename = experiment_results_folder_path + "\\p_data";
+        if(game.equals("UG") || game.equals("DG")){
+            p_data_filename = experiment_results_folder_path + "\\p_data";
+            if(game.equals("UG")){
+                q_data_filename = experiment_results_folder_path + "\\q_data";
+            }
+        }
         EW_data_filename = experiment_results_folder_path + "\\EW_data";
         NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{ // create folders
-            Files.createDirectories(Paths.get(p_data_filename));
+            if(game.equals("UG") || game.equals("DG")){
+                Files.createDirectories(Paths.get(p_data_filename));
+                if(game.equals("UG")){
+                    Files.createDirectories(Paths.get(q_data_filename));
+                }
+            }
             Files.createDirectories(Paths.get(EW_data_filename));
             Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
@@ -1896,6 +1906,24 @@ public class Env extends Thread{ // simulated game environment
             }
         }
         p_SD = Math.pow(p_SD / N, 0.5);
+
+        // calculate average q
+        avg_q = 0;
+        for(ArrayList<Player> row: grid){
+            for(Player player: row){
+                avg_q+=player.getQ();
+            }
+        }
+        avg_q /= N;
+
+        // calculate p SD
+        q_SD = 0;
+        for(ArrayList<Player> row: grid){
+            for(Player player: row){
+                q_SD += Math.pow(player.getQ() - avg_q, 2);
+            }
+        }
+        q_SD = Math.pow(q_SD / N, 0.5);
     }
 
 
@@ -1948,8 +1976,15 @@ public class Env extends Thread{ // simulated game environment
             if(experiment_num == 1){
                 fw = new FileWriter(series_data_filename, false);
                 s+="exp num";
-                s+=",mean avg p";
-                s+=",avg p SD";
+                s+=",game";
+                if(game.equals("UG") || game.equals("DG")){
+                    s+=",mean avg p";
+                    s+=",avg p SD";
+                    if(game.equals("UG")){
+                        s+=",mean avg q";
+                        s+=",avg q SD";
+                    }
+                }
                 s+=",runs";
                 s+=",iters";
                 s+=",neigh";
@@ -1984,8 +2019,15 @@ public class Env extends Thread{ // simulated game environment
 
             // write row data
             s+="\n" + experiment_num;
-            s+="," + DF4.format(experiment_mean_avg_p);
-            s+="," + DF4.format(experiment_SD_avg_p);
+            s+="," + game;
+            if(game.equals("UG") || game.equals("DG")){
+                s+="," + DF4.format(experiment_mean_avg_p);
+                s+="," + DF4.format(experiment_SD_avg_p);
+                if(game.equals("UG")){
+                    s+="," + DF4.format(experiment_mean_avg_q);
+                    s+="," + DF4.format(experiment_SD_avg_q);
+                }
+            }
             s+="," + runs;
             s+="," + iters;
             s+="," + neigh;
@@ -2063,6 +2105,31 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+    public void writeAvgqData(){
+        try{
+            String filename = experiment_results_folder_path + "\\" + "avg_q_data.csv";
+            String output = "";
+            if(gen == 0){
+                fw = new FileWriter(filename, false);
+                output += "gen";
+                output += ",avg q";
+                output += ",q SD";
+                output += "\n";
+            }
+            fw = new FileWriter(filename, true);
+            output += gen;
+            output += ","+DF4.format(avg_q);
+            output += ","+DF4.format(q_SD);
+            output += "\n";
+            fw.append(output);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
     /**
      * Writes a grid of strategies, i.e. the p values, of the pop to a given .csv file.
      */
@@ -2081,6 +2148,29 @@ public class Env extends Thread{ // simulated game environment
                 s += "\n";
             }
             fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public void writeqData(){
+        try{
+            String filename = q_data_filename +"\\gen" + gen + ".csv";
+            fw = new FileWriter(filename, false);
+            String output = "";
+            for(int y = rows - 1; y >= 0; y--){
+                for(int x = 0; x < columns; x++){
+                    output += DF4.format(grid.get(y).get(x).getQ());
+                    if(x + 1 < columns){
+                        output += ",";
+                    }
+                }
+                output += "\n";
+            }
+            fw.append(output);
             fw.close();
         } catch(IOException e){
             e.printStackTrace();

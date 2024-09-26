@@ -2,4 +2,4 @@ game,runs,iters,rows,EWT,EWLC,EWLF,ER,ROC,alpha,beta,leeway1,leeway2,leeway3,lee
 DG,1,10000,10,1,,,100,,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,example of minimum settings
 UG,100,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,UG
 DG,100,10000,10,1,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,DG
-DG,100,10000,10,2,p,ROC,5,0.2,,,,,,,,,,,,,VN 1,RW,,NI,copy,,,,,,,,,DG
+UG,1,10000,10,1,p,ROC,1,0.2,,,,,,,,,,ER,1,8,VN 1,RW,,NI,copy,,,,,,,,,test
