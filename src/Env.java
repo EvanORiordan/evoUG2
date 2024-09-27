@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -439,7 +440,7 @@ public class Env extends Thread{ // simulated game environment
                 Player player = grid.get(i).get(j);
                 String[] neigh_params = neigh.split(" ");
                 switch(neigh_params[0]){
-                    case"VN","M"->{
+                    case"VN","Moore","dia"->{
                         String type = neigh_params[0];
                         int distance = Integer.parseInt(neigh_params[1]);
                         assignAdjacentNeighbours(player, i, j, type, distance);
@@ -450,6 +451,7 @@ public class Env extends Thread{ // simulated game environment
                         assignRandomNeighbours(player, type, size);
                     }
                     case"all"->assignAllNeighbours(player);
+                    case"Margolus"->assignMargolusNeighbourhood(player, i, j);
                     default -> {
                         System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                         Runtime.getRuntime().exit(0);
@@ -470,6 +472,21 @@ public class Env extends Thread{ // simulated game environment
 
         // players begin playing the game
         while(iter <= iters) { // algorithm stops once this condition is reached
+
+            // apply margolus neighbourhood if applicable.
+            // current implementation doesnt work well with edge weights.
+//            if(neigh.split(" ")[0].equals("Margolus")){
+//                for(int i=0;i<rows;i++) {
+//                    for (int j = 0; j < columns; j++) {
+//                        Player player = grid.get(i).get(j);
+//                        assignMargolusNeighbourhood(player, i, j);
+//                        initialiseEdgeWeights(player);
+//                        assignNeighbourIDs(player);
+//                        resetNSIPerNeighbour(player);
+//                    }
+//                }
+//            }
+
 
             // injection
             if(iter == injiter){
@@ -1396,7 +1413,7 @@ public class Env extends Thread{ // simulated game environment
                         " %-9s |" +//varying
                         " %-9s |" +//variation
                         " %-6s |" +//numexp
-                        " %-5s |" +//neigh
+                        " %-8s |" +//neigh
                         " %-8s |" +//sel
                         " %-8s |" +//selnoise
                         " %-3s |" +//ASD
@@ -1474,7 +1491,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-9s ", settings[CI++]); //varying
             System.out.printf("| %-9s ", settings[CI++]); //variation
             System.out.printf("| %-6s ", settings[CI++]); //numexp
-            System.out.printf("| %-5s ", settings[CI++]); //neigh
+            System.out.printf("| %-8s ", settings[CI++]); //neigh
             System.out.printf("| %-8s ", settings[CI++]); //sel
             System.out.printf("| %-8s ", settings[CI++]); //selnoise
             System.out.printf("| %-3s ", settings[CI++]); //ASD
@@ -1788,23 +1805,47 @@ public class Env extends Thread{ // simulated game environment
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
 
         for(int i = 1; i <= d; i++){
-            int x_plus = (((x + i) % rows) + rows) % rows;
-            int x_minus = (((x - i) % rows) + rows) % rows;
-            int y_plus = (((y + i) % columns) + columns) % columns;
-            int y_minus = (((y - i) % columns) + columns) % columns;
+//            int x_plus = (((x + i) % rows) + rows) % rows;
+//            int x_minus = (((x - i) % rows) + rows) % rows;
+//            int y_plus = (((y + i) % columns) + columns) % columns;
+//            int y_minus = (((y - i) % columns) + columns) % columns;
+            int x_plus = adjustPosition(x, i, rows);
+            int x_minus = adjustPosition(x, -i, rows);
+            int y_plus = adjustPosition(y, i, columns);
+            int y_minus = adjustPosition(y, -i, columns);
+
 
             // add VN neighbours
-            neighbourhood.add(grid.get(y).get(x_plus));         // (x + d,  y)
-            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - d,  y)
-            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + d)
-            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - d)
+            neighbourhood.add(grid.get(y).get(x_plus));         // (x + i,  y)
+            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - i,  y)
+            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + i)
+            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - i)
+
+            if(type.equals("dia")){
+                if(i > 1){
+//                    int x_plus_minus = (((x_plus - 1) % rows) + rows) % rows;
+//                    int x_minus_plus = (((x_minus + 1) % rows) + rows) % rows;
+//                    int y_plus_minus = (((y_plus - 1) % rows) + rows) % rows;
+//                    int y_minus_plus = (((y_minus + 1) % rows) + rows) % rows;
+                    int x_plus_minus = adjustPosition(x_plus, -1, rows);
+                    int x_minus_plus = adjustPosition(x_minus, 1, rows);
+                    int y_plus_minus = adjustPosition(y_plus, -1, rows);
+                    int y_minus_plus = adjustPosition(y_minus, 1, rows);
+
+
+                    neighbourhood.add(grid.get(y_plus_minus).get(x_plus_minus));
+                    neighbourhood.add(grid.get(y_minus_plus).get(x_plus_minus));
+                    neighbourhood.add(grid.get(y_minus_plus).get(x_minus_plus));
+                    neighbourhood.add(grid.get(y_plus_minus).get(x_minus_plus));
+                }
+            }
 
             // add M neighbours
             if(type.equals("M")){
-                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + d)
-                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - d)
-                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - d)
-                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + d)
+                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + i)
+                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - i)
+                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - i)
+                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + i)
             }
         }
     }
@@ -2397,5 +2438,80 @@ public class Env extends Thread{ // simulated game environment
             x=Integer.parseInt(settings[CI++]);
         }
         return x;
+    }
+
+
+    /**
+     * Assigns Margolus neighbourhood to players.<br>
+     * Neighbourhood 1: (x-1,y), (x,y+1), (x-1,y+1).<br>
+     * Neighbourhood 2: (x+1,y), (x,y-1), (x-1,y-1).
+     * @param player
+     * @param y
+     * @param x
+     */
+    public void assignMargolusNeighbourhood(Player player, int y, int x){
+        // setup #1
+//        ArrayList <Player> neighbourhood = new ArrayList<>();
+//
+//        int x_plus = adjustPosition(x, 1, rows);
+//        int x_minus = adjustPosition(x, -1, rows);
+//        int y_plus = adjustPosition(y, 1, columns);
+//        int y_minus = adjustPosition(y, -1, columns);
+//
+//        if(gen % 2 == 0){
+//            neighbourhood.add(grid.get(y).get(x_minus));        // (x - 1,  y)
+//            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + 1)
+//            neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - 1,  y + 1)
+//        }else{
+//            neighbourhood.add(grid.get(y).get(x_plus));         // (x + 1,  y)
+//            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - 1)
+//            neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x - 1,  y - 1)
+//        }
+//
+//        player.setNeighbourhood(neighbourhood);
+
+
+        // setup #2 (note that rest of program does not know when to use margolus neighbourhoods instead of regular neighbourhood)
+        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+        ArrayList<Player> mar_neigh1 = player.getMargolus_neighbourhood1();
+        ArrayList<Player> mar_neigh2 = player.getMargolus_neighbourhood2();
+
+        int x_plus = adjustPosition(x, 1, rows);
+        int x_minus = adjustPosition(x, -1, rows);
+        int y_plus = adjustPosition(y, 1, columns);
+        int y_minus = adjustPosition(y, -1, columns);
+
+        Player a;
+        a=grid.get(y).get(x_minus);
+        neighbourhood.add(a);
+        mar_neigh1.add(a);
+        a=grid.get(y_plus).get(x);
+        neighbourhood.add(a);
+        mar_neigh1.add(a);
+        a=grid.get(y_plus).get(x_minus);
+        neighbourhood.add(a);
+        mar_neigh1.add(a);
+        a=grid.get(y).get(x_plus);
+        neighbourhood.add(a);
+        mar_neigh2.add(a);
+        a=grid.get(y_minus).get(x);
+        neighbourhood.add(a);
+        mar_neigh2.add(a);
+        a=grid.get(y_minus).get(x_plus);
+        neighbourhood.add(a);
+        mar_neigh2.add(a);
+    }
+
+
+
+    /**
+     * Adjust position in square space.
+     * @param position original position before adjustment
+     * @param adjustment
+     * @return
+     */
+    public int adjustPosition(int position, int adjustment, int max){
+        int new_position = (((position + adjustment) % max) + max) % max;
+        return new_position;
     }
 }

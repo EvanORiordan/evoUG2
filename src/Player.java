@@ -39,6 +39,10 @@ public class Player {
     private String[] strategies_PD = {"C","D","A","TFT"};
     private String strategy_PD = "";
     private double local_leeway; // inherent leeway of the player
+    private ArrayList<Player> margolus_neighbourhood1 = new ArrayList<>();
+    private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
+    private double[] margolus_edge_weights1;
+    private double[] margolus_edge_weights2;
 
 
 
@@ -172,6 +176,7 @@ public class Player {
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }
+    public void setNeighbourhood(ArrayList <Player> x){neighbourhood=x;}
     public void setNeighbourIDs(int[] arr){
         neighbour_IDs=arr;
     }
@@ -208,5 +213,9 @@ public class Player {
     public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
     public void setMeanNeighbourEdgeWeight(double d){mean_neighbour_edge_weight=d;}
     public String getStrategyPD(){return strategy_PD;}
+    public ArrayList<Player>getMargolus_neighbourhood1(){return margolus_neighbourhood1;}
+    public ArrayList<Player>getMargolus_neighbourhood2(){return margolus_neighbourhood2;}
+    public void setMargolus_neighbourhood1(ArrayList<Player> x){margolus_neighbourhood1=x;}
+    public void setMargolus_neighbourhood2(ArrayList<Player> x){margolus_neighbourhood2=x;}
 
 }
