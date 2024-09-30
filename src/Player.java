@@ -24,7 +24,8 @@ public class Player {
     private double old_p; // p value held at beginning of gen to be inherited by children
     private double q; // acceptance threshold value residing within [0,1]
     private double old_q; // q value held at beginning of gen to be inherited by children
-    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
+//    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
+    private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private int[] neighbour_IDs; // array of the IDs of the player's neighbour
     private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
     private int NI = 0;  // num interactions (NI) player had
@@ -43,6 +44,8 @@ public class Player {
     private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
     private double[] margolus_edge_weights1;
     private double[] margolus_edge_weights2;
+    private double x; // x position in space
+    private double y; // y position in space
 
 
 
@@ -55,20 +58,39 @@ public class Player {
      * @param q is the acceptance threshold value of the player
      * @param leeway2 is a factor used to calculate the player's local leeway
      */
-    public Player(double p, double q, double leeway2){
-        ID=count++; // assign this player's ID
-        setP(p); // assign p value
-        setQ(q); // assign q value
+//    public Player(double p, double q, double leeway2){
+//        ID=count++; // assign this player's ID
+//        setP(p); // assign p value
+//        setQ(q); // assign q value
+//        old_p=p;
+//        old_q=q;
+//
+//        // assign local_leeway value
+//        if(leeway2 == 0){
+//            local_leeway = 0;
+//        } else {
+//            local_leeway = ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
+//        }
+//    }
+
+
+
+    public Player(double x, double y, double p, double q, double leeway2){
+        ID=count++;
+        this.x=x;
+        this.y=y;
+        setP(p);
+        setQ(q);
         old_p=p;
         old_q=q;
-
-        // assign local_leeway value
-        if(leeway2 == 0){
-            local_leeway = 0;
-        } else {
-            local_leeway = ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
-        }
+        if(leeway2==0)
+            local_leeway=0;
+        else
+            local_leeway=ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
     }
+
+
+
 
 
 
@@ -108,6 +130,7 @@ public class Player {
         // document key player attributes
         String player_desc = "";
         player_desc += "ID="+ID;
+        player_desc += " pos=("+x+","+y+")";
         switch(game){
             case"UG","DG"->{
                 player_desc += " p=" + DF4.format(p) // p
@@ -217,5 +240,9 @@ public class Player {
     public ArrayList<Player>getMargolus_neighbourhood2(){return margolus_neighbourhood2;}
     public void setMargolus_neighbourhood1(ArrayList<Player> x){margolus_neighbourhood1=x;}
     public void setMargolus_neighbourhood2(ArrayList<Player> x){margolus_neighbourhood2=x;}
+    public double getY(){return y;}
+    public void setY(double d){y=d;}
+    public double getX(){return x;}
+    public void setX(double d){x=d;}
 
 }

@@ -19,13 +19,15 @@ public class Env extends Thread{ // simulated game environment
 
     // fields related to the game environment
     static String game; // what game is being played
-    static int rows; // how many rows in the square grid
-    static int columns; // how many rows in the square grid
+    static int length; // length of space; in 2D grid, len = num rows
+    static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
     static int N; // population size
     static int iters; // how many iterations occur per experiment run
     static int runs; // how many times this experiment will be run.
     static String neigh; // indicates the type of neighbourhood being enforced
-    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
+//    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
+//    Player[][] pop; // array of players; assumes 2D space
+    Player[]pop; // array of players; assumes 2D space
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates current generation. marks the progression of evo.
@@ -45,6 +47,7 @@ public class Env extends Thread{ // simulated game environment
     static String ASD; // average score denominator: determines how average score is calculated
     double avg_q; // average acceptance threshold across population
     double q_SD; // the standard deviation of q across the pop
+    static String space; // the space the population exists within
 
 
     // fields related to experiment statistics
@@ -177,7 +180,8 @@ public class Env extends Thread{ // simulated game environment
         switch(varying){
             case"runs"->various_amounts.add((double)runs);
             case"iters"->various_amounts.add((double)iters);
-            case"rows"->various_amounts.add((double)rows);
+            case"length"->various_amounts.add((double)length);
+            case"width"->various_amounts.add((double)width);
             case"ER"->various_amounts.add((double)ER);
             case"ROC"->various_amounts.add(ROC);
             case"leeway1"->various_amounts.add(leeway1);
@@ -214,11 +218,15 @@ public class Env extends Thread{ // simulated game environment
                     iters+=(int)variation;
                     various_amounts.add((double)iters);
                 }
-                case "rows"->{
-                    rows+=(int)variation;
-                    columns+=(int)variation;
-                    N += (int) (variation * variation);
-                    various_amounts.add((double)rows);
+                case "length"->{
+                    length+=(int)variation;
+                    N = length * width;
+                    various_amounts.add((double)length);
+                }
+                case"width"->{
+                    width+=(int)variation;
+                    N = length * width;
+                    various_amounts.add((double)width);
                 }
                 case "ER"->{
                     ER+=(int)variation;
@@ -365,20 +373,14 @@ public class Env extends Thread{ // simulated game environment
             // display run results (varies depending on game)
             String output = "experiment "+experiment_num+", run "+run_num+": ";
             if(game.equals("UG") || game.equals("DG")){
-//                output += "avg p of run "+run_num
-//                        +" of experiment "+experiment_num
-//                        +": "+DF4.format(run.avg_p);
                 output += "avg p=" + DF4.format(run.avg_p);
                 if(game.equals("UG")){
                     output += " avg q="+DF4.format(run.avg_q);
                 }
             }
-            // else if game is PD, then print number of C, D and A players...
+            // MAYBE INSERT THIS: else if game is PD, then print number of C, D and A players...
             System.out.println(output);
 
-//            System.out.println("avg p of run "+run_num
-//                    +" of experiment "+experiment_num
-//                    +": "+DF4.format(run.avg_p));
         }
 
         if(!experiment_series){
@@ -409,9 +411,6 @@ public class Env extends Thread{ // simulated game environment
         }
         System.out.println(output);
 
-//        System.out.println("mean avg p="+DF4.format(experiment_mean_avg_p)
-//                +" avg p SD="+DF4.format(experiment_SD_avg_p));
-
         writeSeriesData();
 
         experiment_num++; // move on to the next experiment in the series
@@ -423,55 +422,94 @@ public class Env extends Thread{ // simulated game environment
      */
     @Override
     public void start(){
-        // no need to remove these comments since they act as a reminder as to things we might work on in later research.
-//        if(use_saved_pop){ // user wants to use saved pop, read pop from .csv file
-//            initSavedDGPop();
-//        } else { // user wants to randomly generate a population
-//            initRandomPop();
-//        }
-
-
         initRandomPop();
 
-
-        // initialise neighbourhoods
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<columns;j++) {
-                Player player = grid.get(i).get(j);
-                String[] neigh_params = neigh.split(" ");
-                switch(neigh_params[0]){
-                    case"VN","Moore","dia"->{
-                        String type = neigh_params[0];
-                        int distance = Integer.parseInt(neigh_params[1]);
-                        assignAdjacentNeighbours(player, i, j, type, distance);
-                    }
-                    case"random"->{
-                        String type = neigh_params[1];
-                        int size = Integer.parseInt(neigh_params[2]);
-                        assignRandomNeighbours(player, type, size);
-                    }
-                    case"all"->assignAllNeighbours(player);
-                    case"Margolus"->assignMargolusNeighbourhood(player, i, j);
-                    default -> {
-                        System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
-                        Runtime.getRuntime().exit(0);
-                    }
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            String[] neigh_params = neigh.split(" ");
+            switch(neigh_params[0]){
+                case"VN","Moore","dia"->{
+                    String type = neigh_params[0];
+                    int distance = Integer.parseInt(neigh_params[1]);
+//                    assignAdjacentNeighbours(player, i, j, type, distance);
+                    assignAdjacentNeighbours(player, type, distance);
+                }
+                case"random"->{
+                    String type = neigh_params[1];
+                    int size = Integer.parseInt(neigh_params[2]);
+                    assignRandomNeighbours(player, type, size);
+                }
+                case"all"->assignAllNeighbours(player);
+//                case"Margolus"->assignMargolusNeighbourhood(player, i, j);
+                default -> {
+                    System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
+                    Runtime.getRuntime().exit(0);
                 }
             }
         }
 
-        // initialise edge weights
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<columns;j++){
-                Player player = grid.get(i).get(j);
-                initialiseEdgeWeights(player);
-                assignNeighbourIDs(player);
-                resetNSIPerNeighbour(player);
+        // initialise neighbourhoods
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            initialiseEdgeWeights(player);
+            assignNeighbourIDs(player);
+            resetNSIPerNeighbour(player);
+        }
+
+        while(iter <= iters) { // algorithm stops once this condition is reached
+
+            // playing
+            for(int i=0;i<N;i++){
+                Player player = pop[i];
+                play(player);
+            }
+
+            // edge weight learning
+            for(int i=0;i<N;i++){
+                Player player = pop[i];
+                EWL(player);
             }
         }
 
+
+        // initialise neighbourhoods
+//        for(int i=0;i<rows;i++){
+//            for(int j=0;j<columns;j++) {
+//                Player player = grid.get(i).get(j);
+//                String[] neigh_params = neigh.split(" ");
+//                switch(neigh_params[0]){
+//                    case"VN","Moore","dia"->{
+//                        String type = neigh_params[0];
+//                        int distance = Integer.parseInt(neigh_params[1]);
+//                        assignAdjacentNeighbours(player, i, j, type, distance);
+//                    }
+//                    case"random"->{
+//                        String type = neigh_params[1];
+//                        int size = Integer.parseInt(neigh_params[2]);
+//                        assignRandomNeighbours(player, type, size);
+//                    }
+//                    case"all"->assignAllNeighbours(player);
+//                    case"Margolus"->assignMargolusNeighbourhood(player, i, j);
+//                    default -> {
+//                        System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
+//                        Runtime.getRuntime().exit(0);
+//                    }
+//                }
+//            }
+//        }
+//
+//        // initialise edge weights
+//        for(int i=0;i<rows;i++){
+//            for(int j=0;j<columns;j++){
+//                Player player = grid.get(i).get(j);
+//                initialiseEdgeWeights(player);
+//                assignNeighbourIDs(player);
+//                resetNSIPerNeighbour(player);
+//            }
+//        }
+
         // players begin playing the game
-        while(iter <= iters) { // algorithm stops once this condition is reached
+//        while(iter <= iters) { // algorithm stops once this condition is reached
 
             // apply margolus neighbourhood if applicable.
             // current implementation doesnt work well with edge weights.
@@ -489,100 +527,100 @@ public class Env extends Thread{ // simulated game environment
 
 
             // injection
-            if(iter == injiter){
-                injectStrategyCluster(injp, injsize);
-            }
+//            if(iter == injiter){
+//                injectStrategyCluster(injp, injsize);
+//            }
 
             // playing
-            for(ArrayList<Player> row: grid){
-                for(Player player: row){
-                    play(player);
-                }
-            }
+//            for(ArrayList<Player> row: grid){
+//                for(Player player: row){
+//                    play(player);
+//                }
+//            }
 
             // edge weight learning
-            for(ArrayList<Player> row: grid){
-                for(Player player: row){
-                    EWL(player);
-                }
-            }
+//            for(ArrayList<Player> row: grid){
+//                for(Player player: row){
+//                    EWL(player);
+//                }
+//            }
 
             // evolution (occurs every ER iterations; consists of sel, evo and mut funcs)
-            if(iter % ER == 0) {
-                for (ArrayList<Player> row : grid) {
-                    for (Player child : row) {
-
-                        // select parent
-                        Player parent = null;
-                        switch(sel){
-                            case "RW" -> parent = RWSelection(child);
-                            case "elitist" -> parent = bestSelection(child);
-                            case "rand" -> parent = randSelection(child);
-                            case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
-                            default -> {
-                                System.out.println("[ERROR] Invalid selection function configured. Exiting...");
-                                Runtime.getRuntime().exit(0);
-                            }
-                        }
-
-                        // evolve child
-                        switch (evo) {
-                            case "copy" -> copyEvolution(child, parent);
-                            case "approach" -> approachEvolution(child, parent);
-                            case "crossover" -> {} // do nothing; already completed above.
-                            default -> {
-                                System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
-                                Runtime.getRuntime().exit(0);
-                            }
-                        }
-
-                        // mutate child
-                        switch (mut){
-                            case "global" -> {
-                                if(mutationCheck()){
-                                    globalMutation(child);
-                                }
-                            }
-                            case "local" -> {
-                                if(mutationCheck()){
-                                    localMutation(child);
-                                }
-                            }
-                        }
-                    }
-                }
-                gen++; // move on to the next generation
-            }
-
-            calculateOverallStats();
-            calculateAverageEdgeWeights();
-
-            // periodically record individual data
-            if(datarate != 0){
-                if(run_num == 1 // if first run
-                        && experiment_num == 1 // if first experiment
-                        && iter % (ER * datarate) == 0 // record gen's data every x gens, where x=datarate
-                ){
-//                    System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
-                    String output = "";
-                    if(game.equals("UG") || game.equals("DG")){
-                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
-                        if(game.equals("UG")){
-                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
-                        }
-                    }
-                    System.out.println(output);
-                    writeAvgpData();
-                    writepData();
-                    writeEWData();
-                    writeNSIData();
-                }
-            }
-
-
-            prepare();
-            iter++; // move on to the next iteration
-        }
+//            if(iter % ER == 0) {
+//                for (ArrayList<Player> row : grid) {
+//                    for (Player child : row) {
+//
+//                        // select parent
+//                        Player parent = null;
+//                        switch(sel){
+//                            case "RW" -> parent = RWSelection(child);
+//                            case "elitist" -> parent = bestSelection(child);
+//                            case "rand" -> parent = randSelection(child);
+//                            case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+//                            default -> {
+//                                System.out.println("[ERROR] Invalid selection function configured. Exiting...");
+//                                Runtime.getRuntime().exit(0);
+//                            }
+//                        }
+//
+//                        // evolve child
+//                        switch (evo) {
+//                            case "copy" -> copyEvolution(child, parent);
+//                            case "approach" -> approachEvolution(child, parent);
+//                            case "crossover" -> {} // do nothing; already completed above.
+//                            default -> {
+//                                System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
+//                                Runtime.getRuntime().exit(0);
+//                            }
+//                        }
+//
+//                        // mutate child
+//                        switch (mut){
+//                            case "global" -> {
+//                                if(mutationCheck()){
+//                                    globalMutation(child);
+//                                }
+//                            }
+//                            case "local" -> {
+//                                if(mutationCheck()){
+//                                    localMutation(child);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                gen++; // move on to the next generation
+//            }
+//
+//            calculateOverallStats();
+//            calculateAverageEdgeWeights();
+//
+//            // periodically record individual data
+//            if(datarate != 0){
+//                if(run_num == 1 // if first run
+//                        && experiment_num == 1 // if first experiment
+//                        && iter % (ER * datarate) == 0 // record gen's data every x gens, where x=datarate
+//                ){
+////                    System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD));
+//                    String output = "";
+//                    if(game.equals("UG") || game.equals("DG")){
+//                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
+//                        if(game.equals("UG")){
+//                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
+//                        }
+//                    }
+//                    System.out.println(output);
+//                    writeAvgpData();
+//                    writepData();
+//                    writeEWData();
+//                    writeNSIData();
+//                }
+//            }
+//
+//
+//            prepare();
+//            iter++; // move on to the next iteration
+//        }
     }
 
 
@@ -1133,28 +1171,28 @@ public class Env extends Thread{ // simulated game environment
         double tally = 0.0;
 
         // calculate effective payoffs
-        for(int i = 0; i < rows; i++){
-            for(int j = 0; j < columns; j++){
-                Player player = grid.get(i).get(j);
-                double player_avg_score = player.getAvgScore();
-                double player_effective_payoff = Math.exp(w * player_avg_score);
-                effective_payoffs[(i * rows) + j] = player_effective_payoff;
-                total += player_effective_payoff;
-            }
-        }
+//        for(int i = 0; i < rows; i++){
+//            for(int j = 0; j < columns; j++){
+//                Player player = grid.get(i).get(j);
+//                double player_avg_score = player.getAvgScore();
+//                double player_effective_payoff = Math.exp(w * player_avg_score);
+//                effective_payoffs[(i * rows) + j] = player_effective_payoff;
+//                total += player_effective_payoff;
+//            }
+//        }
 
         // fitter player ==> more likely to be selected
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        for(int i = 0; i < N; i++){
-            tally += effective_payoffs[i];
-            double percentile = tally / total;
-            if(random_double < percentile){
-                int parent_row = (int) Math.floor(i / rows);
-                int parent_col = i % rows;
-                parent = grid.get(parent_row).get(parent_col);
-                break;
-            }
-        }
+//        double random_double = ThreadLocalRandom.current().nextDouble();
+//        for(int i = 0; i < N; i++){
+//            tally += effective_payoffs[i];
+//            double percentile = tally / total;
+//            if(random_double < percentile){
+//                int parent_row = (int) Math.floor(i / rows);
+//                int parent_col = i % rows;
+//                parent = grid.get(parent_row).get(parent_col);
+//                break;
+//            }
+//        }
 
 
         return parent;
@@ -1297,12 +1335,12 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void calculateAverageEdgeWeights(){
-        for(ArrayList<Player> row:grid){
-            for(Player player: row){
-                calculateMeanSelfEdgeWeight(player);
-                calculateMeanNeighbourEdgeWeight(player);
-            }
-        }
+//        for(ArrayList<Player> row:grid){
+//            for(Player player: row){
+//                calculateMeanSelfEdgeWeight(player);
+//                calculateMeanNeighbourEdgeWeight(player);
+//            }
+//        }
     }
 
 
@@ -1395,7 +1433,9 @@ public class Env extends Thread{ // simulated game environment
                         " %-4s |" +//game
                         " %-6s |" +//runs
                         " %-9s |" +//iters
-                        " %-4s |" +//rows
+                        " %-6s |" +//length
+                        " %-6s |" +//width
+                        " %-10s |" +//space
                         " %-3s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
@@ -1431,7 +1471,9 @@ public class Env extends Thread{ // simulated game environment
                 ,"game"
                 ,"runs"
                 ,"iters"
-                ,"rows"
+                ,"length"
+                ,"width"
+                ,"space"
                 ,"EWT"
                 ,"EWLC"
                 ,"EWLF"
@@ -1473,7 +1515,9 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-4s ", settings[CI++]); //game
             System.out.printf("| %-6s ", settings[CI++]); //runs
             System.out.printf("| %-9s ", settings[CI++]); //iters
-            System.out.printf("| %-4s ", settings[CI++]); //rows
+            System.out.printf("| %-6s ", settings[CI++]); //length
+            System.out.printf("| %-6s ", settings[CI++]); //width
+            System.out.printf("| %-10s ", settings[CI++]); //space
             System.out.printf("| %-3s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
@@ -1538,13 +1582,20 @@ public class Env extends Thread{ // simulated game environment
             System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        rows = Integer.parseInt(settings[CI++]);
-        if(rows < 1){
-            System.out.println("[ERROR] Invalid number of rows configured. Exiting...");
+        length = Integer.parseInt(settings[CI++]);
+        if(length < 1){
+            System.out.println("[ERROR] Invalid length. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        columns = rows; // square lattice
-        N = rows * columns;
+        width=Integer.parseInt(settings[CI++]);
+        if(width < 1){
+            System.out.println("[ERROR] Invalid width. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
+//        columns = rows; // square lattice
+//        N = rows * columns;
+        N = length * width;
+        space=settings[CI++];
         EWT = settings[CI++];
         EWLC = settings[CI++];
         if(!EWLC.equals("p") && !EWLC.equals("avgscore"))
@@ -1566,22 +1617,6 @@ public class Env extends Thread{ // simulated game environment
         }
         ROC=applySettingDouble();
 
-
-        alpha=applySettingDouble();
-        beta=applySettingDouble();
-
-
-        leeway1=applySettingDouble();
-        leeway2=applySettingDouble();
-        leeway3=applySettingDouble();
-        leeway4=applySettingDouble();
-        leeway5=applySettingDouble();
-        leeway6=applySettingDouble();
-        leeway7=applySettingDouble();
-        varying=settings[CI++];
-        experiment_series=(varying.equals(""))?false:true;
-        variation=applySettingDouble();
-        numexp=applySettingInt();
         neigh=settings[CI++];
         sel=settings[CI++];
         selnoise=applySettingDouble();
@@ -1591,7 +1626,25 @@ public class Env extends Thread{ // simulated game environment
         mut=settings[CI++];
         mutrate=applySettingDouble();
         mutbound=applySettingDouble();
+
+        varying=settings[CI++];
+        experiment_series=(varying.equals(""))?false:true;
+        variation=applySettingDouble();
+        numexp=applySettingInt();
+
         datarate=applySettingInt();
+
+        alpha=applySettingDouble();
+        beta=applySettingDouble();
+
+        leeway1=applySettingDouble();
+        leeway2=applySettingDouble();
+        leeway3=applySettingDouble();
+        leeway4=applySettingDouble();
+        leeway5=applySettingDouble();
+        leeway6=applySettingDouble();
+        leeway7=applySettingDouble();
+
         injiter=applySettingInt();
         if(injiter>iters)
             System.out.println("NOTE: injiter > iters, therefore no injection will occur.");
@@ -1606,54 +1659,33 @@ public class Env extends Thread{ // simulated game environment
      * Initialises a lattice grid population of players with randomly generated strategies.
      */
     public void initRandomPop(){
-        for (int i = 0; i < rows; i++) {
-            ArrayList<Player> row = new ArrayList<>();
-            for (int j = 0; j < columns; j++) {
-                Player new_player = null;
-                switch(game){
-                    case"UG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            ThreadLocalRandom.current().nextDouble(),
-                            leeway2);
-                    case"DG"->new_player = new Player(
-                            ThreadLocalRandom.current().nextDouble(),
-                            0,
-                            leeway2);
+        pop = new Player[N];
+        int index = 0;
+        if(space.equals("grid")){
+            for(int y=0;y<length;y++){
+                for(int x=0;x<width;x++){
+                    Player new_player = null;
+                    switch(game){
+                        case"UG","DG"->{
+                            double p = ThreadLocalRandom.current().nextDouble();
+                            double q = 0;
+                            switch(game){
+                                case"UG"->q=ThreadLocalRandom.current().nextDouble();
+                                case"DG"->q=0;
+                            }
+                            new_player=new Player(x,y,p,q,leeway2);
+                        }
+                    }
+
+//                    int index = x + (x % y);
+                    pop[index] = new_player;
+                    index++;
                 }
-                row.add(new_player);
             }
-            grid.add(row);
+        }else if(space.equals("hex")){
+            // implement this...
         }
     }
-
-
-
-    // reminder of something we might work on in later research.
-//    /**
-//     * Initialises a lattice grid population of Dictator Game players with strategies loaded from a .csv file.<br>
-//     * WARNING: DO NOT TRY TO USE THE SAVED POP IF THE GAME IS NOT DG! This is because the strategies .csv file currently only stores p values.
-//     */
-//    public void initSavedDGPop() {
-//        try {
-//            br = new BufferedReader(new FileReader(data_filename_prefix + "Strategies.csv"));
-//            String line;
-//            int i = 0;
-//            while ((line = br.readLine()) != null) {
-//                String[] row_contents = line.split(",");
-//                ArrayList<Player> row = new ArrayList<>();
-//                for (int j = 0; j < row_contents.length; j++) {
-//                    row.add(new Player(
-//                            Double.parseDouble(row_contents[i]),
-//                            0,
-//                            leeway2));
-//                }
-//                i++;
-//                grid.add(row);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
 
 
@@ -1674,10 +1706,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Create folders to store data.
-     */
-//    public void createFolders(){
+    // Create folders to store data.
     public static void createFolders(){
         if(game.equals("UG") || game.equals("DG")){
             p_data_filename = experiment_results_folder_path + "\\p_data";
@@ -1687,7 +1716,7 @@ public class Env extends Thread{ // simulated game environment
         }
         EW_data_filename = experiment_results_folder_path + "\\EW_data";
         NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
-        try{ // create folders
+        try{
             if(game.equals("UG") || game.equals("DG")){
                 Files.createDirectories(Paths.get(p_data_filename));
                 if(game.equals("UG")){
@@ -1704,9 +1733,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Collects initial settings into a string.
-     */
+    // Collects initial settings into a string.
     public static void setInitialSettings(){
         if(experiment_series && experiment_num == 1){ // if at start of series
             initial_settings += "Experiment series ("+desc+")" +
@@ -1719,41 +1746,25 @@ public class Env extends Thread{ // simulated game environment
         initial_settings+=game;
         initial_settings+=", "+runs+" runs";
         initial_settings+=", "+iters+" iters";
-        initial_settings+=", "+rows+" rows";
+        initial_settings+=", "+length+" length";
+        initial_settings+=", "+width+" width";
         initial_settings+=", EWT="+EWT;
         initial_settings+=", EWLC="+EWLC;
         initial_settings+=", EWLF="+EWLF;
         initial_settings+=", ER="+ER;
-        if(ROC != 0)
-            initial_settings+=", ROC="+ROC;
-
-
-        if(alpha != 0)
-            initial_settings+=", alpha="+alpha;
-        if(beta != 0)
-            initial_settings+=", beta="+beta;
-
-
-        if(leeway1 != 0)
-            initial_settings+=", leeway1="+leeway1;
-        if(leeway2 != 0)
-            initial_settings+=", leeway2="+leeway2;
-        if(leeway3 != 0)
-            initial_settings+=", leeway3="+leeway3;
-        if(leeway4 != 0)
-            initial_settings+=", leeway4="+leeway4;
-        if(leeway5 != 0)
-            initial_settings+=", leeway5="+leeway5;
-        if(leeway6 != 0)
-            initial_settings+=", leeway6="+leeway6;
-        if(leeway7 != 0)
-            initial_settings+=", leeway7="+leeway7;
+        if(ROC != 0) initial_settings+=", ROC="+ROC;
+        if(alpha != 0) initial_settings+=", alpha="+alpha;
+        if(beta != 0) initial_settings+=", beta="+beta;
+        if(leeway1 != 0) initial_settings+=", leeway1="+leeway1;
+        if(leeway2 != 0) initial_settings+=", leeway2="+leeway2;
+        if(leeway3 != 0) initial_settings+=", leeway3="+leeway3;
+        if(leeway4 != 0) initial_settings+=", leeway4="+leeway4;
+        if(leeway5 != 0) initial_settings+=", leeway5="+leeway5;
+        if(leeway6 != 0) initial_settings+=", leeway6="+leeway6;
+        if(leeway7 != 0) initial_settings+=", leeway7="+leeway7;
         initial_settings+=", "+neigh+" neigh";
         initial_settings+=", "+sel+" sel";
-        switch(sel){
-            case"Rand"->initial_settings+=", selnoise="+selnoise;
-        }
-//        initial_settings+=", ASD="+Player.getASD();
+        if(sel.equals("Rand")) initial_settings+=", selnoise="+selnoise; // if sel func uses another param
         initial_settings+=", ASD="+ASD;
         initial_settings+=", "+evo+" evo";
         switch(evo){
@@ -1793,61 +1804,95 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Assigns adjacent neighbour to player's neighbourhood.<br>
-     * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
-     * for Moore neighbourhood.
-     * @param player
-     * @param y y axis position
-     * @param x x axis position
-    */
-    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
-        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+//    /**
+//     * Assigns adjacent neighbour to player's neighbourhood.<br>
+//     * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
+//     * for Moore neighbourhood.
+//     * @param player
+//     * @param y y axis position
+//     * @param x x axis position
+//    */
+//    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
+    public void assignAdjacentNeighbours(Player player, String type, int d){
+//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+        ArrayList<Player> neighbourhood = new ArrayList<>();
+        double[] edge_weights = new double[]{};
 
-        for(int i = 1; i <= d; i++){
-//            int x_plus = (((x + i) % rows) + rows) % rows;
-//            int x_minus = (((x - i) % rows) + rows) % rows;
-//            int y_plus = (((y + i) % columns) + columns) % columns;
-//            int y_minus = (((y - i) % columns) + columns) % columns;
-            int x_plus = adjustPosition(x, i, rows);
-            int x_minus = adjustPosition(x, -i, rows);
-            int y_plus = adjustPosition(y, i, columns);
-            int y_minus = adjustPosition(y, -i, columns);
+        double y = player.getY();
+        double x = player.getX();
+        for(int i=1;i<=d;i++){
+            double x_plus = (((x + i) % width) + width) % width;
+            double x_minus = (((x - i) % width) + width) % width;
+            double y_plus = (((y + i) % length) + length) % length;
+            double y_minus = (((y - i) % length) + length) % length;
 
-
-            // add VN neighbours
-            neighbourhood.add(grid.get(y).get(x_plus));         // (x + i,  y)
-            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - i,  y)
-            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + i)
-            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - i)
-
-            if(type.equals("dia")){
-                if(i > 1){
-//                    int x_plus_minus = (((x_plus - 1) % rows) + rows) % rows;
-//                    int x_minus_plus = (((x_minus + 1) % rows) + rows) % rows;
-//                    int y_plus_minus = (((y_plus - 1) % rows) + rows) % rows;
-//                    int y_minus_plus = (((y_minus + 1) % rows) + rows) % rows;
-                    int x_plus_minus = adjustPosition(x_plus, -1, rows);
-                    int x_minus_plus = adjustPosition(x_minus, 1, rows);
-                    int y_plus_minus = adjustPosition(y_plus, -1, rows);
-                    int y_minus_plus = adjustPosition(y_minus, 1, rows);
+            neighbourhood.add(findPlayerByPos(y,x_plus));
+//            edge_weights[i]=1.0;
 
 
-                    neighbourhood.add(grid.get(y_plus_minus).get(x_plus_minus));
-                    neighbourhood.add(grid.get(y_minus_plus).get(x_plus_minus));
-                    neighbourhood.add(grid.get(y_minus_plus).get(x_minus_plus));
-                    neighbourhood.add(grid.get(y_plus_minus).get(x_minus_plus));
-                }
-            }
+//            assignNeighbour(neighbourhood,edge_weights,i,y,x_plus);
 
-            // add M neighbours
-            if(type.equals("M")){
-                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + i)
-                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - i)
-                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - i)
-                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + i)
-            }
+            neighbourhood.add(findPlayerByPos(y,x_minus));
+            neighbourhood.add(findPlayerByPos(y_plus,x));
+            neighbourhood.add(findPlayerByPos(y_minus,x));
+
+            // implement other stuff like dia and Moore (SEE BELOW COMMENT!)
         }
+
+        // DO NOT REMOVE UNTIL FULL FUNCTIONALITY REPLICATED ABOVE!
+//        for(int i = 1; i <= d; i++){
+////            int x_plus = (((x + i) % rows) + rows) % rows;
+////            int x_minus = (((x - i) % rows) + rows) % rows;
+////            int y_plus = (((y + i) % columns) + columns) % columns;
+////            int y_minus = (((y - i) % columns) + columns) % columns;
+//            int x_plus = adjustPosition(x, i, rows);
+//            int x_minus = adjustPosition(x, -i, rows);
+//            int y_plus = adjustPosition(y, i, columns);
+//            int y_minus = adjustPosition(y, -i, columns);
+//
+//
+//            // add VN neighbours
+//            neighbourhood.add(grid.get(y).get(x_plus));         // (x + i,  y)
+//            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - i,  y)
+//            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + i)
+//            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - i)
+//
+//            if(type.equals("dia")){
+//                if(i > 1){
+////                    int x_plus_minus = (((x_plus - 1) % rows) + rows) % rows;
+////                    int x_minus_plus = (((x_minus + 1) % rows) + rows) % rows;
+////                    int y_plus_minus = (((y_plus - 1) % rows) + rows) % rows;
+////                    int y_minus_plus = (((y_minus + 1) % rows) + rows) % rows;
+//                    int x_plus_minus = adjustPosition(x_plus, -1, rows);
+//                    int x_minus_plus = adjustPosition(x_minus, 1, rows);
+//                    int y_plus_minus = adjustPosition(y_plus, -1, rows);
+//                    int y_minus_plus = adjustPosition(y_minus, 1, rows);
+//
+//
+//                    neighbourhood.add(grid.get(y_plus_minus).get(x_plus_minus));
+//                    neighbourhood.add(grid.get(y_minus_plus).get(x_plus_minus));
+//                    neighbourhood.add(grid.get(y_minus_plus).get(x_minus_plus));
+//                    neighbourhood.add(grid.get(y_plus_minus).get(x_minus_plus));
+//                }
+//            }
+//
+//            // add M neighbours
+//            if(type.equals("M")){
+//                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + i)
+//                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - i)
+//                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - i)
+//                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + i)
+//            }
+//        }
+
+        player.setNeighbourhood(neighbourhood);
+    }
+
+
+
+    public void assignNeighbour(ArrayList <Player> neighbourhood, double[] edge_weights, int i, double y, double x){
+        neighbourhood.add(findPlayerByPos(y,x));
+        edge_weights[i]=1.0;
     }
 
 
@@ -1883,14 +1928,14 @@ public class Env extends Thread{ // simulated game environment
         }
 
         // assign edges to neighbours
-        for(int ID: IDs){
-            int column = ID / columns;
-            int row = ID % rows;
-            neighbourhood.add(grid.get(column).get(row));
-            if(type.equals("bi")){
-                grid.get(column).get(row).getNeighbourhood().add(player);
-            }
-        }
+//        for(int ID: IDs){
+//            int column = ID / columns;
+//            int row = ID % rows;
+//            neighbourhood.add(grid.get(column).get(row));
+//            if(type.equals("bi")){
+//                grid.get(column).get(row).getNeighbourhood().add(player);
+//            }
+//        }
     }
 
 
@@ -1899,15 +1944,15 @@ public class Env extends Thread{ // simulated game environment
     public void assignAllNeighbours(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         int id = player.getID();
-        for(int i = 0; i < grid.size(); i++){
-            for(int j = 0; j < grid.get(0).size(); j++){
-                Player neighbour = grid.get(i).get(j);
-                int neighbour_id = neighbour.getID();
-                if(id != neighbour_id){
-                    neighbourhood.add(neighbour);
-                }
-            }
-        }
+//        for(int i = 0; i < grid.size(); i++){
+//            for(int j = 0; j < grid.get(0).size(); j++){
+//                Player neighbour = grid.get(i).get(j);
+//                int neighbour_id = neighbour.getID();
+//                if(id != neighbour_id){
+//                    neighbourhood.add(neighbour);
+//                }
+//            }
+//        }
 
 
     }
@@ -1932,38 +1977,38 @@ public class Env extends Thread{ // simulated game environment
     public void calculateOverallStats(){
         // calculate average p
         avg_p = 0;
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                avg_p+=player.getP();
-            }
-        }
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                avg_p+=player.getP();
+//            }
+//        }
         avg_p /= N;
 
         // calculate p SD
         p_SD = 0;
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                p_SD += Math.pow(player.getP() - avg_p, 2);
-            }
-        }
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                p_SD += Math.pow(player.getP() - avg_p, 2);
+//            }
+//        }
         p_SD = Math.pow(p_SD / N, 0.5);
 
         // calculate average q
         avg_q = 0;
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                avg_q+=player.getQ();
-            }
-        }
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                avg_q+=player.getQ();
+//            }
+//        }
         avg_q /= N;
 
         // calculate p SD
         q_SD = 0;
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                q_SD += Math.pow(player.getQ() - avg_q, 2);
-            }
-        }
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                q_SD += Math.pow(player.getQ() - avg_q, 2);
+//            }
+//        }
         q_SD = Math.pow(q_SD / N, 0.5);
     }
 
@@ -1974,33 +2019,33 @@ public class Env extends Thread{ // simulated game environment
      * For each player in the population, some attributes are reset in preparation
      * for the upcoming generation.
      */
-    public void prepare(){
-        for(ArrayList<Player> row: grid){
-            for(Player player: row){
-                player.setScore(0);
-                player.setNI(0);
-                player.setNSI(0);
-                player.setNSP(0);
-                player.setNSR(0);
-                switch(game){
-                    case"UG","DG"->{
-                        player.setOldP(player.getP());
-                        switch(game){
-                            case"UG"->player.setOldQ(player.getQ());
-                            case"DG"->player.setQ(0);
-                        }
-                    }
-                }
-//                player.setNSIPerNeighbour(new int[]{0,0,0,0});
-
-//                for(int i = 0; i < N - 1; i++){
-//                    player.getNSIPerNeighbour()[i] = 0;
+//    public void prepare(){
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                player.setScore(0);
+//                player.setNI(0);
+//                player.setNSI(0);
+//                player.setNSP(0);
+//                player.setNSR(0);
+//                switch(game){
+//                    case"UG","DG"->{
+//                        player.setOldP(player.getP());
+//                        switch(game){
+//                            case"UG"->player.setOldQ(player.getQ());
+//                            case"DG"->player.setQ(0);
+//                        }
+//                    }
 //                }
-
-                resetNSIPerNeighbour(player);
-            }
-        }
-    }
+////                player.setNSIPerNeighbour(new int[]{0,0,0,0});
+//
+////                for(int i = 0; i < N - 1; i++){
+////                    player.getNSIPerNeighbour()[i] = 0;
+////                }
+//
+//                resetNSIPerNeighbour(player);
+//            }
+//        }
+//    }
 
 
 
@@ -2179,15 +2224,15 @@ public class Env extends Thread{ // simulated game environment
             String filename = p_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
-            for(int y = rows - 1; y >= 0; y--){
-                for(int x = 0; x < columns; x++){
-                    s += DF4.format(grid.get(y).get(x).getP());
-                    if(x + 1 < columns){
-                        s += ",";
-                    }
-                }
-                s += "\n";
-            }
+//            for(int y = rows - 1; y >= 0; y--){
+//                for(int x = 0; x < columns; x++){
+//                    s += DF4.format(grid.get(y).get(x).getP());
+//                    if(x + 1 < columns){
+//                        s += ",";
+//                    }
+//                }
+//                s += "\n";
+//            }
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -2202,15 +2247,15 @@ public class Env extends Thread{ // simulated game environment
             String filename = q_data_filename +"\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String output = "";
-            for(int y = rows - 1; y >= 0; y--){
-                for(int x = 0; x < columns; x++){
-                    output += DF4.format(grid.get(y).get(x).getQ());
-                    if(x + 1 < columns){
-                        output += ",";
-                    }
-                }
-                output += "\n";
-            }
+//            for(int y = rows - 1; y >= 0; y--){
+//                for(int x = 0; x < columns; x++){
+//                    output += DF4.format(grid.get(y).get(x).getQ());
+//                    if(x + 1 < columns){
+//                        output += ",";
+//                    }
+//                }
+//                output += "\n";
+//            }
             fw.append(output);
             fw.close();
         } catch(IOException e){
@@ -2224,81 +2269,81 @@ public class Env extends Thread{ // simulated game environment
      * Uses EW data to write a grid of 4x4 sub-grids into a .csv file.<br>
      * Assumes von Neumann neighbourhood type and rows=columns.
      */
-    public void writeEWData(){
-        try{
-            String filename = EW_data_filename + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename);
-            String string = "";
-            String[] substrings = new String[(rows * 4)];
-            for(int i=0;i<substrings.length;i++){
-                substrings[i] = "";
-            }
-            int a=0;
-            for(int y = rows - 1; y >= 0; y--) {
-                for (int x = 0; x < columns; x++) {
-                    Player current = grid.get(y).get(x);
-                    double[] edge_weights = current.getEdgeWeights();
-                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
-
-
-                    // EW health of player is equal to sum of edge weights divided by num edge weights.
-                    // this is equivalent to mean self edge weight plus mean neighbour edge weight divided by 2.
-                    double EW_health = (current.getMeanSelfEdgeWeight() + current.getMeanNeighbourEdgeWeight()) / 2;
-
-
-                    substrings[a] += "0,"
-                            +edge_weights[2]+","
-                            +neighbourhood.get(2).getEdgeWeights()[3]+","
-                            +"0";
-                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
-
-
-//                            +DF2.format(current.getP())+","
-//                            +DF2.format(current.getAverageScore())+","
-
-
-                            +DF2.format(EW_health)+","
-                            +DF2.format(EW_health)+","
-
-
-                            +edge_weights[0];
-                    substrings[a+2] += current.getEdgeWeights()[1]+","
-
-
-//                            +DF2.format(current.getMeanSelfEdgeWeight())+","
-//                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
-
-
-                            +DF2.format(EW_health)+","
-                            +DF2.format(EW_health)+","
-
-
-                            +neighbourhood.get(0).getEdgeWeights()[1];
-                    substrings[a+3] += "0,"
-                            +neighbourhood.get(3).getEdgeWeights()[2]+","
-                            +edge_weights[3]+","
-                            +"0";
-                    if(x + 1 < columns){
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += ",";
-                        }
-                    } else {
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += "\n";
-                        }
-                    }
-                }
-                a += 4;
-            }
-            for(int i=0;i<substrings.length;i++){
-                string += substrings[i];
-            }
-            fw.append(string);
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-    }
+//    public void writeEWData(){
+//        try{
+//            String filename = EW_data_filename + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename);
+//            String string = "";
+//            String[] substrings = new String[(rows * 4)];
+//            for(int i=0;i<substrings.length;i++){
+//                substrings[i] = "";
+//            }
+//            int a=0;
+//            for(int y = rows - 1; y >= 0; y--) {
+//                for (int x = 0; x < columns; x++) {
+//                    Player current = grid.get(y).get(x);
+//                    double[] edge_weights = current.getEdgeWeights();
+//                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
+//
+//
+//                    // EW health of player is equal to sum of edge weights divided by num edge weights.
+//                    // this is equivalent to mean self edge weight plus mean neighbour edge weight divided by 2.
+//                    double EW_health = (current.getMeanSelfEdgeWeight() + current.getMeanNeighbourEdgeWeight()) / 2;
+//
+//
+//                    substrings[a] += "0,"
+//                            +edge_weights[2]+","
+//                            +neighbourhood.get(2).getEdgeWeights()[3]+","
+//                            +"0";
+//                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
+//
+//
+////                            +DF2.format(current.getP())+","
+////                            +DF2.format(current.getAverageScore())+","
+//
+//
+//                            +DF2.format(EW_health)+","
+//                            +DF2.format(EW_health)+","
+//
+//
+//                            +edge_weights[0];
+//                    substrings[a+2] += current.getEdgeWeights()[1]+","
+//
+//
+////                            +DF2.format(current.getMeanSelfEdgeWeight())+","
+////                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
+//
+//
+//                            +DF2.format(EW_health)+","
+//                            +DF2.format(EW_health)+","
+//
+//
+//                            +neighbourhood.get(0).getEdgeWeights()[1];
+//                    substrings[a+3] += "0,"
+//                            +neighbourhood.get(3).getEdgeWeights()[2]+","
+//                            +edge_weights[3]+","
+//                            +"0";
+//                    if(x + 1 < columns){
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += ",";
+//                        }
+//                    } else {
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += "\n";
+//                        }
+//                    }
+//                }
+//                a += 4;
+//            }
+//            for(int i=0;i<substrings.length;i++){
+//                string += substrings[i];
+//            }
+//            fw.append(string);
+//            fw.close();
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+//    }
 
 
 
@@ -2307,69 +2352,69 @@ public class Env extends Thread{ // simulated game environment
      * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
      * Assumes von Neumann neighbourhood type and rows=columns.
      */
-    public void writeNSIData(){
-        try{
-            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename);
-            String string = "";
-            String[] substrings = new String[(rows * 4)];
-            for(int i=0;i<substrings.length;i++){
-                substrings[i] = "";
-            }
-            int a=0;
-            for(int y = rows - 1; y >= 0; y--) {
-                for (int x = 0; x < columns; x++) {
-                    Player current = grid.get(y).get(x);
-                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
-
-
-//                    TESTING TO SEE IF ITS EVER 0
-//                    for(int i: NSI_per_neighbour){
-//                        if(i == 0.0){
-//                            System.out.println("hello"); // can place breakpoint here
+//    public void writeNSIData(){
+//        try{
+//            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename);
+//            String string = "";
+//            String[] substrings = new String[(rows * 4)];
+//            for(int i=0;i<substrings.length;i++){
+//                substrings[i] = "";
+//            }
+//            int a=0;
+//            for(int y = rows - 1; y >= 0; y--) {
+//                for (int x = 0; x < columns; x++) {
+//                    Player current = grid.get(y).get(x);
+//                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
+//
+//
+////                    TESTING TO SEE IF ITS EVER 0
+////                    for(int i: NSI_per_neighbour){
+////                        if(i == 0.0){
+////                            System.out.println("hello"); // can place breakpoint here
+////                        }
+////                    }
+//
+//
+//
+//
+//                    substrings[a] += "0,"
+//                            +NSI_per_neighbour[2]+","
+//                            +NSI_per_neighbour[2]+","
+//                            +"0";
+//                    substrings[a+1] += NSI_per_neighbour[1]+","
+//                            +"0,"
+//                            +"0,"
+//                            +NSI_per_neighbour[0];
+//                    substrings[a+2] += NSI_per_neighbour[1]+","
+//                            +"0,"
+//                            +"0,"
+//                            +NSI_per_neighbour[0];
+//                    substrings[a+3] += "0,"
+//                            +NSI_per_neighbour[3]+","
+//                            +NSI_per_neighbour[3]+","
+//                            +"0";
+//                    if(x + 1 < columns){
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += ",";
+//                        }
+//                    } else {
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += "\n";
 //                        }
 //                    }
-
-
-
-
-                    substrings[a] += "0,"
-                            +NSI_per_neighbour[2]+","
-                            +NSI_per_neighbour[2]+","
-                            +"0";
-                    substrings[a+1] += NSI_per_neighbour[1]+","
-                            +"0,"
-                            +"0,"
-                            +NSI_per_neighbour[0];
-                    substrings[a+2] += NSI_per_neighbour[1]+","
-                            +"0,"
-                            +"0,"
-                            +NSI_per_neighbour[0];
-                    substrings[a+3] += "0,"
-                            +NSI_per_neighbour[3]+","
-                            +NSI_per_neighbour[3]+","
-                            +"0";
-                    if(x + 1 < columns){
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += ",";
-                        }
-                    } else {
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += "\n";
-                        }
-                    }
-                }
-                a += 4;
-            }
-            for(int i=0;i<substrings.length;i++){
-                string += substrings[i];
-            }
-            fw.append(string);
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-    }
+//                }
+//                a += 4;
+//            }
+//            for(int i=0;i<substrings.length;i++){
+//                string += substrings[i];
+//            }
+//            fw.append(string);
+//            fw.close();
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+//    }
 
 
 
@@ -2379,22 +2424,44 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Finds a player given the integer ID parameter.<br>
-     * Currently not used.
-     * @param ID of the player to find
-     * @return player object with the given ID
-     */
-    public Player findPlayerByID(int ID){
+//    /**
+//     * Finds a player given the integer ID parameter.<br>
+//     * Currently not used.
+//     * @param ID of the player to find
+//     * @return player object with the given ID
+//     */
+//    public Player findPlayerByID(int ID){
+//        Player player = null;
+//        for(int i=0;i<rows;i++){
+//            for(int j=0;j<columns;j++){
+//                if(ID == grid.get(i).get(j).getID()){
+//                    player = grid.get(i).get(j);
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return player;
+//    }
+
+
+
+    // find player by position
+    public Player findPlayerByPos(double y, double x){
         Player player = null;
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<columns;j++){
-                if(ID == grid.get(i).get(j).getID()){
-                    player = grid.get(i).get(j);
-                    break;
-                }
+        boolean found = false;
+        int i=0;
+        do{
+            Player player2=pop[i];
+            double y2=player2.getY();
+            double x2=player2.getX();
+            if(y2==y && x2==x){
+                player=player2;
+                found=true;
             }
+            i++;
         }
+        while(!found);
 
         return player;
     }
@@ -2406,13 +2473,13 @@ public class Env extends Thread{ // simulated game environment
      * Injects a cluster of players in the population with a given strategy.
      * Assumes square lattice population.
      */
-    public void injectStrategyCluster(double new_strategy, int cluster_size){
-        for(int i=0;i<cluster_size;i++){
-            for(int j=0;j<cluster_size;j++){
-                grid.get(i).get(j).setP(new_strategy);
-            }
-        }
-    }
+//    public void injectStrategyCluster(double new_strategy, int cluster_size){
+//        for(int i=0;i<cluster_size;i++){
+//            for(int j=0;j<cluster_size;j++){
+//                grid.get(i).get(j).setP(new_strategy);
+//            }
+//        }
+//    }
 
 
     /**
@@ -2449,58 +2516,58 @@ public class Env extends Thread{ // simulated game environment
      * @param y
      * @param x
      */
-    public void assignMargolusNeighbourhood(Player player, int y, int x){
-        // setup #1
-//        ArrayList <Player> neighbourhood = new ArrayList<>();
+//    public void assignMargolusNeighbourhood(Player player, int y, int x){
+//        // setup #1
+////        ArrayList <Player> neighbourhood = new ArrayList<>();
+////
+////        int x_plus = adjustPosition(x, 1, rows);
+////        int x_minus = adjustPosition(x, -1, rows);
+////        int y_plus = adjustPosition(y, 1, columns);
+////        int y_minus = adjustPosition(y, -1, columns);
+////
+////        if(gen % 2 == 0){
+////            neighbourhood.add(grid.get(y).get(x_minus));        // (x - 1,  y)
+////            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + 1)
+////            neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - 1,  y + 1)
+////        }else{
+////            neighbourhood.add(grid.get(y).get(x_plus));         // (x + 1,  y)
+////            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - 1)
+////            neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x - 1,  y - 1)
+////        }
+////
+////        player.setNeighbourhood(neighbourhood);
+//
+//
+//        // setup #2 (note that rest of program does not know when to use margolus neighbourhoods instead of regular neighbourhood)
+//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+//        ArrayList<Player> mar_neigh1 = player.getMargolus_neighbourhood1();
+//        ArrayList<Player> mar_neigh2 = player.getMargolus_neighbourhood2();
 //
 //        int x_plus = adjustPosition(x, 1, rows);
 //        int x_minus = adjustPosition(x, -1, rows);
 //        int y_plus = adjustPosition(y, 1, columns);
 //        int y_minus = adjustPosition(y, -1, columns);
 //
-//        if(gen % 2 == 0){
-//            neighbourhood.add(grid.get(y).get(x_minus));        // (x - 1,  y)
-//            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + 1)
-//            neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - 1,  y + 1)
-//        }else{
-//            neighbourhood.add(grid.get(y).get(x_plus));         // (x + 1,  y)
-//            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - 1)
-//            neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x - 1,  y - 1)
-//        }
-//
-//        player.setNeighbourhood(neighbourhood);
-
-
-        // setup #2 (note that rest of program does not know when to use margolus neighbourhoods instead of regular neighbourhood)
-        ArrayList<Player> neighbourhood = player.getNeighbourhood();
-        ArrayList<Player> mar_neigh1 = player.getMargolus_neighbourhood1();
-        ArrayList<Player> mar_neigh2 = player.getMargolus_neighbourhood2();
-
-        int x_plus = adjustPosition(x, 1, rows);
-        int x_minus = adjustPosition(x, -1, rows);
-        int y_plus = adjustPosition(y, 1, columns);
-        int y_minus = adjustPosition(y, -1, columns);
-
-        Player a;
-        a=grid.get(y).get(x_minus);
-        neighbourhood.add(a);
-        mar_neigh1.add(a);
-        a=grid.get(y_plus).get(x);
-        neighbourhood.add(a);
-        mar_neigh1.add(a);
-        a=grid.get(y_plus).get(x_minus);
-        neighbourhood.add(a);
-        mar_neigh1.add(a);
-        a=grid.get(y).get(x_plus);
-        neighbourhood.add(a);
-        mar_neigh2.add(a);
-        a=grid.get(y_minus).get(x);
-        neighbourhood.add(a);
-        mar_neigh2.add(a);
-        a=grid.get(y_minus).get(x_plus);
-        neighbourhood.add(a);
-        mar_neigh2.add(a);
-    }
+//        Player a;
+//        a=grid.get(y).get(x_minus);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y_plus).get(x);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y_plus).get(x_minus);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y).get(x_plus);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//        a=grid.get(y_minus).get(x);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//        a=grid.get(y_minus).get(x_plus);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//    }
 
 
 
