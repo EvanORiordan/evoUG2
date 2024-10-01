@@ -26,7 +26,7 @@ public class Player {
     private double old_q; // q value held at beginning of gen to be inherited by children
 //    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
-    private int[] neighbour_IDs; // array of the IDs of the player's neighbour
+    private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
     private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
     private int NI = 0;  // num interactions (NI) player had
     private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
@@ -148,25 +148,34 @@ public class Player {
 
 
         // document EW and NSI per neighbour
-        player_desc += " neighbourhood=[";
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            player_desc += "("
-                    + neighbour.ID + ", " // neighbour ID
-                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
-                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
-            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
-                player_desc +=", ";
-            }
-        }
-        player_desc +="]";
+//        player_desc += " neighbourhood=[";
+//        for(int i=0;i<neighbourhood.size();i++){
+//            Player neighbour = neighbourhood.get(i);
+//            player_desc += "("
+//                    + neighbour.ID + ", " // neighbour ID
+//                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
+//                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
+//            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
+//                player_desc +=", ";
+//            }
+//        }
+//        player_desc +="]";
+
+//        player_desc += " weights=[";
+//        for(int i=0;i<edge_weights.length;i++){
+//            player_desc += DF2.format(edge_weights[i]);
+//            if((i+1) < neighbourhood.size()){
+//                player_desc +=", ";
+//            }
+//        }
+//        player_desc +="]";
 
 
         // document interaction stats
-        player_desc += " NI="+ NI;
-        player_desc += " NSI="+ NSI;
-        player_desc += " NSP="+ NSP;
-        player_desc += " NSR="+ NSR;
+//        player_desc += " NI="+ NI;
+//        player_desc += " NSI="+ NSI;
+//        player_desc += " NSP="+ NSP;
+//        player_desc += " NSR="+ NSR;
 
         return player_desc;
     }
@@ -200,6 +209,7 @@ public class Player {
         return neighbourhood;
     }
     public void setNeighbourhood(ArrayList <Player> x){neighbourhood=x;}
+    public int[] getNeighbourIDs(){return neighbour_IDs;}
     public void setNeighbourIDs(int[] arr){
         neighbour_IDs=arr;
     }
