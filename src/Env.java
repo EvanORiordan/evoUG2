@@ -519,11 +519,8 @@ public class Env extends Thread{ // simulated game environment
                     }
                     System.out.println(output);
 
-//                    writeAvgpData();
-//                    writepData();
-
-//                    writeEWData();
-//                    writeNSIData();
+                    writeEWData();
+                    writeNSIData();
                 }
             }
 
@@ -1377,22 +1374,26 @@ public class Env extends Thread{ // simulated game environment
         CI = 0;
         game = settings[CI++];
         Player.setGame(game);
-        runs = Integer.parseInt(settings[CI++]);
+//        runs = Integer.parseInt(settings[CI++]);
+        runs=applySettingInt();
         if(runs < 1){
             System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        iters = Integer.parseInt(settings[CI++]);
+//        iters = Integer.parseInt(settings[CI++]);
+        iters=applySettingInt();
         if(iters < 1){
             System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        length = Integer.parseInt(settings[CI++]);
+//        length = Integer.parseInt(settings[CI++]);
+        length=applySettingInt();
         if(length < 1){
             System.out.println("[ERROR] Invalid length. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        width=Integer.parseInt(settings[CI++]);
+//        width=Integer.parseInt(settings[CI++]);
+        width=applySettingInt();
         if(width < 1){
             System.out.println("[ERROR] Invalid width. Exiting...");
             Runtime.getRuntime().exit(0);
@@ -1415,7 +1416,8 @@ public class Env extends Thread{ // simulated game environment
                 && !EWLF.equals("pAD3")
                 && !EWLF.equals("AB"))
             System.out.println("[NOTE] No edge weight learning formula configured.");
-        ER=Integer.parseInt(settings[CI++]);
+//        ER=Integer.parseInt(settings[CI++]);
+        ER=applySettingInt();
         if(ER < 1){
             System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
             Runtime.getRuntime().exit(0);
@@ -1633,12 +1635,9 @@ public class Env extends Thread{ // simulated game environment
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
 
-            neighbourhood.add(findPlayerByPos(y,x_plus));
-//            edge_weights[i]=1.0;
-
-
 //            assignNeighbour(neighbourhood,edge_weights,i,y,x_plus);
 
+            neighbourhood.add(findPlayerByPos(y,x_plus));
             neighbourhood.add(findPlayerByPos(y,x_minus));
             neighbourhood.add(findPlayerByPos(y_plus,x));
             neighbourhood.add(findPlayerByPos(y_minus,x));
@@ -1649,7 +1648,7 @@ public class Env extends Thread{ // simulated game environment
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-//
+
                     neighbourhood.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
@@ -2143,15 +2142,14 @@ public class Env extends Thread{ // simulated game environment
             String filename = q_data_filename +"\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String output = "";
-//            for(int y = rows - 1; y >= 0; y--){
-//                for(int x = 0; x < columns; x++){
-//                    output += DF4.format(grid.get(y).get(x).getQ());
-//                    if(x + 1 < columns){
-//                        output += ",";
-//                    }
-//                }
-//                output += "\n";
-//            }
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player player = findPlayerByPos(y,x);
+                    double q = player.getQ();
+                    output += DF4.format(q) + ",";
+                }
+                output += "\n";
+            }
             fw.append(output);
             fw.close();
         } catch(IOException e){
@@ -2171,7 +2169,8 @@ public class Env extends Thread{ // simulated game environment
             fw = new FileWriter(filename);
             String string = "";
 //            String[] substrings = new String[(rows * 4)];
-            String[] substrings = new String[(width * 4)];
+//            String[] substrings = new String[(width * 4)];
+            String[] substrings = new String[(length * 4)];
             for(int i=0;i<substrings.length;i++){
                 substrings[i] = "";
             }
@@ -2180,9 +2179,12 @@ public class Env extends Thread{ // simulated game environment
 //                for (int x = 0; x < columns; x++) {
 //                    Player current = grid.get(y).get(x);
 
-            for(int x=width-1;x>=0;x--){
-                for(int y=0;y<length;x++){
-                    Player current = findPlayerByPos(y,x); // DEBUG THIS
+            // DEBUG THIS
+//            for(int x=width-1;x>=0;x--){
+//                for(int y=0;y<length;x++){
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player current = findPlayerByPos(y,x);
 
 
                     double[] edge_weights = current.getEdgeWeights();
@@ -2227,7 +2229,8 @@ public class Env extends Thread{ // simulated game environment
                             +edge_weights[3]+","
                             +"0";
 //                    if(x + 1 < columns){
-                    if(x + 1 < length){
+//                    if(x + 1 < length){
+                    if(x + 1 < width){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
                         }
@@ -2262,7 +2265,8 @@ public class Env extends Thread{ // simulated game environment
             fw = new FileWriter(filename);
             String string = "";
 //            String[] substrings = new String[(rows * 4)];
-            String[] substrings = new String[(width * 4)];
+//            String[] substrings = new String[(width * 4)];
+            String[] substrings = new String[(length * 4)];
             for(int i=0;i<substrings.length;i++){
                 substrings[i] = "";
             }
@@ -2271,9 +2275,10 @@ public class Env extends Thread{ // simulated game environment
 //                for (int x = 0; x < columns; x++) {
 //                    Player current = grid.get(y).get(x);
 
-            for(int x=width-1;x>=0;x--){
-                for(int y=0;y<length;x++){
-                    Player current = findPlayerByPos(y,x); // DEBUG THIS
+
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player current = findPlayerByPos(y,x);
 
 
                     int[] NSI_per_neighbour = current.getNSIPerNeighbour();
@@ -2306,7 +2311,8 @@ public class Env extends Thread{ // simulated game environment
                             +NSI_per_neighbour[3]+","
                             +"0";
 //                    if(x + 1 < columns){
-                    if(x + 1 < length){
+//                    if(x + 1 < length){
+                    if(x + 1 < width){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
                         }
