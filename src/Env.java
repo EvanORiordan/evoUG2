@@ -1,7 +1,6 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -363,7 +362,7 @@ public class Env extends Thread{ // simulated game environment
 
         // display experiment results (varies depending on game)
         String output = "";
-        if(game.equals("UG") || game.equals("UG")){
+        if(game.equals("UG") || game.equals("DG")){
             output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
                     + " avg p SD=" + DF4.format(experiment_SD_avg_p);
             if(game.equals("UG")){
@@ -456,6 +455,21 @@ public class Env extends Thread{ // simulated game environment
                 EWL(player);
             }
 
+
+            // rewiring
+            for(int i=0;i<N;i++){
+                Player player = pop[i];
+
+//                boolean rewire = player.getRewire();
+//                if(rewire){
+//                    rewire(player);
+//                }
+
+                rewire(player);
+            }
+
+
+
             // evolution occurs every ER iterations
             if(iter % ER == 0){
                 for(int i=0;i<N;i++){
@@ -545,8 +559,10 @@ public class Env extends Thread{ // simulated game environment
                 Player neighbours_neighbour = neighbour_neighbourhood.get(j);
                 int neighbours_neighbour_ID = neighbours_neighbour.getID();
                 if (neighbours_neighbour_ID == ID) {
-                    double[] neighbour_edge_weights = neighbour.getEdgeWeights();
-                    double neighbour_edge_weight = neighbour_edge_weights[j];
+//                    double[] neighbour_edge_weights = neighbour.getEdgeWeights();
+//                    double neighbour_edge_weight = neighbour_edge_weights[j];
+                    ArrayList <Double> neighbour_edge_weights = neighbour.getEdgeWeights();
+                    double neighbour_edge_weight = neighbour_edge_weights.get(j);
 
                     // play
                     boolean interact = true; // by default, interaction occurs.
@@ -731,41 +747,72 @@ public class Env extends Thread{ // simulated game environment
 
     public void initialiseEdgeWeights(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        player.setEdgeWeights(new double[neighbourhood.size()]);
-        double[] edge_weights = player.getEdgeWeights();
-        for(int i = 0; i < neighbourhood.size(); i++){
-            edge_weights[i] = 1.0;
+//        player.setEdgeWeights(new double[neighbourhood.size()]);
+//        double[] edge_weights = player.getEdgeWeights();
+//        for(int i = 0; i < neighbourhood.size(); i++){
+//            edge_weights[i] = 1.0;
+//        }
+
+        ArrayList <Double> edge_weights = new ArrayList<>();
+        int size = neighbourhood.size();
+        for(int i=0;i<size;i++){
+            edge_weights.add(1.0);
         }
+        player.setEdgeWeights(edge_weights);
     }
 
 
-
+    /**
+     * perform edge weight learning (EWL).
+     * ensure weight resides within [0,1].
+     * if option == 0, then increase weight.
+     * if option == 1, then decrease weight.
+     * if option == 2, then no effect.
+     */
     public void EWL(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         for(int i = 0; i < neighbourhood.size(); i++){
             Player neighbour = neighbourhood.get(i);
             double total_leeway = calculateTotalLeeway(player, neighbour, i);
             int option = checkEWLC(player, neighbour, total_leeway);
-            double[] edge_weights = player.getEdgeWeights();
-            if(option == 0){ // increase EW
-                edge_weights[i] += calculateLearning(player, neighbour);
-                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
-                    edge_weights[i] = 1.0;
-                }
-            } else if (option == 1){ // decrease EW
-                edge_weights[i] -= calculateLearning(player, neighbour);
-                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
-                    edge_weights[i] = 0;
-                }
+
+
+//            double[] edge_weights = player.getEdgeWeights();
+//            if(option == 0){ // increase EW
+//                edge_weights[i] += calculateLearning(player, neighbour);
+//                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
+//                    edge_weights[i] = 1.0;
+//                }
+//            } else if (option == 1){ // decrease EW
+//                edge_weights[i] -= calculateLearning(player, neighbour);
+//                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
+//                    edge_weights[i] = 0;
+//                }
+//            }
+
+
+            ArrayList <Double> weights = player.getEdgeWeights();
+            double weight = weights.get(i);
+            if(option == 0){
+                weight += calculateLearning(player, neighbour);
+                if(weight > 1)
+                    weight = 1;
+            } else if(option == 1){
+                weight -= calculateLearning(player, neighbour);
+                if(weight < 0)
+                    weight = 0;
             }
-            // if option equals 2, no learning occurs
+//            weights.get(i) = weight;
+            weights.set(i, weight);
         }
     }
 
 
 
     public double calculateTotalLeeway(Player player, Player neighbour, int i) {
-        double[] edge_weights = player.getEdgeWeights();
+//        double[] edge_weights = player.getEdgeWeights();
+        ArrayList <Double> weights = player.getEdgeWeights();
+        double weight = weights.get(i);
         double p = player.getP();
         double neighbour_p = neighbour.getP();
         double avg_score = player.getAvgScore();
@@ -774,7 +821,8 @@ public class Env extends Thread{ // simulated game environment
 
 
         double global_leeway = leeway1;
-        double edge_weight_leeway = edge_weights[i] * leeway3;
+//        double edge_weight_leeway = edge_weights[i] * leeway3;
+        double edge_weight_leeway = weight * leeway3;
         double p_comparison_leeway = (neighbour_p - p) * leeway4;
         double p_leeway = neighbour_p * leeway5;
         double random_leeway;
@@ -1140,15 +1188,28 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void calculateMeanSelfEdgeWeight(Player player){
-        double[] edge_weights = player.getEdgeWeights();
-        int length = edge_weights.length;
+//        double[] edge_weights = player.getEdgeWeights();
+//        int length = edge_weights.length;
+//        double mean_self_edge_weight = 0;
+//
+//        // calculate mean of edge weights from player to its neighbours
+//        for(int i = 0; i < length; i++){
+//            mean_self_edge_weight += edge_weights[i];
+//        }
+//        mean_self_edge_weight /= length;
+//
+//        player.setMeanSelfEdgeWeight(mean_self_edge_weight);
+
+
+        ArrayList <Double> weights = player.getEdgeWeights();
+        int size = weights.size();
         double mean_self_edge_weight = 0;
 
         // calculate mean of edge weights from player to its neighbours
-        for(int i = 0; i < length; i++){
-            mean_self_edge_weight += edge_weights[i];
+        for(int i = 0; i < size; i++){
+            mean_self_edge_weight += weights.get(i);
         }
-        mean_self_edge_weight /= length;
+        mean_self_edge_weight /= size;
 
         player.setMeanSelfEdgeWeight(mean_self_edge_weight);
     }
@@ -1163,9 +1224,11 @@ public class Env extends Thread{ // simulated game environment
         // calculate mean of edge weights directed at player
         for(int i = 0; i < size; i++) {
             Player neighbour = neighbourhood.get(i);
-            double[] edge_weights = neighbour.getEdgeWeights();
+//            double[] edge_weights = neighbour.getEdgeWeights();
+            ArrayList <Double> weights = neighbour.getEdgeWeights();
             int index = findPlayerIndex(player, neighbour);
-            mean_neighbour_edge_weight += edge_weights[index];
+//            mean_neighbour_edge_weight += edge_weights[index];
+            mean_neighbour_edge_weight += weights.get(index);
         }
         mean_neighbour_edge_weight /= size;
 
@@ -1620,7 +1683,7 @@ public class Env extends Thread{ // simulated game environment
     public void assignAdjacentNeighbours(Player player, String type, int d){
 //        ArrayList<Player> neighbourhood = player.getNeighbourhood();
         ArrayList<Player> neighbourhood = new ArrayList<>();
-        double[] edge_weights = new double[]{};
+//        double[] edge_weights = new double[]{};
 
         double y = player.getY();
         double x = player.getX();
@@ -2179,7 +2242,6 @@ public class Env extends Thread{ // simulated game environment
 //                for (int x = 0; x < columns; x++) {
 //                    Player current = grid.get(y).get(x);
 
-            // DEBUG THIS
 //            for(int x=width-1;x>=0;x--){
 //                for(int y=0;y<length;x++){
             for(int y=length-1;y>=0;y--){
@@ -2187,7 +2249,8 @@ public class Env extends Thread{ // simulated game environment
                     Player current = findPlayerByPos(y,x);
 
 
-                    double[] edge_weights = current.getEdgeWeights();
+//                    double[] edge_weights = current.getEdgeWeights();
+                    ArrayList <Double> weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
 
 
@@ -2197,10 +2260,13 @@ public class Env extends Thread{ // simulated game environment
 
 
                     substrings[a] += "0,"
-                            +edge_weights[2]+","
-                            +neighbourhood.get(2).getEdgeWeights()[3]+","
+//                            +edge_weights[2]+","
+                            +weights.get(2)+","
+//                            +neighbourhood.get(2).getEdgeWeights()[3]+","
+                            +neighbourhood.get(2).getEdgeWeights().get(3)+","
                             +"0";
-                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
+//                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
+                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights().get(0)+","
 
 
 //                            +DF2.format(current.getP())+","
@@ -2211,8 +2277,10 @@ public class Env extends Thread{ // simulated game environment
                             +DF2.format(EW_health)+","
 
 
-                            +edge_weights[0];
-                    substrings[a+2] += current.getEdgeWeights()[1]+","
+//                            +edge_weights[0];
+                            +weights.get(0);
+//                    substrings[a+2] += current.getEdgeWeights()[1]+","
+                    substrings[a+2] += current.getEdgeWeights().get(1)+","
 
 
 //                            +DF2.format(current.getMeanSelfEdgeWeight())+","
@@ -2223,10 +2291,13 @@ public class Env extends Thread{ // simulated game environment
                             +DF2.format(EW_health)+","
 
 
-                            +neighbourhood.get(0).getEdgeWeights()[1];
+//                            +neighbourhood.get(0).getEdgeWeights()[1];
+                            +neighbourhood.get(0).getEdgeWeights().get(1);
                     substrings[a+3] += "0,"
-                            +neighbourhood.get(3).getEdgeWeights()[2]+","
-                            +edge_weights[3]+","
+//                            +neighbourhood.get(3).getEdgeWeights()[2]+","
+                            +neighbourhood.get(3).getEdgeWeights().get(2)+","
+//                            +edge_weights[3]+","
+                            +weights.get(3)+","
                             +"0";
 //                    if(x + 1 < columns){
 //                    if(x + 1 < length){
@@ -2515,5 +2586,52 @@ public class Env extends Thread{ // simulated game environment
     public double adjustPosition(double position, double adjustment, int max){
         double new_position = (((position + adjustment) % max) + max) % max;
         return new_position;
+    }
+
+
+
+    public void rewire(Player player){
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+//        ArrayList <Double> weights = player.getEdgeWeights();
+
+        ArrayList <Player> neighbourhood = new ArrayList <Player> (player.getNeighbourhood());
+        ArrayList <Double> weights = new ArrayList <Double> (player.getEdgeWeights());
+
+        int size = weights.size();
+
+//        int x=0;
+
+        // doesnt work when we start at 0 because index exception.
+        // what if we just got backwards thru the arraylist?
+//        for(int i=0;i<size;i++){
+        for(int i=size-1;i>=0;i--){
+
+            // player must have >= 1 edges.
+            // what about the case where both weights = 0: which do you rewire?
+            // for now, whichever edge is encountered first by the loop gets rewired first.
+            int size2 = weights.size();
+            if(size > 1){
+                if(weights.get(i) == 0.0){
+                    // remove neighbour from neighbourhood.
+//                neighbourhood.remove(i-x);
+                    neighbourhood.remove(i);
+
+
+                    // remove edge weight from array.
+//                weights.remove(i-x);
+                    weights.remove(i);
+
+
+                    // find new neighbour.
+
+
+//                x++;
+                }
+            }
+        }
+
+        // enact changes to neighbourhood and weights.
+        player.setNeighbourhood(neighbourhood);
+        player.setEdgeWeights(weights);
     }
 }

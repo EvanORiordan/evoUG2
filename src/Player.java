@@ -27,7 +27,8 @@ public class Player {
 //    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
-    private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
+//    private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
+    private ArrayList <Double> edge_weights;
     private int NI = 0;  // num interactions (NI) player had
     private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
     private int[] NSI_per_neighbour;
@@ -46,6 +47,11 @@ public class Player {
     private double[] margolus_edge_weights2;
     private double x; // x position in space
     private double y; // y position in space
+
+
+    private boolean rewire;
+
+
 
 
 
@@ -213,10 +219,12 @@ public class Player {
     public void setNeighbourIDs(int[] arr){
         neighbour_IDs=arr;
     }
-    public double[] getEdgeWeights(){
-        return edge_weights;
-    }
-    public void setEdgeWeights(double[] d){edge_weights=d;}
+//    public double[] getEdgeWeights(){
+//        return edge_weights;
+//    }
+//    public void setEdgeWeights(double[] d){edge_weights=d;}
+    public ArrayList <Double> getEdgeWeights(){return edge_weights;}
+    public void setEdgeWeights(ArrayList <Double> x){edge_weights=x;}
     public int getNI(){return NI;}
     public void setNI(int i){
         NI=i;
