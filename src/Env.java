@@ -1,4 +1,5 @@
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -455,25 +456,15 @@ public class Env extends Thread{ // simulated game environment
                 EWL(player);
             }
 
-
-            // rewiring
-            for(int i=0;i<N;i++){
-                Player player = pop[i];
-
-//                boolean rewire = player.getRewire();
-//                if(rewire){
-//                    rewire(player);
-//                }
-
-                rewire(player);
-            }
-
-
-
-            // evolution occurs every ER iterations
+            // a generation occurs every ER iterations; evolution occurs each generation
             if(iter % ER == 0){
                 for(int i=0;i<N;i++){
                     Player child = pop[i];
+
+                    // rewiring
+                    if(EWT.equals("3")){
+                        rewire(child);
+                    }
 
                     // selection
                     Player parent = null;
@@ -533,8 +524,11 @@ public class Env extends Thread{ // simulated game environment
                     }
                     System.out.println(output);
 
-                    writeEWData();
-                    writeNSIData();
+                    if(!EWT.equals("3") && length==width && neigh.split(" ")[0].equals("VN")){
+                        writeEWData();
+                        writeNSIData();
+                    }
+
                 }
             }
 
@@ -802,8 +796,16 @@ public class Env extends Thread{ // simulated game environment
                 if(weight < 0)
                     weight = 0;
             }
-//            weights.get(i) = weight;
-            weights.set(i, weight);
+
+//            weights.set(i, weight);
+
+//            weight = Math.floor(weight);
+//            BigDecimal bd =
+            String str = DF2.format(weight);
+            double x = Double.parseDouble(str);
+            if(x==0 && weight!=0)
+                System.out.println("hello");
+            weights.set(i, x);
         }
     }
 
@@ -2615,14 +2617,17 @@ public class Env extends Thread{ // simulated game environment
                     // remove neighbour from neighbourhood.
 //                neighbourhood.remove(i-x);
                     neighbourhood.remove(i);
+                    // remove edge for both players! same with weights.
 
 
                     // remove edge weight from array.
 //                weights.remove(i-x);
                     weights.remove(i);
 
-
                     // find new neighbour.
+
+
+
 
 
 //                x++;

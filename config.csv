@@ -1,2 +1,2 @@
 game,runs,iters,length,width,space,EWT,EWLC,EWLF,ER,ROC,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,varying,variation,numexp,datarate,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,injiter,injp,injsize,desc
-UG,1,10000,3,5,grid,1,p,ROC,5,0.2,VN 1,RW,,NI,copy,,,,,,,,10,,,,,,,,,,,,,test
+UG,1,10000,3,5,grid,3,p,ROC,5,0.2,VN 1,RW,,NI,copy,,,,,,,,10,,,,,,,,,,,,,test
