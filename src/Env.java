@@ -547,14 +547,12 @@ public class Env extends Thread{ // simulated game environment
         for(int i = 0; i < neighbourhood.size(); i++){
             Player neighbour = neighbourhood.get(i);
 
-            // partner finds player (use neighbourIDs to do this?)
-            ArrayList <Player> neighbour_neighbourhood = neighbour.getNeighbourhood();
-            for (int j = 0; j < neighbour_neighbourhood.size(); j++) {
-                Player neighbours_neighbour = neighbour_neighbourhood.get(j);
-                int neighbours_neighbour_ID = neighbours_neighbour.getID();
-                if (neighbours_neighbour_ID == ID) {
-//                    double[] neighbour_edge_weights = neighbour.getEdgeWeights();
-//                    double neighbour_edge_weight = neighbour_edge_weights[j];
+            // neighbour finds player (use neighbourIDs to do this?)
+            ArrayList <Player> neighbourhood2 = neighbour.getNeighbourhood();
+            for (int j = 0; j < neighbourhood2.size(); j++) {
+                Player neighbour2 = neighbourhood2.get(j);
+                int ID2 = neighbour2.getID();
+                if (ID2 == ID) { // if true, the correct player has been found.
                     ArrayList <Double> neighbour_edge_weights = neighbour.getEdgeWeights();
                     double neighbour_edge_weight = neighbour_edge_weights.get(j);
 
@@ -1250,9 +1248,9 @@ public class Env extends Thread{ // simulated game environment
         int size = neighbourhood.size();
 
         for (int i = 0; i < size; i++) {
-            Player neighbours_neighbour = neighbourhood.get(i);
-            int neighbours_neighbour_ID = neighbours_neighbour.getID();
-            if (ID == neighbours_neighbour_ID) {
+            Player neighbour2 = neighbourhood.get(i);
+            int ID2 = neighbour2.getID();
+            if (ID == ID2) {
                 index = i;
                 break;
             }
@@ -2592,46 +2590,47 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+    // rewiring where rewirer and rewiree simultaneously lose edge if rewirer edge
+    // to rewiree equals 0. rewirer selects random player that is a neighbour of a
+    // neighbour.
+    // to prevent complete isolation, player must have >= 1 edges.
+    // what about the case where x out of x edges have 0 weight: which do you rewire?
+    // for now, whichever edges are encountered first by the loop gets rewired first.
     public void rewire(Player player){
-//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-//        ArrayList <Double> weights = player.getEdgeWeights();
-
-        ArrayList <Player> neighbourhood = new ArrayList <Player> (player.getNeighbourhood());
-        ArrayList <Double> weights = new ArrayList <Double> (player.getEdgeWeights());
-
+        ArrayList <Player> neighbourhood = new ArrayList(player.getNeighbourhood());
+        ArrayList <Double> weights = new ArrayList(player.getEdgeWeights());
         int size = weights.size();
-
-//        int x=0;
-
-        // doesnt work when we start at 0 because index exception.
-        // what if we just got backwards thru the arraylist?
-//        for(int i=0;i<size;i++){
-        for(int i=size-1;i>=0;i--){
-
-            // player must have >= 1 edges.
-            // what about the case where both weights = 0: which do you rewire?
-            // for now, whichever edge is encountered first by the loop gets rewired first.
-            int size2 = weights.size();
-            if(size > 1){
-                if(weights.get(i) == 0.0){
-                    // remove neighbour from neighbourhood.
-//                neighbourhood.remove(i-x);
-                    neighbourhood.remove(i);
-                    // remove edge for both players! same with weights.
-
-
-                    // remove edge weight from array.
-//                weights.remove(i-x);
-                    weights.remove(i);
-
-                    // find new neighbour.
-
-
-
-
-
-//                x++;
+        for(int i=size-1;i>=0;i--){ // i: index of rewiree in rewiree's data
+            double weight = weights.get(i);
+            if(weight == 0.0){
+                int size2 = weights.size();
+                Player neighbour = neighbourhood.get(i);
+                ArrayList <Player> neighbourhood2 = neighbour.getNeighbourhood();
+                int size3 = neighbourhood2.size();
+                if(size2 > 1 && size3 > 1) {
+                    for (int j = 0; j < neighbourhood2.size(); j++) { // j: index of rewirer in rewiree's data
+                        Player neighbour2 = neighbourhood2.get(j);
+                        int ID = player.getID();
+                        int ID2 = neighbour2.getID();
+                        if (ID2 == ID) {
+                            ArrayList<Double> weights2 = neighbour.getEdgeWeights();
+//                            double weight2 = weights2.get(j);
+//                            neighbourhood.remove(neighbour);
+//                            weights.remove(weight);
+//                            neighbourhood2.remove(neighbour2);
+//                            weights2.remove(weight2);
+                            neighbourhood.remove(i);
+                            weights.remove(i);
+                            neighbourhood2.remove(j);
+                            weights2.remove(j);
+                        }
+                    }
                 }
+
+
+
+                // TODO implement find new neighbour for rewirer.
+
             }
         }
 

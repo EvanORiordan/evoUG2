@@ -154,18 +154,19 @@ public class Player {
 
 
         // document EW and NSI per neighbour
-//        player_desc += " neighbourhood=[";
-//        for(int i=0;i<neighbourhood.size();i++){
-//            Player neighbour = neighbourhood.get(i);
-//            player_desc += "("
-//                    + neighbour.ID + ", " // neighbour ID
+        player_desc += " neighbourhood=[";
+        for(int i=0;i<neighbourhood.size();i++){
+            Player neighbour = neighbourhood.get(i);
+            player_desc += "("
+                    + neighbour.ID + ", " // neighbour ID
 //                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
-//                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
-//            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
-//                player_desc +=", ";
-//            }
-//        }
-//        player_desc +="]";
+                    + DF2.format(edge_weights.get(i)) + ", "
+                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
+            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
+                player_desc +=", ";
+            }
+        }
+        player_desc +="]";
 
 //        player_desc += " weights=[";
 //        for(int i=0;i<edge_weights.length;i++){
