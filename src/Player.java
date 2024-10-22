@@ -29,8 +29,9 @@ public class Player {
     private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
 //    private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
     private ArrayList <Double> edge_weights;
-    private int NI = 0;  // num interactions (NI) player had
-    private int NSI = 0; // num successful interactions (NSI) player had i.e. num interactions earned payoff
+//    private int NIP = 0; // num of interactions possible (NIP) that the player could have had.
+    private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
+    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.
     private int[] NSI_per_neighbour;
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
@@ -154,19 +155,19 @@ public class Player {
 
 
         // document EW and NSI per neighbour
-        player_desc += " neighbourhood=[";
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
-            player_desc += "("
-                    + neighbour.ID + ", " // neighbour ID
-//                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
-                    + DF2.format(edge_weights.get(i)) + ", "
-                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
-            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
-                player_desc +=", ";
-            }
-        }
-        player_desc +="]";
+//        player_desc += " neighbourhood=[";
+//        for(int i=0;i<neighbourhood.size();i++){
+//            Player neighbour = neighbourhood.get(i);
+//            player_desc += "("
+//                    + neighbour.ID + ", " // neighbour ID
+////                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
+//                    + DF2.format(edge_weights.get(i)) + ", "
+//                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
+//            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
+//                player_desc +=", ";
+//            }
+//        }
+//        player_desc +="]";
 
 //        player_desc += " weights=[";
 //        for(int i=0;i<edge_weights.length;i++){
@@ -185,6 +186,22 @@ public class Player {
 //        player_desc += " NSR="+ NSR;
 
         return player_desc;
+    }
+
+
+    @Override
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+
+        if(!(obj instanceof Player)){
+            return false;
+        }
+
+        Player obj2 = (Player) obj;
+
+        return Integer.compare(ID, obj2.ID) == 0;
     }
 
 
@@ -226,9 +243,9 @@ public class Player {
 //    public void setEdgeWeights(double[] d){edge_weights=d;}
     public ArrayList <Double> getEdgeWeights(){return edge_weights;}
     public void setEdgeWeights(ArrayList <Double> x){edge_weights=x;}
-    public int getNI(){return NI;}
-    public void setNI(int i){
-        NI=i;
+    public int getMNI(){return MNI;}
+    public void setMNI(int i){
+        MNI=i;
     }
     public int getNSI(){return NSI;}
     public void setNSI(int i){

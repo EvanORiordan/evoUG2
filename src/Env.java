@@ -419,8 +419,8 @@ public class Env extends Thread{ // simulated game environment
         for(int i=0;i<N;i++){
             Player player = pop[i];
             initialiseEdgeWeights(player);
-            assignNeighbourIDs(player);
-            resetNSIPerNeighbour(player);
+//            assignNeighbourIDs(player);
+//            resetNSIPerNeighbour(player);
         }
 
         // population stops once this condition is reached
@@ -526,7 +526,7 @@ public class Env extends Thread{ // simulated game environment
 
                     if(!EWT.equals("3") && length==width && neigh.split(" ")[0].equals("VN")){
                         writeEWData();
-                        writeNSIData();
+//                        writeNSIData();
                     }
 
                 }
@@ -539,35 +539,41 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+    /**
+     * Once the neighbour locates their index for the player, game playing can begin.<br>
+     * If {@code interact == true}, successful interaction. MNI and NSI increment.<br>
+     * If {@code interact == false}, unsuccessful interaction. MNI increments, NSI remains the same.
+     */
     public void play(Player player) {
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        int ID = player.getID();
-
         // find partner
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
         for(int i = 0; i < neighbourhood.size(); i++){
             Player neighbour = neighbourhood.get(i);
 
-            // neighbour finds player (use neighbourIDs to do this?)
+            // neighbour finds player
             ArrayList <Player> neighbourhood2 = neighbour.getNeighbourhood();
             for (int j = 0; j < neighbourhood2.size(); j++) {
                 Player neighbour2 = neighbourhood2.get(j);
-                int ID2 = neighbour2.getID();
-                if (ID2 == ID) { // if true, the correct player has been found.
+                if (player.equals(neighbour2)) {
                     ArrayList <Double> neighbour_edge_weights = neighbour.getEdgeWeights();
-                    double neighbour_edge_weight = neighbour_edge_weights.get(j);
+                    double weight = neighbour_edge_weights.get(j);
 
                     // play
-                    boolean interact = true; // by default, interaction occurs.
+                    boolean interact = true;
                     if(EWT.equals("1")){
-                        double random_double = ThreadLocalRandom.current().nextDouble();
-                        if(neighbour_edge_weight <= random_double){
+                        double random_number = ThreadLocalRandom.current().nextDouble();
+                        if(weight <= random_number){
                             interact = false;
+
+                            // generically update stats
+                            updateStats(player,0);
+                            updateStats(neighbour,0);
                         }
                     }
                     if(interact){
                         switch(game){
-                            case"UG","DG"->UG(player, neighbour, neighbour_edge_weight);
-                            case"PD"->PD(player, neighbour, neighbour_edge_weight);
+                            case"UG","DG"->UG(player, neighbour, weight);
+                            case"PD"->PD(player, neighbour, weight);
                         }
                     }
                     break;
@@ -582,57 +588,66 @@ public class Env extends Thread{ // simulated game environment
     public void UG(Player proposer, Player responder, double responder_edge_weight){
         double proposer_p = proposer.getP();
         double responder_q = responder.getQ();
-        int proposer_ID = proposer.getID();
-        int responder_ID = responder.getID();
+        double proposer_payoff = 0;
+        double responder_payoff = 0;
 
-        if(proposer_p >= responder_q){ // accept
-            double proposer_payoff = prize - (prize * proposer_p);
-            double responder_payoff = prize * proposer_p;
+        if(proposer_p >= responder_q){ // if true, accept proposal
+            proposer_payoff = prize - (prize * proposer_p);
+            responder_payoff = prize * proposer_p;
+        } // if false, reject proposal
 
-            // apply EWT 2 if applicable
-            if(EWT.equals("2")){
-                proposer_payoff *= responder_edge_weight;
-                responder_payoff *= responder_edge_weight;
-            }
-
-            updateStatsUG(proposer, proposer_payoff, responder_ID, true);
-            updateStatsUG(responder, responder_payoff, proposer.getID(), false);
-        } else { // reject
-            updateStatsUG(proposer, 0, responder_ID, true);
-            updateStatsUG(responder, 0, proposer_ID, false);
+        // apply EWT 2 if applicable
+        if(EWT.equals("2")){
+            proposer_payoff *= responder_edge_weight;
+            responder_payoff *= responder_edge_weight;
         }
+
+        updateStatsUG(proposer, proposer_payoff);
+        updateStatsUG(responder, responder_payoff);
     }
 
 
 
-    public void updateStatsUG(Player player, double payoff, int partner_ID, boolean proposer){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+//    public void updateStatsUG(Player player, double payoff, int partner_ID, boolean proposer){
+    public void updateStatsUG(Player player, double payoff){
+
+
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+
+
         double score = player.getScore();
-        int NI = player.getNI();
+        int MNI = player.getMNI();
         int NSI = player.getNSI();
-        int NSP = player.getNSP();
-        int NSR = player.getNSR();
+
+
+//        int NSP = player.getNSP();
+//        int NSR = player.getNSR();
+
 
         player.setScore(score + payoff);
-        player.setNI(NI + 1);
+        player.setMNI(MNI + 1);
         if(payoff > 0){
             player.setNSI(NSI + 1);
-            for(int i = 0; i < neighbourhood.size(); i++){
-                if(neighbourhood.get(i).getID() == partner_ID){
-                    player.getNSIPerNeighbour()[i]++;
-                    break;
-                }
-            }
-            if(proposer)
-                player.setNSP(NSP + 1);
-            else
-                player.setNSR(NSR + 1);
+
+
+//            for(int i = 0; i < size; i++){
+//                if(neighbourhood.get(i).getID() == partner_ID){
+//                    player.getNSIPerNeighbour()[i]++;
+//                    break;
+//                }
+//            }
+//            if(proposer)
+//                player.setNSP(NSP + 1);
+//            else
+//                player.setNSR(NSR + 1);
+
+
         }
         score = player.getScore();
-        NI = player.getNI();
+        MNI = player.getMNI();
         NSI = player.getNSI();
         switch (ASD){
-            case "NI" -> player.setAvgScore(score / NI);
+            case "MNI" -> player.setAvgScore(score / MNI);
             case "NSI" -> player.setAvgScore(score / NSI);
 
             default -> {
@@ -648,54 +663,25 @@ public class Env extends Thread{ // simulated game environment
     public void PD(Player player, Player partner, double partner_edge_weight){
         String strategy_PD = player.getStrategyPD();
         String partner_strategy_PD = partner.getStrategyPD();
-
-//        double score = player.getScore();
-//        double partner_score = partner.getScore();
-
         double player_payoff = 0;
         double partner_payoff = 0;
 
         if(strategy_PD.equals("C") && partner_strategy_PD.equals("C")){
-//            score += R;
-//            partner_score += R;
-//            updateStatsPD(player, R);
-//            updateStatsPD(partner, R);
             player_payoff = R;
             partner_payoff = R;
         } else if(strategy_PD.equals("C") && partner_strategy_PD.equals("D")){
-//            score += S;
-//            partner_score += T;
-//            updateStatsPD(player, S);
-//            updateStatsPD(partner, T);
             player_payoff = S;
             partner_payoff = T;
         }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("C")){
-//            score += T;
-//            partner_score += S;
-//            updateStatsPD(player, T);
-//            updateStatsPD(partner, S);
             player_payoff = T;
             partner_payoff = S;
         }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("D")){
-//            score += P;
-//            partner_score += P;
-//            updateStatsPD(player, P);
-//            updateStatsPD(partner, P);
             player_payoff = P;
             partner_payoff = P;
         }else if(strategy_PD.equals("A") || partner_strategy_PD.equals("A")){
-//            score += l;
-//            partner_score += l;
-//            updateStatsPD(player, l);
-//            updateStatsPD(partner, l);
             player_payoff = l;
             partner_payoff = l;
         }
-
-//        NI++;
-//        partner.NI++;
-//        avg_score = score / NI;
-//        partner.avg_score = partner_score / partner.NI;
 
         // apply EWT 2 if applicable
         if(EWT.equals("2")){
@@ -710,23 +696,23 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void updateStatsPD(Player player, double payoff){
-//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
         double score = player.getScore();
-        int NI = player.getNI();
+        int MNI = player.getMNI();
         int NSI = player.getNSI();
 
         player.setScore(score + payoff);
-        player.setNI(NI + 1);
+        player.setMNI(MNI + 1);
 
-        // insert segment here for NSI per neighbour counting if you get EWT 2 working with PD.
-        // 25/9/24: ??? idk what above comment means.
+        if(payoff > 0) { // true if interaction didnt occur or if
+            player.setNSI(NSI + 1);
+        }
 
         score = player.getScore();
-        NI = player.getNI();
-//        NSI = player.getNSI();
+        MNI = player.getMNI();
+        NSI = player.getNSI();
         switch(ASD){
-            case "NI" -> player.setScore(score / NI);
-            case "NSI" -> player.setScore(score / NSI);
+            case "MNI" -> player.setAvgScore(score / MNI);
+            case "NSI" -> player.setAvgScore(score / NSI);
 
             default -> {
                 System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
@@ -801,8 +787,8 @@ public class Env extends Thread{ // simulated game environment
 //            BigDecimal bd =
             String str = DF2.format(weight);
             double x = Double.parseDouble(str);
-            if(x==0 && weight!=0)
-                System.out.println("hello");
+//            if(x==0 && weight!=0)
+//                System.out.println("hello");
             weights.set(i, x);
         }
     }
@@ -1551,7 +1537,7 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }else if(space.equals("hex")){
-            // implement this...
+            // implement this later...
         }
     }
 
@@ -1787,15 +1773,15 @@ public class Env extends Thread{ // simulated game environment
 
 
     // give player the IDs of its neighbours.
-    public void assignNeighbourIDs(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        int size = neighbourhood.size();
-        int[] arr = new int[size];
-        for(int i=0;i<size;i++){
-            arr[i] = neighbourhood.get(i).getID();
-        }
-        player.setNeighbourIDs(arr);
-    }
+//    public void assignNeighbourIDs(Player player){
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+//        int size = neighbourhood.size();
+//        int[] arr = new int[size];
+//        for(int i=0;i<size;i++){
+//            arr[i] = neighbourhood.get(i).getID();
+//        }
+//        player.setNeighbourIDs(arr);
+//    }
 
 
 
@@ -1860,14 +1846,14 @@ public class Env extends Thread{ // simulated game environment
 
 
     // initialise NSI per neighbour counters.
-    public void resetNSIPerNeighbour(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        int size = neighbourhood.size();
-        player.setNSIPerNeighbour(new int[size]);
-        for(int i = 0; i < size; i++){
-            player.getNSIPerNeighbour()[i] = 0;
-        }
-    }
+//    public void resetNSIPerNeighbour(Player player){
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+//        int size = neighbourhood.size();
+//        player.setNSIPerNeighbour(new int[size]);
+//        for(int i = 0; i < size; i++){
+//            player.getNSIPerNeighbour()[i] = 0;
+//        }
+//    }
 
 
 
@@ -1948,10 +1934,14 @@ public class Env extends Thread{ // simulated game environment
             Player player = pop[i];
 
             player.setScore(0);
-            player.setNI(0);
+            player.setMNI(0);
             player.setNSI(0);
-            player.setNSP(0);
-            player.setNSR(0);
+
+
+//            player.setNSP(0);
+//            player.setNSR(0);
+
+
             switch(game){
                 case"UG","DG"->{
                     player.setOldP(player.getP());
@@ -1968,7 +1958,7 @@ public class Env extends Thread{ // simulated game environment
 //                    player.getNSIPerNeighbour()[i] = 0;
 //                }
 
-            resetNSIPerNeighbour(player);
+//            resetNSIPerNeighbour(player);
         }
     }
 
@@ -2330,80 +2320,80 @@ public class Env extends Thread{ // simulated game environment
      * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
      * Assumes von Neumann neighbourhood type and rows=columns.
      */
-    public void writeNSIData(){
-        try{
-            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename);
-            String string = "";
-//            String[] substrings = new String[(rows * 4)];
-//            String[] substrings = new String[(width * 4)];
-            String[] substrings = new String[(length * 4)];
-            for(int i=0;i<substrings.length;i++){
-                substrings[i] = "";
-            }
-            int a=0;
-//            for(int y = rows - 1; y >= 0; y--) {
-//                for (int x = 0; x < columns; x++) {
-//                    Player current = grid.get(y).get(x);
-
-
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
-                    Player current = findPlayerByPos(y,x);
-
-
-                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
-
-
-//                    TESTING TO SEE IF ITS EVER 0
-//                    for(int i: NSI_per_neighbour){
-//                        if(i == 0.0){
-//                            System.out.println("hello"); // can place breakpoint here
+//    public void writeNSIData(){
+//        try{
+//            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename);
+//            String string = "";
+////            String[] substrings = new String[(rows * 4)];
+////            String[] substrings = new String[(width * 4)];
+//            String[] substrings = new String[(length * 4)];
+//            for(int i=0;i<substrings.length;i++){
+//                substrings[i] = "";
+//            }
+//            int a=0;
+////            for(int y = rows - 1; y >= 0; y--) {
+////                for (int x = 0; x < columns; x++) {
+////                    Player current = grid.get(y).get(x);
+//
+//
+//            for(int y=length-1;y>=0;y--){
+//                for(int x=0;x<width;x++){
+//                    Player current = findPlayerByPos(y,x);
+//
+//
+//                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
+//
+//
+////                    TESTING TO SEE IF ITS EVER 0
+////                    for(int i: NSI_per_neighbour){
+////                        if(i == 0.0){
+////                            System.out.println("hello"); // can place breakpoint here
+////                        }
+////                    }
+//
+//
+//
+//
+//                    substrings[a] += "0,"
+//                            +NSI_per_neighbour[2]+","
+//                            +NSI_per_neighbour[2]+","
+//                            +"0";
+//                    substrings[a+1] += NSI_per_neighbour[1]+","
+//                            +"0,"
+//                            +"0,"
+//                            +NSI_per_neighbour[0];
+//                    substrings[a+2] += NSI_per_neighbour[1]+","
+//                            +"0,"
+//                            +"0,"
+//                            +NSI_per_neighbour[0];
+//                    substrings[a+3] += "0,"
+//                            +NSI_per_neighbour[3]+","
+//                            +NSI_per_neighbour[3]+","
+//                            +"0";
+////                    if(x + 1 < columns){
+////                    if(x + 1 < length){
+//                    if(x + 1 < width){
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += ",";
+//                        }
+//                    } else {
+//                        for(int b=a;b<a+4;b++){
+//                            substrings[b] += "\n";
 //                        }
 //                    }
-
-
-
-
-                    substrings[a] += "0,"
-                            +NSI_per_neighbour[2]+","
-                            +NSI_per_neighbour[2]+","
-                            +"0";
-                    substrings[a+1] += NSI_per_neighbour[1]+","
-                            +"0,"
-                            +"0,"
-                            +NSI_per_neighbour[0];
-                    substrings[a+2] += NSI_per_neighbour[1]+","
-                            +"0,"
-                            +"0,"
-                            +NSI_per_neighbour[0];
-                    substrings[a+3] += "0,"
-                            +NSI_per_neighbour[3]+","
-                            +NSI_per_neighbour[3]+","
-                            +"0";
-//                    if(x + 1 < columns){
-//                    if(x + 1 < length){
-                    if(x + 1 < width){
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += ",";
-                        }
-                    } else {
-                        for(int b=a;b<a+4;b++){
-                            substrings[b] += "\n";
-                        }
-                    }
-                }
-                a += 4;
-            }
-            for(int i=0;i<substrings.length;i++){
-                string += substrings[i];
-            }
-            fw.append(string);
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-    }
+//                }
+//                a += 4;
+//            }
+//            for(int i=0;i<substrings.length;i++){
+//                string += substrings[i];
+//            }
+//            fw.append(string);
+//            fw.close();
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+//    }
 
 
 
@@ -2452,9 +2442,9 @@ public class Env extends Thread{ // simulated game environment
         int i=0;
 
         do{
-            if(i==15){
-                System.out.println("insert BP here");
-            }
+//            if(i==15){
+//                System.out.println("insert BP here");
+//            }
             Player player2=pop[i];
             double y2=player2.getY();
             double x2=player2.getX();
@@ -2590,33 +2580,42 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // rewiring where rewirer and rewiree simultaneously lose edge if rewirer edge
-    // to rewiree equals 0. rewirer selects random player that is a neighbour of a
-    // neighbour.
-    // to prevent isolation, player must have >= 1 edges.
-    // what about the case where x out of x edges have 0 weight: which do you rewire?
-    // for now, whichever edges are encountered first by the loop gets rewired first.
+    // rewirer cuts edges if edge to old neighbour was 0.
+    // to prevent isolation, players must have >= 1 edges.
+    // if multiple edges of rewirer are 0, whichever edges are encountered first by the loop get rewired first.
+    // rewirer finds new neighbour by randomly selecting neighbour of neighbour.
+    // cannot rewire to yourself or old neighbour you just rewired away from this generation.
     public void rewire(Player rewirer){
         ArrayList <Player>
-                neighbourhood = new ArrayList(rewirer.getNeighbourhood()),
+                neighbourhood = new ArrayList(rewirer.getNeighbourhood()), // rewirer's neighbourhood
                 neighbourhood2,
-                pool = new ArrayList();
+                pool;
         double weight;
         ArrayList <Double>
                 weights = new ArrayList(rewirer.getEdgeWeights()),
                 weights2;
         int
-                size = weights.size(),
+                size = weights.size(), // number of weights rewirer had before checking for rewiring
                 size2 = weights.size(),
                 size3,
                 ID = rewirer.getID(),
                 ID2 = 0, // must be initialised for program to run.
                 ID3,
-                i,j;
+                ID4,
+                i, // index of rewirer's weight
+                j,
+                k,
+                l;
         Player
                 neighbour,
-                neighbour2;
-        Set <Integer> IDs = new HashSet<>();
+                neighbour2,
+                neighbour3;
+        Set <Integer> IDs;
+        boolean add;
+
+
+//        System.out.println(rewirer.equals(rewirer.getNeighbourhood().get(0)));
+//        System.out.println("BP");
 
 
         // check for rewiring
@@ -2636,7 +2635,11 @@ public class Env extends Thread{ // simulated game environment
                         ID3 = neighbour2.getID(); // might be the rewirer's ID
                         if (ID == ID3) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
                             weights2 = neighbour.getEdgeWeights(); // old neighbour's weights
-                            neighbourhood.remove(i);
+                            try {
+                                neighbourhood.remove(i);
+                            }catch(IndexOutOfBoundsException e){
+                                System.out.println("h");
+                            }
                             weights.remove(i);
                             neighbourhood2.remove(j);
                             weights2.remove(j);
@@ -2644,41 +2647,89 @@ public class Env extends Thread{ // simulated game environment
                     }
                 }
 
+
                 // form pool of candidates for new neighbour
-                size = neighbourhood.size(); // number of neighbours rewirer has
-                for (i = 0; i < size; i++) {
-                    neighbour = neighbourhood.get(i); // neighbour of rewirer
+                IDs = new HashSet<>();
+                size2 = neighbourhood.size(); // number of neighbours rewirer has
+                for (j = 0; j < size2; j++) {
+                    neighbour = neighbourhood.get(j); // neighbour of rewirer
                     neighbourhood2 = neighbour.getNeighbourhood(); // neighbour's neighbourhood
-                    size2 = neighbourhood2.size(); // size of neighbour's neighbourhood
-                    for (j = 0; j < size2; j++) { // find candidates
-                        neighbour2 = neighbourhood2.get(j); // neighbour of neighbour
+                    size3 = neighbourhood2.size(); // size of neighbour's neighbourhood
+                    for (k = 0; k < size3; k++) { // find candidates
+                        neighbour2 = neighbourhood2.get(k); // neighbour of neighbour
                         ID3 = neighbour2.getID(); // ID of candidate
                         if (ID != ID2 && ID != ID3) { // if candidate is not the rewirer or the rewiree, then add them to pool.
-//                            pool.add(neighbour2);
-                            IDs.add(ID3);
+
+
+                            // do not add candidate if they are already neighbours with rewirer
+                            add = true;
+                            for(l=0;l<size2;l++){
+                                neighbour3 = neighbourhood.get(l);
+                                ID4 = neighbour3.getID();
+                                if(ID3 == ID4){
+                                    add = false;
+                                    break;
+                                }
+                            }
+                            if(add){
+                                IDs.add(ID3);
+                            }
+
+//                            IDs.add(ID3);
                         }
                     }
                 }
 
 
                 // remove duplicates from the pool
-                size = IDs.size();
-                for(int ID4: IDs){
-                    Player candidate = findPlayerByID(ID4);
+                pool = new ArrayList();
+                for(int x: IDs){
+                    Player candidate = findPlayerByID(x);
                     pool.add(candidate);
                 }
 
 
+                // remove candidates who are already neighbours with rewirer
+//                int l = 0;
+//                ArrayList<Player> pool2 = new ArrayList<>();
+//                size2 = pool.size();
+//                for(j=0;j<size2;j++){
+//                    size3 = neighbourhood.size();
+//                    for(k=0;k<size3;k++){
+//                        if(pool.get(j).getID() == neighbourhood.get(k).getID()){
+//
+//                        }
+//                        pool2.add(pool.get(j));
+//                    }
+//                }
+
+
                 // randomly select candidate from pool
-                size = pool.size();
-                i = ThreadLocalRandom.current().nextInt(size);
-                neighbour = pool.get(i); // new neighbour
-                neighbourhood.add(neighbour);
-                weights.add(1.0);
-                neighbourhood2 = neighbour.getNeighbourhood(); // new neighbour's neighbourhood
-                neighbourhood2.add(rewirer);
-                weights2 = neighbour.getEdgeWeights(); // new neighbour's weights
-                weights2.add(1.0);
+                size2 = pool.size();
+                if(size2 > 0){
+                    try {
+                        j = ThreadLocalRandom.current().nextInt(size2);
+                    }
+                    catch(IllegalArgumentException e){
+                        e.printStackTrace();
+                        System.out.println("BP");
+                    }
+                    neighbour = pool.get(j); // new neighbour
+                    neighbourhood.add(neighbour);
+
+                    for(int x=0;x<neighbourhood.size()-1;x++){
+                        if(neighbourhood.get(x).getID() == neighbourhood.get(neighbourhood.size()-1).getID()){
+                            System.out.println("BP");
+                        }
+                    }
+                    weights.add(1.0);
+                    neighbourhood2 = neighbour.getNeighbourhood(); // new neighbour's neighbourhood
+                    neighbourhood2.add(rewirer);
+                    weights2 = neighbour.getEdgeWeights(); // new neighbour's weights
+                    weights2.add(1.0);
+                }else{
+                    System.out.println("BP");
+                }
             }
         }
 
@@ -2686,5 +2737,17 @@ public class Env extends Thread{ // simulated game environment
         // enact changes to neighbourhood and weights.
         rewirer.setNeighbourhood(neighbourhood);
         rewirer.setEdgeWeights(weights);
+    }
+
+
+
+    /**
+     * Generic version of update stats
+     */
+    public void updateStats(Player player, double payoff){
+        player.setScore(player.getScore() + payoff);
+        player.setMNI(player.getMNI() + 1);
+        if(ASD.equals("MNI"))
+            player.setAvgScore(player.getScore() / player.getMNI());
     }
 }
