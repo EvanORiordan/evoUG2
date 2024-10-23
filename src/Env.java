@@ -503,11 +503,13 @@ public class Env extends Thread{ // simulated game environment
                 gen++; // move on to the next generation
             }
 
-            calculateOverallStats();
-            calculateAverageEdgeWeights();
+            switch(game){
+                case"UG","DG"->calculateStatsUG();
+//                case"PD"->calculateStatsPD(); // implement this func later...
+            }
 
-            // periodically record individual data
-            if(datarate != 0){
+            // save data
+            if(datarate != 0){ // must check this before trying next che
                 if(run_num == 1 // if first run
                         && experiment_num == 1 // if first experiment
                         && iter % (ER * datarate) == 0){ // record gen's data every x gens, where x=datarate
@@ -525,6 +527,7 @@ public class Env extends Thread{ // simulated game environment
                     System.out.println(output);
 
                     if(!EWT.equals("3") && length==width && neigh.split(" ")[0].equals("VN")){
+                        calculateAverageEdgeWeights();
                         writeEWData();
 //                        writeNSIData();
                     }
@@ -608,48 +611,15 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public void updateStatsUG(Player player, double payoff, int partner_ID, boolean proposer){
     public void updateStatsUG(Player player, double payoff){
-
-
-//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-
-
-        double score = player.getScore();
-        int MNI = player.getMNI();
-        int NSI = player.getNSI();
-
-
-//        int NSP = player.getNSP();
-//        int NSR = player.getNSR();
-
-
-        player.setScore(score + payoff);
-        player.setMNI(MNI + 1);
+        player.setScore(player.getScore() + payoff);
+        player.setMNI(player.getMNI() + 1);
         if(payoff > 0){
-            player.setNSI(NSI + 1);
-
-
-//            for(int i = 0; i < size; i++){
-//                if(neighbourhood.get(i).getID() == partner_ID){
-//                    player.getNSIPerNeighbour()[i]++;
-//                    break;
-//                }
-//            }
-//            if(proposer)
-//                player.setNSP(NSP + 1);
-//            else
-//                player.setNSR(NSR + 1);
-
-
+            player.setNSI(player.getNSI() + 1);
         }
-        score = player.getScore();
-        MNI = player.getMNI();
-        NSI = player.getNSI();
         switch (ASD){
-            case "MNI" -> player.setAvgScore(score / MNI);
-            case "NSI" -> player.setAvgScore(score / NSI);
-
+            case "MNI" -> player.setAvgScore(player.getScore() / player.getMNI());
+            case "NSI" -> player.setAvgScore(player.getScore() / player.getNSI());
             default -> {
                 System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
                 Runtime.getRuntime().exit(0);
@@ -659,7 +629,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public void PD(Player player, Player partner){
     public void PD(Player player, Player partner, double partner_edge_weight){
         String strategy_PD = player.getStrategyPD();
         String partner_strategy_PD = partner.getStrategyPD();
@@ -741,11 +710,11 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * perform edge weight learning (EWL).
-     * ensure weight resides within [0,1].
-     * if option == 0, then increase weight.
-     * if option == 1, then decrease weight.
-     * if option == 2, then no effect.
+     * perform edge weight learning (EWL).<br>
+     * ensure weight resides within [0,1].<br>
+     * if {@code option == 0}, then increase weight.<br>
+     * if {@code option == 1}, then decrease weight.<br>
+     * if {@code option == 2}, then no effect.<br>
      */
     public void EWL(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
@@ -842,34 +811,34 @@ public class Env extends Thread{ // simulated game environment
      */
     public int checkEWLC(Player player, Player neighbour, double total_leeway) {
         double p = player.getP();
-        double neighbour_p = neighbour.getP();
+        double p2 = neighbour.getP();
         double avg_score = player.getAvgScore();
-        double neighbour_avg_score = neighbour.getAvgScore();
+        double avg_score2 = neighbour.getAvgScore();
         double q = player.getQ();
-        double neighbour_q = neighbour.getQ();
+        double q2 = neighbour.getQ();
 
         int option = 2;
         switch(EWLC){
 
             case"p"->{
-                if (neighbour_p + total_leeway > p){
+                if (p2 + total_leeway > p){
                     option = 0;
-                } else if (neighbour_p + total_leeway < p){
+                } else if (p2 + total_leeway < p){
                     option = 1;
                 }
             }
 
             case"avgscore"->{
-                if (neighbour_avg_score < avg_score + total_leeway){
+                if (avg_score2 < avg_score + total_leeway){
                     option = 0;
-                } else if (neighbour_avg_score > avg_score + total_leeway){
+                } else if (avg_score2 > avg_score + total_leeway){
                     option = 1;
                 }
             }
 
             case"AB"->{
                 double AB_rating1 = ((alpha * p) + (beta * avg_score)) / (alpha + beta);
-                double AB_rating2 = ((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta);
+                double AB_rating2 = ((alpha * p2) + (beta * avg_score2)) / (alpha + beta);
                 if(AB_rating1 < AB_rating2)
                     option = 0;
                 else if(AB_rating1 > AB_rating2)
@@ -877,9 +846,9 @@ public class Env extends Thread{ // simulated game environment
             }
 
             case"q"->{
-                if(neighbour_q > q)
+                if(q2 > q)
                     option = 0;
-                else if(neighbour_q < q)
+                else if(q2 < q)
                     option = 1;
             }
         }
@@ -1076,9 +1045,9 @@ public class Env extends Thread{ // simulated game environment
      * @param parent is the parent the player is copying.
      */
     public void copyEvolution(Player child, Player parent){
-        double parent_old_p = parent.getOldP();
-        double parent_old_q = parent.getOldQ();
-        setStrategy(child, parent_old_p, parent_old_q);
+        double old_p = parent.getOldP();
+        double old_q = parent.getOldQ();
+        setStrategy(child, old_p, old_q);
     }
 
 
@@ -1157,13 +1126,6 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void calculateAverageEdgeWeights(){
-//        for(ArrayList<Player> row:grid){
-//            for(Player player: row){
-//                calculateMeanSelfEdgeWeight(player);
-//                calculateMeanNeighbourEdgeWeight(player);
-//            }
-//        }
-
         for(int i=0;i<N;i++){
             Player player = pop[i];
             calculateMeanSelfEdgeWeight(player);
@@ -1174,19 +1136,6 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void calculateMeanSelfEdgeWeight(Player player){
-//        double[] edge_weights = player.getEdgeWeights();
-//        int length = edge_weights.length;
-//        double mean_self_edge_weight = 0;
-//
-//        // calculate mean of edge weights from player to its neighbours
-//        for(int i = 0; i < length; i++){
-//            mean_self_edge_weight += edge_weights[i];
-//        }
-//        mean_self_edge_weight /= length;
-//
-//        player.setMeanSelfEdgeWeight(mean_self_edge_weight);
-
-
         ArrayList <Double> weights = player.getEdgeWeights();
         int size = weights.size();
         double mean_self_edge_weight = 0;
@@ -1210,10 +1159,8 @@ public class Env extends Thread{ // simulated game environment
         // calculate mean of edge weights directed at player
         for(int i = 0; i < size; i++) {
             Player neighbour = neighbourhood.get(i);
-//            double[] edge_weights = neighbour.getEdgeWeights();
             ArrayList <Double> weights = neighbour.getEdgeWeights();
             int index = findPlayerIndex(player, neighbour);
-//            mean_neighbour_edge_weight += edge_weights[index];
             mean_neighbour_edge_weight += weights.get(index);
         }
         mean_neighbour_edge_weight /= size;
@@ -1859,16 +1806,12 @@ public class Env extends Thread{ // simulated game environment
 
     /**
      * Calculate the average value of p and the standard deviation of p across the population
-     * at the current generation.
+     * at the current generation.<br>
+     * Assumes the game is UG/DG.
      */
-    public void calculateOverallStats(){
+    public void calculateStatsUG(){
         // calculate average p
         avg_p = 0;
-//        for(ArrayList<Player> row: grid){
-//            for(Player player: row){
-//                avg_p+=player.getP();
-//            }
-//        }
         for(int i=0;i<N;i++){
             Player player = pop[i];
             double p = player.getP();
@@ -1878,11 +1821,6 @@ public class Env extends Thread{ // simulated game environment
 
         // calculate p SD
         p_SD = 0;
-//        for(ArrayList<Player> row: grid){
-//            for(Player player: row){
-//                p_SD += Math.pow(player.getP() - avg_p, 2);
-//            }
-//        }
         for(int i=0;i<N;i++){
             Player player = pop[i];
             double p = player.getP();
@@ -1892,11 +1830,6 @@ public class Env extends Thread{ // simulated game environment
 
         // calculate average q
         avg_q = 0;
-//        for(ArrayList<Player> row: grid){
-//            for(Player player: row){
-//                avg_q+=player.getQ();
-//            }
-//        }
         for(int i=0;i<N;i++){
             Player player = pop[i];
             double q = player.getQ();
@@ -1906,11 +1839,6 @@ public class Env extends Thread{ // simulated game environment
 
         // calculate p SD
         q_SD = 0;
-//        for(ArrayList<Player> row: grid){
-//            for(Player player: row){
-//                q_SD += Math.pow(player.getQ() - avg_q, 2);
-//            }
-//        }
         for(int i=0;i<N;i++){
             Player player = pop[i];
             double q = player.getQ();
@@ -2153,31 +2081,20 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Writes proposal values of pop to .csv file.
-     */
+    // Saves proposal values of pop to .csv file.
     public void writepData(){
         try{
             String filename = p_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
-//            for(int y = rows - 1; y >= 0; y--){
-//                for(int x = 0; x < columns; x++){
-//                    s += DF4.format(grid.get(y).get(x).getP());
-//                    if(x + 1 < columns){
-//                        s += ",";
-//                    }
-//                }
-//                s += "\n";
-//            }
-//            for(int y=0;y<length;y++){
-//            for(int y=0;y<length;y++){
             for(int y=length-1;y>=0;y--){
-//                for(int x=0;x<width;x++){
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
                     double p = player.getP();
-                    s += DF4.format(p) + ",";
+                    s += DF4.format(p);
+                    if(x + 1 < length){
+                        s += ",";
+                    }
                 }
                 s += "\n";
             }
@@ -2213,84 +2130,42 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Uses EW data to write a grid of 4x4 sub-grids into a .csv file.<br>
-     * Assumes von Neumann neighbourhood type and rows=columns.
+     * Records aggregate EW data by writing a grid of 4x4 sub-grids.<br>
+     * Assumes von Neumann, square grid.<br>
+     * {@code EW_health} equals sum of weights divided by num weights.
      */
     public void writeEWData(){
         try{
             String filename = EW_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename);
             String string = "";
-//            String[] substrings = new String[(rows * 4)];
-//            String[] substrings = new String[(width * 4)];
             String[] substrings = new String[(length * 4)];
             for(int i=0;i<substrings.length;i++){
                 substrings[i] = "";
             }
             int a=0;
-//            for(int y = rows - 1; y >= 0; y--) {
-//                for (int x = 0; x < columns; x++) {
-//                    Player current = grid.get(y).get(x);
-
-//            for(int x=width-1;x>=0;x--){
-//                for(int y=0;y<length;x++){
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
                     Player current = findPlayerByPos(y,x);
-
-
-//                    double[] edge_weights = current.getEdgeWeights();
                     ArrayList <Double> weights = current.getEdgeWeights();
                     ArrayList<Player> neighbourhood = current.getNeighbourhood();
-
-
-                    // EW health of player is equal to sum of edge weights divided by num edge weights.
-                    // this is equivalent to mean self edge weight plus mean neighbour edge weight divided by 2.
                     double EW_health = (current.getMeanSelfEdgeWeight() + current.getMeanNeighbourEdgeWeight()) / 2;
-
-
                     substrings[a] += "0,"
-//                            +edge_weights[2]+","
                             +weights.get(2)+","
-//                            +neighbourhood.get(2).getEdgeWeights()[3]+","
                             +neighbourhood.get(2).getEdgeWeights().get(3)+","
                             +"0";
-//                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
                     substrings[a+1] += neighbourhood.get(1).getEdgeWeights().get(0)+","
-
-
-//                            +DF2.format(current.getP())+","
-//                            +DF2.format(current.getAverageScore())+","
-
-
                             +DF2.format(EW_health)+","
                             +DF2.format(EW_health)+","
-
-
-//                            +edge_weights[0];
                             +weights.get(0);
-//                    substrings[a+2] += current.getEdgeWeights()[1]+","
                     substrings[a+2] += current.getEdgeWeights().get(1)+","
-
-
-//                            +DF2.format(current.getMeanSelfEdgeWeight())+","
-//                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
-
-
                             +DF2.format(EW_health)+","
                             +DF2.format(EW_health)+","
-
-
-//                            +neighbourhood.get(0).getEdgeWeights()[1];
                             +neighbourhood.get(0).getEdgeWeights().get(1);
                     substrings[a+3] += "0,"
-//                            +neighbourhood.get(3).getEdgeWeights()[2]+","
                             +neighbourhood.get(3).getEdgeWeights().get(2)+","
-//                            +edge_weights[3]+","
                             +weights.get(3)+","
                             +"0";
-//                    if(x + 1 < columns){
-//                    if(x + 1 < length){
                     if(x + 1 < width){
                         for(int b=a;b<a+4;b++){
                             substrings[b] += ",";
@@ -2318,9 +2193,12 @@ public class Env extends Thread{ // simulated game environment
 
     /**
      * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
-     * Assumes von Neumann neighbourhood type and rows=columns.
+     * Assumes von Neumann neighbourhood type and rows=columns.<br>
+     *
+     *
+     * DISCONTINUED FOR NOW...
      */
-//    public void writeNSIData(){
+    public void writeNSIData(){
 //        try{
 //            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
 //            fw = new FileWriter(filename);
@@ -2393,7 +2271,7 @@ public class Env extends Thread{ // simulated game environment
 //        }catch(IOException e){
 //            e.printStackTrace();
 //        }
-//    }
+    }
 
 
 
