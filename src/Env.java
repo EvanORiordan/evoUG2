@@ -2465,149 +2465,114 @@ public class Env extends Thread{ // simulated game environment
     // cannot rewire to yourself or old neighbour you just rewired away from this generation.
     public void rewire(Player rewirer){
         ArrayList <Player>
-                neighbourhood = new ArrayList(rewirer.getNeighbourhood()), // rewirer's neighbourhood
-                neighbourhood2,
-                pool;
-        double weight;
+                neighbourhood = new ArrayList(rewirer.getNeighbourhood()), // copy of rewirer's neighbourhood
+                neighbourhood2, // old neighbour's neighbourhood
+                neighbourhood3, // neighbour's neighbourhood
+                pool = new ArrayList<>(); // pool of candidates to be new neighbour of rewirer
+        double weight; // rewirer's weight
         ArrayList <Double>
-                weights = new ArrayList(rewirer.getEdgeWeights()),
-                weights2;
+                weights = new ArrayList(rewirer.getEdgeWeights()), // copy of rewirer's weights
+                weights2; // old neighbour's weights
         int
                 size = weights.size(), // number of weights rewirer had before checking for rewiring
-                size2 = weights.size(),
-                size3,
-                ID = rewirer.getID(),
-                ID2 = 0, // must be initialised for program to run.
-                ID3,
-                ID4,
-                i, // index of rewirer's weight
-                j,
-                k,
-                l;
+                size2 = weights.size(), // number of weights rewirer CURRENTLY has
+                size3, // number of neighbours old neighbour has
+                size4, // number of neighbours neighbour of rewirer has
+                size5, // number of candidates already in the pool
+                a, // index of rewirer's weight to old neighbour and neighbour in rewirer's neighbourhood
+                b, // index of rewirer in old neighbour's neighbourhood
+                c, // index of candidate already in the pool
+                d;
         Player
-                neighbour,
-                neighbour2,
-                neighbour3;
-        Set <Integer> IDs;
+                player, // old neighbour
+                player2 = null, // another reference to the rewirer
+                player3, // neighbour of rewirer
+                player4, // neighbour of neighbour of rewirer
+                player5; // candidate already in the pool
         boolean add;
 
 
-//        System.out.println(rewirer.equals(rewirer.getNeighbourhood().get(0)));
-//        System.out.println("BP");
-
-
-        // check for rewiring
-        for(i=size-1;i>=0;i--){
-            weight = weights.get(i);
+        for(a=size-1;a>=0;a--){ // looking for edges to rewire
+            weight = weights.get(a);
             if(weight == 0.0){
-
-                // cut edges
-                size2 = weights.size(); // number of weights rewirer CURRENTLY has
-                neighbour = neighbourhood.get(i); // old neighbour
-                ID2 = neighbour.getID(); // old neighbour's ID
-                neighbourhood2 = neighbour.getNeighbourhood(); // old neighbour's neighbourhood
-                size3 = neighbourhood2.size(); // number of neighbours old neighbour has
-                if(size2 > 1 && size3 > 1) { // ensure both players won't end up isolated
-                    for (j = 0; j < neighbourhood2.size(); j++) { // looking for the old neighbour's edge that corresponds to the rewirer
-                        neighbour2 = neighbourhood2.get(j); // might be the rewirer
-                        ID3 = neighbour2.getID(); // might be the rewirer's ID
-                        if (ID == ID3) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
-                            weights2 = neighbour.getEdgeWeights(); // old neighbour's weights
-                            try {
-                                neighbourhood.remove(i);
-                            }catch(IndexOutOfBoundsException e){
-                                System.out.println("h");
-                            }
-                            weights.remove(i);
-                            neighbourhood2.remove(j);
-                            weights2.remove(j);
+                player = neighbourhood.get(a);
+                neighbourhood2 = player.getNeighbourhood();
+                size3 = neighbourhood2.size();
+                if(size3 > 1) { // ensure old neighbour won't end up isolated
+                    for (b = 0; b < neighbourhood2.size(); b++) { // looking for the rewirer in the old neighbour's neighbourhood
+                        player2 = neighbourhood2.get(b);
+                        if (rewirer.equals(player2)) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
+                            weights2 = player.getEdgeWeights();
+                            neighbourhood.remove(a);
+                            weights.remove(a);
+                            neighbourhood2.remove(b);
+                            weights2.remove(b);
                         }
                     }
                 }
-
-
-                // form pool of candidates for new neighbour
-                IDs = new HashSet<>();
-                size2 = neighbourhood.size(); // number of neighbours rewirer has
-                for (j = 0; j < size2; j++) {
-                    neighbour = neighbourhood.get(j); // neighbour of rewirer
-                    neighbourhood2 = neighbour.getNeighbourhood(); // neighbour's neighbourhood
-                    size3 = neighbourhood2.size(); // size of neighbour's neighbourhood
-                    for (k = 0; k < size3; k++) { // find candidates
-                        neighbour2 = neighbourhood2.get(k); // neighbour of neighbour
-                        ID3 = neighbour2.getID(); // ID of candidate
-                        if (ID != ID2 && ID != ID3) { // if candidate is not the rewirer or the rewiree, then add them to pool.
-
-
-                            // do not add candidate if they are already neighbours with rewirer
-                            add = true;
-                            for(l=0;l<size2;l++){
-                                neighbour3 = neighbourhood.get(l);
-                                ID4 = neighbour3.getID();
-                                if(ID3 == ID4){
-                                    add = false;
-                                    break;
+                size2 = neighbourhood.size();
+                for (c = 0; c < size2; c++) {
+                    player3 = neighbourhood.get(c);
+                    neighbourhood3 = player.getNeighbourhood();
+                    size4 = neighbourhood3.size();
+                    for (d = 0; d < size4; d++) { // find candidates
+                        player4 = neighbourhood3.get(d);
+                        if(!player4.equals(rewirer) // if candidate is not the rewirer
+                                && !player4.equals(player) // if candidate is not the old neighbour
+                                && !player4.equals(player3)){ // if candidate is not already a neighbour of the rewirer
+                            size5 = pool.size();
+                            for(c=0;c<size5;c++){
+                                player5 = pool.get(c);
+                                if(!player4.equals(player5)){ // if candidate is not already in the pool
+                                    pool.add(player4);
                                 }
                             }
-                            if(add){
-                                IDs.add(ID3);
-                            }
 
-//                            IDs.add(ID3);
+                            // TODO CONTINUE CHANGING STUFF FROM HERE
+
+
+//                            pool.add(player4);
                         }
                     }
                 }
 
 
+                System.out.println("BP");
+
                 // remove duplicates from the pool
-                pool = new ArrayList();
-                for(int x: IDs){
-                    Player candidate = findPlayerByID(x);
-                    pool.add(candidate);
-                }
-
-
-                // remove candidates who are already neighbours with rewirer
-//                int l = 0;
-//                ArrayList<Player> pool2 = new ArrayList<>();
-//                size2 = pool.size();
-//                for(j=0;j<size2;j++){
-//                    size3 = neighbourhood.size();
-//                    for(k=0;k<size3;k++){
-//                        if(pool.get(j).getID() == neighbourhood.get(k).getID()){
-//
-//                        }
-//                        pool2.add(pool.get(j));
-//                    }
+//                pool = new ArrayList();
+//                for(int x: IDs){
+//                    Player candidate = findPlayerByID(x);
+//                    pool.add(candidate);
 //                }
 
 
                 // randomly select candidate from pool
-                size2 = pool.size();
-                if(size2 > 0){
-                    try {
-                        j = ThreadLocalRandom.current().nextInt(size2);
-                    }
-                    catch(IllegalArgumentException e){
-                        e.printStackTrace();
-                        System.out.println("BP");
-                    }
-                    neighbour = pool.get(j); // new neighbour
-                    neighbourhood.add(neighbour);
-
-                    for(int x=0;x<neighbourhood.size()-1;x++){
-                        if(neighbourhood.get(x).getID() == neighbourhood.get(neighbourhood.size()-1).getID()){
-                            System.out.println("BP");
-                        }
-                    }
-                    weights.add(1.0);
-                    neighbourhood2 = neighbour.getNeighbourhood(); // new neighbour's neighbourhood
-                    neighbourhood2.add(rewirer);
-                    weights2 = neighbour.getEdgeWeights(); // new neighbour's weights
-                    weights2.add(1.0);
-                }else{
-                    System.out.println("BP");
-                }
+//                size2 = pool.size();
+//                if(size2 > 0){
+//                    try {
+//                        j = ThreadLocalRandom.current().nextInt(size2);
+//                    }
+//                    catch(IllegalArgumentException e){
+//                        e.printStackTrace();
+//                        System.out.println("BP");
+//                    }
+//                    neighbour = pool.get(j); // new neighbour
+//                    neighbourhood.add(neighbour);
+//
+//                    for(int x=0;x<neighbourhood.size()-1;x++){
+//                        if(neighbourhood.get(x).getID() == neighbourhood.get(neighbourhood.size()-1).getID()){
+//                            System.out.println("BP");
+//                        }
+//                    }
+//                    weights.add(1.0);
+//                    neighbourhood2 = neighbour.getNeighbourhood(); // new neighbour's neighbourhood
+//                    neighbourhood2.add(rewirer);
+//                    weights2 = neighbour.getEdgeWeights(); // new neighbour's weights
+//                    weights2.add(1.0);
+//                }else{
+//                    System.out.println("BP");
+//                }
             }
         }
 
