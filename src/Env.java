@@ -1,5 +1,4 @@
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -83,9 +82,9 @@ public class Env extends Thread{ // simulated game environment
     static String NSI_data_filename;
     static int datarate; // factors into which gens have their data recorded. if 0, no gens are recorded.
     static String[] settings;
-    static int CI; // config index: facilitates construction of table of configs
+    static int CI; // Config Index: Facilitates construction of table of configs.
+    static int CI2; // Iterate through multiple values crammed into one param during configuation.
     static String q_data_filename;
-    String[] neigh_params;
     static String pos_data_filename;
 
 
@@ -120,8 +119,9 @@ public class Env extends Thread{ // simulated game environment
     static double mutbound = 0; // denotes max mutation possible
 
 
-
+    // fields related to rewiring
     static String rewiring_away_type;
+    static String EW_rewire_away_amount;
     static String rewiring_to_type;
 
 
@@ -392,7 +392,10 @@ public class Env extends Thread{ // simulated game environment
 
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            neigh_params = neigh.split(" ");
+
+
+
+            String[] neigh_params = neigh.split(" ");
             switch(neigh_params[0]){
                 case"VN","Moore","dia"->{
                     String type = neigh_params[0];
@@ -412,6 +415,10 @@ public class Env extends Thread{ // simulated game environment
                     Runtime.getRuntime().exit(0);
                 }
             }
+
+
+
+
         }
 
         if(space.equals("grid")){
@@ -464,21 +471,28 @@ public class Env extends Thread{ // simulated game environment
                 for(int i=0;i<N;i++){
                     Player child = pop[i];
 
+
                     // rewiring
-//                    if(rewiring_type.equals("3")){
-//                        localRewire(child);
-//                    }
-
-                    int num_rewires = 0;
-                    switch(rewiring_away_type){
-                        case"EW"->num_rewires = rewireAwayEW(child);
-                        // insert here a different method of rewiring away from neighbour...
+                    if(EWT.equals("3")) {
+                        int num_rewires = 0;
+                        switch (rewiring_away_type) {
+                            case"EW"->{
+                                switch(EW_rewire_away_amount){
+                                    case"single"->{
+                                        rewireAwayEWSingle(child);
+                                        num_rewires = 1;
+                                    }
+                                    case"many"->num_rewires = rewireAwayEWMultiple(child);
+                                }
+                            }
+                            // insert here a different method of rewiring away from neighbour...
+                        }
+                        switch (rewiring_to_type) {
+                            case "local" -> rewireToLocal(child, num_rewires);
+                            case "random" -> rewireToRandom(child, num_rewires);
+                        }
                     }
 
-                    switch(rewiring_to_type){
-                        case"local"->rewireToLocal(child, num_rewires);
-                        case"random"->rewireToRandom(child, num_rewires);
-                    }
 
                     // selection
                     Player parent = null;
@@ -1237,7 +1251,7 @@ public class Env extends Thread{ // simulated game environment
                         " %-6s |" +//length
                         " %-6s |" +//width
                         " %-10s |" +//space
-                        " %-8s |" +//EWT
+                        " %-17s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
                         " %-3s |" +//ER
@@ -1327,7 +1341,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-6s ", settings[CI++]); //length
             System.out.printf("| %-6s ", settings[CI++]); //width
             System.out.printf("| %-10s ", settings[CI++]); //space
-            System.out.printf("| %-8s ", settings[CI++]); //EWT
+            System.out.printf("| %-17s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
             System.out.printf("| %-3s ", settings[CI++]); //ER
@@ -1384,40 +1398,41 @@ public class Env extends Thread{ // simulated game environment
         CI = 0;
         game = settings[CI++];
         Player.setGame(game);
-//        runs = Integer.parseInt(settings[CI++]);
         runs=applySettingInt();
         if(runs < 1){
             System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-//        iters = Integer.parseInt(settings[CI++]);
         iters=applySettingInt();
         if(iters < 1){
             System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-//        length = Integer.parseInt(settings[CI++]);
         length=applySettingInt();
         if(length < 1){
             System.out.println("[ERROR] Invalid length. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-//        width=Integer.parseInt(settings[CI++]);
         width=applySettingInt();
         if(width < 1){
             System.out.println("[ERROR] Invalid width. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-//        columns = rows; // square lattice
-//        N = rows * columns;
         N = length * width;
         space=settings[CI++];
-        EWT = settings[CI++];
-        String[] EWT_params = EWT.split(" ");
-        if(EWT_params[0].equals("3")){
-            rewiring_to_type = EWT_params[1];
-            rewiring_away_type = EWT_params[2];
+
+
+        String[] EWT_params = settings[CI++].split(" ");
+        CI2 = 0;
+        EWT = EWT_params[CI2++];
+        if(EWT.equals("3")){
+            rewiring_away_type = EWT_params[CI2++];
+            if(rewiring_away_type.equals("EW"))
+                EW_rewire_away_amount = EWT_params[CI2++];
+            rewiring_to_type = EWT_params[CI2];
         }
+
+
         EWLC = settings[CI++];
         if(!EWLC.equals("p") && !EWLC.equals("avgscore"))
             System.out.println("[NOTE] No edge weight learning condition configured.");
@@ -1431,14 +1446,12 @@ public class Env extends Thread{ // simulated game environment
                 && !EWLF.equals("pAD3")
                 && !EWLF.equals("AB"))
             System.out.println("[NOTE] No edge weight learning formula configured.");
-//        ER=Integer.parseInt(settings[CI++]);
         ER=applySettingInt();
         if(ER < 1){
             System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
         ROC=applySettingDouble();
-
         neigh=settings[CI++];
         sel=settings[CI++];
         selnoise=applySettingDouble();
@@ -1448,17 +1461,13 @@ public class Env extends Thread{ // simulated game environment
         mut=settings[CI++];
         mutrate=applySettingDouble();
         mutbound=applySettingDouble();
-
         varying=settings[CI++];
         experiment_series=(varying.equals(""))?false:true;
         variation=applySettingDouble();
         numexp=applySettingInt();
-
         datarate=applySettingInt();
-
         alpha=applySettingDouble();
         beta=applySettingDouble();
-
         leeway1=applySettingDouble();
         leeway2=applySettingDouble();
         leeway3=applySettingDouble();
@@ -1466,7 +1475,6 @@ public class Env extends Thread{ // simulated game environment
         leeway5=applySettingDouble();
         leeway6=applySettingDouble();
         leeway7=applySettingDouble();
-
         injiter=applySettingInt();
         if(injiter>iters)
             System.out.println("NOTE: injiter > iters, therefore no injection will occur.");
@@ -2479,10 +2487,91 @@ public class Env extends Thread{ // simulated game environment
 
     /**
      * Find new neighbour by randomly choosing a neighbour of a neighbour.<br>
-     * New neighbour cannot be rewirer or already a neighbour or old neighbour.<br>
+     * New neighbour cannot be rewirer or already a neighbour.<br>
+     * Ensure candidate is not already in the pool?<br>
      * @param rewirer
      */
     public void rewireToLocal(Player rewirer, int num_rewires){
+        // create pool of candidates for new neighbour
+        ArrayList<Player> neighbourhood = rewirer.getNeighbourhood();
+        ArrayList<Player> pool = new ArrayList<>();
+        if(num_rewires > 0) {
+            for (int b = 0; b < neighbourhood.size(); b++) {
+                Player neighbour = neighbourhood.get(b); // neighbour of rewirer
+                ArrayList<Player> neighbourhood2 = neighbour.getNeighbourhood(); // neighbourhood of neighbour of rewirer
+                for (int c = 0; c < neighbourhood2.size(); c++) {
+                    boolean add = true;
+                    Player neighbour2 = neighbourhood2.get(c); // neighbour of neighbour of rewirer
+                    if (!neighbour2.equals(rewirer)) { // ensure candidate is not the rewirer
+                        for (int d = 0; d < neighbourhood.size(); d++) {
+                            Player neighbour3 = neighbourhood.get(d); // neighbour of rewirer
+                            if (neighbour2.equals(neighbour3)) { // ensure candidate is not already a neighbour of the rewirer
+//                                pool.add(neighbour2);
+                                add = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(add){
+                        pool.add(neighbour2);
+                    }
+                }
+            }
+        }
+
+
+
+        // select new neighbour
+
+        // TODO:
+        //  implement way to recognise if new neighbour is already in the neighbourhood
+        //  and then keep looking for new neighbours until num_rewires many new neighoburs
+        //  have been found.
+
+
+
+        Player new_neighbour = null;
+        ArrayList<Player> neighbourhood2 = new ArrayList<>(neighbourhood); // original copy // probabily not necessary to use in loop over "neighbourhood"
+        for(int a=0;a<num_rewires;a++){
+            boolean duplicate = false;
+            boolean keep_going = true;
+            while(keep_going){
+                new_neighbour = pool.get(ThreadLocalRandom.current().nextInt(pool.size()-1));
+//                for(int b=0;b<neighbourhood.size();b++){
+                for(int b=0;b<neighbourhood2.size();b++){
+//                    Player x = neighbourhood.get(b);
+                    Player x = neighbourhood2.get(b);
+                    if(new_neighbour.equals(x)){
+                        duplicate = true;
+                    }
+                }
+                if(!duplicate){
+                    keep_going = false;
+                }
+            }
+            if(new_neighbour != null){
+                neighbourhood.add(new_neighbour);
+                rewirer.getEdgeWeights().add(1.0);
+                new_neighbour.getNeighbourhood().add(rewirer);
+                new_neighbour.getEdgeWeights().add(1.0);
+            }
+        }
+
+
+
+
+
+
+//        for(int a=0;a<num_rewires;a++){
+//            Player new_neighbour = pool.get(ThreadLocalRandom.current().nextInt(pool.size()-1));
+//            neighbourhood.add(new_neighbour);
+//            rewirer.getEdgeWeights().add(1.0);
+//            new_neighbour.getNeighbourhood().add(rewirer);
+//            new_neighbour.getEdgeWeights().add(1.0);
+//        }
+
+
+
 //        ArrayList <Player>
 //                neighbourhood = new ArrayList(rewirer.getNeighbourhood()),
 //                neighbourhood2, // old neighbour's neighbourhood
@@ -2586,8 +2675,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-        // TODO implement this func using above comment for reference
-
 
 
 
@@ -2596,15 +2683,34 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Rewirer uses edge weights to perform rewiring.<br>
-     * If weight to neighbour is 0, cut edges between neighbour.<br>
-     * To prevent isolation, players must have >= 1 edges.
-     * If multiple weights are 0, whichever edges are encountered first by the loop get rewired first.<br>
      * Randomly select new neighbour.<br>
-     * New neighbour cannot be rewirer or already a neighbour or old neighbour.<br>
+     * New neighbour cannot be rewirer or already a neighbour.<br>
      * @param rewirer
      */
     public void rewireToRandom(Player rewirer, int num_rewires){
+
+        for(int a=0;a<num_rewires;a++){
+            ArrayList<Player> neighbourhood = rewirer.getNeighbourhood();
+            Player new_neighbour = null;
+            boolean valid = false;
+            while(!valid){ // if invalid candidate found, roll for a different candidate
+                new_neighbour = pop[ThreadLocalRandom.current().nextInt(pop.length)];
+                for(int b=0;b<neighbourhood.size();b++){
+                    Player neighbour = neighbourhood.get(b);
+                    if(!new_neighbour.equals(rewirer) && !new_neighbour.equals(neighbour)){
+                        valid = true;
+                    }
+                }
+            }
+            neighbourhood.add(new_neighbour);
+            rewirer.getEdgeWeights().add(1.0);
+            new_neighbour.getNeighbourhood().add(rewirer);
+            new_neighbour.getEdgeWeights().add(1.0);
+        }
+
+
+
+
 //        ArrayList<Player>
 //                neighbourhood = new ArrayList<>(rewirer.getNeighbourhood()), // copy of rewirer's neighbourhood
 //                neighbourhood2, // old neighbour's neighbourhood
@@ -2685,39 +2791,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-
-
-
-
-
-
-        for(int a=0;a<num_rewires;a++){
-            ArrayList<Player> neighbourhood = rewirer.getNeighbourhood();
-            Player player = null;
-            boolean valid = false;
-            while(!valid){ // if invalid candidate found, roll for a different candidate
-                player = pop[ThreadLocalRandom.current().nextInt(pop.length)];
-                for(int b=0;b<rewirer.getEdgeWeights().size();b++){
-                    Player player2 = rewirer.getNeighbourhood().get(b);
-                    if(!player.equals(rewirer) && !player.equals(player2)){
-                        valid = true;
-                    }
-                }
-            }
-            neighbourhood.add(player);
-            rewirer.getEdgeWeights().add(1.0);
-            player.getNeighbourhood().add(rewirer);
-            player.getEdgeWeights().add(1.0);
-        }
-
-
-
-
-
-
-
-
     }
 
 
@@ -2742,39 +2815,23 @@ public class Env extends Thread{ // simulated game environment
      * If multiple weights are 0, whichever edges are encountered first by the loop get rewired first.<br>
      * @param rewirer the player cutting edges with 0 weight
      */
-    public int rewireAwayEW(Player rewirer){
-        int a;
-        double weight;
+    public int rewireAwayEWMultiple(Player rewirer){
         ArrayList<Double> weights = new ArrayList(rewirer.getEdgeWeights()); // copy of rewirer's weights
-        Player old_neighbour;
         ArrayList<Player> neighbourhood = new ArrayList<>(rewirer.getNeighbourhood()); // copy of rewirer's neighbourhood pre-rewiring away
-        int size = neighbourhood.size();
-        ArrayList<Player> neighbourhood2;
-        int size2;
-        int size3;
-        int b;
-        Player player2;
-        ArrayList<Double> weights2;
         int num_rewires = 0;
-
-
-
-        for(a=size-1;a>=0;a--) { // looking for edges to rewire
-            weight = weights.get(a);
-            if (weight == 0.0) { // if weight is 0, rewire
-                old_neighbour = neighbourhood.get(a);
-                neighbourhood2 = old_neighbour.getNeighbourhood();
-                size2 = weights.size();
-                size3 = neighbourhood2.size();
-                if (size2 > 1 && size3 > 1) { // do not cut edges if doing so makes old neighbour or rewirer isolated
-                    for (b = 0; b < neighbourhood2.size(); b++) { // looking for the rewirer in the old neighbour's neighbourhood
-                        player2 = neighbourhood2.get(b);
-                        if (rewirer.equals(player2)) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
-                            weights2 = old_neighbour.getEdgeWeights();
+        for(int a=neighbourhood.size()-1;a>=0;a--) { // looking for edges to rewire
+            if (weights.get(a) == 0.0) { // if weight is 0, rewire
+                Player old_neighbour = neighbourhood.get(a);
+                ArrayList<Player> neighbourhood2 = old_neighbour.getNeighbourhood();
+                int size = neighbourhood2.size();
+                if (weights.size() > 1 && size > 1) { // do not cut edges if doing so makes old neighbour or rewirer isolated
+                    for (int b = 0; b < size; b++) { // looking for the rewirer in the old neighbour's neighbourhood
+                        Player neighbour = neighbourhood2.get(b);
+                        if (rewirer.equals(neighbour)) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
                             neighbourhood.remove(a);
                             weights.remove(a);
                             neighbourhood2.remove(b);
-                            weights2.remove(b);
+                            old_neighbour.getEdgeWeights().remove(b);
                             break;
                         }
                     }
@@ -2784,6 +2841,69 @@ public class Env extends Thread{ // simulated game environment
         }
         rewirer.setNeighbourhood(neighbourhood);
         rewirer.setEdgeWeights(weights);
+
         return num_rewires;
+    }
+
+
+
+    public void rewireAwayEWSingle(Player rewirer){
+        ArrayList<Double> weights = new ArrayList(rewirer.getEdgeWeights()); // copy of rewirer's weights
+        ArrayList<Player> neighbourhood = new ArrayList<>(rewirer.getNeighbourhood()); // copy of rewirer's neighbourhood pre-rewiring away
+
+        ArrayList<Integer> rewire_edge_indices = new ArrayList();
+        for(int a=0;a<weights.size();a++){
+            double weight = weights.get(a);
+            if(weight == 0){
+                rewire_edge_indices.add(a);
+            }
+        }
+
+
+        // randomly choose a 0 weight edge to rewire away from.
+        int a;
+        int num_rewirable_edges = rewire_edge_indices.size();
+        if(num_rewirable_edges > 0){
+            a = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges - 1));
+
+            // begin rewiring away from old neighbour. TODO: implement this
+
+
+
+        } // if false, there are no rewirable edges, therefore do not rewire.
+
+
+
+
+
+//        for(int a=neighbourhood.size()-1;a>=0;a--) { // looking for edges to rewire
+//            if (weights.get(a) == 0.0) { // if weight is 0, rewire
+//                Player old_neighbour = neighbourhood.get(a);
+//                ArrayList<Player> neighbourhood2 = old_neighbour.getNeighbourhood();
+//                int size = neighbourhood2.size();
+//                if (weights.size() > 1 && size > 1) { // do not cut edges if doing so makes old neighbour or rewirer isolated
+//                    for (int b = 0; b < size; b++) { // looking for the rewirer in the old neighbour's neighbourhood
+//                        Player neighbour = neighbourhood2.get(b);
+//                        if (rewirer.equals(neighbour)) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
+//                            neighbourhood.remove(a);
+//                            weights.remove(a);
+//                            neighbourhood2.remove(b);
+//                            old_neighbour.getEdgeWeights().remove(b);
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        rewirer.setNeighbourhood(neighbourhood);
+//        rewirer.setEdgeWeights(weights);
+
+
+
+
+
+
+
+
     }
 }
