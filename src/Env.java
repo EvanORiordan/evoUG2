@@ -2551,41 +2551,86 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
 
-
-
-
-//                    // if pool is empty, add c to pool
-//                    if(pool.size() == 0){
-//                        pool2.add(c);
-//                    } else {
-//
-//                        // d denotes candidate in pool
-//                        for (Player d : pool) {
-//
-//                            // e denotes neighbour of rewirer.
-//                            for (Player e : omega_a) {
-//
-//                                // add c to pool if c != a AND c != d AND c != e.
-//                                if (!c.equals(a) && !c.equals(d) && !c.equals(e)) {
-//                                    pool2.add(c);
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    }
-
-
-
-
-
-
                     // sync copy updates by copying async copy.
                     pool = new ArrayList<>(pool2);
                 }
             }
         }
 
-        int BP = 0;
+        // what if pool empty? what to do in that case? when would this be the case?
+        // what if f already in omega_a? earlier checks already cleared this possiblity.
+
+
+
+
+//        // f denotes new neighbour of a.
+//        Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size() - 1));
+//
+//        // connect a to f.
+//        a.getNeighbourhood().add(f);
+//        a.getEdgeWeights().add(1.0);
+//
+//        // connect f to a.
+//        f.getNeighbourhood().add(a);
+//        f.getEdgeWeights().add(1.0);
+
+
+
+        // TODO: DEBUG THIS
+
+        // find num_rewires many new neighbours
+        for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
+
+            // f denotes new neighbour of a.
+            Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size() - 1));
+
+            // connect a to f.
+            a.getNeighbourhood().add(f);
+            a.getEdgeWeights().add(1.0);
+
+            // connect f to a.
+            f.getNeighbourhood().add(a);
+            f.getEdgeWeights().add(1.0);
+        }
+
+
+
+
+
+
+
+
+
+
+
+//        Player f;
+//        while(true){
+//            f = pool.get(ThreadLocalRandom.current().nextInt(pool.size() - 1));
+//            boolean valid = true;
+//            for(Player g: omega_a){
+//
+//            }
+//        }
+
+
+
+
+
+//        Player f = null;
+//        if(pool.size() > 0){
+//            f = pool.get(ThreadLocalRandom.current().nextInt(pool.size() - 1));
+//        }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2620,13 +2665,6 @@ public class Env extends Thread{ // simulated game environment
 //        }
 
 
-
-        // select new neighbour
-
-        // TODO:
-        //  implement way to recognise if new neighbour is already in the neighbourhood
-        //  and then keep looking for new neighbours until num_rewires many new neighoburs
-        //  have been found.
 
 
 
