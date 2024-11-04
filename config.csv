@@ -4,3 +4,5 @@ DG,10,10000,40,40,grid,1,p,ROC,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,
 DG,10,10000,10,10,grid,1,p,pAD,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,approach2 test
 DG,10,10000,40,40,grid,1,p,pAD,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,approach2 test
 DG,100,10000,40,40,grid,1,p,ROC,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,approach1 big test
+DG,100,10000,40,40,grid,1,p,pAD,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,approach2 big test
+DG,100,10000,40,40,grid,1,p,pEAD,1,0.2,VN 1,RW,,MNI,copy,,,,,ER,1,10,,,,,,,,,,,,,,approach3 big test

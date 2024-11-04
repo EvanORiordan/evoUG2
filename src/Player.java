@@ -181,6 +181,7 @@ public class Player {
 
         // document interaction stats
 //        player_desc += " NI="+ NI;
+        player_desc += " MNI=" + MNI;
 //        player_desc += " NSI="+ NSI;
 //        player_desc += " NSP="+ NSP;
 //        player_desc += " NSR="+ NSR;
