@@ -120,10 +120,12 @@ public class Env extends Thread{ // simulated game environment
 
 
     // fields related to rewiring
-    static String rewiring_away_type;
-    static String EW_rewire_away_amount;
+    static String rewiring_away_type; // values accepted: "0EW", "EWRW" (edge weight roulette wheel), "random"
+//    static String EW_rewire_away_qty;
+//    static String rewire_qty;
     static String rewiring_to_type;
-
+    static double rewire_prob;
+//    static int num_rewires; // number of rewires to be performed by the given player
 
 
 
@@ -474,20 +476,62 @@ public class Env extends Thread{ // simulated game environment
 
                     // rewiring
                     if(EWT.equals("3")) {
-                        int num_rewires = 0;
-                        switch (rewiring_away_type) {
-                            case"EW"->{
-                                switch(EW_rewire_away_amount){
-                                    case"single"-> num_rewires = rewireAwayEWSingle(child);
-                                    case"many"->num_rewires = rewireAwayEWMany(child);
-                                }
+
+                        double random_number = ThreadLocalRandom.current().nextDouble();
+
+                        if(rewire_prob > random_number){
+                            int num_rewires = 0;
+                            switch (rewiring_away_type) {
+                                case"0EWSingle"->num_rewires = rewireAway0EWSingle(child);
+                                case"0EWMany"->num_rewires = rewireAway0EWMany(child);
+                                case"EWRW"->num_rewires = rewireAway0EWSingle(child);
                             }
-                            // insert here a different method of rewiring away from neighbour...
+                            switch(rewiring_to_type){
+                                case"local"->rewireToLocal(child, num_rewires);
+                                case"random"->rewireToRandom(child, num_rewires);
+                            }
                         }
-                        switch (rewiring_to_type) {
-                            case "local" -> rewireToLocal(child, num_rewires);
-                            case "random" -> rewireToRandom(child, num_rewires);
-                        }
+
+
+//                        int num_rewires = 0;
+////
+////                        num_rewires = 0;
+//
+//                        switch (rewiring_away_type) {
+//
+//                            // JUST MAKE IT SO THAT THESE REWIRE AWAY FUNCS ALL CONNECT TO
+//                            // THE GLOBAL num_rewires VAR, THUS REMOVING NEED FOR THIS SWITCH.
+//                            // JUST MAKE THE EW_rewire_away_qty AFFECT THESE FUNCS INSIDE THEIR OWN
+//                            // CODE
+//
+////                            case"0EW"->{
+////                                switch(EW_rewire_away_qty){
+////                                    case"single"-> num_rewires = rewireAwayEWSingle(child);
+////                                    case"many"->num_rewires = rewireAwayEWMany(child);
+////                                }
+////                            }
+//
+////                            case"0EW"->rewireAway0EW(child);
+//
+////                            case"0EW"->rewireAway0EW(child);
+////                            case"EWRW"->rewireAwayEWRW(child);
+//
+//
+//
+//                            case"0EWSingle"->num_rewires = rewireAway0EWSingle(child);
+//                            case"0EWMany"->num_rewires = rewireAway0EWSingle(child);
+//                            case"EWRW"->num_rewires = rewireAway0EWSingle(child);
+//
+//                        }
+//                        switch (rewiring_to_type) {
+//                            case "local" -> rewireToLocal(child, num_rewires);
+//                            case "random" -> rewireToRandom(child, num_rewires);
+//
+////                            case"local"->rewireToLocal(child);
+////                            case"random"->rewireToRandom(child);
+//                        }
+
+
                     }
 
 
@@ -1248,7 +1292,7 @@ public class Env extends Thread{ // simulated game environment
                         " %-6s |" +//length
                         " %-6s |" +//width
                         " %-10s |" +//space
-                        " %-17s |" +//EWT
+                        " %-21s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
                         " %-3s |" +//ER
@@ -1338,7 +1382,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-6s ", settings[CI++]); //length
             System.out.printf("| %-6s ", settings[CI++]); //width
             System.out.printf("| %-10s ", settings[CI++]); //space
-            System.out.printf("| %-17s ", settings[CI++]); //EWT
+            System.out.printf("| %-21s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
             System.out.printf("| %-3s ", settings[CI++]); //ER
@@ -1423,9 +1467,14 @@ public class Env extends Thread{ // simulated game environment
         CI2 = 0;
         EWT = EWT_params[CI2++];
         if(EWT.equals("3")){
+            rewire_prob = Double.parseDouble(EWT_params[CI2++]);
             rewiring_away_type = EWT_params[CI2++];
-            if(rewiring_away_type.equals("EW"))
-                EW_rewire_away_amount = EWT_params[CI2++];
+
+//            if(rewiring_away_type.equals("EW"))
+//                EW_rewire_away_qty = EWT_params[CI2++];
+
+//            rewire_qty = EWT_params[CI2++];
+
             rewiring_to_type = EWT_params[CI2];
         }
 
@@ -2667,7 +2716,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     // TODO: debug
-    public int rewireAwayEWMany(Player a){
+    public int rewireAway0EWMany(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
@@ -2743,7 +2792,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public int rewireAwayEWSingle(Player a){
+    public int rewireAway0EWSingle(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
@@ -2756,16 +2805,17 @@ public class Env extends Thread{ // simulated game environment
         // b_index denotes index of edge w_ab that connects a to neighbour b.
         for(int b_index = 0; b_index < weights.size(); b_index++){
             double w = weights.get(b_index);
+
+            // can cut the edge if weight w = 0.
             if(w == 0){
                 rewire_edge_indices.add(b_index);
             }
         }
 
         int num_rewirable_edges = rewire_edge_indices.size();
-        int num_rewires; // supports the process of rewiring to new neighbour.
 
-        // you could use a while loop like this if you were rewiring multiple edges.
-//        while(num_rewirable_edges > 0){
+        // supports the process of rewiring to new neighbour. 1 if successful rewire away, 0 otherwise.
+        int num_rewires;
 
         // randomly select an edge w from the pool to cut. denote the index of w by w_index.
         if(num_rewirable_edges > 0){
@@ -2779,12 +2829,11 @@ public class Env extends Thread{ // simulated game environment
             ArrayList<Player> omega_c = c.getNeighbourhood();
 
             // d denotes neighbour of c.
-            for(int d_index = 0; d_index < omega_c.size(); d_index++){
+            for(int d_index = 0; d_index < omega_c.size(); d_index++) {
                 Player d = omega_c.get(d_index);
 
-
                 // insert check to prevent the two players involved from becoming isolated?
-
+                // if(a.getNeighbourhood().size() > 1 && c.getNeighbourhood().size() > 1){ CONTINUE WITH THE REWIRING...}
 
                 // if d = a, then c_index is the location of a in omega_b.
                 if(d.equals(a)){
@@ -2814,4 +2863,144 @@ public class Env extends Thread{ // simulated game environment
 
         return num_rewires;
     }
+
+
+
+
+
+
+
+
+//    public int rewireAway0EW(Player a){
+//        // omega_a denotes copy of neighbourhood of a.
+//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+//
+//        // denotes list of weighted edges connecting a to its neigbours.
+//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
+//
+//        // denotes pool of rewireable edges represented by their indices.
+//        ArrayList<Integer> rewire_edge_indices = new ArrayList();
+//
+//        // b_index denotes index of edge w_ab that connects a to neighbour b.
+//        for(int b_index = 0; b_index < weights.size(); b_index++){
+//            double w = weights.get(b_index);
+//            if(w == 0){
+//                rewire_edge_indices.add(b_index);
+//            }
+//        }
+//
+//        int num_rewirable_edges = rewire_edge_indices.size();
+//
+//        ArrayList<Integer> chosen_edges_indices = new ArrayList<>();
+//
+//        int num_rewires;
+//
+//        if(rewire_qty.equals("single")){
+//            chosen_edges_indices.add(rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges)));
+//            num_rewires = 1;
+//        }
+//        else if(rewire_qty.equals("many")){
+//
+//            for(double w)
+//
+//
+//
+//            int i = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
+//
+//            chosen_edges_indices.add(i);
+//
+//            // remember to remove the index of the edge just chosen from the pool so that it cannot be chosen again.
+//            rewire_edge_indices.remove(i);
+//        }
+//
+//
+//
+////        int num_rewirable_edges = rewire_edge_indices.size();
+////        int num_rewires; // supports the process of rewiring to new neighbour.
+////
+////        // you could use a while loop like this if you were rewiring multiple edges.
+//////        while(num_rewirable_edges > 0){
+////
+////        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
+////        if(EW_rewire_away_qty.equals("single")){
+////            num_rewires = 1;
+////            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
+////
+////            // c denotes neighbour of a.
+////            Player c = omega_a.get(c_index);
+////
+////            // omega_c denotes neighbourhood of c.
+////            ArrayList<Player> omega_c = c.getNeighbourhood();
+////
+////            // d denotes neighbour of c.
+////            for(int d_index = 0; d_index < omega_c.size(); d_index++){
+////                Player d = omega_c.get(d_index);
+////
+////
+////                // insert check to prevent the two players involved from becoming isolated?
+////
+////
+////                // if d = a, then c_index is the location of a in omega_b.
+////                if(d.equals(a)){
+////
+////                    // disconnect a from c.
+////                    omega_a.remove(c_index);
+////                    weights.remove(c_index);
+////
+////                    // disconnect c from a.
+////                    omega_c.remove(d_index);
+////                    c.getEdgeWeights().remove(d_index);
+////
+////                    // once the cutting of edges has been completed, stop looping.
+////                    break;
+////                }
+////            }
+////
+//////            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
+////
+////        } // if false, there are no rewirable edges, therefore do not rewire.
+////        else if(EW_rewire_away_qty.equals("single")){
+////            num_rewires = 0;
+////        }
+////        else {
+////            num_rewires = 0;
+////        }
+//
+//
+//
+//
+//
+//
+//
+//
+//        a.setNeighbourhood(omega_a);
+//        a.setEdgeWeights(weights);
+//
+//        return num_rewires;
+//    }
+
+
+
+
+
+    /**
+     * work in progress...
+     *
+     * this approach to rewiring away only makes sense if we limit the number of rewirings per gen
+     * to 1.
+     * @param a
+     * @return
+     */
+    public int rewireAwayEWRW(Player a){
+
+        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+
+        ArrayList<Double> weights = new ArrayList<>(a.getEdgeWeights());
+
+
+        //apply roulette wheel approach to selecting edges.
+
+        return 0;
+    }
+
 }
