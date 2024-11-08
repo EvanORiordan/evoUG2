@@ -486,52 +486,13 @@ public class Env extends Thread{ // simulated game environment
                                 case"0EWMany"->num_rewires = rewireAway0EWMany(child);
                                 case"EWRW"->num_rewires = rewireAway0EWSingle(child);
                             }
-                            switch(rewiring_to_type){
-                                case"local"->rewireToLocal(child, num_rewires);
-                                case"random"->rewireToRandom(child, num_rewires);
+                            if(num_rewires > 0){
+                                switch (rewiring_to_type){
+                                    case"local"->rewireToLocal(child, num_rewires);
+                                    case"random"->rewireToRandom(child, num_rewires);
+                                }
                             }
                         }
-
-
-//                        int num_rewires = 0;
-////
-////                        num_rewires = 0;
-//
-//                        switch (rewiring_away_type) {
-//
-//                            // JUST MAKE IT SO THAT THESE REWIRE AWAY FUNCS ALL CONNECT TO
-//                            // THE GLOBAL num_rewires VAR, THUS REMOVING NEED FOR THIS SWITCH.
-//                            // JUST MAKE THE EW_rewire_away_qty AFFECT THESE FUNCS INSIDE THEIR OWN
-//                            // CODE
-//
-////                            case"0EW"->{
-////                                switch(EW_rewire_away_qty){
-////                                    case"single"-> num_rewires = rewireAwayEWSingle(child);
-////                                    case"many"->num_rewires = rewireAwayEWMany(child);
-////                                }
-////                            }
-//
-////                            case"0EW"->rewireAway0EW(child);
-//
-////                            case"0EW"->rewireAway0EW(child);
-////                            case"EWRW"->rewireAwayEWRW(child);
-//
-//
-//
-//                            case"0EWSingle"->num_rewires = rewireAway0EWSingle(child);
-//                            case"0EWMany"->num_rewires = rewireAway0EWSingle(child);
-//                            case"EWRW"->num_rewires = rewireAway0EWSingle(child);
-//
-//                        }
-//                        switch (rewiring_to_type) {
-//                            case "local" -> rewireToLocal(child, num_rewires);
-//                            case "random" -> rewireToRandom(child, num_rewires);
-//
-////                            case"local"->rewireToLocal(child);
-////                            case"random"->rewireToRandom(child);
-//                        }
-
-
                     }
 
 
@@ -1292,7 +1253,7 @@ public class Env extends Thread{ // simulated game environment
                         " %-6s |" +//length
                         " %-6s |" +//width
                         " %-10s |" +//space
-                        " %-21s |" +//EWT
+                        " %-22s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
                         " %-3s |" +//ER
@@ -1382,7 +1343,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-6s ", settings[CI++]); //length
             System.out.printf("| %-6s ", settings[CI++]); //width
             System.out.printf("| %-10s ", settings[CI++]); //space
-            System.out.printf("| %-21s ", settings[CI++]); //EWT
+            System.out.printf("| %-22s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
             System.out.printf("| %-3s ", settings[CI++]); //ER
@@ -2547,52 +2508,50 @@ public class Env extends Thread{ // simulated game environment
         // omega_a denotes neighbourhood of rewirer.
         ArrayList<Player> omega_a = a.getNeighbourhood();
 
-        // form candidate pool if there is rewiring to be performed.
-        if(num_rewires > 0){
 
-            // b denotes neighbour of rewirer
-            for(Player b: omega_a){
+        // b denotes neighbour of rewirer
+        for(Player b: omega_a){
 
-                // omega_b denotes neighbourhood of neighbour of rewirer.
-                ArrayList<Player> omega_b = b.getNeighbourhood();
+            // omega_b denotes neighbourhood of neighbour of rewirer.
+            ArrayList<Player> omega_b = b.getNeighbourhood();
 
-                // c denotes neighbour of neighbour of rewirer.
-                for(Player c: omega_b){
+            // c denotes neighbour of neighbour of rewirer.
+            for(Player c: omega_b){
 
-                    // do not add c to pool if c = a
-                    if(!c.equals(a)){
+                // do not add c to pool if c = a
+                if(!c.equals(a)){
 
-                        // boolean tracking whether c should be added to pool or not.
-                        boolean add = true;
+                    // boolean tracking whether c should be added to pool or not.
+                    boolean add = true;
 
-                        // d denotes candidate in pool
-                        for (Player d : pool) {
+                    // d denotes candidate in pool
+                    for (Player d : pool) {
 
-                            // if c = d, c must already be in the pool, therefore do not add c to the pool.
-                            if(c.equals(d)){
-                                add = false;
-                                break;
-                            }
+                        // if c = d, c must already be in the pool, therefore do not add c to the pool.
+                        if(c.equals(d)){
+                            add = false;
+                            break;
                         }
+                    }
 
-                        // e denotes neighbour of rewirer.
-                        for (Player e : omega_a) {
+                    // e denotes neighbour of rewirer.
+                    for (Player e : omega_a) {
 
-                            // if c = e, c must already be in omega_a, therefore do not add c to the pool.
-                            if(c.equals(e)){
-                                add = false;
-                                break;
-                            }
+                        // if c = e, c must already be in omega_a, therefore do not add c to the pool.
+                        if(c.equals(e)){
+                            add = false;
+                            break;
                         }
+                    }
 
-                        // if the previous conditions were not true, then c is a valid candidate to rewire to.
-                        if(add){
-                            pool.add(c);
-                        }
+                    // if the previous conditions were not true, then c is a valid candidate to rewire to.
+                    if(add){
+                        pool.add(c);
                     }
                 }
             }
         }
+
 
         // connect to new neighbours.
         for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
@@ -2612,7 +2571,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // TODO: debug
     /**
      * Find new neighbour by randomly choosing a player from the population.<br>
      * New neighbour cannot be rewirer or already a neighbour.<br>
@@ -2629,7 +2587,7 @@ public class Env extends Thread{ // simulated game environment
             // d denotes new neighbour.
             Player d = null;
 
-            // e indicates whether d has been found valid.
+            // e indicates whether a valid new neighbour d has been found yet.
             boolean e = false;
             while(!e){
 
@@ -2639,19 +2597,18 @@ public class Env extends Thread{ // simulated game environment
                 // do not connect a to d if d = a.
                 if(!d.equals(a)){
 
+                    // f indicates whether there does not exist g in omega_a such that g = d.
+                    boolean f = true;
+
                     // f denotes neighbour of a.
-                    for(Player f: omega_a){
-
-                        // do not connect a to d if d = f.
-                        if(!d.equals(f)){
-                            e = true;
-                        }
-
-                        // in this case, no need to continue looking at other e in omega_a.
-                        else{
+                    for(Player g: omega_a){
+                        if(d.equals(g)){
+                            f = false;
                             break;
                         }
                     }
+
+                    e = f;
                 }
             }
 
@@ -2715,7 +2672,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // TODO: debug
+    // TODO: debug the situation where num rewires is greater than 1.
     public int rewireAway0EWMany(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2743,8 +2700,7 @@ public class Env extends Thread{ // simulated game environment
         // you could use a while loop like this if you were rewiring multiple edges.
         while(num_rewirable_edges > 0){
 
-        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
-//        if(num_rewirable_edges > 0){
+            // randomly select an edge to cut. the randomness here makes it so that we dont know which neighbour is necessarily going to be rewired away from first. relevant if rewiring is isolation is being prevented (since we then dont know which neighbour is going to get away with being pointed at by a 0 weight edge!)
             int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
 
             // c denotes neighbour of a.
@@ -2761,7 +2717,7 @@ public class Env extends Thread{ // simulated game environment
                 // insert check to prevent the two players involved from becoming isolated?
 
 
-                // if d = a, then c_index is the location of a in omega_b.
+                // if d = a, then d_index is the index/location of a in omega_c.
                 if(d.equals(a)){
 
                     // disconnect a from c.
