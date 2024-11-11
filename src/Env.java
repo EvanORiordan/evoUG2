@@ -394,9 +394,6 @@ public class Env extends Thread{ // simulated game environment
 
         for(int i=0;i<N;i++){
             Player player = pop[i];
-
-
-
             String[] neigh_params = neigh.split(" ");
             switch(neigh_params[0]){
                 case"VN","Moore","dia"->{
@@ -417,13 +414,11 @@ public class Env extends Thread{ // simulated game environment
                     Runtime.getRuntime().exit(0);
                 }
             }
-
-
-
-
         }
 
-        if(space.equals("grid")){
+        // write pos data assuming grid space.
+
+        if(space.equals("grid") && run_num == 1){
             writePosData();
         }
 
@@ -499,9 +494,10 @@ public class Env extends Thread{ // simulated game environment
                     // selection
                     Player parent = null;
                     switch(sel){
-                        case "RW" -> parent = RWSelection(child);
-                        case "elitist" -> parent = bestSelection(child);
-                        case "rand" -> parent = randSelection(child);
+                        case "NRW" -> parent = selectionNRW(child);
+                        case "ERW" -> parent = selectionERW(child);
+                        case "elitist" -> parent = selectionBest(child);
+                        case "rand" -> parent = selectionRand(child);
                         case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
                         default -> {
                             System.out.println("[ERROR] Invalid selection function configured. Exiting...");
@@ -921,12 +917,12 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Roulette Wheel (RW) Selection method compares fitness of child to neighbours. The
-     * fitter the neighbour, the greater the likelihood of them being selected as child's
+     * Exponential Roulette Wheel (ERW) Selection method compares fitness of child to neighbours. The
+     * fitter the neighbour, the exponentially more likely they are to be selected as child's
      * parent. If a parent is not selected, the child is selected as parent
      * by default.<br>
      */
-    public Player RWSelection(Player child){
+    public Player selectionERW(Player child){
         ArrayList <Player> neighbourhood = child.getNeighbourhood();
         int size = neighbourhood.size();
         double fitness = child.getAvgScore(); // fitness equals avg score
@@ -940,7 +936,10 @@ public class Env extends Thread{ // simulated game environment
             pockets[i] = Math.exp(neighbour_fitness - fitness);
             roulette_total += pockets[i];
         }
-        roulette_total += 1.0; // allocate pocket to child
+
+        // allocate pocket to child
+        roulette_total += 1.0; // this is equivalent to the below line of code.
+//        roulette_total += Math.exp(fitness - fitness);
 
         // fitter player ==> more likely to be selected
         double tally = 0;
@@ -960,9 +959,48 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
+     * Normal Roulette Wheel (NRW) Selection method compares fitness of child to neighbours. The
+     * fitter the neighbour, the exponentially more likely they are to be selected as child's
+     * parent. If a parent is not selected, the child is selected as parent
+     * by default.<br>
+     */
+    public Player selectionNRW(Player child){
+        Player parent = null;
+        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood());
+        pool.add(child);
+        int size = pool.size();
+        double[] pockets = new double[size];
+        double roulette_total = 0;
+        int i;
+        for(i=0;i<size;i++){
+            pockets[i] = pool.get(i).getAvgScore();
+            roulette_total += pockets[i];
+        }
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        double tally = 0;
+        for(i=0;i<size;i++){
+            tally += pockets[i];
+            double percentile = tally / roulette_total;
+            if(random_double < percentile){
+                parent = pool.get(i);
+                break;
+            }
+        }
+
+        return parent;
+    }
+
+
+
+
+
+
+
+
+    /**
      * Child selects highest scoring neighbour.
      */
-    public Player bestSelection(Player child){
+    public Player selectionBest(Player child){
         ArrayList <Player> neighbourhood = child.getNeighbourhood();
         double avg_score = child.getAvgScore();
         int size = neighbourhood.size();
@@ -997,7 +1035,7 @@ public class Env extends Thread{ // simulated game environment
      * @param child
      * @return parent player
      */
-    public Player randSelection(Player child){
+    public Player selectionRand(Player child){
         double w = selnoise;
         double[] effective_payoffs = new double[N];
         Player parent = null;
@@ -1497,6 +1535,7 @@ public class Env extends Thread{ // simulated game environment
      */
     public void initRandomPop(){
         pop = new Player[N];
+        Player.setCount(0);
         int index = 0;
         if(space.equals("grid")){
             for(int y=0;y<length;y++){
@@ -2671,8 +2710,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-    // TODO: debug the situation where num rewires is greater than 1.
     public int rewireAway0EWMany(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2715,6 +2752,7 @@ public class Env extends Thread{ // simulated game environment
 
 
                 // insert check to prevent the two players involved from becoming isolated?
+                // if(
 
 
                 // if d = a, then d_index is the index/location of a in omega_c.
@@ -2748,6 +2786,79 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+//    public int rewireAway0EWSingle(Player a){
+//        // omega_a denotes copy of neighbourhood of a.
+//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+//
+//        // denotes list of weighted edges connecting a to its neigbours.
+//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
+//
+//        // denotes pool of rewireable edges represented by their indices.
+//        ArrayList<Integer> rewire_edge_indices = new ArrayList();
+//
+//        // b_index denotes index of edge w_ab that connects a to neighbour b.
+//        for(int b_index = 0; b_index < weights.size(); b_index++){
+//            double w = weights.get(b_index);
+//
+//            // can cut the edge if weight w = 0.
+//            if(w == 0){
+//                rewire_edge_indices.add(b_index);
+//            }
+//        }
+//
+//        int num_rewirable_edges = rewire_edge_indices.size();
+//
+//        // supports the process of rewiring to new neighbour. 1 if successful rewire away, 0 otherwise.
+//        int num_rewires;
+//
+//        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
+//        if(num_rewirable_edges > 0){
+//            num_rewires = 1;
+//            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
+//
+//            // c denotes neighbour of a.
+//            Player c = omega_a.get(c_index);
+//
+//            // omega_c denotes neighbourhood of c.
+//            ArrayList<Player> omega_c = c.getNeighbourhood();
+//
+//            // d denotes neighbour of c.
+//            for(int d_index = 0; d_index < omega_c.size(); d_index++) {
+//                Player d = omega_c.get(d_index);
+//
+//                // insert check to prevent the two players involved from becoming isolated?
+//                // if(a.getNeighbourhood().size() > 1 && c.getNeighbourhood().size() > 1){
+//                //      CONTINUE WITH THE REWIRING...
+//                // }
+//
+//                // if d = a, then c_index is the location of a in omega_b.
+//                if(d.equals(a)){
+//
+//                    // disconnect a from c.
+//                    omega_a.remove(c_index);
+//                    weights.remove(c_index);
+//
+//                    // disconnect c from a.
+//                    omega_c.remove(d_index);
+//                    c.getEdgeWeights().remove(d_index);
+//
+//                    // once the cutting of edges has been completed, stop looping.
+//                    break;
+//                }
+//            }
+//
+////            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
+//
+//        } // if false, there are no rewirable edges, therefore do not rewire.
+//        else {
+//            num_rewires = 0;
+//        }
+//
+//        a.setNeighbourhood(omega_a);
+//        a.setEdgeWeights(weights);
+//
+//        return num_rewires;
+//    }
     public int rewireAway0EWSingle(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2771,55 +2882,68 @@ public class Env extends Thread{ // simulated game environment
         int num_rewirable_edges = rewire_edge_indices.size();
 
         // supports the process of rewiring to new neighbour. 1 if successful rewire away, 0 otherwise.
-        int num_rewires;
+        int num_rewires = 0;
 
-        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
-        if(num_rewirable_edges > 0){
-            num_rewires = 1;
-            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
+        // do not rewire if a has < 2 edge
+        if(omega_a.size() > 1){
 
-            // c denotes neighbour of a.
-            Player c = omega_a.get(c_index);
+            // randomly select an edge w from the pool to cut. denote the index of w by w_index.
+            if(num_rewirable_edges > 0){
+                num_rewires = 1;
+                int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
 
-            // omega_c denotes neighbourhood of c.
-            ArrayList<Player> omega_c = c.getNeighbourhood();
+                // c denotes neighbour of a.
+                Player c = omega_a.get(c_index);
 
-            // d denotes neighbour of c.
-            for(int d_index = 0; d_index < omega_c.size(); d_index++) {
-                Player d = omega_c.get(d_index);
+                // omega_c denotes neighbourhood of c.
+                ArrayList<Player> omega_c = c.getNeighbourhood();
 
-                // insert check to prevent the two players involved from becoming isolated?
-                // if(a.getNeighbourhood().size() > 1 && c.getNeighbourhood().size() > 1){ CONTINUE WITH THE REWIRING...}
+                // d denotes neighbour of c.
+                for(int d_index = 0; d_index < omega_c.size(); d_index++) {
+                    Player d = omega_c.get(d_index);
 
-                // if d = a, then c_index is the location of a in omega_b.
-                if(d.equals(a)){
+                    // if d = a, then c_index is the location of a in omega_b.
+                    if(d.equals(a)){
 
-                    // disconnect a from c.
-                    omega_a.remove(c_index);
-                    weights.remove(c_index);
+                        /*
+                        TODO think about this!
+                        should the isolation check for the old neighbour occur here or earlier?
+                        earlier makes the rewiring more likely to occur. having it here means
+                        a has selected who they want to rewire away from but if they find the
+                        selected neighbour hasnt enough edges, a does not rewire and does not
+                        have an opportunity to select a different neighbour with whom the weight
+                        equals 0.
 
-                    // disconnect c from a.
-                    omega_c.remove(d_index);
-                    c.getEdgeWeights().remove(d_index);
+                        think about how i envision rewiring-single-away to work. look at how i
+                        phrased my writings on it in rewiring3.
+                         */
 
-                    // once the cutting of edges has been completed, stop looping.
-                    break;
+                        // disconnect a from c.
+                        omega_a.remove(c_index);
+                        weights.remove(c_index);
+
+                        // disconnect c from a.
+                        omega_c.remove(d_index);
+                        c.getEdgeWeights().remove(d_index);
+
+                        // once the cutting of edges has been completed, stop looping.
+                        break;
+                    }
                 }
+
+        //            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
+
+            } // if false, there are no rewirable edges, therefore do not rewire.
+            else {
+                num_rewires = 0;
             }
 
-//            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-
-        } // if false, there are no rewirable edges, therefore do not rewire.
-        else {
-            num_rewires = 0;
+            a.setNeighbourhood(omega_a);
+            a.setEdgeWeights(weights);
         }
-
-        a.setNeighbourhood(omega_a);
-        a.setEdgeWeights(weights);
 
         return num_rewires;
     }
-
 
 
 

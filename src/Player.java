@@ -14,7 +14,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Player {
 
     // ===================================== Attributes =====================================
-    private static int count = 0; // class-wide attribute that helps assign player ID
+//    private static int count = 0; // class-wide attribute that helps assign player ID
+    private static int count; // class-wide attribute that helps assign player ID
     private final int ID; // each player has a unique ID i.e. position
     private static final DecimalFormat DF1 = new DecimalFormat("0.0");
     private static final DecimalFormat DF2 = new DecimalFormat("0.00");
@@ -281,5 +282,6 @@ public class Player {
     public void setY(double d){y=d;}
     public double getX(){return x;}
     public void setX(double d){x=d;}
-
+    public static int getCount(){return count;}
+    public static void setCount(int i){count=i;}
 }
