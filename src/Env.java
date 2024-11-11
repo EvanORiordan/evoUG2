@@ -2916,6 +2916,8 @@ public class Env extends Thread{ // simulated game environment
 
                         think about how i envision rewiring-single-away to work. look at how i
                         phrased my writings on it in rewiring3.
+
+                        EXTRA COMMENT
                          */
 
                         // disconnect a from c.
