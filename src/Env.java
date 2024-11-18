@@ -2859,6 +2859,11 @@ public class Env extends Thread{ // simulated game environment
 //
 //        return num_rewires;
 //    }
+    /*
+    a will pick a random c with 0.0 weight. if a or c would be isolated
+    as a result of cutting ties, rewiring will not occur. in that case, a will NOT
+    look for a new c. by this point, a has lost its opportunity to rewire this gen.
+     */
     public int rewireAway0EWSingle(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2869,7 +2874,7 @@ public class Env extends Thread{ // simulated game environment
         // denotes pool of rewireable edges represented by their indices.
         ArrayList<Integer> rewire_edge_indices = new ArrayList();
 
-        // b_index denotes index of edge w_ab that connects a to neighbour b.
+        // b_index denotes index of weighted edge w_ab that connects a to neighbour b.
         for(int b_index = 0; b_index < weights.size(); b_index++){
             double w = weights.get(b_index);
 
@@ -2879,70 +2884,59 @@ public class Env extends Thread{ // simulated game environment
             }
         }
 
+        // indicates number of 0.0 weights originating at a.
         int num_rewirable_edges = rewire_edge_indices.size();
 
-        // supports the process of rewiring to new neighbour. 1 if successful rewire away, 0 otherwise.
+        // supports the process of rewiring to new neighbour.
+        // 1 if successful rewire away, 0 otherwise.
         int num_rewires = 0;
 
-        // do not rewire if a has < 2 edge
+        // do not rewire if a has < 2 edges.
         if(omega_a.size() > 1){
 
-            // randomly select an edge w from the pool to cut. denote the index of w by w_index.
+            // do not rewire if there are no 0.0 weights to cut.
             if(num_rewirable_edges > 0){
-                num_rewires = 1;
+
+                // randomly select a 0.0 weight.
+                // c_index denotes the index of c within omega_a.
                 int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
 
-                // c denotes neighbour of a.
+                // c denotes neighbour of a that a will try to rewire away from.
                 Player c = omega_a.get(c_index);
 
                 // omega_c denotes neighbourhood of c.
                 ArrayList<Player> omega_c = c.getNeighbourhood();
 
-                // d denotes neighbour of c.
-                for(int d_index = 0; d_index < omega_c.size(); d_index++) {
-                    Player d = omega_c.get(d_index);
+                // do not rewire if c has < 2 edges.
+                if(omega_c.size() > 1){
 
-                    // if d = a, then c_index is the location of a in omega_b.
-                    if(d.equals(a)){
+                    // d denotes neighbour of c.
+                    for(int d_index = 0; d_index < omega_c.size(); d_index++) {
+                        Player d = omega_c.get(d_index);
 
-                        /*
-                        TODO think about this!
-                        should the isolation check for the old neighbour occur here or earlier?
-                        earlier makes the rewiring more likely to occur. having it here means
-                        a has selected who they want to rewire away from but if they find the
-                        selected neighbour hasnt enough edges, a does not rewire and does not
-                        have an opportunity to select a different neighbour with whom the weight
-                        equals 0.
+                        // if d = a, then c_index is the location of a in omega_b.
+                        if(d.equals(a)){
 
-                        think about how i envision rewiring-single-away to work. look at how i
-                        phrased my writings on it in rewiring3.
+                            // disconnect a from c.
+                            omega_a.remove(c_index);
+                            weights.remove(c_index);
 
-                        EXTRA COMMENT
-                         */
+                            // disconnect c from a.
+                            omega_c.remove(d_index);
+                            c.getEdgeWeights().remove(d_index);
 
-                        // disconnect a from c.
-                        omega_a.remove(c_index);
-                        weights.remove(c_index);
+                            num_rewires = 1;
 
-                        // disconnect c from a.
-                        omega_c.remove(d_index);
-                        c.getEdgeWeights().remove(d_index);
-
-                        // once the cutting of edges has been completed, stop looping.
-                        break;
+                            // once the cutting of edges has been completed, stop looping.
+                            break;
+                        }
                     }
-                }
-
-        //            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-
-            } // if false, there are no rewirable edges, therefore do not rewire.
-            else {
-                num_rewires = 0;
-            }
+                } // if false, c would be isolated as a result of a rewiring.
+            } // if false, a has no 0.0 weights to cut.
 
             a.setNeighbourhood(omega_a);
             a.setEdgeWeights(weights);
-        }
+        } // if false, a would be isolated as a result of rewiring away.
 
         return num_rewires;
     }
