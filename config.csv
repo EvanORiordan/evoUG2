@@ -1,8 +1,2 @@
 game,runs,iters,length,width,space,EWT,EWLC,EWLF,ER,ROC,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,varying,variation,numexp,datarate,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,injiter,injp,injsize,desc
-DG,1,100,5,5,grid,3 1.0 0EWSingle random,p,ROC,5,0.2,VN 1,ERW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,test
-DG,1,100,5,5,grid,3 1.0 0EWMany random,p,ROC,5,0.2,VN 1,ERW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,test
-DG,1,100,5,5,grid,1,p,ROC,5,0.2,VN 1,NRW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,NRW
-DG,20,10000,30,30,grid,1,p,ROC,5,0.2,VN 1,NRW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,NRW
-DG,20,10000,30,30,grid,1,p,ROC,5,0.2,VN 1,ERW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,NRW
-DG,50,10000,40,40,grid,1,p,ROC,5,0.2,VN 1,NRW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,NRW
-DG,50,10000,40,40,grid,1,p,ROC,5,0.2,VN 1,ERW,,MNI,copy,,,,,,,,,,,,,,,,,,,,,ERW
+DG,1,100,5,5,grid,3 0.1 0EWSingle pop,p,ROC,5,0.2,VN 1,ERW,,MNI,copy,,,,,,,,1,,,,,,,,,,,,,test

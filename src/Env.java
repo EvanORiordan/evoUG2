@@ -86,6 +86,7 @@ public class Env extends Thread{ // simulated game environment
     static int CI2; // Iterate through multiple values crammed into one param during configuation.
     static String q_data_filename;
     static String pos_data_filename;
+    static String edge_count_data_filename;
 
 
     // fields related to edge weight learning (EWL)
@@ -120,11 +121,11 @@ public class Env extends Thread{ // simulated game environment
 
 
     // fields related to rewiring
-    static String rewiring_away_type; // values accepted: "0EW", "EWRW" (edge weight roulette wheel), "random"
+    static String rewiring_away; // values accepted: "0EW", "EWRW" (edge weight roulette wheel), "random"
 //    static String EW_rewire_away_qty;
 //    static String rewire_qty;
-    static String rewiring_to_type;
-    static double rewire_prob;
+    static String rewiring_to;
+    static double RP = 1.0; // rewire probability parameter
 //    static int num_rewires; // number of rewires to be performed by the given player
 
 
@@ -430,7 +431,7 @@ public class Env extends Thread{ // simulated game environment
 //            resetNSIPerNeighbour(player);
         }
 
-        // population stops once this condition is reached
+        // the algorithm iterates.
         while(iter <= iters) {
 
             // apply margolus neighbourhood if applicable.
@@ -463,33 +464,37 @@ public class Env extends Thread{ // simulated game environment
                 EWL(player);
             }
 
-            // a generation occurs every ER iterations; evolution occurs each generation
+            // a generation passes every ER iterations.
+            // rewiring and strategy evolution occur every generation.
             if(iter % ER == 0){
-                for(int i=0;i<N;i++){
-                    Player child = pop[i];
 
-
-                    // rewiring
-                    if(EWT.equals("3")) {
-
+                // rewiring
+                if(EWT.equals("3")){
+                    for(int i=0;i<N;i++){
+                        Player rewiring_player = pop[i];
                         double random_number = ThreadLocalRandom.current().nextDouble();
-
-                        if(rewire_prob > random_number){
+                            if(RP > random_number){
                             int num_rewires = 0;
-                            switch (rewiring_away_type) {
-                                case"0EWSingle"->num_rewires = rewireAway0EWSingle(child);
-                                case"0EWMany"->num_rewires = rewireAway0EWMany(child);
-                                case"EWRW"->num_rewires = rewireAway0EWSingle(child);
+                            switch (rewiring_away) {
+                                case"0EWSingle"->num_rewires = rewireAway0EWSingle(rewiring_player);
+                                case"0EWMany"->num_rewires = rewireAway0EWMany(rewiring_player);
+                                case"EWRW"->num_rewires = rewireAway0EWSingle(rewiring_player);
                             }
                             if(num_rewires > 0){
-                                switch (rewiring_to_type){
-                                    case"local"->rewireToLocal(child, num_rewires);
-                                    case"random"->rewireToRandom(child, num_rewires);
+                                switch (rewiring_to){
+                                    case"local"->rewireToLocal(rewiring_player, num_rewires);
+                                    case"pop"->rewireToPop(rewiring_player, num_rewires);
                                 }
                             }
                         }
                     }
+                }
 
+
+
+                // strategy evolution
+                for(int i=0;i<N;i++) {
+                    Player child = pop[i];
 
                     // selection
                     Player parent = null;
@@ -526,6 +531,13 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
                 }
+
+
+
+
+
+
+
                 gen++; // move on to the next generation
             }
 
@@ -534,16 +546,25 @@ public class Env extends Thread{ // simulated game environment
 //                case"PD"->calculateStatsPD(); // implement this func later...
             }
 
-            // save data
-            if(datarate != 0){ // must check this before trying next che
-                if(run_num == 1 // if first run
-                        && experiment_num == 1 // if first experiment
-                        && iter % (ER * datarate) == 0){ // record gen's data every x gens, where x=datarate
+            // save data.
+            // do not save data if datarate has not been initialised past 0.
+            // must check this before future datarate checks that assume datarate != 0
+            if(datarate != 0){
+
+                // do not save data if not the first run
+                if(run_num == 1
+
+                        // do not save data if not the first experiment
+                        && experiment_num == 1
+
+                        // data rate is used to determine rate at which data is saved
+                        && iter % (ER * datarate) == 0){
                     String output = "";
                     if(game.equals("UG") || game.equals("DG")){
                         output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
                         writepData();
                         writeAvgpData();
+                        writeEdgeCountData();
                         if(game.equals("UG")){
                             output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
                             writeqData();
@@ -1466,15 +1487,15 @@ public class Env extends Thread{ // simulated game environment
         CI2 = 0;
         EWT = EWT_params[CI2++];
         if(EWT.equals("3")){
-            rewire_prob = Double.parseDouble(EWT_params[CI2++]);
-            rewiring_away_type = EWT_params[CI2++];
+            RP = Double.parseDouble(EWT_params[CI2++]);
+            rewiring_away = EWT_params[CI2++];
 
-//            if(rewiring_away_type.equals("EW"))
+//            if(rewiring_away.equals("EW"))
 //                EW_rewire_away_qty = EWT_params[CI2++];
 
 //            rewire_qty = EWT_params[CI2++];
 
-            rewiring_to_type = EWT_params[CI2];
+            rewiring_to = EWT_params[CI2];
         }
 
 
@@ -1588,6 +1609,11 @@ public class Env extends Thread{ // simulated game environment
                 q_data_filename = experiment_results_folder_path + "\\q_data";
             }
         }
+
+
+        edge_count_data_filename = experiment_results_folder_path + "\\edge_count_data";
+
+
         EW_data_filename = experiment_results_folder_path + "\\EW_data";
         NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{
@@ -1597,6 +1623,11 @@ public class Env extends Thread{ // simulated game environment
                     Files.createDirectories(Paths.get(q_data_filename));
                 }
             }
+
+
+            Files.createDirectories(Paths.get(edge_count_data_filename));
+
+
             Files.createDirectories(Paths.get(EW_data_filename));
             Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
@@ -2616,7 +2647,7 @@ public class Env extends Thread{ // simulated game environment
      * @param a rewirer
      * @param b number of rewires to do
      */
-    public void rewireToRandom(Player a, int b){
+    public void rewireToPop(Player a, int b){
         // c denotes number of rewires done so far.
         for(int c=0;c<b;c++){
 
@@ -2636,7 +2667,7 @@ public class Env extends Thread{ // simulated game environment
                 // do not connect a to d if d = a.
                 if(!d.equals(a)){
 
-                    // f indicates whether there does not exist g in omega_a such that g = d.
+                    // f indicates: there does not exist g in omega_a such that g = d.
                     boolean f = true;
 
                     // f denotes neighbour of a.
@@ -2786,79 +2817,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public int rewireAway0EWSingle(Player a){
-//        // omega_a denotes copy of neighbourhood of a.
-//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
-//
-//        // denotes list of weighted edges connecting a to its neigbours.
-//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
-//
-//        // denotes pool of rewireable edges represented by their indices.
-//        ArrayList<Integer> rewire_edge_indices = new ArrayList();
-//
-//        // b_index denotes index of edge w_ab that connects a to neighbour b.
-//        for(int b_index = 0; b_index < weights.size(); b_index++){
-//            double w = weights.get(b_index);
-//
-//            // can cut the edge if weight w = 0.
-//            if(w == 0){
-//                rewire_edge_indices.add(b_index);
-//            }
-//        }
-//
-//        int num_rewirable_edges = rewire_edge_indices.size();
-//
-//        // supports the process of rewiring to new neighbour. 1 if successful rewire away, 0 otherwise.
-//        int num_rewires;
-//
-//        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
-//        if(num_rewirable_edges > 0){
-//            num_rewires = 1;
-//            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
-//
-//            // c denotes neighbour of a.
-//            Player c = omega_a.get(c_index);
-//
-//            // omega_c denotes neighbourhood of c.
-//            ArrayList<Player> omega_c = c.getNeighbourhood();
-//
-//            // d denotes neighbour of c.
-//            for(int d_index = 0; d_index < omega_c.size(); d_index++) {
-//                Player d = omega_c.get(d_index);
-//
-//                // insert check to prevent the two players involved from becoming isolated?
-//                // if(a.getNeighbourhood().size() > 1 && c.getNeighbourhood().size() > 1){
-//                //      CONTINUE WITH THE REWIRING...
-//                // }
-//
-//                // if d = a, then c_index is the location of a in omega_b.
-//                if(d.equals(a)){
-//
-//                    // disconnect a from c.
-//                    omega_a.remove(c_index);
-//                    weights.remove(c_index);
-//
-//                    // disconnect c from a.
-//                    omega_c.remove(d_index);
-//                    c.getEdgeWeights().remove(d_index);
-//
-//                    // once the cutting of edges has been completed, stop looping.
-//                    break;
-//                }
-//            }
-//
-////            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-//
-//        } // if false, there are no rewirable edges, therefore do not rewire.
-//        else {
-//            num_rewires = 0;
-//        }
-//
-//        a.setNeighbourhood(omega_a);
-//        a.setEdgeWeights(weights);
-//
-//        return num_rewires;
-//    }
     /*
     a will pick a random c with 0.0 weight. if a or c would be isolated
     as a result of cutting ties, rewiring will not occur. in that case, a will NOT
@@ -2925,7 +2883,7 @@ public class Env extends Thread{ // simulated game environment
                             omega_c.remove(d_index);
                             c.getEdgeWeights().remove(d_index);
 
-                            num_rewires = 1;
+                            num_rewires++;
 
                             // once the cutting of edges has been completed, stop looping.
                             break;
@@ -3079,4 +3037,37 @@ public class Env extends Thread{ // simulated game environment
         return 0;
     }
 
+
+
+
+    public void writeEdgeCountData(){
+        try{
+            String filename = edge_count_data_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename, false);
+            String s = "";
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player player = findPlayerByPos(y,x);
+
+
+                    int n_omega = player.getNeighbourhood().size();
+                    s += n_omega;
+
+
+//                    double p = player.getP();
+//                    s += DF4.format(p);
+
+
+                    if(x + 1 < length){
+                        s += ",";
+                    }
+                }
+                s += "\n";
+            }
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
 }

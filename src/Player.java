@@ -180,6 +180,17 @@ public class Player {
 //        player_desc +="]";
 
 
+        player_desc += " neighbourhood=[";
+        for(int i=0;i<neighbourhood.size();i++){
+            player_desc += neighbourhood.get(i).ID;
+            if((i + 1) < neighbourhood.size()){
+                player_desc += ", ";
+            }
+        }
+        player_desc += "]";
+
+
+
         // document interaction stats
 //        player_desc += " NI="+ NI;
         player_desc += " MNI=" + MNI;
