@@ -557,8 +557,12 @@ public class Env extends Thread{ // simulated game environment
                         // do not save data if not the first experiment
                         && experiment_num == 1
 
-                        // data rate is used to determine rate at which data is saved
-                        && iter % (ER * datarate) == 0){
+                        // data rate is used to determine rate at which data is saved.
+                        // save data every x gens where x = datarate.
+                        // e.g. datarate = 10 ==> save data every 10 gens.
+                        && iter % (ER * datarate) == 0
+//                        && gen % datarate == 0
+                ){
                     String output = "";
                     if(game.equals("UG") || game.equals("DG")){
                         output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
@@ -2657,7 +2661,7 @@ public class Env extends Thread{ // simulated game environment
             // d denotes new neighbour.
             Player d = null;
 
-            // e indicates whether a valid new neighbour d has been found yet.
+            // e indicates: a valid new neighbour d has been found.
             boolean e = false;
             while(!e){
 
@@ -2830,7 +2834,7 @@ public class Env extends Thread{ // simulated game environment
         ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
 
         // denotes pool of rewireable edges represented by their indices.
-        ArrayList<Integer> rewire_edge_indices = new ArrayList();
+        ArrayList<Integer> rewirable_edge_indices = new ArrayList();
 
         // b_index denotes index of weighted edge w_ab that connects a to neighbour b.
         for(int b_index = 0; b_index < weights.size(); b_index++){
@@ -2838,12 +2842,12 @@ public class Env extends Thread{ // simulated game environment
 
             // can cut the edge if weight w = 0.
             if(w == 0){
-                rewire_edge_indices.add(b_index);
+                rewirable_edge_indices.add(b_index);
             }
         }
 
         // indicates number of 0.0 weights originating at a.
-        int num_rewirable_edges = rewire_edge_indices.size();
+        int num_rewirable_edges = rewirable_edge_indices.size();
 
         // supports the process of rewiring to new neighbour.
         // 1 if successful rewire away, 0 otherwise.
@@ -2857,7 +2861,7 @@ public class Env extends Thread{ // simulated game environment
 
                 // randomly select a 0.0 weight.
                 // c_index denotes the index of c within omega_a.
-                int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
+                int c_index = rewirable_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
 
                 // c denotes neighbour of a that a will try to rewire away from.
                 Player c = omega_a.get(c_index);
@@ -3045,25 +3049,31 @@ public class Env extends Thread{ // simulated game environment
             String filename = edge_count_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
+
+            // total number of edges in the population.
+            int actual_total_edges = 0;
+
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
-
-
                     int n_omega = player.getNeighbourhood().size();
+
+                    actual_total_edges += n_omega;
+
                     s += n_omega;
-
-
-//                    double p = player.getP();
-//                    s += DF4.format(p);
-
-
                     if(x + 1 < length){
                         s += ",";
                     }
                 }
                 s += "\n";
             }
+
+            int expected_total_edges = N * 4;
+            if(actual_total_edges != expected_total_edges){
+                System.out.println("ERROR: assuming 4 initial edges per player, total edges must equal N * 4!");
+                Runtime.getRuntime().exit(0);
+            }
+
             fw.append(s);
             fw.close();
         } catch(IOException e){
