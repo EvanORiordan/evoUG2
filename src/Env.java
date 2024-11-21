@@ -23,7 +23,9 @@ public class Env extends Thread{ // simulated game environment
     static int N; // population size
     static int iters; // how many iterations occur per experiment run
     static int runs; // how many times this experiment will be run.
-    static String neigh; // indicates the type of neighbourhood being enforced
+    static String neigh; // indicates type of neighbourhood players will have.
+    static int neigh_range; // range of neighbourhood with von Neumann / Moore / diamond neighbourhood type.
+    static int neigh_size; // size of neighbours with random neighbourhood type.
 //    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
 //    Player[][] pop; // array of players; assumes 2D space
     Player[]pop; // array of players; assumes 2D space
@@ -32,7 +34,7 @@ public class Env extends Thread{ // simulated game environment
     int gen = 0; // indicates current generation. marks the progression of evo.
     int iter = 1; // indicates current iteration. each gen is made up of ER iters.
 //    static double DCF = 0; // distance cost factor
-    static String initial_settings = ""; // stores initial experimentation settings
+//    static String initial_settings = ""; // stores initial experimentation settings
     static int injiter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injp = 0.0; // injection p: indicates p value to be injected
     static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
@@ -135,7 +137,7 @@ public class Env extends Thread{ // simulated game environment
       */
     public static void main(String[] args) {
         setupEnvironment();
-        setInitialSettings();
+//        setInitialSettings();
         LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
         start_timestamp_string = start_timestamp.getYear()
                 +"-"+start_timestamp.getMonthValue()
@@ -180,8 +182,8 @@ public class Env extends Thread{ // simulated game environment
      * experiments, i.e. the running of an experiment series.
      */
     public static void experimentSeries(){
-        System.out.println();
-        printInitialSettings();
+//        System.out.println();
+//        printInitialSettings();
 
 
         various_amounts = new ArrayList<>(); // stores initial value of varying parameter
@@ -314,10 +316,10 @@ public class Env extends Thread{ // simulated game environment
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        if(!experiment_series){
-            System.out.println();
-            printInitialSettings();
-        }
+//        if(!experiment_series){
+//            System.out.println();
+//            printInitialSettings();
+//        }
 
         // stats to be tracked
         experiment_mean_avg_p = 0;
@@ -351,10 +353,10 @@ public class Env extends Thread{ // simulated game environment
 
         }
 
-        if(!experiment_series){
-            System.out.println();
-            printInitialSettings();
-        }
+//        if(!experiment_series){
+//            System.out.println();
+//            printInitialSettings();
+//        }
 
         // calculate stats of experiment
         experiment_mean_avg_p /= runs;
@@ -395,19 +397,9 @@ public class Env extends Thread{ // simulated game environment
 
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            String[] neigh_params = neigh.split(" ");
-            switch(neigh_params[0]){
-                case"VN","Moore","dia"->{
-                    String type = neigh_params[0];
-                    int distance = Integer.parseInt(neigh_params[1]);
-//                    assignAdjacentNeighbours(player, i, j, type, distance);
-                    assignAdjacentNeighbours(player, type, distance);
-                }
-                case"random"->{
-                    String type = neigh_params[1];
-                    int size = Integer.parseInt(neigh_params[2]);
-                    assignRandomNeighbours(player, type, size);
-                }
+            switch(neigh){
+                case"VN","Moore","dia"->assignAdjacentNeighbours(player, neigh, neigh_range);
+                case"random"->assignRandomNeighbours(player, neigh_size);
                 case"all"->assignAllNeighbours(player);
 //                case"Margolus"->assignMargolusNeighbourhood(player, i, j);
                 default -> {
@@ -427,25 +419,11 @@ public class Env extends Thread{ // simulated game environment
         for(int i=0;i<N;i++){
             Player player = pop[i];
             initialiseEdgeWeights(player);
-//            assignNeighbourIDs(player);
-//            resetNSIPerNeighbour(player);
         }
 
         // the algorithm iterates.
         while(iter <= iters) {
 
-            // apply margolus neighbourhood if applicable.
-//            if(neigh.split(" ")[0].equals("Margolus")){
-//                for(int i=0;i<rows;i++) {
-//                    for (int j = 0; j < columns; j++) {
-//                        Player player = grid.get(i).get(j);
-//                        assignMargolusNeighbourhood(player, i, j);
-//                        initialiseEdgeWeights(player);
-//                        assignNeighbourIDs(player);
-//                        resetNSIPerNeighbour(player);
-//                    }
-//                }
-//            }
 
             // injection
 //            if(iter == injiter){
@@ -1522,7 +1500,22 @@ public class Env extends Thread{ // simulated game environment
             Runtime.getRuntime().exit(0);
         }
         ROC=applySettingDouble();
-        neigh=settings[CI++];
+
+
+//        neigh=settings[CI++];
+
+
+        String[] neigh_params = settings[CI++].split(" ");
+        CI2 = 0;
+        neigh = neigh_params[CI2++];
+        if(neigh.equals("VN") || neigh.equals("Moore") || neigh.equals("dia")){
+            neigh_range = Integer.parseInt(neigh_params[CI2++]);
+        } else if(neigh.equals("random")){
+            neigh_size = Integer.parseInt(neigh_params[CI2++]);
+        }
+
+
+
         sel=settings[CI++];
         selnoise=applySettingDouble();
         ASD=settings[CI++];
@@ -1642,67 +1635,67 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // Collects initial settings into a string.
-    public static void setInitialSettings(){
-        if(experiment_series && experiment_num == 1){ // if at start of series
-            initial_settings += "Experiment series ("+desc+")" +
-                    " varying "+varying+
-                    " by "+variation+
-                    " between " + numexp+" experiments: ";
-        } else if(!experiment_series){
-            initial_settings += "Experiment: ";
-        }
-        initial_settings+=game;
-        initial_settings+=", "+runs+" runs";
-        initial_settings+=", "+iters+" iters";
-        initial_settings+=", "+length+" length";
-        initial_settings+=", "+width+" width";
-        initial_settings+=", EWT="+EWT;
-        initial_settings+=", EWLC="+EWLC;
-        initial_settings+=", EWLF="+EWLF;
-        initial_settings+=", ER="+ER;
-        if(ROC != 0) initial_settings+=", ROC="+ROC;
-        if(alpha != 0) initial_settings+=", alpha="+alpha;
-        if(beta != 0) initial_settings+=", beta="+beta;
-        if(leeway1 != 0) initial_settings+=", leeway1="+leeway1;
-        if(leeway2 != 0) initial_settings+=", leeway2="+leeway2;
-        if(leeway3 != 0) initial_settings+=", leeway3="+leeway3;
-        if(leeway4 != 0) initial_settings+=", leeway4="+leeway4;
-        if(leeway5 != 0) initial_settings+=", leeway5="+leeway5;
-        if(leeway6 != 0) initial_settings+=", leeway6="+leeway6;
-        if(leeway7 != 0) initial_settings+=", leeway7="+leeway7;
-        initial_settings+=", "+neigh+" neigh";
-        initial_settings+=", "+sel+" sel";
-        if(sel.equals("Rand")) initial_settings+=", selnoise="+selnoise; // if sel func uses another param
-        initial_settings+=", ASD="+ASD;
-        initial_settings+=", "+evo+" evo";
-        switch(evo){
-            case"approach"->initial_settings+=", evonoise="+evonoise;
-        }
-        switch(mut){
-            case"local","global"->{
-                initial_settings+=", "+mut+" mut";
-                initial_settings+=", mutrate="+DF4.format(mutrate);
-                switch(mut){
-                    case"local"->initial_settings+=", mutbound="+DF4.format(mutbound);
-                }
-            }
-        }
-        if(injiter > 0){
-            initial_settings+=", injiter="+injiter;
-            initial_settings+=", injp="+injp;
-            initial_settings+=", injsize="+injsize;
-        }
-    }
+//    // Collects initial settings into a string.
+//    public static void setInitialSettings(){
+//        if(experiment_series && experiment_num == 1){ // if at start of series
+//            initial_settings += "Experiment series ("+desc+")" +
+//                    " varying "+varying+
+//                    " by "+variation+
+//                    " between " + numexp+" experiments: ";
+//        } else if(!experiment_series){
+//            initial_settings += "Experiment: ";
+//        }
+//        initial_settings+=game;
+//        initial_settings+=", "+runs+" runs";
+//        initial_settings+=", "+iters+" iters";
+//        initial_settings+=", "+length+" length";
+//        initial_settings+=", "+width+" width";
+//        initial_settings+=", EWT="+EWT;
+//        initial_settings+=", EWLC="+EWLC;
+//        initial_settings+=", EWLF="+EWLF;
+//        initial_settings+=", ER="+ER;
+//        if(ROC != 0) initial_settings+=", ROC="+ROC;
+//        if(alpha != 0) initial_settings+=", alpha="+alpha;
+//        if(beta != 0) initial_settings+=", beta="+beta;
+//        if(leeway1 != 0) initial_settings+=", leeway1="+leeway1;
+//        if(leeway2 != 0) initial_settings+=", leeway2="+leeway2;
+//        if(leeway3 != 0) initial_settings+=", leeway3="+leeway3;
+//        if(leeway4 != 0) initial_settings+=", leeway4="+leeway4;
+//        if(leeway5 != 0) initial_settings+=", leeway5="+leeway5;
+//        if(leeway6 != 0) initial_settings+=", leeway6="+leeway6;
+//        if(leeway7 != 0) initial_settings+=", leeway7="+leeway7;
+//        initial_settings+=", "+neigh+" neigh";
+//        initial_settings+=", "+sel+" sel";
+//        if(sel.equals("Rand")) initial_settings+=", selnoise="+selnoise; // if sel func uses another param
+//        initial_settings+=", ASD="+ASD;
+//        initial_settings+=", "+evo+" evo";
+//        switch(evo){
+//            case"approach"->initial_settings+=", evonoise="+evonoise;
+//        }
+//        switch(mut){
+//            case"local","global"->{
+//                initial_settings+=", "+mut+" mut";
+//                initial_settings+=", mutrate="+DF4.format(mutrate);
+//                switch(mut){
+//                    case"local"->initial_settings+=", mutbound="+DF4.format(mutbound);
+//                }
+//            }
+//        }
+//        if(injiter > 0){
+//            initial_settings+=", injiter="+injiter;
+//            initial_settings+=", injp="+injp;
+//            initial_settings+=", injsize="+injsize;
+//        }
+//    }
 
 
 
-    /**
-     * Prints initial experimentation settings.
-     */
-    public static void printInitialSettings(){
-        System.out.println(initial_settings);
-    }
+//    /**
+//     * Prints initial experimentation settings.
+//     */
+//    public static void printInitialSettings(){
+//        System.out.println(initial_settings);
+//    }
 
 
 
@@ -1721,14 +1714,14 @@ public class Env extends Thread{ // simulated game environment
      * for Moore neighbourhood.
     */
 //    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
-    public void assignAdjacentNeighbours(Player player, String type, int d){
+    public void assignAdjacentNeighbours(Player player, String type, int range){
 //        ArrayList<Player> neighbourhood = player.getNeighbourhood();
         ArrayList<Player> neighbourhood = new ArrayList<>();
 //        double[] edge_weights = new double[]{};
 
         double y = player.getY();
         double x = player.getX();
-        for(int i=1;i<=d;i++){
+        for(int i=1;i<=range;i++){
 //            double y_plus = (((y + i) % length) + length) % length;
 //            double y_minus = (((y - i) % length) + length) % length;
 //            double x_plus = (((x + i) % width) + width) % width;
@@ -1844,10 +1837,9 @@ public class Env extends Thread{ // simulated game environment
      * Randomly assigns either uni-directional or bi-directional edges to player.<br>
      * Assumes 2D square lattice grid population structure.
      * @param player
-     * @param type
      * @param size
      */
-    public void assignRandomNeighbours(Player player, String type, int size){
+    public void assignRandomNeighbours(Player player, int size){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
 
         // randomly generate IDs
@@ -2499,70 +2491,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Assigns Margolus neighbourhood to players.<br>
-     * Neighbourhood 1: (x-1,y), (x,y+1), (x-1,y+1).<br>
-     * Neighbourhood 2: (x+1,y), (x,y-1), (x-1,y-1).
-     */
-    public void assignMargolusNeighbourhood(Player player, int y, int x){
-//        // setup #1
-////        ArrayList <Player> neighbourhood = new ArrayList<>();
-////
-////        int x_plus = adjustPosition(x, 1, rows);
-////        int x_minus = adjustPosition(x, -1, rows);
-////        int y_plus = adjustPosition(y, 1, columns);
-////        int y_minus = adjustPosition(y, -1, columns);
-////
-////        if(gen % 2 == 0){
-////            neighbourhood.add(grid.get(y).get(x_minus));        // (x - 1,  y)
-////            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + 1)
-////            neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - 1,  y + 1)
-////        }else{
-////            neighbourhood.add(grid.get(y).get(x_plus));         // (x + 1,  y)
-////            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - 1)
-////            neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x - 1,  y - 1)
-////        }
-////
-////        player.setNeighbourhood(neighbourhood);
-//
-//
-//        // setup #2 (note that rest of program does not know when to use margolus neighbourhoods instead of regular neighbourhood)
-//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
-//        ArrayList<Player> mar_neigh1 = player.getMargolus_neighbourhood1();
-//        ArrayList<Player> mar_neigh2 = player.getMargolus_neighbourhood2();
-//
-//        int x_plus = adjustPosition(x, 1, rows);
-//        int x_minus = adjustPosition(x, -1, rows);
-//        int y_plus = adjustPosition(y, 1, columns);
-//        int y_minus = adjustPosition(y, -1, columns);
-//
-//        Player a;
-//        a=grid.get(y).get(x_minus);
-//        neighbourhood.add(a);
-//        mar_neigh1.add(a);
-//        a=grid.get(y_plus).get(x);
-//        neighbourhood.add(a);
-//        mar_neigh1.add(a);
-//        a=grid.get(y_plus).get(x_minus);
-//        neighbourhood.add(a);
-//        mar_neigh1.add(a);
-//        a=grid.get(y).get(x_plus);
-//        neighbourhood.add(a);
-//        mar_neigh2.add(a);
-//        a=grid.get(y_minus).get(x);
-//        neighbourhood.add(a);
-//        mar_neigh2.add(a);
-//        a=grid.get(y_minus).get(x_plus);
-//        neighbourhood.add(a);
-//        mar_neigh2.add(a);
-    }
 
-
-
-//    public int adjustPosition(int position, int adjustment, int max){
-//        int new_position = (((position + adjustment) % max) + max) % max;
-//        return new_position;
-//    }
     // adjust position with respect to periodic boundaries
     public double adjustPosition(double position, double adjustment, int max){
         double new_position = (((position + adjustment) % max) + max) % max;
@@ -2712,36 +2641,6 @@ public class Env extends Thread{ // simulated game environment
     }
 
 
-
-//    public int rewireAwayEWMany(Player rewirer){
-//        ArrayList<Double> weights = new ArrayList(rewirer.getEdgeWeights()); // copy of rewirer's weights
-//        ArrayList<Player> neighbourhood = new ArrayList<>(rewirer.getNeighbourhood()); // copy of rewirer's neighbourhood pre-rewiring away
-//        int num_rewires = 0;
-//        for(int a=neighbourhood.size()-1;a>=0;a--) { // looking for edges to rewire
-//            if (weights.get(a) == 0.0) { // if weight is 0, rewire
-//                Player old_neighbour = neighbourhood.get(a);
-//                ArrayList<Player> neighbourhood2 = old_neighbour.getNeighbourhood();
-//                int size = neighbourhood2.size();
-//                if (weights.size() > 1 && size > 1) { // do not cut edges if doing so makes old neighbour or rewirer isolated
-//                    for (int b = 0; b < size; b++) { // looking for the rewirer in the old neighbour's neighbourhood
-//                        Player neighbour = neighbourhood2.get(b);
-//                        if (rewirer.equals(neighbour)) { // once rewirer found in old neighbour's neighbourhood, then ready to cut edges
-//                            neighbourhood.remove(a);
-//                            weights.remove(a);
-//                            neighbourhood2.remove(b);
-//                            old_neighbour.getEdgeWeights().remove(b);
-//                            break;
-//                        }
-//                    }
-//                }
-//                num_rewires++;
-//            }
-//        }
-//        rewirer.setNeighbourhood(neighbourhood);
-//        rewirer.setEdgeWeights(weights);
-//
-//        return num_rewires;
-//  }
 
 
 
@@ -2906,123 +2805,8 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-
-
-//    public int rewireAway0EW(Player a){
-//        // omega_a denotes copy of neighbourhood of a.
-//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
-//
-//        // denotes list of weighted edges connecting a to its neigbours.
-//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
-//
-//        // denotes pool of rewireable edges represented by their indices.
-//        ArrayList<Integer> rewire_edge_indices = new ArrayList();
-//
-//        // b_index denotes index of edge w_ab that connects a to neighbour b.
-//        for(int b_index = 0; b_index < weights.size(); b_index++){
-//            double w = weights.get(b_index);
-//            if(w == 0){
-//                rewire_edge_indices.add(b_index);
-//            }
-//        }
-//
-//        int num_rewirable_edges = rewire_edge_indices.size();
-//
-//        ArrayList<Integer> chosen_edges_indices = new ArrayList<>();
-//
-//        int num_rewires;
-//
-//        if(rewire_qty.equals("single")){
-//            chosen_edges_indices.add(rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges)));
-//            num_rewires = 1;
-//        }
-//        else if(rewire_qty.equals("many")){
-//
-//            for(double w)
-//
-//
-//
-//            int i = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
-//
-//            chosen_edges_indices.add(i);
-//
-//            // remember to remove the index of the edge just chosen from the pool so that it cannot be chosen again.
-//            rewire_edge_indices.remove(i);
-//        }
-//
-//
-//
-////        int num_rewirable_edges = rewire_edge_indices.size();
-////        int num_rewires; // supports the process of rewiring to new neighbour.
-////
-////        // you could use a while loop like this if you were rewiring multiple edges.
-//////        while(num_rewirable_edges > 0){
-////
-////        // randomly select an edge w from the pool to cut. denote the index of w by w_index.
-////        if(EW_rewire_away_qty.equals("single")){
-////            num_rewires = 1;
-////            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
-////
-////            // c denotes neighbour of a.
-////            Player c = omega_a.get(c_index);
-////
-////            // omega_c denotes neighbourhood of c.
-////            ArrayList<Player> omega_c = c.getNeighbourhood();
-////
-////            // d denotes neighbour of c.
-////            for(int d_index = 0; d_index < omega_c.size(); d_index++){
-////                Player d = omega_c.get(d_index);
-////
-////
-////                // insert check to prevent the two players involved from becoming isolated?
-////
-////
-////                // if d = a, then c_index is the location of a in omega_b.
-////                if(d.equals(a)){
-////
-////                    // disconnect a from c.
-////                    omega_a.remove(c_index);
-////                    weights.remove(c_index);
-////
-////                    // disconnect c from a.
-////                    omega_c.remove(d_index);
-////                    c.getEdgeWeights().remove(d_index);
-////
-////                    // once the cutting of edges has been completed, stop looping.
-////                    break;
-////                }
-////            }
-////
-//////            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-////
-////        } // if false, there are no rewirable edges, therefore do not rewire.
-////        else if(EW_rewire_away_qty.equals("single")){
-////            num_rewires = 0;
-////        }
-////        else {
-////            num_rewires = 0;
-////        }
-//
-//
-//
-//
-//
-//
-//
-//
-//        a.setNeighbourhood(omega_a);
-//        a.setEdgeWeights(weights);
-//
-//        return num_rewires;
-//    }
-
-
-
-
-
     /**
-     * work in progress...
+     * INCOMPLETE
      *
      * this approach to rewiring away only makes sense if we limit the number of rewirings per gen
      * to 1.

@@ -191,6 +191,17 @@ public class Player {
 
 
 
+        player_desc += " weights=[";
+        for(int i=0;i<edge_weights.size();i++){
+            player_desc += DF2.format(edge_weights.get(i));
+            if((i + 1) < neighbourhood.size()){
+                player_desc += ", ";
+            }
+        }
+        player_desc += "]";
+
+
+
         // document interaction stats
 //        player_desc += " NI="+ NI;
         player_desc += " MNI=" + MNI;
