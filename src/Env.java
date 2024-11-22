@@ -208,6 +208,11 @@ public class Env extends Thread{ // simulated game environment
             case"injiter"->various_amounts.add((double)injiter);
             case"injp"->various_amounts.add(injp);
             case"injsize"->various_amounts.add((double)injsize);
+
+
+            case"RP"->various_amounts.add((double)RP);
+
+
         }
 
         // run experiment series
@@ -302,6 +307,14 @@ public class Env extends Thread{ // simulated game environment
                     injsize += (int) variation;
                     various_amounts.add((double) injsize);
                 }
+
+
+                case"RP"->{
+                    RP+=variation;
+                    various_amounts.add(RP);
+                }
+
+
             }
 
             // inform user what the varying parameter's value was
@@ -2537,6 +2550,11 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
 
+                    // move on to next c if this c has already been ruled out of contention.
+                    if(!add){
+                        continue;
+                    }
+
                     // e denotes neighbour of rewirer.
                     for (Player e : omega_a) {
 
@@ -2547,7 +2565,7 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
 
-                    // if the previous conditions were not true, then c is a valid candidate to rewire to.
+                    // if c has been deemed to be valid, add it to the pool.
                     if(add){
                         pool.add(c);
                     }
@@ -2556,19 +2574,49 @@ public class Env extends Thread{ // simulated game environment
         }
 
 
-        // connect to new neighbours.
-        for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
 
-            // f denotes new neighbour of a.
-            Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+//        // connect to new neighbours.
+//        for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
+//
+//
+//
+//
+//
+//            // f denotes new neighbour of a.
+//            Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+//
+//
+//
+//
+//            // connect a to f.
+//            omega_a.add(f);
+//            a.getEdgeWeights().add(1.0);
+//
+//            // connect f to a.
+//            f.getNeighbourhood().add(a);
+//            f.getEdgeWeights().add(1.0);
+//        }
 
-            // connect a to f.
-            omega_a.add(f);
-            a.getEdgeWeights().add(1.0);
 
-            // connect f to a.
-            f.getNeighbourhood().add(a);
-            f.getEdgeWeights().add(1.0);
+
+
+        // if pool empty, default to rewiring to a random player in the pop.
+        if(pool.size() == 0){
+            rewireToPop(a, num_rewires);
+        } else{ // connect to local player.
+            for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
+
+                // f denotes new neighbour of a.
+                Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+
+                // connect a to f.
+                omega_a.add(f);
+                a.getEdgeWeights().add(1.0);
+
+                // connect f to a.
+                f.getNeighbourhood().add(a);
+                f.getEdgeWeights().add(1.0);
+            }
         }
     }
 
