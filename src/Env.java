@@ -2055,8 +2055,10 @@ public class Env extends Thread{ // simulated game environment
                 s+=(injiter==0)?"":",injiter";
                 s+=(injp==0)?"":",injp";
                 s+=(injsize==0)?"":",injsize";
-
                 s+=",ASD";
+
+
+                s += !EWT.equals("3")? "": ",RP";
 
 
             } else {
@@ -2102,8 +2104,11 @@ public class Env extends Thread{ // simulated game environment
             s+=(injiter==0)?"":","+injiter;
             s+=(injp==0)?"":","+injp;
             s+=(injsize==0)?"":","+injsize;
-
             s+=","+ASD;
+
+
+            s += !EWT.equals("3")? "": "," + RP;
+
 
             fw.append(s);
             fw.close();
