@@ -31,8 +31,8 @@ public class Env extends Thread{ // simulated game environment
     Player[]pop; // array of players; assumes 2D space
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
-    int gen = 0; // indicates current generation. marks the progression of evo.
-    int iter = 1; // indicates current iteration. each gen is made up of ER iters.
+    int gen = 0; // indicates current generation. indicates how many generations have passed.
+    int iter = 1; // indicates current iteration of the core algorithm (play + EWL)
 //    static double DCF = 0; // distance cost factor
 //    static String initial_settings = ""; // stores initial experimentation settings
     static int injiter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
@@ -208,11 +208,7 @@ public class Env extends Thread{ // simulated game environment
             case"injiter"->various_amounts.add((double)injiter);
             case"injp"->various_amounts.add(injp);
             case"injsize"->various_amounts.add((double)injsize);
-
-
             case"RP"->various_amounts.add((double)RP);
-
-
         }
 
         // run experiment series
@@ -394,7 +390,10 @@ public class Env extends Thread{ // simulated game environment
         }
         System.out.println(output);
 
-        writeSeriesData();
+//        writeSeriesData();
+        writeSettings();
+        writeResults();
+
 
         experiment_num++; // move on to the next experiment in the series
     }
@@ -455,8 +454,8 @@ public class Env extends Thread{ // simulated game environment
                 EWL(player);
             }
 
-            // a generation passes every ER iterations.
-            // rewiring and strategy evolution occur every generation.
+            // a generation passes after every ER iterations.
+            // rewiring and strategy evolution may occur every generation.
             if(iter % ER == 0){
 
                 // rewiring
@@ -464,7 +463,7 @@ public class Env extends Thread{ // simulated game environment
                     for(int i=0;i<N;i++){
                         Player rewiring_player = pop[i];
                         double random_number = ThreadLocalRandom.current().nextDouble();
-                            if(RP > random_number){
+                        if(RP > random_number){
                             int num_rewires = 0;
                             switch (rewiring_away) {
                                 case"0EWSingle"->num_rewires = rewireAway0EWSingle(rewiring_player);
@@ -1303,9 +1302,9 @@ public class Env extends Thread{ // simulated game environment
         System.out.printf("%-6s |" +//config
                         " %-4s |" +//game
                         " %-6s |" +//runs
-                        " %-9s |" +//iters
+                        " %-7s |" +//iters
                         " %-6s |" +//length
-                        " %-6s |" +//width
+                        " %-5s |" +//width
                         " %-10s |" +//space
                         " %-22s |" +//EWT
                         " %-9s |" +//EWLC
@@ -1322,13 +1321,10 @@ public class Env extends Thread{ // simulated game environment
                         " %-6s |" +//mut
                         " %-7s |" +//mutrate
                         " %-9s |" +//mutbound
-
+                        " %-8s |" +//datarate
                         " %-9s |" +//varying
                         " %-9s |" +//variation
                         " %-6s |" +//numexp
-
-                        " %-8s |" +//datarate
-
                         " %-6s |" +//alpha
                         " %-6s |" +//beta
                         " %-7s |" +//leeway1
@@ -1365,10 +1361,11 @@ public class Env extends Thread{ // simulated game environment
                 ,"mut"
                 ,"mutrate"
                 ,"mutbound"
+                ,"datarate"
                 ,"varying"
                 ,"variation"
                 ,"numexp"
-                ,"datarate"
+
 
                 ,"alpha"
                 ,"beta"
@@ -1393,9 +1390,9 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("%-6d ", i); //config
             System.out.printf("| %-4s ", settings[CI++]); //game
             System.out.printf("| %-6s ", settings[CI++]); //runs
-            System.out.printf("| %-9s ", settings[CI++]); //iters
+            System.out.printf("| %-7s ", settings[CI++]); //iters
             System.out.printf("| %-6s ", settings[CI++]); //length
-            System.out.printf("| %-6s ", settings[CI++]); //width
+            System.out.printf("| %-5s ", settings[CI++]); //width
             System.out.printf("| %-10s ", settings[CI++]); //space
             System.out.printf("| %-22s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
@@ -1537,11 +1534,11 @@ public class Env extends Thread{ // simulated game environment
         mut=settings[CI++];
         mutrate=applySettingDouble();
         mutbound=applySettingDouble();
+        datarate=applySettingInt();
         varying=settings[CI++];
         experiment_series=(varying.equals(""))?false:true;
         variation=applySettingDouble();
         numexp=applySettingInt();
-        datarate=applySettingInt();
         alpha=applySettingDouble();
         beta=applySettingDouble();
         leeway1=applySettingDouble();
@@ -1600,6 +1597,7 @@ public class Env extends Thread{ // simulated game environment
     public static void printTableBorder(){
         System.out.printf(
                 "=======================================================" +
+                        "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
@@ -2914,6 +2912,140 @@ public class Env extends Thread{ // simulated game environment
             fw.append(s);
             fw.close();
         } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void writeSettings(){
+        String settings_filename = experiment_results_folder_path + "\\" + "settings.csv";
+        String settings = "";
+        try{
+            if(experiment_num == 1){
+                fw = new FileWriter(settings_filename, false);
+                settings += "experiment number";
+                settings += ",game";
+                settings += ",runs";
+                settings += ",iters";
+                settings += ",neigh";
+                settings += ",length";
+                settings += ",width";
+                settings += ",N";
+                settings += ",EWT";
+                settings += (EWLC.isEmpty())? "": ",EWLC";
+                settings += (EWLF.isEmpty())? "": ",EWLF";
+                settings += ",ER";
+                settings += (ROC==0)? "": ",ROC";
+                settings += (leeway1==0)? "": ",leeway1";
+                settings += (leeway2==0)? "": ",leeway2";
+                settings += (leeway3==0)? "": ",leeway3";
+                settings += (leeway4==0)? "": ",leeway4";
+                settings += (leeway5==0)? "": ",leeway5";
+                settings += (leeway6==0)? "": ",leeway6";
+                settings += (leeway7==0)? "": ",leeway7";
+                settings += ",sel";
+                settings += (selnoise==0)? "": ",selnoise";
+                settings += ",evo";
+                settings += (evonoise==0)? "": ",evonoise";
+                settings += (mut.isEmpty())? "": ",mut";
+                settings += (mutrate==0)? "": ",mutrate";
+                settings += (mutbound==0)? "": ",mutbound";
+                settings += (injiter==0)? "": ",injiter";
+                settings += (injp==0)? "": ",injp";
+                settings += (injsize==0)? "": ",injsize";
+                settings += ",ASD";
+                settings += !EWT.equals("3")? "": ",RP";
+            } else {
+                fw = new FileWriter(settings_filename, true);
+            }
+            settings += "\n" + experiment_num;
+            settings += "," + game;
+            settings += "," + runs;
+            settings += "," + iters;
+            settings += "," + neigh;
+            settings += "," + length;
+            settings += "," + width;
+            settings += "," + N;
+            settings += "," + EWT;
+            settings += (EWLC.isEmpty()) ? "": "," + EWLC;
+            settings += (EWLF.isEmpty()) ? "": "," + EWLF;
+            settings += "," + ER;
+            settings += (ROC==0)? "": "," + ROC;
+            settings += (leeway1==0)? "": "," + leeway1;
+            settings += (leeway2==0)? "": "," + leeway2;
+            settings += (leeway3==0)? "": "," + leeway3;
+            settings += (leeway4==0)? "": "," + leeway4;
+            settings += (leeway5==0)? "": "," + leeway5;
+            settings += (leeway6==0)? "": "," + leeway6;
+            settings += (leeway7==0)? "": "," + leeway7;
+            settings += "," + sel;
+            settings += (selnoise==0)? "": "," + selnoise;
+            settings += "," + evo;
+            settings += (evonoise==0)? "": "," + evonoise;
+            settings += (mut.isEmpty())? "": "," + mut;
+            settings += (mutrate==0)? "": "," + mutrate;
+            settings += (mutbound==0)? "": "," + mutbound;
+            settings += (injiter==0)? "": "," + injiter;
+            settings += (injp==0)? "": "," + injp;
+            settings += (injsize==0)? "": "," + injsize;
+            settings += "," + ASD;
+            settings += !EWT.equals("3")? "": "," + RP;
+            fw.append(settings);
+            fw.close();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void writeResults(){
+        String results_filename = experiment_results_folder_path + "\\" + "results.csv";
+        String results = "";
+        try{
+            if(experiment_num == 1){
+                fw = new FileWriter(results_filename, false);
+                results += "experiment number";
+                if(game.equals("UG") || game.equals("DG")){
+                    results += ",mean avg p";
+                    results += ",avg p SD";
+                    if(game.equals("UG")){
+                        results += ",mean avg q";
+                        results += ",avg q SD";
+                    }
+                }
+                results += "," + varying;
+            }else {
+                fw = new FileWriter(results_filename, true);
+            }
+            results += "\n" + experiment_num;
+            if(game.equals("UG") || game.equals("DG")){
+                results += "," + DF4.format(experiment_mean_avg_p);
+                results += "," + DF4.format(experiment_SD_avg_p);
+                if(game.equals("UG")){
+                    results += "," + DF4.format(experiment_mean_avg_q);
+                    results += "," + DF4.format(experiment_SD_avg_q);
+                }
+            }
+
+            // write value of varying parameter.
+            switch(varying){
+                case "runs" -> results += "," + runs;
+                case "ER" -> results += "," + ER;
+                case "ROC" -> results += "," + ROC;
+                case "length" -> results += "," + length;
+                case "width" -> results += "," + width;
+                case "RP" -> results += "," + RP;
+                case "iters" -> results += "," + iters;
+            }
+
+
+
+
+            fw.append(results);
+            fw.close();
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
