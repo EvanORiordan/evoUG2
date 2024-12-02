@@ -2006,113 +2006,113 @@ public class Env extends Thread{ // simulated game environment
 
 
     public static void writeSeriesData(){
-        // write experiment data, including results and settings, to a .csv data file.
-        try{
-//            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
-            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
-            String s="";
-
-            // write column headings
-            if(experiment_num == 1){
-                fw = new FileWriter(series_data_filename, false);
-                s+="exp num";
-                s+=",game";
-                if(game.equals("UG") || game.equals("DG")){
-                    s+=",mean avg p";
-                    s+=",avg p SD";
-                    if(game.equals("UG")){
-                        s+=",mean avg q";
-                        s+=",avg q SD";
-                    }
-                }
-                s+=",runs";
-                s+=",iters";
-                s+=",neigh";
-                s+=",length";
-                s+=",width";
-                s+=",N";
-                s+=",EWT";
-                s+=(EWLC.isEmpty())?"":",EWLC";
-                s+=(EWLF.isEmpty())?"":",EWLF";
-                s+=",ER";
-                s+=(ROC==0)?"":",ROC";
-                s+=(leeway1==0)?"":",leeway1";
-                s+=(leeway2==0)?"":",leeway2";
-                s+=(leeway3==0)?"":",leeway3";
-                s+=(leeway4==0)?"":",leeway4";
-                s+=(leeway5==0)?"":",leeway5";
-                s+=(leeway6==0)?"":",leeway6";
-                s+=(leeway7==0)?"":",leeway7";
-                s+=",sel";
-                s+=(selnoise==0)?"":",selnoise";
-                s+=",evo";
-                s+=(evonoise==0)?"":",evonoise";
-                s+=(mut.isEmpty())?"":",mut";
-                s+=(mutrate==0)?"":",mutrate";
-                s+=(mutbound==0)?"":",mutbound";
-                s+=(injiter==0)?"":",injiter";
-                s+=(injp==0)?"":",injp";
-                s+=(injsize==0)?"":",injsize";
-                s+=",ASD";
-
-
-                s += !EWT.equals("3")? "": ",RP";
-
-
-            } else {
-                fw = new FileWriter(series_data_filename, true);
-            }
-
-            // write row data
-            s+="\n" + experiment_num;
-            s+="," + game;
-            if(game.equals("UG") || game.equals("DG")){
-                s+="," + DF4.format(experiment_mean_avg_p);
-                s+="," + DF4.format(experiment_SD_avg_p);
-                if(game.equals("UG")){
-                    s+="," + DF4.format(experiment_mean_avg_q);
-                    s+="," + DF4.format(experiment_SD_avg_q);
-                }
-            }
-            s+="," + runs;
-            s+="," + iters;
-            s+="," + neigh;
-            s+="," + length;
-            s+="," + width;
-            s+="," + N;
-            s+=","+EWT;
-            s+=(EWLC.isEmpty())?"":","+EWLC;
-            s+=(EWLF.isEmpty())?"":","+EWLF;
-            s+=","+ER;
-            s+=(ROC==0)?"":","+ROC;
-            s+=(leeway1==0)?"":","+leeway1;
-            s+=(leeway2==0)?"":","+leeway2;
-            s+=(leeway3==0)?"":","+leeway3;
-            s+=(leeway4==0)?"":","+leeway4;
-            s+=(leeway5==0)?"":","+leeway5;
-            s+=(leeway6==0)?"":","+leeway6;
-            s+=(leeway7==0)?"":","+leeway7;
-            s+=","+sel;
-            s+=(selnoise==0)?"":","+selnoise;
-            s+=","+evo;
-            s+=(evonoise==0)?"":","+evonoise;
-            s+=(mut.isEmpty())?"":","+mut;
-            s+=(mutrate==0)?"":","+mutrate;
-            s+=(mutbound==0)?"":","+mutbound;
-            s+=(injiter==0)?"":","+injiter;
-            s+=(injp==0)?"":","+injp;
-            s+=(injsize==0)?"":","+injsize;
-            s+=","+ASD;
-
-
-            s += !EWT.equals("3")? "": "," + RP;
-
-
-            fw.append(s);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+//        // write experiment data, including results and settings, to a .csv data file.
+//        try{
+////            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+//            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
+//            String s="";
+//
+//            // write column headings
+//            if(experiment_num == 1){
+//                fw = new FileWriter(series_data_filename, false);
+//                s+="exp num";
+//                s+=",game";
+//                if(game.equals("UG") || game.equals("DG")){
+//                    s+=",mean avg p";
+//                    s+=",avg p SD";
+//                    if(game.equals("UG")){
+//                        s+=",mean avg q";
+//                        s+=",avg q SD";
+//                    }
+//                }
+//                s+=",runs";
+//                s+=",iters";
+//                s+=",neigh";
+//                s+=",length";
+//                s+=",width";
+//                s+=",N";
+//                s+=",EWT";
+//                s+=(EWLC.isEmpty())?"":",EWLC";
+//                s+=(EWLF.isEmpty())?"":",EWLF";
+//                s+=",ER";
+//                s+=(ROC==0)?"":",ROC";
+//                s+=(leeway1==0)?"":",leeway1";
+//                s+=(leeway2==0)?"":",leeway2";
+//                s+=(leeway3==0)?"":",leeway3";
+//                s+=(leeway4==0)?"":",leeway4";
+//                s+=(leeway5==0)?"":",leeway5";
+//                s+=(leeway6==0)?"":",leeway6";
+//                s+=(leeway7==0)?"":",leeway7";
+//                s+=",sel";
+//                s+=(selnoise==0)?"":",selnoise";
+//                s+=",evo";
+//                s+=(evonoise==0)?"":",evonoise";
+//                s+=(mut.isEmpty())?"":",mut";
+//                s+=(mutrate==0)?"":",mutrate";
+//                s+=(mutbound==0)?"":",mutbound";
+//                s+=(injiter==0)?"":",injiter";
+//                s+=(injp==0)?"":",injp";
+//                s+=(injsize==0)?"":",injsize";
+//                s+=",ASD";
+//
+//
+//                s += !EWT.equals("3")? "": ",RP";
+//
+//
+//            } else {
+//                fw = new FileWriter(series_data_filename, true);
+//            }
+//
+//            // write row data
+//            s+="\n" + experiment_num;
+//            s+="," + game;
+//            if(game.equals("UG") || game.equals("DG")){
+//                s+="," + DF4.format(experiment_mean_avg_p);
+//                s+="," + DF4.format(experiment_SD_avg_p);
+//                if(game.equals("UG")){
+//                    s+="," + DF4.format(experiment_mean_avg_q);
+//                    s+="," + DF4.format(experiment_SD_avg_q);
+//                }
+//            }
+//            s+="," + runs;
+//            s+="," + iters;
+//            s+="," + neigh;
+//            s+="," + length;
+//            s+="," + width;
+//            s+="," + N;
+//            s+=","+EWT;
+//            s+=(EWLC.isEmpty())?"":","+EWLC;
+//            s+=(EWLF.isEmpty())?"":","+EWLF;
+//            s+=","+ER;
+//            s+=(ROC==0)?"":","+ROC;
+//            s+=(leeway1==0)?"":","+leeway1;
+//            s+=(leeway2==0)?"":","+leeway2;
+//            s+=(leeway3==0)?"":","+leeway3;
+//            s+=(leeway4==0)?"":","+leeway4;
+//            s+=(leeway5==0)?"":","+leeway5;
+//            s+=(leeway6==0)?"":","+leeway6;
+//            s+=(leeway7==0)?"":","+leeway7;
+//            s+=","+sel;
+//            s+=(selnoise==0)?"":","+selnoise;
+//            s+=","+evo;
+//            s+=(evonoise==0)?"":","+evonoise;
+//            s+=(mut.isEmpty())?"":","+mut;
+//            s+=(mutrate==0)?"":","+mutrate;
+//            s+=(mutbound==0)?"":","+mutbound;
+//            s+=(injiter==0)?"":","+injiter;
+//            s+=(injp==0)?"":","+injp;
+//            s+=(injsize==0)?"":","+injsize;
+//            s+=","+ASD;
+//
+//
+//            s += !EWT.equals("3")? "": "," + RP;
+//
+//
+//            fw.append(s);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -2924,8 +2924,9 @@ public class Env extends Thread{ // simulated game environment
         try{
             if(experiment_num == 1){
                 fw = new FileWriter(settings_filename, false);
-                settings += "experiment number";
-                settings += ",game";
+//                settings += "experiment number";
+//                settings += ",game";
+                settings += "game";
                 settings += ",runs";
                 settings += ",iters";
                 settings += ",neigh";
@@ -2959,8 +2960,10 @@ public class Env extends Thread{ // simulated game environment
             } else {
                 fw = new FileWriter(settings_filename, true);
             }
-            settings += "\n" + experiment_num;
-            settings += "," + game;
+//            settings += "\n" + experiment_num;
+            settings += "\n";
+//            settings += "," + game;
+            settings += game;
             settings += "," + runs;
             settings += "," + iters;
             settings += "," + neigh;
@@ -3006,9 +3009,10 @@ public class Env extends Thread{ // simulated game environment
         try{
             if(experiment_num == 1){
                 fw = new FileWriter(results_filename, false);
-                results += "experiment number";
+//                results += "experiment number";
                 if(game.equals("UG") || game.equals("DG")){
-                    results += ",mean avg p";
+//                    results += ",mean avg p";
+                    results += "mean avg p";
                     results += ",avg p SD";
                     if(game.equals("UG")){
                         results += ",mean avg q";
@@ -3019,9 +3023,11 @@ public class Env extends Thread{ // simulated game environment
             }else {
                 fw = new FileWriter(results_filename, true);
             }
-            results += "\n" + experiment_num;
+//            results += "\n" + experiment_num;
+            results += "\n";
             if(game.equals("UG") || game.equals("DG")){
-                results += "," + DF4.format(experiment_mean_avg_p);
+//                results += "," + DF4.format(experiment_mean_avg_p);
+                results += DF4.format(experiment_mean_avg_p);
                 results += "," + DF4.format(experiment_SD_avg_p);
                 if(game.equals("UG")){
                     results += "," + DF4.format(experiment_mean_avg_q);

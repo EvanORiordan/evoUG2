@@ -1,2 +1,2 @@
 game,runs,iters,length,width,space,EWT,EWLC,EWLF,ER,ROC,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,datarate,varying,variation,numexp,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,injiter,injp,injsize,desc
-DG,1,10,40,40,grid,3 0.5 0EWSingle pop,p,pAD,5,,VN 1,ERW,,MNI,copy,,,,,,ER,1,5,,,,,,,,,,,,,test
+DG,5,10000,20,20,grid,1,p,pAD,1,,VN 1,ERW,,MNI,copy,,,,,,ER,1,5,,,,,,,,,,,,,test
