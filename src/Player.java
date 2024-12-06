@@ -49,9 +49,7 @@ public class Player {
     private double[] margolus_edge_weights2;
     private double x; // x position in space
     private double y; // y position in space
-
-
-    private boolean rewire;
+    private double utility; // utility / fitness
 
 
 
@@ -135,10 +133,10 @@ public class Player {
     @Override
     public String toString(){ // document details relating to the player
 
-        // document key player attributes
+        // key player attributes
         String player_desc = "";
         player_desc += "ID="+ID;
-        player_desc += " pos=("+x+","+y+")";
+//        player_desc += " pos=("+x+","+y+")";
         switch(game){
             case"UG","DG"->{
                 player_desc += " p=" + DF4.format(p) // p
@@ -152,10 +150,11 @@ public class Player {
             }
         }
         player_desc+=" score="+DF4.format(score); // score
-        player_desc+=" ("+DF4.format(avg_score)+")"; // avg score
+//        player_desc+=" ("+DF4.format(avg_score)+")"; // avg score
+        player_desc += " utility=" + DF4.format(utility);
 
 
-        // document EW and NSI per neighbour
+        // EW and NSI per neighbour
 //        player_desc += " neighbourhood=[";
 //        for(int i=0;i<neighbourhood.size();i++){
 //            Player neighbour = neighbourhood.get(i);
@@ -202,9 +201,9 @@ public class Player {
 
 
 
-        // document interaction stats
+        // interaction stats
 //        player_desc += " NI="+ NI;
-        player_desc += " MNI=" + MNI;
+//        player_desc += " MNI=" + MNI;
 //        player_desc += " NSI="+ NSI;
 //        player_desc += " NSP="+ NSP;
 //        player_desc += " NSR="+ NSR;
@@ -306,4 +305,6 @@ public class Player {
     public void setX(double d){x=d;}
     public static int getCount(){return count;}
     public static void setCount(int i){count=i;}
+    public double getUtility(){return utility;}
+    public void setUtility(double d){utility=d;}
 }

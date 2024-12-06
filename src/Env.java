@@ -45,7 +45,8 @@ public class Env extends Thread{ // simulated game environment
     static double l; // loner's payoff
 //    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
-    static String ASD; // average score denominator: determines how average score is calculated
+//    static String ASD; // average score denominator: determines how average score is calculated
+    static String UD; // utility denominator for calculating utility
     double avg_q; // average acceptance threshold across population
     double q_SD; // the standard deviation of q across the pop
     static String space; // the space the population exists within
@@ -95,6 +96,7 @@ public class Env extends Thread{ // simulated game environment
     static String EWT; // edge weight type
     static String EWLC; // edge weight learning condition
     static String EWLF; // edge weight learning formula
+    static String EWLT; // edge weight learning type
     static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
     static double ROC = 0; // rate of edge weight change per edge weight learning call
 
@@ -429,8 +431,10 @@ public class Env extends Thread{ // simulated game environment
 
         // initialise neighbourhoods
         for(int i=0;i<N;i++){
-            Player player = pop[i];
-            initialiseEdgeWeights(player);
+//            Player player = pop[i];
+//            initialiseEdgeWeights(player);
+
+            initialiseEdgeWeights(pop[i]);
         }
 
         // the algorithm iterates.
@@ -444,14 +448,25 @@ public class Env extends Thread{ // simulated game environment
 
             // playing
             for(int i=0;i<N;i++){
-                Player player = pop[i];
-                play(player);
+//                Player player = pop[i];
+//                play(player);
+
+                play(pop[i]);
             }
+
+            // update utility
+            for(int i=0;i<N;i++){
+//                updateAvgScore(pop[i]);
+                updateUtility(pop[i]);
+            }
+
 
             // edge weight learning
             for(int i=0;i<N;i++){
-                Player player = pop[i];
-                EWL(player);
+//                Player player = pop[i];
+//                EWL(player);
+
+                EWL(pop[i]);
             }
 
             // a generation passes after every ER iterations.
@@ -658,14 +673,25 @@ public class Env extends Thread{ // simulated game environment
         if(payoff > 0){
             player.setNSI(player.getNSI() + 1);
         }
-        switch (ASD){
-            case "MNI" -> player.setAvgScore(player.getScore() / player.getMNI());
-            case "NSI" -> player.setAvgScore(player.getScore() / player.getNSI());
-            default -> {
-                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-                Runtime.getRuntime().exit(0);
-            }
-        }
+
+
+//        double score = player.getScore();
+//        switch (ASD){
+//            case "MNI" -> player.setAvgScore(score / player.getMNI());
+//            case "NSI" -> player.setAvgScore(score / player.getNSI());
+//            default -> {
+//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+//                Runtime.getRuntime().exit(0);
+//            }
+//
+//
+//            case "deg" -> {
+//                int degree = player.getNeighbourhood().size();
+//                player.setAvgScore(score / degree);
+//            }
+//
+//
+//        }
     }
 
 
@@ -717,18 +743,18 @@ public class Env extends Thread{ // simulated game environment
             player.setNSI(NSI + 1);
         }
 
-        score = player.getScore();
-        MNI = player.getMNI();
-        NSI = player.getNSI();
-        switch(ASD){
-            case "MNI" -> player.setAvgScore(score / MNI);
-            case "NSI" -> player.setAvgScore(score / NSI);
-
-            default -> {
-                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-                Runtime.getRuntime().exit(0);
-            }
-        }
+//        score = player.getScore();
+//        MNI = player.getMNI();
+//        NSI = player.getNSI();
+//        switch(ASD){
+//            case "MNI" -> player.setAvgScore(score / MNI);
+//            case "NSI" -> player.setAvgScore(score / NSI);
+//
+//            default -> {
+//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+//                Runtime.getRuntime().exit(0);
+//            }
+//        }
     }
 
 
@@ -758,48 +784,50 @@ public class Env extends Thread{ // simulated game environment
      * if {@code option == 2}, then no effect.<br>
      */
     public void EWL(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        for(int i = 0; i < neighbourhood.size(); i++){
-            Player neighbour = neighbourhood.get(i);
-            double total_leeway = calculateTotalLeeway(player, neighbour, i);
-            int option = checkEWLC(player, neighbour, total_leeway);
-
-
-//            double[] edge_weights = player.getEdgeWeights();
-//            if(option == 0){ // increase EW
-//                edge_weights[i] += calculateLearning(player, neighbour);
-//                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
-//                    edge_weights[i] = 1.0;
-//                }
-//            } else if (option == 1){ // decrease EW
-//                edge_weights[i] -= calculateLearning(player, neighbour);
-//                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
-//                    edge_weights[i] = 0;
-//                }
-//            }
-
-
-            ArrayList <Double> weights = player.getEdgeWeights();
-            double weight = weights.get(i);
-            if(option == 0){
-                weight += calculateLearning(player, neighbour);
-                if(weight > 1)
-                    weight = 1;
-            } else if(option == 1){
-                weight -= calculateLearning(player, neighbour);
-                if(weight < 0)
-                    weight = 0;
+        if(EWLT.equals("")) { // old implementation of EWL
+            ArrayList<Player> neighbourhood = player.getNeighbourhood();
+            for (int i = 0; i < neighbourhood.size(); i++) {
+                Player neighbour = neighbourhood.get(i);
+                double total_leeway = calculateTotalLeeway(player, neighbour, i);
+                int option = checkEWLC(player, neighbour, total_leeway);
+                ArrayList<Double> weights = player.getEdgeWeights();
+                double weight = weights.get(i);
+                if (option == 0) {
+                    weight += calculateLearning(player, neighbour);
+                    if (weight > 1)
+                        weight = 1;
+                } else if (option == 1) {
+                    weight -= calculateLearning(player, neighbour);
+                    if (weight < 0)
+                        weight = 0;
+                }
+                String str = DF2.format(weight);
+                double x = Double.parseDouble(str);
+                weights.set(i, x);
             }
+        } else { // new way of EWL; it will eventually replace old way.
 
-//            weights.set(i, weight);
 
-//            weight = Math.floor(weight);
-//            BigDecimal bd =
-            String str = DF2.format(weight);
-            double x = Double.parseDouble(str);
-//            if(x==0 && weight!=0)
-//                System.out.println("hello");
-            weights.set(i, x);
+            Player a = player;
+            ArrayList<Player> omega_a = a.getNeighbourhood();
+            for (int i = 0; i < omega_a.size(); i++) {
+                Player b = omega_a.get(i);
+                ArrayList<Double> weights = a.getEdgeWeights();
+                double weight = weights.get(i);
+                double k = 0.1; // SHORTCUT WAY OF ASSIGNING NOISE; CAN IMPLEMENT BETTER WAY IN FUTURE
+                switch (EWLT) {
+                    case "pfixed" -> weight += b.getP() > a.getP()? ROC: -ROC; // increment or decrement by fixed amount ROC depending on p_a and p_b
+                    case "pD" -> weight += b.getP() - a.getP();
+                    case "pFD" -> weight += 1 / (1 + Math.exp((a.getUtility() - b.getUtility()) / k)); // fermi-dirac equation
+                }
+                if(weight > 1.0)
+                    weight = 1.0;
+                else if(weight < 0.0)
+                    weight = 0.0;
+                String str = DF2.format(weight);
+                double x = Double.parseDouble(str);
+                weights.set(i, x);
+            }
         }
     }
 
@@ -938,32 +966,59 @@ public class Env extends Thread{ // simulated game environment
      * by default.<br>
      */
     public Player selectionERW(Player child){
-        ArrayList <Player> neighbourhood = child.getNeighbourhood();
-        int size = neighbourhood.size();
-        double fitness = child.getAvgScore(); // fitness equals avg score
-        Player parent = child; // default parent is child
-        double[] pockets = new double[size]; // pockets of roulette wheel
-        double roulette_total = 0; // total fitness exp diff
+//        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+//        int size = neighbourhood.size();
+//        double fitness = child.getAvgScore(); // fitness equals avg score
+//        Player parent = child; // default parent is child
+//        double[] pockets = new double[size]; // pockets of roulette wheel
+//        double roulette_total = 0; // total fitness exp diff
+//
+//        // allocate pockets
+//        for(int i = 0 ; i < size; i++){
+//            double neighbour_fitness = neighbourhood.get(i).getAvgScore();
+//            pockets[i] = Math.exp(neighbour_fitness - fitness);
+//            roulette_total += pockets[i];
+//        }
+//
+//        // allocate pocket to child
+//        roulette_total += 1.0; // this is equivalent to the below line of code.
+////        roulette_total += Math.exp(fitness - fitness);
+//
+//        // fitter player ==> more likely to be selected
+//        double tally = 0;
+//        double random_double = ThreadLocalRandom.current().nextDouble();
+//        for(int j = 0; j < size; j++){
+//            tally += pockets[j];
+//            double percentile = tally / roulette_total;
+//            if (random_double < percentile) {
+//                parent = neighbourhood.get(j);
+//                break;
+//            }
+//        }
+//
+//        return parent;
 
-        // allocate pockets
-        for(int i = 0 ; i < size; i++){
-            double neighbour_fitness = neighbourhood.get(i).getAvgScore();
-            pockets[i] = Math.exp(neighbour_fitness - fitness);
+
+
+        Player parent = null;
+        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood());
+        pool.add(child);
+        int size = pool.size();
+        double[] pockets = new double[size];
+        double roulette_total = 0;
+        int i;
+        for(i=0;i<size;i++){
+//            pockets[i] = pool.get(i).getAvgScore();
+            pockets[i] = pool.get(i).getUtility();
             roulette_total += pockets[i];
         }
-
-        // allocate pocket to child
-        roulette_total += 1.0; // this is equivalent to the below line of code.
-//        roulette_total += Math.exp(fitness - fitness);
-
-        // fitter player ==> more likely to be selected
-        double tally = 0;
         double random_double = ThreadLocalRandom.current().nextDouble();
-        for(int j = 0; j < size; j++){
-            tally += pockets[j];
+        double tally = 0;
+        for(i=0;i<size;i++){
+            tally += pockets[i];
             double percentile = tally / roulette_total;
-            if (random_double < percentile) {
-                parent = neighbourhood.get(j);
+            if(random_double < percentile){
+                parent = pool.get(i);
                 break;
             }
         }
@@ -988,7 +1043,8 @@ public class Env extends Thread{ // simulated game environment
         double roulette_total = 0;
         int i;
         for(i=0;i<size;i++){
-            pockets[i] = pool.get(i).getAvgScore();
+//            pockets[i] = pool.get(i).getAvgScore();
+            pockets[i] = pool.get(i).getUtility();
             roulette_total += pockets[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
@@ -1309,13 +1365,14 @@ public class Env extends Thread{ // simulated game environment
                         " %-22s |" +//EWT
                         " %-9s |" +//EWLC
                         " %-11s |" +//EWLF
+                        " %-3s |" +//EWLT
                         " %-3s |" +//ER
                         " %-6s |" +//ROC
-
                         " %-8s |" +//neigh
                         " %-8s |" +//sel
                         " %-8s |" +//selnoise
-                        " %-3s |" +//ASD
+//                        " %-3s |" +//ASD
+                        " %-3s |" +//UD
                         " %-8s |" +//evo
                         " %-8s |" +//evonoise
                         " %-6s |" +//mut
@@ -1334,7 +1391,6 @@ public class Env extends Thread{ // simulated game environment
                         " %-7s |" +//leeway5
                         " %-7s |" +//leeway6
                         " %-7s |" +//leeway7
-
                         " %-9s |" +//injiter
                         " %-6s |" +//injp
                         " %-7s |" +//injsize
@@ -1349,13 +1405,14 @@ public class Env extends Thread{ // simulated game environment
                 ,"EWT"
                 ,"EWLC"
                 ,"EWLF"
+                ,"EWLT"
                 ,"ER"
                 ,"ROC"
-
                 ,"neigh"
                 ,"sel"
                 ,"selnoise"
-                ,"ASD"
+//                ,"ASD"
+                ,"UD"
                 ,"evo"
                 ,"evonoise"
                 ,"mut"
@@ -1365,8 +1422,6 @@ public class Env extends Thread{ // simulated game environment
                 ,"varying"
                 ,"variation"
                 ,"numexp"
-
-
                 ,"alpha"
                 ,"beta"
                 ,"leeway1"
@@ -1376,7 +1431,6 @@ public class Env extends Thread{ // simulated game environment
                 ,"leeway5"
                 ,"leeway6"
                 ,"leeway7"
-
                 ,"injiter"
                 ,"injp"
                 ,"injsize"
@@ -1397,13 +1451,14 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-22s ", settings[CI++]); //EWT
             System.out.printf("| %-9s ", settings[CI++]); //EWLC
             System.out.printf("| %-11s ", settings[CI++]); //EWLF
+            System.out.printf("| %-3s ", settings[CI++]); //EWLT
             System.out.printf("| %-3s ", settings[CI++]); //ER
             System.out.printf("| %-6s ", settings[CI++]); //ROC
-
             System.out.printf("| %-8s ", settings[CI++]); //neigh
             System.out.printf("| %-8s ", settings[CI++]); //sel
             System.out.printf("| %-8s ", settings[CI++]); //selnoise
-            System.out.printf("| %-3s ", settings[CI++]); //ASD
+//            System.out.printf("| %-3s ", settings[CI++]); //ASD
+            System.out.printf("| %-3s ", settings[CI++]); //UD
             System.out.printf("| %-8s ", settings[CI++]); //evo
             System.out.printf("| %-8s ", settings[CI++]); //evonoise
             System.out.printf("| %-6s ", settings[CI++]); //mut
@@ -1413,7 +1468,6 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-9s ", settings[CI++]); //varying
             System.out.printf("| %-9s ", settings[CI++]); //variation
             System.out.printf("| %-6s ", settings[CI++]); //numexp
-
             System.out.printf("| %-6s ", settings[CI++]); //alpha
             System.out.printf("| %-6s ", settings[CI++]); //beta
             System.out.printf("| %-7s ", settings[CI++]); //leeway1
@@ -1481,12 +1535,6 @@ public class Env extends Thread{ // simulated game environment
         if(EWT.equals("3")){
             RP = Double.parseDouble(EWT_params[CI2++]);
             rewiring_away = EWT_params[CI2++];
-
-//            if(rewiring_away.equals("EW"))
-//                EW_rewire_away_qty = EWT_params[CI2++];
-
-//            rewire_qty = EWT_params[CI2++];
-
             rewiring_to = EWT_params[CI2];
         }
 
@@ -1504,6 +1552,7 @@ public class Env extends Thread{ // simulated game environment
                 && !EWLF.equals("pAD3")
                 && !EWLF.equals("AB"))
             System.out.println("[NOTE] No edge weight learning formula configured.");
+        EWLT = settings[CI++];
         ER=applySettingInt();
         if(ER < 1){
             System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
@@ -1528,7 +1577,8 @@ public class Env extends Thread{ // simulated game environment
 
         sel=settings[CI++];
         selnoise=applySettingDouble();
-        ASD=settings[CI++];
+//        ASD=settings[CI++];
+        UD=settings[CI++];
         evo=settings[CI++];
         evonoise=applySettingDouble();
         mut=settings[CI++];
@@ -2687,8 +2737,10 @@ public class Env extends Thread{ // simulated game environment
     public void updateStats(Player player, double payoff){
         player.setScore(player.getScore() + payoff);
         player.setMNI(player.getMNI() + 1);
-        if(ASD.equals("MNI"))
-            player.setAvgScore(player.getScore() / player.getMNI());
+//        if(ASD.equals("MNI"))
+//            player.setAvgScore(player.getScore() / player.getMNI());
+        if(UD.equals("MNI"))
+            player.setUtility(player.getScore() / player.getMNI());
     }
 
 
@@ -2731,14 +2783,13 @@ public class Env extends Thread{ // simulated game environment
             // omega_c denotes neighbourhood of c.
             ArrayList<Player> omega_c = c.getNeighbourhood();
 
+            // do not rewire if c has < 2 edges.
+            //if(omega_c.size() > 1){
+
+
             // d denotes neighbour of c.
             for(int d_index = 0; d_index < omega_c.size(); d_index++){
                 Player d = omega_c.get(d_index);
-
-
-                // insert check to prevent the two players involved from becoming isolated?
-                // if(
-
 
                 // if d = a, then d_index is the index/location of a in omega_c.
                 if(d.equals(a)){
@@ -2936,6 +2987,7 @@ public class Env extends Thread{ // simulated game environment
                 settings += ",EWT";
                 settings += (EWLC.isEmpty())? "": ",EWLC";
                 settings += (EWLF.isEmpty())? "": ",EWLF";
+                settings += (EWLT.isEmpty())? "": ",EWLT";
                 settings += ",ER";
                 settings += (ROC==0)? "": ",ROC";
                 settings += (leeway1==0)? "": ",leeway1";
@@ -2955,7 +3007,8 @@ public class Env extends Thread{ // simulated game environment
                 settings += (injiter==0)? "": ",injiter";
                 settings += (injp==0)? "": ",injp";
                 settings += (injsize==0)? "": ",injsize";
-                settings += ",ASD";
+//                settings += ",ASD";
+                settings += ",UD";
                 settings += !EWT.equals("3")? "": ",RP";
             } else {
                 fw = new FileWriter(settings_filename, true);
@@ -2972,7 +3025,8 @@ public class Env extends Thread{ // simulated game environment
             settings += "," + N;
             settings += "," + EWT;
             settings += (EWLC.isEmpty()) ? "": "," + EWLC;
-            settings += (EWLF.isEmpty()) ? "": "," + EWLF;
+//            settings += (EWLF.isEmpty()) ? "": "," + EWLF;
+            settings += (EWLT.isEmpty()) ? "": "," + EWLT;
             settings += "," + ER;
             settings += (ROC==0)? "": "," + ROC;
             settings += (leeway1==0)? "": "," + leeway1;
@@ -2992,7 +3046,8 @@ public class Env extends Thread{ // simulated game environment
             settings += (injiter==0)? "": "," + injiter;
             settings += (injp==0)? "": "," + injp;
             settings += (injsize==0)? "": "," + injsize;
-            settings += "," + ASD;
+//            settings += "," + ASD;
+            settings += "," + UD;
             settings += !EWT.equals("3")? "": "," + RP;
             fw.append(settings);
             fw.close();
@@ -3054,5 +3109,46 @@ public class Env extends Thread{ // simulated game environment
         } catch(IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+
+    public void updateAvgScore(Player player){
+//        double score = player.getScore();
+//        switch (ASD){
+//            default -> {
+//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+//                Runtime.getRuntime().exit(0);
+//            }
+//            case "MNI" -> player.setAvgScore(score / player.getMNI());
+//            case "NSI" -> player.setAvgScore(score / player.getNSI());
+//            case "deg" -> player.setAvgScore(score / player.getNeighbourhood().size());
+//        }
+    }
+
+
+
+    // chance to rewire is equal to 1 - w. as w increases, prob decreases.
+    public void rewireAwayProportional(Player a){
+        // omega_a denotes copy of neighbourhood of a.
+        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+
+
+    }
+
+
+
+    public void updateUtility(Player player){
+        double score = player.getScore();
+        double utility = 0.0;
+        switch(UD){
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
+            case "deg" -> utility = score / player.getNeighbourhood().size(); // normalised payoff
+            case "one" -> utility = score; // cumulative payoff
+        }
+        player.setUtility(utility);
     }
 }
