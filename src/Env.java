@@ -23,12 +23,9 @@ public class Env extends Thread{ // simulated game environment
     static int N; // population size
     static int iters; // how many iterations occur per experiment run
     static int runs; // how many times this experiment will be run.
-    static String neigh; // indicates type of neighbourhood players will have.
-    static int neigh_range; // range of neighbourhood with von Neumann / Moore / diamond neighbourhood type.
-    static int neigh_size; // size of neighbours with random neighbourhood type.
 //    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
 //    Player[][] pop; // array of players; assumes 2D space
-    Player[]pop; // array of players; assumes 2D space
+    Player[] pop; // array of players; assumes 2D space
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates current generation. indicates how many generations have passed.
@@ -46,7 +43,7 @@ public class Env extends Thread{ // simulated game environment
 //    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
 //    static String ASD; // average score denominator: determines how average score is calculated
-    static String UD; // utility denominator for calculating utility
+    static String UF; // utility formula: indicates how utility is calculated
     double avg_q; // average acceptance threshold across population
     double q_SD; // the standard deviation of q across the pop
     static String space; // the space the population exists within
@@ -92,11 +89,16 @@ public class Env extends Thread{ // simulated game environment
     static String edge_count_data_filename;
 
 
+    // fields related to neighbourhoods
+    static String neighType; // indicates type of neighbourhood players will have.
+    static int neighRange; // range of neighbourhood with von Neumann / Moore / diamond neighbourhood type.
+    static int neighSize; // size of neighbours with random neighbourhood type.
+
+
     // fields related to edge weight learning (EWL)
     static String EWT; // edge weight type
     static String EWLC; // edge weight learning condition
     static String EWLF; // edge weight learning formula
-    static String EWLT; // edge weight learning type
     static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
     static double ROC = 0; // rate of edge weight change per edge weight learning call
 
@@ -125,11 +127,11 @@ public class Env extends Thread{ // simulated game environment
 
 
     // fields related to rewiring
-    static String rewiring_away; // values accepted: "0EW", "EWRW" (edge weight roulette wheel), "random"
+    static String RA; // rewire away
 //    static String EW_rewire_away_qty;
 //    static String rewire_qty;
-    static String rewiring_to;
-    static double RP = 1.0; // rewire probability parameter
+    static String RT; // rewire to
+    static double RP = 1.0; // rewire probability
 //    static int num_rewires; // number of rewires to be performed by the given player
 
 
@@ -305,14 +307,10 @@ public class Env extends Thread{ // simulated game environment
                     injsize += (int) variation;
                     various_amounts.add((double) injsize);
                 }
-
-
                 case"RP"->{
                     RP+=variation;
                     various_amounts.add(RP);
                 }
-
-
             }
 
             // inform user what the varying parameter's value was
@@ -411,9 +409,9 @@ public class Env extends Thread{ // simulated game environment
 
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            switch(neigh){
-                case"VN","Moore","dia"->assignAdjacentNeighbours(player, neigh, neigh_range);
-                case"random"->assignRandomNeighbours(player, neigh_size);
+            switch(neighType){
+                case"VN","Moore","dia"->assignAdjacentNeighbours(player);
+                case"random"->assignRandomNeighbours(player, neighSize);
                 case"all"->assignAllNeighbours(player);
 //                case"Margolus"->assignMargolusNeighbourhood(player, i, j);
                 default -> {
@@ -480,13 +478,13 @@ public class Env extends Thread{ // simulated game environment
                         double random_number = ThreadLocalRandom.current().nextDouble();
                         if(RP > random_number){
                             int num_rewires = 0;
-                            switch (rewiring_away) {
+                            switch (RA) {
                                 case"0EWSingle"->num_rewires = rewireAway0EWSingle(rewiring_player);
                                 case"0EWMany"->num_rewires = rewireAway0EWMany(rewiring_player);
                                 case"EWRW"->num_rewires = rewireAway0EWSingle(rewiring_player);
                             }
                             if(num_rewires > 0){
-                                switch (rewiring_to){
+                                switch (RT){
                                     case"local"->rewireToLocal(rewiring_player, num_rewires);
                                     case"pop"->rewireToPop(rewiring_player, num_rewires);
                                 }
@@ -582,7 +580,7 @@ public class Env extends Thread{ // simulated game environment
                     }
                     System.out.println(output);
 
-                    if(!EWT.equals("3") && length==width && neigh.split(" ")[0].equals("VN")){
+                    if(!EWT.equals("3") && length==width && neighType.split(" ")[0].equals("VN")){
                         calculateAverageEdgeWeights();
                         writeEWData();
 //                        writeNSIData();
@@ -598,11 +596,11 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Once the neighbour locates their index for the player, game playing can begin.<br>
-     * If {@code interact == true}, successful interaction. MNI and NSI increment.<br>
-     * If {@code interact == false}, unsuccessful interaction. MNI increments, NSI remains the same.
-     */
+//    /**
+//     * Once the neighbour locates their index for the player, game playing can begin.<br>
+//     * If {@code interact == true}, successful interaction. MNI and NSI increment.<br>
+//     * If {@code interact == false}, unsuccessful interaction. MNI increments, NSI remains the same.
+//     */
     public void play(Player player) {
         // find partner
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
@@ -627,6 +625,7 @@ public class Env extends Thread{ // simulated game environment
                             // generically update stats
                             updateStats(player,0);
                             updateStats(neighbour,0);
+
                         }
                     }
                     if(interact){
@@ -776,60 +775,76 @@ public class Env extends Thread{ // simulated game environment
     }
 
 
+
+
+//    public void EWL(Player player){
+//        if(EWLT.equals("")) { // old implementation of EWL
+//            ArrayList<Player> neighbourhood = player.getNeighbourhood();
+//            for (int i = 0; i < neighbourhood.size(); i++) {
+//                Player neighbour = neighbourhood.get(i);
+//                double total_leeway = calculateTotalLeeway(player, neighbour, i);
+//                int option = checkEWLC(player, neighbour, total_leeway);
+//                ArrayList<Double> weights = player.getEdgeWeights();
+//                double weight = weights.get(i);
+//                if (option == 0) {
+//                    weight += calculateLearning(player, neighbour);
+//                    if (weight > 1)
+//                        weight = 1;
+//                } else if (option == 1) {
+//                    weight -= calculateLearning(player, neighbour);
+//                    if (weight < 0)
+//                        weight = 0;
+//                }
+//                String str = DF2.format(weight);
+//                double x = Double.parseDouble(str);
+//                weights.set(i, x);
+//            }
+//        } else { // new way of EWL; might eventually replace old way.
+//
+//
+//            Player a = player;
+//            ArrayList<Player> omega_a = a.getNeighbourhood();
+//            for (int i = 0; i < omega_a.size(); i++) {
+//                Player b = omega_a.get(i);
+//                ArrayList<Double> weights = a.getEdgeWeights();
+//                double weight = weights.get(i);
+//                double k = 0.1; // SHORTCUT WAY OF ASSIGNING NOISE; CAN IMPLEMENT BETTER WAY IN FUTURE
+//                switch (EWLT) {
+//                    case "pfixed" -> weight += b.getP() > a.getP()? ROC: -ROC; // increment or decrement by fixed amount ROC depending on p_a and p_b
+//                    case "pD" -> weight += b.getP() - a.getP();
+//                    case "pFD" -> weight += 1 / (1 + Math.exp((a.getUtility() - b.getUtility()) / k)); // fermi-dirac equation
+//                }
+//                if(weight > 1.0)
+//                    weight = 1.0;
+//                else if(weight < 0.0)
+//                    weight = 0.0;
+//                String str = DF2.format(weight);
+//                double x = Double.parseDouble(str);
+//                weights.set(i, x);
+//            }
+//        }
+//    }
+
+
     /**
      * perform edge weight learning (EWL).<br>
      * ensure weight resides within [0,1].<br>
-     * if {@code option == 0}, then increase weight.<br>
-     * if {@code option == 1}, then decrease weight.<br>
-     * if {@code option == 2}, then no effect.<br>
      */
-    public void EWL(Player player){
-        if(EWLT.equals("")) { // old implementation of EWL
-            ArrayList<Player> neighbourhood = player.getNeighbourhood();
-            for (int i = 0; i < neighbourhood.size(); i++) {
-                Player neighbour = neighbourhood.get(i);
-                double total_leeway = calculateTotalLeeway(player, neighbour, i);
-                int option = checkEWLC(player, neighbour, total_leeway);
-                ArrayList<Double> weights = player.getEdgeWeights();
-                double weight = weights.get(i);
-                if (option == 0) {
-                    weight += calculateLearning(player, neighbour);
-                    if (weight > 1)
-                        weight = 1;
-                } else if (option == 1) {
-                    weight -= calculateLearning(player, neighbour);
-                    if (weight < 0)
-                        weight = 0;
-                }
-                String str = DF2.format(weight);
-                double x = Double.parseDouble(str);
-                weights.set(i, x);
-            }
-        } else { // new way of EWL; it will eventually replace old way.
+    public void EWL(Player a){
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Player> omega_a = a.getNeighbourhood();
+        int degree_a = omega_a.size();
+        for(int i = 0; i < degree_a; i++){
+            Player b = omega_a.get(i);
+            double w_ab = weights.get(i);
 
-
-            Player a = player;
-            ArrayList<Player> omega_a = a.getNeighbourhood();
-            for (int i = 0; i < omega_a.size(); i++) {
-                Player b = omega_a.get(i);
-                ArrayList<Double> weights = a.getEdgeWeights();
-                double weight = weights.get(i);
-                double k = 0.1; // SHORTCUT WAY OF ASSIGNING NOISE; CAN IMPLEMENT BETTER WAY IN FUTURE
-                switch (EWLT) {
-                    case "pfixed" -> weight += b.getP() > a.getP()? ROC: -ROC; // increment or decrement by fixed amount ROC depending on p_a and p_b
-                    case "pD" -> weight += b.getP() - a.getP();
-                    case "pFD" -> weight += 1 / (1 + Math.exp((a.getUtility() - b.getUtility()) / k)); // fermi-dirac equation
-                }
-                if(weight > 1.0)
-                    weight = 1.0;
-                else if(weight < 0.0)
-                    weight = 0.0;
-                String str = DF2.format(weight);
-                double x = Double.parseDouble(str);
-                weights.set(i, x);
-            }
         }
     }
+
+
+
+
+
 
 
 
@@ -1355,69 +1370,49 @@ public class Env extends Thread{ // simulated game environment
         System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
         printTableBorder();
-        System.out.printf("%-6s |" +//config
-                        " %-4s |" +//game
-                        " %-6s |" +//runs
-                        " %-7s |" +//iters
-                        " %-6s |" +//length
-                        " %-5s |" +//width
-                        " %-10s |" +//space
-                        " %-22s |" +//EWT
-                        " %-9s |" +//EWLC
-                        " %-11s |" +//EWLF
-                        " %-3s |" +//EWLT
-                        " %-3s |" +//ER
-                        " %-6s |" +//ROC
-                        " %-8s |" +//neigh
-                        " %-8s |" +//sel
-                        " %-8s |" +//selnoise
-//                        " %-3s |" +//ASD
-                        " %-3s |" +//UD
-                        " %-8s |" +//evo
-                        " %-8s |" +//evonoise
-                        " %-6s |" +//mut
-                        " %-7s |" +//mutrate
-                        " %-9s |" +//mutbound
-                        " %-8s |" +//datarate
-                        " %-9s |" +//varying
-                        " %-9s |" +//variation
-                        " %-6s |" +//numexp
-                        " %-6s |" +//alpha
-                        " %-6s |" +//beta
-                        " %-7s |" +//leeway1
-                        " %-7s |" +//leeway2
-                        " %-7s |" +//leeway3
-                        " %-7s |" +//leeway4
-                        " %-7s |" +//leeway5
-                        " %-7s |" +//leeway6
-                        " %-7s |" +//leeway7
-                        " %-9s |" +//injiter
-                        " %-6s |" +//injp
-                        " %-7s |" +//injsize
+        System.out.printf("%-10s |" +//config
+                        " %-5s |" +//game
+                        " %-10s |" +//runs
+                        " %-10s |" +//iters
+                        " %-5s |" +//ER
+                        " %-15s |" +//space
+                        " %-25s |" +//EW
+                        " %-25s |" +//EWL
+                        " %-15s |" +//neigh
+                        " %-15s |" +//sel
+                        " %-15s |" +//evo
+                        " %-15s |" +//mut
+                        " %-10s |" +//UF
+                        " %-10s |" +//datarate
+                        " %-10s |" +//varying
+                        " %-10s |" +//variation
+                        " %-10s |" +//numexp
+                        " %-10s |" +//alpha
+                        " %-10s |" +//beta
+                        " %-10s |" +//leeway1
+                        " %-10s |" +//leeway2
+                        " %-10s |" +//leeway3
+                        " %-10s |" +//leeway4
+                        " %-10s |" +//leeway5
+                        " %-10s |" +//leeway6
+                        " %-10s |" +//leeway7
+                        " %-10s |" +//injiter
+                        " %-10s |" +//injp
+                        " %-10s |" +//injsize
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
                 ,"runs"
                 ,"iters"
-                ,"length"
-                ,"width"
-                ,"space"
-                ,"EWT"
-                ,"EWLC"
-                ,"EWLF"
-                ,"EWLT"
                 ,"ER"
-                ,"ROC"
+                ,"space"
+                ,"EW"
+                ,"EWL"
                 ,"neigh"
                 ,"sel"
-                ,"selnoise"
-//                ,"ASD"
-                ,"UD"
                 ,"evo"
-                ,"evonoise"
                 ,"mut"
-                ,"mutrate"
-                ,"mutbound"
+                ,"UF"
                 ,"datarate"
                 ,"varying"
                 ,"variation"
@@ -1441,46 +1436,36 @@ public class Env extends Thread{ // simulated game environment
         for(int i=0;i<configurations.size();i++){
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
-            System.out.printf("%-6d ", i); //config
-            System.out.printf("| %-4s ", settings[CI++]); //game
-            System.out.printf("| %-6s ", settings[CI++]); //runs
-            System.out.printf("| %-7s ", settings[CI++]); //iters
-            System.out.printf("| %-6s ", settings[CI++]); //length
-            System.out.printf("| %-5s ", settings[CI++]); //width
-            System.out.printf("| %-10s ", settings[CI++]); //space
-            System.out.printf("| %-22s ", settings[CI++]); //EWT
-            System.out.printf("| %-9s ", settings[CI++]); //EWLC
-            System.out.printf("| %-11s ", settings[CI++]); //EWLF
-            System.out.printf("| %-3s ", settings[CI++]); //EWLT
-            System.out.printf("| %-3s ", settings[CI++]); //ER
-            System.out.printf("| %-6s ", settings[CI++]); //ROC
-            System.out.printf("| %-8s ", settings[CI++]); //neigh
-            System.out.printf("| %-8s ", settings[CI++]); //sel
-            System.out.printf("| %-8s ", settings[CI++]); //selnoise
-//            System.out.printf("| %-3s ", settings[CI++]); //ASD
-            System.out.printf("| %-3s ", settings[CI++]); //UD
-            System.out.printf("| %-8s ", settings[CI++]); //evo
-            System.out.printf("| %-8s ", settings[CI++]); //evonoise
-            System.out.printf("| %-6s ", settings[CI++]); //mut
-            System.out.printf("| %-7s ", settings[CI++]); //mutrate
-            System.out.printf("| %-9s ", settings[CI++]); //mutbound
-            System.out.printf("| %-8s ", settings[CI++]); //datarate
-            System.out.printf("| %-9s ", settings[CI++]); //varying
-            System.out.printf("| %-9s ", settings[CI++]); //variation
-            System.out.printf("| %-6s ", settings[CI++]); //numexp
-            System.out.printf("| %-6s ", settings[CI++]); //alpha
-            System.out.printf("| %-6s ", settings[CI++]); //beta
-            System.out.printf("| %-7s ", settings[CI++]); //leeway1
-            System.out.printf("| %-7s ", settings[CI++]); //leeway2
-            System.out.printf("| %-7s ", settings[CI++]); //leeway3
-            System.out.printf("| %-7s ", settings[CI++]); //leeway4
-            System.out.printf("| %-7s ", settings[CI++]); //leeway5
-            System.out.printf("| %-7s ", settings[CI++]); //leeway6
-            System.out.printf("| %-7s ", settings[CI++]); //leeway7
+            System.out.printf("%-10d ", i); //config
+            System.out.printf("| %-5s ", settings[CI++]); //game
+            System.out.printf("| %-10s ", settings[CI++]); //runs
+            System.out.printf("| %-10s ", settings[CI++]); //iters
+            System.out.printf("| %-5s ", settings[CI++]); //ER
+            System.out.printf("| %-15s ", settings[CI++]); //space
+            System.out.printf("| %-25s ", settings[CI++]); //EW
+            System.out.printf("| %-25s ", settings[CI++]); //EWLT
+            System.out.printf("| %-15s ", settings[CI++]); //neigh
+            System.out.printf("| %-15s ", settings[CI++]); //sel
+            System.out.printf("| %-15s ", settings[CI++]); //evo
+            System.out.printf("| %-15s ", settings[CI++]); //mut
+            System.out.printf("| %-10s ", settings[CI++]); //UF
+            System.out.printf("| %-10s ", settings[CI++]); //datarate
+            System.out.printf("| %-10s ", settings[CI++]); //varying
+            System.out.printf("| %-10s ", settings[CI++]); //variation
+            System.out.printf("| %-10s ", settings[CI++]); //numexp
+            System.out.printf("| %-10s ", settings[CI++]); //alpha
+            System.out.printf("| %-10s ", settings[CI++]); //beta
+            System.out.printf("| %-10s ", settings[CI++]); //leeway1
+            System.out.printf("| %-10s ", settings[CI++]); //leeway2
+            System.out.printf("| %-10s ", settings[CI++]); //leeway3
+            System.out.printf("| %-10s ", settings[CI++]); //leeway4
+            System.out.printf("| %-10s ", settings[CI++]); //leeway5
+            System.out.printf("| %-10s ", settings[CI++]); //leeway6
+            System.out.printf("| %-10s ", settings[CI++]); //leeway7
 
-            System.out.printf("| %-9s ", settings[CI++]); //injiter
-            System.out.printf("| %-6s ", settings[CI++]); //injp
-            System.out.printf("| %-7s ", settings[CI++]); //injsize
+            System.out.printf("| %-10s ", settings[CI++]); //injiter
+            System.out.printf("| %-10s ", settings[CI++]); //injp
+            System.out.printf("| %-10s ", settings[CI++]); //injsize
             System.out.printf("| %s ", settings[CI]); //desc
             System.out.println();
         }
@@ -1506,6 +1491,7 @@ public class Env extends Thread{ // simulated game environment
         game = settings[CI++];
         Player.setGame(game);
         runs=applySettingInt();
+        // todo update field assignment segment
         if(runs < 1){
             System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
             Runtime.getRuntime().exit(0);
@@ -1515,75 +1501,84 @@ public class Env extends Thread{ // simulated game environment
             System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
             Runtime.getRuntime().exit(0);
         }
-        length=applySettingInt();
-        if(length < 1){
-            System.out.println("[ERROR] Invalid length. Exiting...");
-            Runtime.getRuntime().exit(0);
-        }
-        width=applySettingInt();
-        if(width < 1){
-            System.out.println("[ERROR] Invalid width. Exiting...");
-            Runtime.getRuntime().exit(0);
-        }
-        N = length * width;
-        space=settings[CI++];
-
-
-        String[] EWT_params = settings[CI++].split(" ");
+        ER = Integer.parseInt(settings[CI++]);
+        String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
-        EWT = EWT_params[CI2++];
+        space = space_params[CI2++]; // required field
+        if(space.equals("grid")){
+            length = Integer.parseInt(space_params[CI2++]);
+            width = Integer.parseInt(space_params[CI2++]);
+            N = length * width;
+        }
+        String[] EW_params = settings[CI++].split(" "); // edge weight parameters
+        CI2 = 0;
+        EWT = EW_params[CI2++]; // required field
         if(EWT.equals("3")){
-            RP = Double.parseDouble(EWT_params[CI2++]);
-            rewiring_away = EWT_params[CI2++];
-            rewiring_to = EWT_params[CI2];
+            RP = Double.parseDouble(EW_params[CI2++]);
+            RA = EW_params[CI2++];
+            RT = EW_params[CI2];
         }
-
-
-        EWLC = settings[CI++];
-        if(!EWLC.equals("p") && !EWLC.equals("avgscore"))
-            System.out.println("[NOTE] No edge weight learning condition configured.");
-        EWLF = settings[CI++];
-        if(!EWLF.equals("ROC")
-                && !EWLF.equals("pAD")
-                && !EWLF.equals("pEAD")
-                && !EWLF.equals("avgscoreAD")
-                && !EWLF.equals("avgscoreEAD")
-                && !EWLF.equals("pAD2")
-                && !EWLF.equals("pAD3")
-                && !EWLF.equals("AB"))
-            System.out.println("[NOTE] No edge weight learning formula configured.");
-        EWLT = settings[CI++];
-        ER=applySettingInt();
-        if(ER < 1){
-            System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
-            Runtime.getRuntime().exit(0);
+        String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
+        if(EWL_params.length > 0){
+            CI2 = 0;
+            EWLC = EWL_params[CI2++];
+            EWLF = EWL_params[CI2++];
+            if(EWLF.equals("ROC"))
+                ROC = Double.parseDouble(EW_params[CI2++]);
         }
-        ROC=applySettingDouble();
-
-
-//        neigh=settings[CI++];
-
-
-        String[] neigh_params = settings[CI++].split(" ");
+        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
         CI2 = 0;
-        neigh = neigh_params[CI2++];
-        if(neigh.equals("VN") || neigh.equals("Moore") || neigh.equals("dia")){
-            neigh_range = Integer.parseInt(neigh_params[CI2++]);
-        } else if(neigh.equals("random")){
-            neigh_size = Integer.parseInt(neigh_params[CI2++]);
+        neighType = neigh_params[CI2++]; // required field
+        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
+            neighRange = Integer.parseInt(neigh_params[CI2++]);
+        } else if(neighType.equals("random")){
+            neighSize = Integer.parseInt(neigh_params[CI2++]);
         }
 
 
 
-        sel=settings[CI++];
-        selnoise=applySettingDouble();
-//        ASD=settings[CI++];
-        UD=settings[CI++];
-        evo=settings[CI++];
-        evonoise=applySettingDouble();
-        mut=settings[CI++];
-        mutrate=applySettingDouble();
-        mutbound=applySettingDouble();
+//        sel=settings[CI++];
+//        selnoise=applySettingDouble();
+//        evo=settings[CI++];
+//        evonoise=applySettingDouble();
+//        mut=settings[CI++];
+//        mutrate=applySettingDouble();
+//        mutbound=applySettingDouble();
+
+
+
+        String[] sel_params = settings[CI++].split(" "); // selection parameters
+        CI2 = 0;
+        sel = sel_params[CI2++];
+        if(sel.equals("rand")){
+            selnoise = Double.parseDouble(sel_params[CI2++]);
+        }
+        String[] evo_params = settings[CI++].split(" "); // evolution parameters
+        CI2 = 0;
+        evo = evo_params[CI2++];
+        if(evo.equals("approach")){
+            evonoise = Double.parseDouble(evo_params[CI2++]);
+        }
+        String[] mut_params = settings[CI++].split(" "); // mututation parameters
+        CI2 = 0;
+        if(mut_params.length > 0){
+            mut = mut_params[CI2++];
+            mutrate = Double.parseDouble(mut_params[CI2++]);
+            if(mut.equals("local")){
+                mutbound = Double.parseDouble(mut_params[CI2++]);
+            }
+        }
+
+
+        // TODO
+        //  remove use of applySettingInt() and applySettingDouble()... i dont like them anymore
+        //  especially since the introduction of CI2. i want to avoid confusing future me.
+        //  CI can be made non-static and secluded to this func only since its the only one
+        //  using CI.
+
+
+        // TODO put the rest of the params into singular params where applicable.
+        UF=settings[CI++];
         datarate=applySettingInt();
         varying=settings[CI++];
         experiment_series=(varying.equals(""))?false:true;
@@ -1775,14 +1770,15 @@ public class Env extends Thread{ // simulated game environment
      * for Moore neighbourhood.
     */
 //    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
-    public void assignAdjacentNeighbours(Player player, String type, int range){
+//    public void assignAdjacentNeighbours(Player player, String type, int range){
+    public void assignAdjacentNeighbours(Player player){
 //        ArrayList<Player> neighbourhood = player.getNeighbourhood();
         ArrayList<Player> neighbourhood = new ArrayList<>();
 //        double[] edge_weights = new double[]{};
 
         double y = player.getY();
         double x = player.getX();
-        for(int i=1;i<=range;i++){
+        for(int i=1;i<=neighRange;i++){
 //            double y_plus = (((y + i) % length) + length) % length;
 //            double y_minus = (((y - i) % length) + length) % length;
 //            double x_plus = (((x + i) % width) + width) % width;
@@ -1800,7 +1796,7 @@ public class Env extends Thread{ // simulated game environment
             neighbourhood.add(findPlayerByPos(y_plus,x));
             neighbourhood.add(findPlayerByPos(y_minus,x));
 
-            if(type.equals("dia")) {
+            if(neighType.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
@@ -1815,7 +1811,7 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
 
-            if(type.equals("Moore")){
+            if(neighType.equals("Moore")){
                 neighbourhood.add(findPlayerByPos(y_plus,x_plus));
                 neighbourhood.add(findPlayerByPos(y_minus,x_plus));
                 neighbourhood.add(findPlayerByPos(y_minus,x_minus));
@@ -2739,8 +2735,8 @@ public class Env extends Thread{ // simulated game environment
         player.setMNI(player.getMNI() + 1);
 //        if(ASD.equals("MNI"))
 //            player.setAvgScore(player.getScore() / player.getMNI());
-        if(UD.equals("MNI"))
-            player.setUtility(player.getScore() / player.getMNI());
+//        if(UF.equals("MNI"))
+//            player.setUtility(player.getScore() / player.getMNI());
     }
 
 
@@ -2969,34 +2965,35 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+    /**
+     * use the varying field to help determine whether a field should be
+     * included in the settings String. if a field equals 0.0 and is not being
+     * varied, it does not need to be added.<br>
+     */
     public static void writeSettings(){
         String settings_filename = experiment_results_folder_path + "\\" + "settings.csv";
         String settings = "";
         try{
             if(experiment_num == 1){
+                // TODO update this segment
                 fw = new FileWriter(settings_filename, false);
-//                settings += "experiment number";
-//                settings += ",game";
                 settings += "game";
                 settings += ",runs";
                 settings += ",iters";
-                settings += ",neigh";
-                settings += ",length";
-                settings += ",width";
-                settings += ",N";
-                settings += ",EWT";
-                settings += (EWLC.isEmpty())? "": ",EWLC";
-                settings += (EWLF.isEmpty())? "": ",EWLF";
-                settings += (EWLT.isEmpty())? "": ",EWLT";
                 settings += ",ER";
-                settings += (ROC==0)? "": ",ROC";
-                settings += (leeway1==0)? "": ",leeway1";
-                settings += (leeway2==0)? "": ",leeway2";
-                settings += (leeway3==0)? "": ",leeway3";
-                settings += (leeway4==0)? "": ",leeway4";
-                settings += (leeway5==0)? "": ",leeway5";
-                settings += (leeway6==0)? "": ",leeway6";
-                settings += (leeway7==0)? "": ",leeway7";
+                settings += "neighType";
+                settings += neighRange == 0 && !varying.equals("neighRange")? "": ",neighRange";
+                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
+                settings += ",space";
+                settings += length == 0 && !varying.equals("length")? "": ",length";
+                settings += width == 0 && !varying.equals("width")? "": ",width";
+                settings += ",EWT";
+                settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
+                settings += RA.equals("")? "": ",RA";
+                settings += RT.equals("")? "": ",RT";
+                settings += !EWLC.equals("")? "": ",EWLC";
+                settings += !EWLF.equals("")? "": ",EWLF";
+                settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
                 settings += ",sel";
                 settings += (selnoise==0)? "": ",selnoise";
                 settings += ",evo";
@@ -3004,38 +3001,39 @@ public class Env extends Thread{ // simulated game environment
                 settings += (mut.isEmpty())? "": ",mut";
                 settings += (mutrate==0)? "": ",mutrate";
                 settings += (mutbound==0)? "": ",mutbound";
+                settings += ",UF";
                 settings += (injiter==0)? "": ",injiter";
                 settings += (injp==0)? "": ",injp";
                 settings += (injsize==0)? "": ",injsize";
-//                settings += ",ASD";
-                settings += ",UD";
-                settings += !EWT.equals("3")? "": ",RP";
+                settings += (leeway1==0)? "": ",leeway1";
+                settings += (leeway2==0)? "": ",leeway2";
+                settings += (leeway3==0)? "": ",leeway3";
+                settings += (leeway4==0)? "": ",leeway4";
+                settings += (leeway5==0)? "": ",leeway5";
+                settings += (leeway6==0)? "": ",leeway6";
+                settings += (leeway7==0)? "": ",leeway7";
             } else {
                 fw = new FileWriter(settings_filename, true);
             }
-//            settings += "\n" + experiment_num;
+            // TODO update this segment
             settings += "\n";
-//            settings += "," + game;
             settings += game;
             settings += "," + runs;
             settings += "," + iters;
-            settings += "," + neigh;
-            settings += "," + length;
-            settings += "," + width;
-            settings += "," + N;
-            settings += "," + EWT;
-            settings += (EWLC.isEmpty()) ? "": "," + EWLC;
-//            settings += (EWLF.isEmpty()) ? "": "," + EWLF;
-            settings += (EWLT.isEmpty()) ? "": "," + EWLT;
             settings += "," + ER;
-            settings += (ROC==0)? "": "," + ROC;
-            settings += (leeway1==0)? "": "," + leeway1;
-            settings += (leeway2==0)? "": "," + leeway2;
-            settings += (leeway3==0)? "": "," + leeway3;
-            settings += (leeway4==0)? "": "," + leeway4;
-            settings += (leeway5==0)? "": "," + leeway5;
-            settings += (leeway6==0)? "": "," + leeway6;
-            settings += (leeway7==0)? "": "," + leeway7;
+            settings += "," + neighType;
+            settings += neighRange == 0 && !varying.equals("neighRange")? "": "," + neighRange;
+            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
+            settings += "," + space;
+            settings += length == 0 && !varying.equals("length")? "": "," + length;
+            settings += width == 0 && !varying.equals("width")? "": "," + width;
+            settings += ",EWT";
+            settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
+            settings += RA.equals("")? "": "," + RA;
+            settings += RT.equals("")? "": "," + RT;
+            settings += !EWLC.equals("")? "": "," + EWLC;
+            settings += !EWLF.equals("")? "": "," + EWLF;
+            settings += !EWLF.equals("ROC")? "": "," + ROC;
             settings += "," + sel;
             settings += (selnoise==0)? "": "," + selnoise;
             settings += "," + evo;
@@ -3043,12 +3041,17 @@ public class Env extends Thread{ // simulated game environment
             settings += (mut.isEmpty())? "": "," + mut;
             settings += (mutrate==0)? "": "," + mutrate;
             settings += (mutbound==0)? "": "," + mutbound;
+            settings += "," + UF;
             settings += (injiter==0)? "": "," + injiter;
             settings += (injp==0)? "": "," + injp;
             settings += (injsize==0)? "": "," + injsize;
-//            settings += "," + ASD;
-            settings += "," + UD;
-            settings += !EWT.equals("3")? "": "," + RP;
+            settings += (leeway1==0)? "": "," + leeway1;
+            settings += (leeway2==0)? "": "," + leeway2;
+            settings += (leeway3==0)? "": "," + leeway3;
+            settings += (leeway4==0)? "": "," + leeway4;
+            settings += (leeway5==0)? "": "," + leeway5;
+            settings += (leeway6==0)? "": "," + leeway6;
+            settings += (leeway7==0)? "": "," + leeway7;
             fw.append(settings);
             fw.close();
         } catch(IOException e) {
@@ -3141,13 +3144,10 @@ public class Env extends Thread{ // simulated game environment
     public void updateUtility(Player player){
         double score = player.getScore();
         double utility = 0.0;
-        switch(UD){
-            default -> {
-                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-                Runtime.getRuntime().exit(0);
-            }
-            case "deg" -> utility = score / player.getNeighbourhood().size(); // normalised payoff
-            case "one" -> utility = score; // cumulative payoff
+        switch(UF){
+            case "MNI" -> utility = score / player.getMNI(); // minimum number of interactions
+            case "cumulative" -> utility = score; // cumulative payoff
+            case "normalised" -> utility = score / player.getNeighbourhood().size(); // normalised payoff
         }
         player.setUtility(utility);
     }
