@@ -1819,52 +1819,6 @@ public class Env extends Thread{ // simulated game environment
             }
         }
 
-        // DO NOT REMOVE UNTIL FULL FUNCTIONALITY REPLICATED ABOVE!
-//        for(int i = 1; i <= d; i++){
-////            int x_plus = (((x + i) % rows) + rows) % rows;
-////            int x_minus = (((x - i) % rows) + rows) % rows;
-////            int y_plus = (((y + i) % columns) + columns) % columns;
-////            int y_minus = (((y - i) % columns) + columns) % columns;
-//            int x_plus = adjustPosition(x, i, rows);
-//            int x_minus = adjustPosition(x, -i, rows);
-//            int y_plus = adjustPosition(y, i, columns);
-//            int y_minus = adjustPosition(y, -i, columns);
-//
-//
-//            // add VN neighbours
-//            neighbourhood.add(grid.get(y).get(x_plus));         // (x + i,  y)
-//            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - i,  y)
-//            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + i)
-//            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - i)
-//
-//            if(type.equals("dia")){
-//                if(i > 1){
-////                    int x_plus_minus = (((x_plus - 1) % rows) + rows) % rows;
-////                    int x_minus_plus = (((x_minus + 1) % rows) + rows) % rows;
-////                    int y_plus_minus = (((y_plus - 1) % rows) + rows) % rows;
-////                    int y_minus_plus = (((y_minus + 1) % rows) + rows) % rows;
-//                    int x_plus_minus = adjustPosition(x_plus, -1, rows);
-//                    int x_minus_plus = adjustPosition(x_minus, 1, rows);
-//                    int y_plus_minus = adjustPosition(y_plus, -1, rows);
-//                    int y_minus_plus = adjustPosition(y_minus, 1, rows);
-//
-//
-//                    neighbourhood.add(grid.get(y_plus_minus).get(x_plus_minus));
-//                    neighbourhood.add(grid.get(y_minus_plus).get(x_plus_minus));
-//                    neighbourhood.add(grid.get(y_minus_plus).get(x_minus_plus));
-//                    neighbourhood.add(grid.get(y_plus_minus).get(x_minus_plus));
-//                }
-//            }
-//
-//            // add M neighbours
-//            if(type.equals("M")){
-//                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + i)
-//                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - i)
-//                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - i)
-//                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + i)
-//            }
-//        }
-
         player.setNeighbourhood(neighbourhood);
     }
 
