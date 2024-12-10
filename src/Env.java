@@ -23,26 +23,20 @@ public class Env extends Thread{ // simulated game environment
     static int N; // population size
     static int iters; // how many iterations occur per experiment run
     static int runs; // how many times this experiment will be run.
-//    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
-//    Player[][] pop; // array of players; assumes 2D space
     Player[] pop; // array of players; assumes 2D space
     double avg_p; // the average value of p across the population.
     double p_SD; // the standard deviation of p across the pop
     int gen = 0; // indicates current generation. indicates how many generations have passed.
     int iter = 1; // indicates current iteration of the core algorithm (play + EWL)
-//    static double DCF = 0; // distance cost factor
-//    static String initial_settings = ""; // stores initial experimentation settings
-    static int injiter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
-    static double injp = 0.0; // injection p: indicates p value to be injected
-    static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
+    static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
+    static double injP = 0.0; // injection p: indicates p value to be injected
+    static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
-//    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
     static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
-//    static String ASD; // average score denominator: determines how average score is calculated
     static String UF; // utility formula: indicates how utility is calculated
     double avg_q; // average acceptance threshold across population
     double q_SD; // the standard deviation of q across the pop
@@ -50,10 +44,9 @@ public class Env extends Thread{ // simulated game environment
 
 
     // fields related to experiment statistics
-    static boolean experiment_series; //indicates whether to run experiment or experiment series where a parameter is varied
-    static String varying; //indicates which parameter will be varied in an experiment series
-    static double variation; //indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-    static int numexp; //indicates the number of experiments to occur in the series
+    static String varying; // indicates which parameter will be varied in experiment series
+    static double variation; // amount by which varying parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
+    static int numExp = 1; // number of experiments to occur; indicates whether series of experiments to occur; set to 1 by default.
     static int experiment_num = 1; //tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
@@ -80,10 +73,7 @@ public class Env extends Thread{ // simulated game environment
     static String p_data_filename;
     static String EW_data_filename;
     static String NSI_data_filename;
-    static int datarate; // factors into which gens have their data recorded. if 0, no gens are recorded.
-    static String[] settings;
-    static int CI; // Config Index: Facilitates construction of table of configs.
-    static int CI2; // Iterate through multiple values crammed into one param during configuation.
+    static int dataRate; // factors into which gens have their data recorded. if 0, no gens are recorded.
     static String q_data_filename;
     static String pos_data_filename;
     static String edge_count_data_filename;
@@ -118,12 +108,12 @@ public class Env extends Thread{ // simulated game environment
 
     // fields related to evolution, selection, mutation
     static String evo; // indicates which evolution function to call
-    static double evonoise = 0; // noise affecting evolution
+    static double evoNoise = 0; // noise affecting evolution
     static String sel; // indicates which selection function to call
-    static double selnoise = 0; // noise affecting selection
+    static double selNoise = 0; // noise affecting selection
     static String mut; // indicates which mutation function to call
-    static double mutrate = 0; // probability of mutation
-    static double mutbound = 0; // denotes max mutation possible
+    static double mutRate = 0; // probability of mutation
+    static double mutBound = 0; // denotes max mutation possible
 
 
     // fields related to rewiring
@@ -159,13 +149,16 @@ public class Env extends Thread{ // simulated game environment
 
 
         // create result data folders
-        if(datarate != 0) {
+        if(dataRate != 0) {
             createFolders();
         }
 
 
         System.out.println("Starting timestamp: "+start_timestamp);
-        if(experiment_series){
+
+
+//        if(experiment_series){
+        if(numExp > 1){
             experimentSeries(); // run an experiment series
         } else {
             experiment(); // run a single experiment
@@ -205,18 +198,18 @@ public class Env extends Thread{ // simulated game environment
             case"leeway5"->various_amounts.add(leeway5);
             case"leeway6"->various_amounts.add(leeway6);
             case"leeway7"->various_amounts.add(leeway7);
-            case"selnoise"->various_amounts.add(selnoise);
-            case"evonoise"->various_amounts.add(evonoise);
-            case"mutrate"->various_amounts.add(mutrate);
-            case"mutbound"->various_amounts.add(mutbound);
-            case"injiter"->various_amounts.add((double)injiter);
-            case"injp"->various_amounts.add(injp);
-            case"injsize"->various_amounts.add((double)injsize);
+            case"selNoise"->various_amounts.add(selNoise);
+            case"evoNoise"->various_amounts.add(evoNoise);
+            case"mutRate"->various_amounts.add(mutRate);
+            case"mutBound"->various_amounts.add(mutBound);
+            case"injIter"->various_amounts.add((double)injIter);
+            case"injP"->various_amounts.add(injP);
+            case"injSize"->various_amounts.add((double)injSize);
             case"RP"->various_amounts.add((double)RP);
         }
 
         // run experiment series
-        for(int i=0;i<numexp;i++){
+        for(int i=1;i<=numExp;i++){
 
             // helps user keep track of the current value of the varying parameter
             System.out.println("\n===================\n" +
@@ -279,33 +272,33 @@ public class Env extends Thread{ // simulated game environment
                     leeway7+=variation;
                     various_amounts.add(leeway7);
                 }
-                case "selnoise"->{
-                    selnoise+=variation;
-                    various_amounts.add(selnoise);
+                case "selNoise"->{
+                    selNoise+=variation;
+                    various_amounts.add(selNoise);
                 }
-                case "evonoise"->{
-                    evonoise+=variation;
-                    various_amounts.add(evonoise);
+                case "evoNoise"->{
+                    evoNoise+=variation;
+                    various_amounts.add(evoNoise);
                 }
-                case "mutrate"->{
-                    mutrate+=variation;
-                    various_amounts.add(mutrate);
+                case "mutRate"->{
+                    mutRate+=variation;
+                    various_amounts.add(mutRate);
                 }
-                case "mutbound"->{
-                    mutbound+=variation;
-                    various_amounts.add(mutbound);
+                case "mutBound"->{
+                    mutBound+=variation;
+                    various_amounts.add(mutBound);
                 }
-                case "injiter"->{
-                    injiter += (int) variation;
-                    various_amounts.add((double) injiter);
+                case "injIter"->{
+                    injIter += (int) variation;
+                    various_amounts.add((double) injIter);
                 }
-                case "injp"->{
-                    injp += variation;
-                    various_amounts.add(injp);
+                case "injP"->{
+                    injP += variation;
+                    various_amounts.add(injP);
                 }
-                case "injsize"->{
-                    injsize += (int) variation;
-                    various_amounts.add((double) injsize);
+                case "injSize"->{
+                    injSize += (int) variation;
+                    various_amounts.add((double) injSize);
                 }
                 case"RP"->{
                     RP+=variation;
@@ -325,11 +318,6 @@ public class Env extends Thread{ // simulated game environment
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-//        if(!experiment_series){
-//            System.out.println();
-//            printInitialSettings();
-//        }
-
         // stats to be tracked
         experiment_mean_avg_p = 0;
         double[] experiment_avg_p_values = new double[runs + 1];
@@ -362,18 +350,12 @@ public class Env extends Thread{ // simulated game environment
 
         }
 
-//        if(!experiment_series){
-//            System.out.println();
-//            printInitialSettings();
-//        }
-
         // calculate stats of experiment
         experiment_mean_avg_p /= runs;
         experiment_mean_avg_q /= runs;
         for(int i=0;i<runs;i++){
             experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
             experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
-
         }
         experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
         experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
@@ -390,10 +372,8 @@ public class Env extends Thread{ // simulated game environment
         }
         System.out.println(output);
 
-//        writeSeriesData();
         writeSettings();
         writeResults();
-
 
         experiment_num++; // move on to the next experiment in the series
     }
@@ -413,7 +393,6 @@ public class Env extends Thread{ // simulated game environment
                 case"VN","Moore","dia"->assignAdjacentNeighbours(player);
                 case"random"->assignRandomNeighbours(player, neighSize);
                 case"all"->assignAllNeighbours(player);
-//                case"Margolus"->assignMargolusNeighbourhood(player, i, j);
                 default -> {
                     System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                     Runtime.getRuntime().exit(0);
@@ -421,53 +400,40 @@ public class Env extends Thread{ // simulated game environment
             }
         }
 
-        // write pos data assuming grid space.
-
         if(space.equals("grid") && run_num == 1){
             writePosData();
         }
 
         // initialise neighbourhoods
         for(int i=0;i<N;i++){
-//            Player player = pop[i];
-//            initialiseEdgeWeights(player);
-
             initialiseEdgeWeights(pop[i]);
         }
 
         // the algorithm iterates.
         while(iter <= iters) {
 
-
             // injection
-//            if(iter == injiter){
-//                injectStrategyCluster(injp, injsize);
-//            }
+            if(iter == injIter){
+                injectStrategyCluster();
+            }
 
             // playing
             for(int i=0;i<N;i++){
-//                Player player = pop[i];
-//                play(player);
-
                 play(pop[i]);
             }
 
             // update utility
             for(int i=0;i<N;i++){
-//                updateAvgScore(pop[i]);
                 updateUtility(pop[i]);
             }
 
 
             // edge weight learning
             for(int i=0;i<N;i++){
-//                Player player = pop[i];
-//                EWL(player);
-
                 EWL(pop[i]);
             }
 
-            // a generation passes after every ER iterations.
+            // one generation passes after every ER iterations.
             // rewiring and strategy evolution may occur every generation.
             if(iter % ER == 0){
 
@@ -492,8 +458,6 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
                 }
-
-
 
                 // strategy evolution
                 for(int i=0;i<N;i++) {
@@ -535,12 +499,6 @@ public class Env extends Thread{ // simulated game environment
                     }
                 }
 
-
-
-
-
-
-
                 gen++; // move on to the next generation
             }
 
@@ -550,9 +508,9 @@ public class Env extends Thread{ // simulated game environment
             }
 
             // save data.
-            // do not save data if datarate has not been initialised past 0.
-            // must check this before future datarate checks that assume datarate != 0
-            if(datarate != 0){
+            // do not save data if dataRate has not been initialised past 0.
+            // must check this before future dataRate checks that assume dataRate != 0
+            if(dataRate != 0){
 
                 // do not save data if not the first run
                 if(run_num == 1
@@ -561,10 +519,10 @@ public class Env extends Thread{ // simulated game environment
                         && experiment_num == 1
 
                         // data rate is used to determine rate at which data is saved.
-                        // save data every x gens where x = datarate.
-                        // e.g. datarate = 10 ==> save data every 10 gens.
-                        && iter % (ER * datarate) == 0
-//                        && gen % datarate == 0
+                        // save data every x gens where x = dataRate.
+                        // e.g. dataRate = 10 ==> save data every 10 gens.
+                        && iter % (ER * dataRate) == 0
+//                        && gen % dataRate == 0
                 ){
                     String output = "";
                     if(game.equals("UG") || game.equals("DG")){
@@ -596,11 +554,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    /**
-//     * Once the neighbour locates their index for the player, game playing can begin.<br>
-//     * If {@code interact == true}, successful interaction. MNI and NSI increment.<br>
-//     * If {@code interact == false}, unsuccessful interaction. MNI increments, NSI remains the same.
-//     */
+    // player initiates games with neighbours
     public void play(Player player) {
         // find partner
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
@@ -642,7 +596,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public void UG(double net_prize, Player proposer, Player responder){
     public void UG(Player proposer, Player responder, double responder_edge_weight){
         double proposer_p = proposer.getP();
         double responder_q = responder.getQ();
@@ -672,25 +625,6 @@ public class Env extends Thread{ // simulated game environment
         if(payoff > 0){
             player.setNSI(player.getNSI() + 1);
         }
-
-
-//        double score = player.getScore();
-//        switch (ASD){
-//            case "MNI" -> player.setAvgScore(score / player.getMNI());
-//            case "NSI" -> player.setAvgScore(score / player.getNSI());
-//            default -> {
-//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-//                Runtime.getRuntime().exit(0);
-//            }
-//
-//
-//            case "deg" -> {
-//                int degree = player.getNeighbourhood().size();
-//                player.setAvgScore(score / degree);
-//            }
-//
-//
-//        }
     }
 
 
@@ -741,31 +675,12 @@ public class Env extends Thread{ // simulated game environment
         if(payoff > 0) { // true if interaction didnt occur or if
             player.setNSI(NSI + 1);
         }
-
-//        score = player.getScore();
-//        MNI = player.getMNI();
-//        NSI = player.getNSI();
-//        switch(ASD){
-//            case "MNI" -> player.setAvgScore(score / MNI);
-//            case "NSI" -> player.setAvgScore(score / NSI);
-//
-//            default -> {
-//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-//                Runtime.getRuntime().exit(0);
-//            }
-//        }
     }
 
 
 
     public void initialiseEdgeWeights(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
-//        player.setEdgeWeights(new double[neighbourhood.size()]);
-//        double[] edge_weights = player.getEdgeWeights();
-//        for(int i = 0; i < neighbourhood.size(); i++){
-//            edge_weights[i] = 1.0;
-//        }
-
         ArrayList <Double> edge_weights = new ArrayList<>();
         int size = neighbourhood.size();
         for(int i=0;i<size;i++){
@@ -837,7 +752,9 @@ public class Env extends Thread{ // simulated game environment
         for(int i = 0; i < degree_a; i++){
             Player b = omega_a.get(i);
             double w_ab = weights.get(i);
-
+            // todo continue implementing function. i think this will actually
+            // just look almost the exact same since i have reversed my preference on some
+            // questions as to how tthis should be implemented.
         }
     }
 
@@ -1122,7 +1039,7 @@ public class Env extends Thread{ // simulated game environment
      * @return parent player
      */
     public Player selectionRand(Player child){
-        double w = selnoise;
+        double w = selNoise;
         double[] effective_payoffs = new double[N];
         Player parent = null;
         double total = 0.0;
@@ -1223,7 +1140,7 @@ public class Env extends Thread{ // simulated game environment
         if(parent_ID != ID){
 
             // for attribute, if parent is lower, reduce child; else, increase.
-            double approach = ThreadLocalRandom.current().nextDouble(evonoise);
+            double approach = ThreadLocalRandom.current().nextDouble(evoNoise);
             if(parent_old_p < p){
                 approach *= -1;
             }
@@ -1245,7 +1162,7 @@ public class Env extends Thread{ // simulated game environment
      */
     public boolean mutationCheck(){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        boolean mutation = random_double < mutrate;
+        boolean mutation = random_double < mutRate;
 
         return mutation;
     }
@@ -1271,8 +1188,8 @@ public class Env extends Thread{ // simulated game environment
         double p = child.getP();
         double q = child.getQ();
 
-        double new_p = ThreadLocalRandom.current().nextDouble(p - mutbound, p + mutbound);
-        double new_q = ThreadLocalRandom.current().nextDouble(q - mutbound, q + mutbound);
+        double new_p = ThreadLocalRandom.current().nextDouble(p - mutBound, p + mutBound);
+        double new_q = ThreadLocalRandom.current().nextDouble(q - mutBound, q + mutBound);
 
         setStrategy(child, new_p,new_q);
     }
@@ -1383,22 +1300,10 @@ public class Env extends Thread{ // simulated game environment
                         " %-15s |" +//evo
                         " %-15s |" +//mut
                         " %-10s |" +//UF
-                        " %-10s |" +//datarate
-                        " %-10s |" +//varying
-                        " %-10s |" +//variation
-                        " %-10s |" +//numexp
-                        " %-10s |" +//alpha
-                        " %-10s |" +//beta
-                        " %-10s |" +//leeway1
-                        " %-10s |" +//leeway2
-                        " %-10s |" +//leeway3
-                        " %-10s |" +//leeway4
-                        " %-10s |" +//leeway5
-                        " %-10s |" +//leeway6
-                        " %-10s |" +//leeway7
-                        " %-10s |" +//injiter
-                        " %-10s |" +//injp
-                        " %-10s |" +//injsize
+                        " %-10s |" +//dataRate
+                        " %-25s |" +//series
+                        " %-20s |" +//leeway
+                        " %-15s |" +//inj
                         " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
@@ -1413,26 +1318,16 @@ public class Env extends Thread{ // simulated game environment
                 ,"evo"
                 ,"mut"
                 ,"UF"
-                ,"datarate"
-                ,"varying"
-                ,"variation"
-                ,"numexp"
-                ,"alpha"
-                ,"beta"
-                ,"leeway1"
-                ,"leeway2"
-                ,"leeway3"
-                ,"leeway4"
-                ,"leeway5"
-                ,"leeway6"
-                ,"leeway7"
-                ,"injiter"
-                ,"injp"
-                ,"injsize"
+                ,"dataRate"
+                ,"series"
+                ,"leeway"
+                ,"inj"
         );
         printTableBorder();
 
         // display config table rows
+        int CI; // configuration index
+        String[] settings;
         for(int i=0;i<configurations.size();i++){
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
@@ -1443,35 +1338,22 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-5s ", settings[CI++]); //ER
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-25s ", settings[CI++]); //EW
-            System.out.printf("| %-25s ", settings[CI++]); //EWLT
+            System.out.printf("| %-25s ", settings[CI++]); //EWL
             System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-15s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", settings[CI++]); //evo
             System.out.printf("| %-15s ", settings[CI++]); //mut
             System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-10s ", settings[CI++]); //datarate
-            System.out.printf("| %-10s ", settings[CI++]); //varying
-            System.out.printf("| %-10s ", settings[CI++]); //variation
-            System.out.printf("| %-10s ", settings[CI++]); //numexp
-            System.out.printf("| %-10s ", settings[CI++]); //alpha
-            System.out.printf("| %-10s ", settings[CI++]); //beta
-            System.out.printf("| %-10s ", settings[CI++]); //leeway1
-            System.out.printf("| %-10s ", settings[CI++]); //leeway2
-            System.out.printf("| %-10s ", settings[CI++]); //leeway3
-            System.out.printf("| %-10s ", settings[CI++]); //leeway4
-            System.out.printf("| %-10s ", settings[CI++]); //leeway5
-            System.out.printf("| %-10s ", settings[CI++]); //leeway6
-            System.out.printf("| %-10s ", settings[CI++]); //leeway7
-
-            System.out.printf("| %-10s ", settings[CI++]); //injiter
-            System.out.printf("| %-10s ", settings[CI++]); //injp
-            System.out.printf("| %-10s ", settings[CI++]); //injsize
+            System.out.printf("| %-10s ", settings[CI++]); //dataRate
+            System.out.printf("| %-25s ", settings[CI++]); //series
+            System.out.printf("| %-20s ", settings[CI++]); //leeway
+            System.out.printf("| %-15s ", settings[CI++]); //inj
             System.out.printf("| %s ", settings[CI]); //desc
             System.out.println();
         }
         printTableBorder();
 
-        // ask user which config they want to use
+        // ask user which config they wish to use
         System.out.println("Which config would you like to use? (int)");
         boolean config_found = false;
         int config_num;
@@ -1484,27 +1366,18 @@ public class Env extends Thread{ // simulated game environment
             }
         }while(!config_found);
 
-
-        // start applying the config
+        // apply config
         settings = configurations.get(config_num).split(",");
         CI = 0;
+        int CI2;
         game = settings[CI++];
         Player.setGame(game);
-        runs=applySettingInt();
-        // todo update field assignment segment
-        if(runs < 1){
-            System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
-            Runtime.getRuntime().exit(0);
-        }
-        iters=applySettingInt();
-        if(iters < 1){
-            System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
-            Runtime.getRuntime().exit(0);
-        }
+        runs = Integer.parseInt(settings[CI++]);
+        iters = Integer.parseInt(settings[CI++]);
         ER = Integer.parseInt(settings[CI++]);
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
-        space = space_params[CI2++]; // required field
+        space = space_params[CI2++];
         if(space.equals("grid")){
             length = Integer.parseInt(space_params[CI2++]);
             width = Integer.parseInt(space_params[CI2++]);
@@ -1512,19 +1385,23 @@ public class Env extends Thread{ // simulated game environment
         }
         String[] EW_params = settings[CI++].split(" "); // edge weight parameters
         CI2 = 0;
-        EWT = EW_params[CI2++]; // required field
+        EWT = EW_params[CI2++];
         if(EWT.equals("3")){
             RP = Double.parseDouble(EW_params[CI2++]);
             RA = EW_params[CI2++];
             RT = EW_params[CI2];
         }
         String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
-        if(EWL_params.length > 0){
+        if(!EWL_params[0].equals("")){
             CI2 = 0;
             EWLC = EWL_params[CI2++];
             EWLF = EWL_params[CI2++];
             if(EWLF.equals("ROC"))
-                ROC = Double.parseDouble(EW_params[CI2++]);
+                ROC = Double.parseDouble(EWL_params[CI2++]);
+            if(EWLC.equals("AB") || EWLF.equals("AB")){
+                alpha = Double.parseDouble(EWL_params[CI2++]);
+                beta = Double.parseDouble(EWL_params[CI2++]);
+            }
         }
         String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
         CI2 = 0;
@@ -1534,71 +1411,67 @@ public class Env extends Thread{ // simulated game environment
         } else if(neighType.equals("random")){
             neighSize = Integer.parseInt(neigh_params[CI2++]);
         }
-
-
-
-//        sel=settings[CI++];
-//        selnoise=applySettingDouble();
-//        evo=settings[CI++];
-//        evonoise=applySettingDouble();
-//        mut=settings[CI++];
-//        mutrate=applySettingDouble();
-//        mutbound=applySettingDouble();
-
-
-
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
         if(sel.equals("rand")){
-            selnoise = Double.parseDouble(sel_params[CI2++]);
+            selNoise = Double.parseDouble(sel_params[CI2++]);
         }
         String[] evo_params = settings[CI++].split(" "); // evolution parameters
         CI2 = 0;
         evo = evo_params[CI2++];
         if(evo.equals("approach")){
-            evonoise = Double.parseDouble(evo_params[CI2++]);
+            evoNoise = Double.parseDouble(evo_params[CI2++]);
         }
-        String[] mut_params = settings[CI++].split(" "); // mututation parameters
+        String[] mut_params = settings[CI++].split(" "); // mutation parameters
         CI2 = 0;
-        if(mut_params.length > 0){
+        if(!mut_params[0].equals("")){
             mut = mut_params[CI2++];
-            mutrate = Double.parseDouble(mut_params[CI2++]);
+            mutRate = Double.parseDouble(mut_params[CI2++]);
             if(mut.equals("local")){
-                mutbound = Double.parseDouble(mut_params[CI2++]);
+                mutBound = Double.parseDouble(mut_params[CI2++]);
             }
         }
+        UF = settings[CI++];
+        dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
+        CI++;
+        String[] series_params = settings[CI++].split(" ");
+        if(!series_params[0].equals("")){
+            CI2 = 0;
+            varying = settings[CI2++];
+            variation = Double.parseDouble(series_params[CI2++]);
+            numExp = Integer.parseInt(series_params[CI2++]);
+        }
+        String[] leeway_params = settings[CI++].split(" "); // leeway parameters
+        if(!leeway_params[0].equals("")){
+            CI2 = 0;
+            leeway1 = Double.parseDouble(leeway_params[CI2++]);
+            leeway2 = Double.parseDouble(leeway_params[CI2++]);
+            leeway3 = Double.parseDouble(leeway_params[CI2++]);
+            leeway4 = Double.parseDouble(leeway_params[CI2++]);
+            leeway5 = Double.parseDouble(leeway_params[CI2++]);
+            leeway6 = Double.parseDouble(leeway_params[CI2++]);
+            leeway7 = Double.parseDouble(leeway_params[CI2++]);
+        }
+        String[] inj_params = settings[CI++].split(" "); // injection parameters
+        if(!inj_params[0].equals("")){
+            CI2 = 0;
+            injIter = Integer.parseInt(inj_params[CI2++]);
+            injP = Double.parseDouble(inj_params[CI2++]);
+            injSize = Integer.parseInt(inj_params[CI2++]);
+        }
 
 
-        // TODO
-        //  remove use of applySettingInt() and applySettingDouble()... i dont like them anymore
-        //  especially since the introduction of CI2. i want to avoid confusing future me.
-        //  CI can be made non-static and secluded to this func only since its the only one
-        //  using CI.
+//        injIter=applySettingInt();
+//        if(injIter>iters)
+//            System.out.println("NOTE: injIter > iters, therefore no injection will occur.");
+//        injP=applySettingDouble();
+//        injSize=applySettingInt();
 
 
-        // TODO put the rest of the params into singular params where applicable.
-        UF=settings[CI++];
-        datarate=applySettingInt();
-        varying=settings[CI++];
-        experiment_series=(varying.equals(""))?false:true;
-        variation=applySettingDouble();
-        numexp=applySettingInt();
-        alpha=applySettingDouble();
-        beta=applySettingDouble();
-        leeway1=applySettingDouble();
-        leeway2=applySettingDouble();
-        leeway3=applySettingDouble();
-        leeway4=applySettingDouble();
-        leeway5=applySettingDouble();
-        leeway6=applySettingDouble();
-        leeway7=applySettingDouble();
-        injiter=applySettingInt();
-        if(injiter>iters)
-            System.out.println("NOTE: injiter > iters, therefore no injection will occur.");
-        injp=applySettingDouble();
-        injsize=applySettingInt();
-        desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
+
+//        desc = settings[CI].equals("")? "": settings[CI]; // final config param // old line
+        desc = settings[CI];
     }
 
 
@@ -1630,7 +1503,7 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }else if(space.equals("hex")){
-            // implement this later...
+            // maybe implement this in future
         }
     }
 
@@ -1642,8 +1515,6 @@ public class Env extends Thread{ // simulated game environment
     public static void printTableBorder(){
         System.out.printf(
                 "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
@@ -1662,11 +1533,7 @@ public class Env extends Thread{ // simulated game environment
                 q_data_filename = experiment_results_folder_path + "\\q_data";
             }
         }
-
-
         edge_count_data_filename = experiment_results_folder_path + "\\edge_count_data";
-
-
         EW_data_filename = experiment_results_folder_path + "\\EW_data";
         NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{
@@ -1676,82 +1543,13 @@ public class Env extends Thread{ // simulated game environment
                     Files.createDirectories(Paths.get(q_data_filename));
                 }
             }
-
-
             Files.createDirectories(Paths.get(edge_count_data_filename));
-
-
             Files.createDirectories(Paths.get(EW_data_filename));
             Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
             e.printStackTrace();
         }
-
     }
-
-
-
-//    // Collects initial settings into a string.
-//    public static void setInitialSettings(){
-//        if(experiment_series && experiment_num == 1){ // if at start of series
-//            initial_settings += "Experiment series ("+desc+")" +
-//                    " varying "+varying+
-//                    " by "+variation+
-//                    " between " + numexp+" experiments: ";
-//        } else if(!experiment_series){
-//            initial_settings += "Experiment: ";
-//        }
-//        initial_settings+=game;
-//        initial_settings+=", "+runs+" runs";
-//        initial_settings+=", "+iters+" iters";
-//        initial_settings+=", "+length+" length";
-//        initial_settings+=", "+width+" width";
-//        initial_settings+=", EWT="+EWT;
-//        initial_settings+=", EWLC="+EWLC;
-//        initial_settings+=", EWLF="+EWLF;
-//        initial_settings+=", ER="+ER;
-//        if(ROC != 0) initial_settings+=", ROC="+ROC;
-//        if(alpha != 0) initial_settings+=", alpha="+alpha;
-//        if(beta != 0) initial_settings+=", beta="+beta;
-//        if(leeway1 != 0) initial_settings+=", leeway1="+leeway1;
-//        if(leeway2 != 0) initial_settings+=", leeway2="+leeway2;
-//        if(leeway3 != 0) initial_settings+=", leeway3="+leeway3;
-//        if(leeway4 != 0) initial_settings+=", leeway4="+leeway4;
-//        if(leeway5 != 0) initial_settings+=", leeway5="+leeway5;
-//        if(leeway6 != 0) initial_settings+=", leeway6="+leeway6;
-//        if(leeway7 != 0) initial_settings+=", leeway7="+leeway7;
-//        initial_settings+=", "+neigh+" neigh";
-//        initial_settings+=", "+sel+" sel";
-//        if(sel.equals("Rand")) initial_settings+=", selnoise="+selnoise; // if sel func uses another param
-//        initial_settings+=", ASD="+ASD;
-//        initial_settings+=", "+evo+" evo";
-//        switch(evo){
-//            case"approach"->initial_settings+=", evonoise="+evonoise;
-//        }
-//        switch(mut){
-//            case"local","global"->{
-//                initial_settings+=", "+mut+" mut";
-//                initial_settings+=", mutrate="+DF4.format(mutrate);
-//                switch(mut){
-//                    case"local"->initial_settings+=", mutbound="+DF4.format(mutbound);
-//                }
-//            }
-//        }
-//        if(injiter > 0){
-//            initial_settings+=", injiter="+injiter;
-//            initial_settings+=", injp="+injp;
-//            initial_settings+=", injsize="+injsize;
-//        }
-//    }
-
-
-
-//    /**
-//     * Prints initial experimentation settings.
-//     */
-//    public static void printInitialSettings(){
-//        System.out.println(initial_settings);
-//    }
 
 
 
@@ -1769,48 +1567,31 @@ public class Env extends Thread{ // simulated game environment
      * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
      * for Moore neighbourhood.
     */
-//    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
-//    public void assignAdjacentNeighbours(Player player, String type, int range){
     public void assignAdjacentNeighbours(Player player){
-//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
         ArrayList<Player> neighbourhood = new ArrayList<>();
-//        double[] edge_weights = new double[]{};
-
         double y = player.getY();
         double x = player.getX();
         for(int i=1;i<=neighRange;i++){
-//            double y_plus = (((y + i) % length) + length) % length;
-//            double y_minus = (((y - i) % length) + length) % length;
-//            double x_plus = (((x + i) % width) + width) % width;
-//            double x_minus = (((x - i) % width) + width) % width;
-
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
-
-//            assignNeighbour(neighbourhood,edge_weights,i,y,x_plus);
-
             neighbourhood.add(findPlayerByPos(y,x_plus));
             neighbourhood.add(findPlayerByPos(y,x_minus));
             neighbourhood.add(findPlayerByPos(y_plus,x));
             neighbourhood.add(findPlayerByPos(y_minus,x));
-
             if(neighType.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-
                     neighbourhood.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
                     neighbourhood.add(findPlayerByPos(y_plus_minus,(x_minus_plus)));
-
                 }
             }
-
             if(neighType.equals("Moore")){
                 neighbourhood.add(findPlayerByPos(y_plus,x_plus));
                 neighbourhood.add(findPlayerByPos(y_minus,x_plus));
@@ -1818,29 +1599,8 @@ public class Env extends Thread{ // simulated game environment
                 neighbourhood.add(findPlayerByPos(y_plus,x_minus));
             }
         }
-
         player.setNeighbourhood(neighbourhood);
     }
-
-
-
-//    public void assignNeighbour(ArrayList <Player> neighbourhood, double[] edge_weights, int i, double y, double x){
-//        neighbourhood.add(findPlayerByPos(y,x));
-//        edge_weights[i]=1.0;
-//    }
-
-
-
-    // give player the IDs of its neighbours.
-//    public void assignNeighbourIDs(Player player){
-//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-//        int size = neighbourhood.size();
-//        int[] arr = new int[size];
-//        for(int i=0;i<size;i++){
-//            arr[i] = neighbourhood.get(i).getID();
-//        }
-//        player.setNeighbourIDs(arr);
-//    }
 
 
 
@@ -1852,25 +1612,11 @@ public class Env extends Thread{ // simulated game environment
      */
     public void assignRandomNeighbours(Player player, int size){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
-
-        // randomly generate IDs
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size){
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
-
-        // assign edges to neighbours
-//        for(int ID: IDs){
-//            int column = ID / columns;
-//            int row = ID % rows;
-//            neighbourhood.add(grid.get(column).get(row));
-//            if(type.equals("bi")){
-//                grid.get(column).get(row).getNeighbourhood().add(player);
-//            }
-//        }
-
-
         for(int ID: IDs){
             neighbourhood.add(findPlayerByID(ID));
         }
@@ -1882,17 +1628,6 @@ public class Env extends Thread{ // simulated game environment
     public void assignAllNeighbours(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         int ID = player.getID();
-
-//        for(int i = 0; i < grid.size(); i++){
-//            for(int j = 0; j < grid.get(0).size(); j++){
-//                Player neighbour = grid.get(i).get(j);
-//                int neighbour_id = neighbour.getID();
-//                if(id != neighbour_id){
-//                    neighbourhood.add(neighbour);
-//                }
-//            }
-//        }
-
         for(int i=0;i<N;i++){
             Player player2 = pop[i];
             int ID2 = player2.getID();
@@ -1901,17 +1636,6 @@ public class Env extends Thread{ // simulated game environment
             }
         }
     }
-
-
-    // initialise NSI per neighbour counters.
-//    public void resetNSIPerNeighbour(Player player){
-//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-//        int size = neighbourhood.size();
-//        player.setNSIPerNeighbour(new int[size]);
-//        for(int i = 0; i < size; i++){
-//            player.getNSIPerNeighbour()[i] = 0;
-//        }
-//    }
 
 
 
@@ -1966,21 +1690,11 @@ public class Env extends Thread{ // simulated game environment
      * for the upcoming generation.
      */
     public void prepare(){
-//        for(ArrayList<Player> row: grid){
-//            for(Player player: row){
-
         for(int i=0;i<N;i++){
             Player player = pop[i];
-
             player.setScore(0);
             player.setMNI(0);
             player.setNSI(0);
-
-
-//            player.setNSP(0);
-//            player.setNSR(0);
-
-
             switch(game){
                 case"UG","DG"->{
                     player.setOldP(player.getP());
@@ -1990,129 +1704,7 @@ public class Env extends Thread{ // simulated game environment
                     }
                 }
             }
-
-//                player.setNSIPerNeighbour(new int[]{0,0,0,0});
-
-//                for(int i = 0; i < N - 1; i++){
-//                    player.getNSIPerNeighbour()[i] = 0;
-//                }
-
-//            resetNSIPerNeighbour(player);
         }
-    }
-
-
-
-
-
-    public static void writeSeriesData(){
-//        // write experiment data, including results and settings, to a .csv data file.
-//        try{
-////            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
-//            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
-//            String s="";
-//
-//            // write column headings
-//            if(experiment_num == 1){
-//                fw = new FileWriter(series_data_filename, false);
-//                s+="exp num";
-//                s+=",game";
-//                if(game.equals("UG") || game.equals("DG")){
-//                    s+=",mean avg p";
-//                    s+=",avg p SD";
-//                    if(game.equals("UG")){
-//                        s+=",mean avg q";
-//                        s+=",avg q SD";
-//                    }
-//                }
-//                s+=",runs";
-//                s+=",iters";
-//                s+=",neigh";
-//                s+=",length";
-//                s+=",width";
-//                s+=",N";
-//                s+=",EWT";
-//                s+=(EWLC.isEmpty())?"":",EWLC";
-//                s+=(EWLF.isEmpty())?"":",EWLF";
-//                s+=",ER";
-//                s+=(ROC==0)?"":",ROC";
-//                s+=(leeway1==0)?"":",leeway1";
-//                s+=(leeway2==0)?"":",leeway2";
-//                s+=(leeway3==0)?"":",leeway3";
-//                s+=(leeway4==0)?"":",leeway4";
-//                s+=(leeway5==0)?"":",leeway5";
-//                s+=(leeway6==0)?"":",leeway6";
-//                s+=(leeway7==0)?"":",leeway7";
-//                s+=",sel";
-//                s+=(selnoise==0)?"":",selnoise";
-//                s+=",evo";
-//                s+=(evonoise==0)?"":",evonoise";
-//                s+=(mut.isEmpty())?"":",mut";
-//                s+=(mutrate==0)?"":",mutrate";
-//                s+=(mutbound==0)?"":",mutbound";
-//                s+=(injiter==0)?"":",injiter";
-//                s+=(injp==0)?"":",injp";
-//                s+=(injsize==0)?"":",injsize";
-//                s+=",ASD";
-//
-//
-//                s += !EWT.equals("3")? "": ",RP";
-//
-//
-//            } else {
-//                fw = new FileWriter(series_data_filename, true);
-//            }
-//
-//            // write row data
-//            s+="\n" + experiment_num;
-//            s+="," + game;
-//            if(game.equals("UG") || game.equals("DG")){
-//                s+="," + DF4.format(experiment_mean_avg_p);
-//                s+="," + DF4.format(experiment_SD_avg_p);
-//                if(game.equals("UG")){
-//                    s+="," + DF4.format(experiment_mean_avg_q);
-//                    s+="," + DF4.format(experiment_SD_avg_q);
-//                }
-//            }
-//            s+="," + runs;
-//            s+="," + iters;
-//            s+="," + neigh;
-//            s+="," + length;
-//            s+="," + width;
-//            s+="," + N;
-//            s+=","+EWT;
-//            s+=(EWLC.isEmpty())?"":","+EWLC;
-//            s+=(EWLF.isEmpty())?"":","+EWLF;
-//            s+=","+ER;
-//            s+=(ROC==0)?"":","+ROC;
-//            s+=(leeway1==0)?"":","+leeway1;
-//            s+=(leeway2==0)?"":","+leeway2;
-//            s+=(leeway3==0)?"":","+leeway3;
-//            s+=(leeway4==0)?"":","+leeway4;
-//            s+=(leeway5==0)?"":","+leeway5;
-//            s+=(leeway6==0)?"":","+leeway6;
-//            s+=(leeway7==0)?"":","+leeway7;
-//            s+=","+sel;
-//            s+=(selnoise==0)?"":","+selnoise;
-//            s+=","+evo;
-//            s+=(evonoise==0)?"":","+evonoise;
-//            s+=(mut.isEmpty())?"":","+mut;
-//            s+=(mutrate==0)?"":","+mutrate;
-//            s+=(mutbound==0)?"":","+mutbound;
-//            s+=(injiter==0)?"":","+injiter;
-//            s+=(injp==0)?"":","+injp;
-//            s+=(injsize==0)?"":","+injsize;
-//            s+=","+ASD;
-//
-//
-//            s += !EWT.equals("3")? "": "," + RP;
-//
-//
-//            fw.append(s);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//        }
     }
 
 
@@ -2130,7 +1722,6 @@ public class Env extends Thread{ // simulated game environment
      */
     public void writeAvgpData(){
         try{
-//            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
             String filename = experiment_results_folder_path + "\\avg_p_data.csv";
             String s="";
             if(gen == 0){ // apply headings to file before writing data
@@ -2410,16 +2001,6 @@ public class Env extends Thread{ // simulated game environment
      */
     public Player findPlayerByID(int ID){
         Player player = null;
-
-//        for(int i=0;i<rows;i++){
-//            for(int j=0;j<columns;j++){
-//                if(ID == grid.get(i).get(j).getID()){
-//                    player = grid.get(i).get(j);
-//                    break;
-//                }
-//            }
-//        }
-
         for(int i=0;i<N;i++){
             Player player2 = pop[i];
             int ID2 = player2.getID();
@@ -2434,16 +2015,18 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // find player by position
+    /**
+     * find player by position in the grid.<br>
+     * e.g. if you call findPlayerByPos(5, 2), it returns the player at position (2, 5).
+     * @param y y co-ordinate of the player
+     * @param x x co-ordinate of the player
+     * @return Player object at position (x, y) in the grid.
+     */
     public Player findPlayerByPos(double y, double x){
         Player player = null;
         boolean found = false;
         int i=0;
-
         do{
-//            if(i==15){
-//                System.out.println("insert BP here");
-//            }
             Player player2=pop[i];
             double y2=player2.getY();
             double x2=player2.getX();
@@ -2454,57 +2037,22 @@ public class Env extends Thread{ // simulated game environment
             i++;
         }
         while(!found);
-
         return player;
     }
 
 
 
     /**
-     * Injects a cluster of players in the population with a given strategy.
-     * Doesnt work with new pop structure...
+     * Assign same strategy to cluster of players within the grid.
      */
-//    public void injectStrategyCluster(double new_strategy, int cluster_size){
-////        for(int i=0;i<cluster_size;i++){
-////            for(int j=0;j<cluster_size;j++){
-////                grid.get(i).get(j).setP(new_strategy);
-////            }
-////        }
-////        for(int i=0;i<cluster_size;i++){
-////
-////        }
-//    }
-
-
-
-    /**
-     * applySettingDouble() and applySettingInt() apply the value obtained from the config file to the
-     * parameter in question.
-     */
-    public static double applySettingDouble(){
-        double x;
-        if(settings[CI].equals("")){
-            x=0;
-            CI++;
-        }else{
-            x=Double.parseDouble(settings[CI++]);
+    public void injectStrategyCluster(){
+        for(int i = 0; i < injSize; i++){
+            for(int j = 0; j < injSize; j++){
+                Player player = findPlayerByPos(j, i);
+                player.setP(injP);
+            }
         }
-        return x;
     }
-
-
-
-    public static int applySettingInt(){
-        int x;
-        if(settings[CI].equals("")){
-            x=0;
-            CI++;
-        }else{
-            x=Integer.parseInt(settings[CI++]);
-        }
-        return x;
-    }
-
 
 
 
@@ -2575,32 +2123,6 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }
-
-
-
-//        // connect to new neighbours.
-//        for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
-//
-//
-//
-//
-//
-//            // f denotes new neighbour of a.
-//            Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-//
-//
-//
-//
-//            // connect a to f.
-//            omega_a.add(f);
-//            a.getEdgeWeights().add(1.0);
-//
-//            // connect f to a.
-//            f.getNeighbourhood().add(a);
-//            f.getEdgeWeights().add(1.0);
-//        }
-
-
 
 
         // if pool empty, default to rewiring to a random player in the pop.
@@ -2678,22 +2200,13 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-
-
     /**
-     * Generic version of update stats
+     * Generic function to update stats
      */
     public void updateStats(Player player, double payoff){
         player.setScore(player.getScore() + payoff);
         player.setMNI(player.getMNI() + 1);
-//        if(ASD.equals("MNI"))
-//            player.setAvgScore(player.getScore() / player.getMNI());
-//        if(UF.equals("MNI"))
-//            player.setUtility(player.getScore() / player.getMNI());
     }
-
-
 
 
 
@@ -2718,7 +2231,6 @@ public class Env extends Thread{ // simulated game environment
         int num_rewirable_edges = rewire_edge_indices.size();
 
         // supports the process of rewiring to new neighbour.
-//        int num_rewires = 0;
         int num_rewires = num_rewirable_edges;
 
         // you could use a while loop like this if you were rewiring multiple edges.
@@ -2758,8 +2270,6 @@ public class Env extends Thread{ // simulated game environment
             }
 
             num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-
-//            num_rewires++;
 
         }
 
@@ -2857,14 +2367,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * INCOMPLETE
-     *
-     * this approach to rewiring away only makes sense if we limit the number of rewirings per gen
-     * to 1.
-     * @param a
-     * @return
-     */
+    // incomplete
     public int rewireAwayEWRW(Player a){
 
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2872,7 +2375,7 @@ public class Env extends Thread{ // simulated game environment
         ArrayList<Double> weights = new ArrayList<>(a.getEdgeWeights());
 
 
-        //apply roulette wheel approach to selecting edges.
+        //apply roulette wheel approach to selecting edges...
 
         return 0;
     }
@@ -2885,10 +2388,7 @@ public class Env extends Thread{ // simulated game environment
             String filename = edge_count_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
-
-            // total number of edges in the population.
             int actual_total_edges = 0;
-
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
@@ -2903,13 +2403,11 @@ public class Env extends Thread{ // simulated game environment
                 }
                 s += "\n";
             }
-
             int expected_total_edges = N * 4;
             if(actual_total_edges != expected_total_edges){
                 System.out.println("ERROR: assuming 4 initial edges per player, total edges must equal N * 4!");
                 Runtime.getRuntime().exit(0);
             }
-
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -2929,7 +2427,7 @@ public class Env extends Thread{ // simulated game environment
         String settings = "";
         try{
             if(experiment_num == 1){
-                // TODO update this segment
+                // TODO update the order of settings to match config file argmument order.
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
                 settings += ",runs";
@@ -2949,16 +2447,16 @@ public class Env extends Thread{ // simulated game environment
                 settings += !EWLF.equals("")? "": ",EWLF";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
                 settings += ",sel";
-                settings += (selnoise==0)? "": ",selnoise";
+                settings += (selNoise==0)? "": ",selNoise";
                 settings += ",evo";
-                settings += (evonoise==0)? "": ",evonoise";
+                settings += (evoNoise==0)? "": ",evoNoise";
                 settings += (mut.isEmpty())? "": ",mut";
-                settings += (mutrate==0)? "": ",mutrate";
-                settings += (mutbound==0)? "": ",mutbound";
+                settings += (mutRate==0)? "": ",mutRate";
+                settings += (mutBound==0)? "": ",mutBound";
                 settings += ",UF";
-                settings += (injiter==0)? "": ",injiter";
-                settings += (injp==0)? "": ",injp";
-                settings += (injsize==0)? "": ",injsize";
+                settings += (injIter==0)? "": ",injIter";
+                settings += (injP==0)? "": ",injP";
+                settings += (injSize==0)? "": ",injSize";
                 settings += (leeway1==0)? "": ",leeway1";
                 settings += (leeway2==0)? "": ",leeway2";
                 settings += (leeway3==0)? "": ",leeway3";
@@ -2969,7 +2467,7 @@ public class Env extends Thread{ // simulated game environment
             } else {
                 fw = new FileWriter(settings_filename, true);
             }
-            // TODO update this segment
+            // TODO update the order of settings to match config file argmument order.
             settings += "\n";
             settings += game;
             settings += "," + runs;
@@ -2989,16 +2487,16 @@ public class Env extends Thread{ // simulated game environment
             settings += !EWLF.equals("")? "": "," + EWLF;
             settings += !EWLF.equals("ROC")? "": "," + ROC;
             settings += "," + sel;
-            settings += (selnoise==0)? "": "," + selnoise;
+            settings += (selNoise==0)? "": "," + selNoise;
             settings += "," + evo;
-            settings += (evonoise==0)? "": "," + evonoise;
+            settings += (evoNoise==0)? "": "," + evoNoise;
             settings += (mut.isEmpty())? "": "," + mut;
-            settings += (mutrate==0)? "": "," + mutrate;
-            settings += (mutbound==0)? "": "," + mutbound;
+            settings += (mutRate==0)? "": "," + mutRate;
+            settings += (mutBound==0)? "": "," + mutBound;
             settings += "," + UF;
-            settings += (injiter==0)? "": "," + injiter;
-            settings += (injp==0)? "": "," + injp;
-            settings += (injsize==0)? "": "," + injsize;
+            settings += (injIter==0)? "": "," + injIter;
+            settings += (injP==0)? "": "," + injP;
+            settings += (injSize==0)? "": "," + injSize;
             settings += (leeway1==0)? "": "," + leeway1;
             settings += (leeway2==0)? "": "," + leeway2;
             settings += (leeway3==0)? "": "," + leeway3;
@@ -3021,9 +2519,7 @@ public class Env extends Thread{ // simulated game environment
         try{
             if(experiment_num == 1){
                 fw = new FileWriter(results_filename, false);
-//                results += "experiment number";
                 if(game.equals("UG") || game.equals("DG")){
-//                    results += ",mean avg p";
                     results += "mean avg p";
                     results += ",avg p SD";
                     if(game.equals("UG")){
@@ -3035,10 +2531,8 @@ public class Env extends Thread{ // simulated game environment
             }else {
                 fw = new FileWriter(results_filename, true);
             }
-//            results += "\n" + experiment_num;
             results += "\n";
             if(game.equals("UG") || game.equals("DG")){
-//                results += "," + DF4.format(experiment_mean_avg_p);
                 results += DF4.format(experiment_mean_avg_p);
                 results += "," + DF4.format(experiment_SD_avg_p);
                 if(game.equals("UG")){
@@ -3057,10 +2551,6 @@ public class Env extends Thread{ // simulated game environment
                 case "RP" -> results += "," + RP;
                 case "iters" -> results += "," + iters;
             }
-
-
-
-
             fw.append(results);
             fw.close();
         } catch(IOException e) {
@@ -3070,18 +2560,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void updateAvgScore(Player player){
-//        double score = player.getScore();
-//        switch (ASD){
-//            default -> {
-//                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
-//                Runtime.getRuntime().exit(0);
-//            }
-//            case "MNI" -> player.setAvgScore(score / player.getMNI());
-//            case "NSI" -> player.setAvgScore(score / player.getNSI());
-//            case "deg" -> player.setAvgScore(score / player.getNeighbourhood().size());
-//        }
-    }
 
 
 
@@ -3090,7 +2568,7 @@ public class Env extends Thread{ // simulated game environment
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
-
+        // TODO: implement this function
     }
 
 

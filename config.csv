@@ -1,2 +1,2 @@
-game,runs,iters,ER,space,EW,EWL,neigh,sel,evo,mut,UC,datarate,varying,variation,numexp,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,injiter,injp,injsize,desc,
-DG,1,10000,1,grid 10 10,3 1.0 0EWMany pop,pFD pD,VN 1,ERW,copy,,cumulative,,,,,,,,,,,,,,,,,test,
+game,runs,iters,ER,space,EW,EWL,neigh,sel,evo,mut,UC,datarate,series,leeway,inj,desc
+DG,1,10000,1,grid 10 10,3 1.0 0EWMany pop,pFD pD,VN 1,ERW,copy,,cumulative,,,,,test 123
