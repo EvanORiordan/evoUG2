@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Evan O'Riordan (e.oriordan3@universityofgalway.ie)<br>
- * 02/10/2023<br>
+ * 10/12/2024<br>
  * School of Computer Science<br>
  * University of Galway<br>
  */
@@ -85,16 +85,15 @@ public class Env extends Thread{ // simulated game environment
     static int neighSize; // size of neighbours with random neighbourhood type.
 
 
-    // fields related to edge weight learning (EWL)
-    static String EWT; // edge weight type
-    static String EWLC; // edge weight learning condition
-    static String EWLF; // edge weight learning formula
+    // fields related to edge weights (EWs) and edge weight learning (EWL)
+    static String EWT; // EW type
+    static String EWLC; // EWL condition
+    static String EWLF; // EWL formula
     static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
-    static double ROC = 0; // rate of edge weight change per edge weight learning call
-
-
-    static double alpha = 0;
-    static double beta = 0;
+    static double ROC = 0; // rate of change: fixed learning amount to EW
+    static double alpha = 0; // used in alpha-beta rating
+    static double beta = 0; // used in alpha-beta rating
+    static String EWLP; // EWL probability
 
 
     static double leeway1 = 0; // defines global leeway affecting all players.
@@ -130,7 +129,7 @@ public class Env extends Thread{ // simulated game environment
      * Main method of Java program.
       */
     public static void main(String[] args) {
-        setupEnvironment();
+        configureEnvironment();
 //        setInitialSettings();
         LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
         start_timestamp_string = start_timestamp.getYear()
@@ -527,13 +526,13 @@ public class Env extends Thread{ // simulated game environment
                     String output = "";
                     if(game.equals("UG") || game.equals("DG")){
                         output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
-                        writepData();
-                        writeAvgpData();
+                        writePData();
+                        writeAvgPData();
                         writeEdgeCountData();
                         if(game.equals("UG")){
                             output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
-                            writeqData();
-                            writeAvgqData();
+                            writeQData();
+                            writeAvgQData();
                         }
                     }
                     System.out.println(output);
@@ -741,26 +740,129 @@ public class Env extends Thread{ // simulated game environment
 //    }
 
 
+
+
+    // todo continue implementing function
     /**
-     * perform edge weight learning (EWL).<br>
-     * ensure weight resides within [0,1].<br>
+     * player performs edge weight learning (EWL) with all of its edges.
+     * @param a player performing EWL
      */
     public void EWL(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getNeighbourhood();
         int degree_a = omega_a.size();
         for(int i = 0; i < degree_a; i++){
+
+            // b denotes neighbour at end of edge
             Player b = omega_a.get(i);
+
+            // w_ab denotes weight of edge from a to b
             double w_ab = weights.get(i);
-            // todo continue implementing function. i think this will actually
-            // just look almost the exact same since i have reversed my preference on some
-            // questions as to how tthis should be implemented.
+
+            // enable if experimenting with leeway.
+            // c denotes the total amount of leeway given by a to b.
+//            double c = calculateTotalLeeway(a, b, i);
+
+//            // d indicated whether weight will increase
+//            int d = checkEWLC(player, neighbour, total_leeway);
+
+
+
+            // if EWLC equals EWLF, we can skip to calculating learning.
+
+
+            // TODO implement. see old comments for reference.
+            boolean e = checkEWLP(a, b);
+            if(e){
+                w_ab += calculateLearning(a, b);
+                if(w_ab > 1.0)
+                    w_ab = 1.0;
+                else if(w_ab < 0.0)
+                    w_ab = 0.0;
+
+                // TODO
+                //  test what happens with vs without this code block here.
+                //  is it necessary?
+                //  what is its function?
+                String str = DF2.format(w_ab);
+                double x = Double.parseDouble(str);
+                weights.set(i, x);
+
+
+
+            }
+
+            // TODO implement case where EWLC and EWLF differ. e.g. EWLC = PD and EWLF = PED
+
+
+            // TODO fix acronyms for EWLFs. capitalise the p in things like pD. e.g. change pD to PD. change pEAD to just PED, lose the absolute part.
+
+
+
+//            if(!EWLP.equals("")){
+//
+//                // TODO implement this
+//
+//                // e denotes whether a will perform EWL with w_ab.
+//                boolean e = checkEWLP(a, b);
+//                if(e){
+//                    w_ab += calculateLearning(a, b);
+//                    if(w_ab > 1.0)
+//                        w_ab = 1.0;
+//                    else if(w_ab < 0.0)
+//                        w_ab = 0.0;
+//
+//
+//                    // TODO
+//                    //  test what happens with vs without this code block here.
+//                    //  is it necessary?
+//                    //  what is its function?
+//                    String str = DF2.format(w_ab);
+//                    double x = Double.parseDouble(str);
+//                    weights.set(i, x);
+//
+//
+//
+//                }
+//
+//
+//
+//            } else{
+//                // go about the usual EWL process of checking EWLC then EWLF...
+//                // TODO implement this.
+//            }
+
+
         }
     }
 
 
 
+    // TODO implement this. if successful in doing so, switch to having EWLP as a config param.
+    public boolean checkEWLP(Player a, Player b){
+        // manually set EWLP (edge weight learning probability).
+//        String EWLP = "pFD";
+//        String EWLP = "uFD";
 
+        // manually set noise k.
+        double k = 0.1;
+
+        double x = 0.0;
+        switch(EWLP){
+            case "uFD" -> x = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
+            case "pFD" -> x = 1 / (1 + Math.exp((a.getP() - b.getP()) / k));
+            case "always" -> x = 1.0;
+        }
+
+//        System.out.println(a.getP() + "\t" + b.getP() + "\t" + x);
+//        System.out.println(a.getU() + "\t" + b.getU() + "\t" + x);
+
+        double y = ThreadLocalRandom.current().nextDouble();
+
+        boolean z = x < y;
+
+        return z;
+    }
 
 
 
@@ -941,7 +1043,7 @@ public class Env extends Thread{ // simulated game environment
         int i;
         for(i=0;i<size;i++){
 //            pockets[i] = pool.get(i).getAvgScore();
-            pockets[i] = pool.get(i).getUtility();
+            pockets[i] = pool.get(i).getU();
             roulette_total += pockets[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
@@ -976,7 +1078,7 @@ public class Env extends Thread{ // simulated game environment
         int i;
         for(i=0;i<size;i++){
 //            pockets[i] = pool.get(i).getAvgScore();
-            pockets[i] = pool.get(i).getUtility();
+            pockets[i] = pool.get(i).getU();
             roulette_total += pockets[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
@@ -1268,7 +1370,7 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Loads in a configuration of settings from the config file, allowing the user to choose the values of the environmental parameters.
      */
-    public static void setupEnvironment(){
+    public static void configureEnvironment(){
         // load configurations
         ArrayList<String> configurations = new ArrayList<>(); // stores configs
         try{
@@ -1401,6 +1503,9 @@ public class Env extends Thread{ // simulated game environment
             if(EWLC.equals("AB") || EWLF.equals("AB")){
                 alpha = Double.parseDouble(EWL_params[CI2++]);
                 beta = Double.parseDouble(EWL_params[CI2++]);
+            }
+            if(EWLC.equals(EWLF)){
+                EWLP = EWL_params[CI2++];
             }
         }
         String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
@@ -1720,7 +1825,7 @@ public class Env extends Thread{ // simulated game environment
      * - Separate the data into columns: gen number, avg p and SD for that gen<br>
      * - Create a line chart with the data.<br>
      */
-    public void writeAvgpData(){
+    public void writeAvgPData(){
         try{
             String filename = experiment_results_folder_path + "\\avg_p_data.csv";
             String s="";
@@ -1745,7 +1850,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void writeAvgqData(){
+    public void writeAvgQData(){
         try{
             String filename = experiment_results_folder_path + "\\avg_q_data.csv";
             String output = "";
@@ -1794,7 +1899,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     // Saves proposal values of pop to .csv file.
-    public void writepData(){
+    public void writePData(){
         try{
             String filename = p_data_filename + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
@@ -1819,7 +1924,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void writeqData(){
+    public void writeQData(){
         try{
             String filename = q_data_filename +"\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
@@ -2575,12 +2680,12 @@ public class Env extends Thread{ // simulated game environment
 
     public void updateUtility(Player player){
         double score = player.getScore();
-        double utility = 0.0;
+        double u = 0.0;
         switch(UF){
-            case "MNI" -> utility = score / player.getMNI(); // minimum number of interactions
-            case "cumulative" -> utility = score; // cumulative payoff
-            case "normalised" -> utility = score / player.getNeighbourhood().size(); // normalised payoff
+            case "MNI" -> u = score / player.getMNI(); // minimum number of interactions
+            case "cumulative" -> u = score; // cumulative payoff
+            case "normalised" -> u = score / player.getNeighbourhood().size(); // normalised payoff
         }
-        player.setUtility(utility);
+        player.setU(u);
     }
 }

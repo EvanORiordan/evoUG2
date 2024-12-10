@@ -49,7 +49,7 @@ public class Player {
     private double[] margolus_edge_weights2;
     private double x; // x position in space
     private double y; // y position in space
-    private double utility; // utility / fitness
+    private double u; // utility
 
 
 
@@ -151,7 +151,7 @@ public class Player {
         }
         player_desc+=" score="+DF4.format(score); // score
 //        player_desc+=" ("+DF4.format(avg_score)+")"; // avg score
-        player_desc += " utility=" + DF4.format(utility);
+        player_desc += " u=" + DF4.format(u);
 
 
         // EW and NSI per neighbour
@@ -305,6 +305,6 @@ public class Player {
     public void setX(double d){x=d;}
     public static int getCount(){return count;}
     public static void setCount(int i){count=i;}
-    public double getUtility(){return utility;}
-    public void setUtility(double d){utility=d;}
+    public double getU(){return u;}
+    public void setU(double d){u=d;}
 }
