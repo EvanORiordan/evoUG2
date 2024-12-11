@@ -439,19 +439,20 @@ public class Env extends Thread{ // simulated game environment
                 // rewiring
                 if(EWT.equals("3")){
                     for(int i=0;i<N;i++){
-                        Player rewiring_player = pop[i];
+//                        Player rewiring_player = pop[i];
                         double random_number = ThreadLocalRandom.current().nextDouble();
                         if(RP > random_number){
                             int num_rewires = 0;
                             switch (RA) {
-                                case"0EWSingle"->num_rewires = rewireAway0EWSingle(rewiring_player);
-                                case"0EWMany"->num_rewires = rewireAway0EWMany(rewiring_player);
-                                case"EWRW"->num_rewires = rewireAway0EWSingle(rewiring_player);
+                                case "0Single" -> num_rewires = rewireAway0Single(pop[i]);
+                                case "0Many" -> num_rewires = rewireAway0Many(pop[i]);
+//                                case "RW" -> num_rewires = rewireAwayRW(rewiring_player);
+                                case "proportional" -> num_rewires = rewireAwayProportional(pop[i]);
                             }
                             if(num_rewires > 0){
                                 switch (RT){
-                                    case"local"->rewireToLocal(rewiring_player, num_rewires);
-                                    case"pop"->rewireToPop(rewiring_player, num_rewires);
+                                    case"local"->rewireToLocal(pop[i], num_rewires);
+                                    case"pop"->rewireToPop(pop[i], num_rewires);
                                 }
                             }
                         }
@@ -462,38 +463,42 @@ public class Env extends Thread{ // simulated game environment
                 for(int i=0;i<N;i++) {
                     Player child = pop[i];
 
-                    // selection
-                    Player parent = null;
-                    switch(sel){
-                        case "NRW" -> parent = selectionNRW(child);
-                        case "ERW" -> parent = selectionERW(child);
-                        case "elitist" -> parent = selectionBest(child);
-                        case "rand" -> parent = selectionRand(child);
-                        case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
-                        default -> {
-                            System.out.println("[ERROR] Invalid selection function configured. Exiting...");
-                            Runtime.getRuntime().exit(0);
-                        }
-                    }
+                    // prevent evolution if child is isolated.
+                    if(child.getNeighbourhood().size() > 0){
 
-                    // evolution
-                    switch (evo) {
-                        case "copy" -> copyEvolution(child, parent);
-                        case "approach" -> approachEvolution(child, parent);
-                        case "crossover" -> {} // do nothing; already completed above.
-                        default -> {
-                            System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
-                            Runtime.getRuntime().exit(0);
+                        // selection
+                        Player parent = null;
+                        switch(sel){
+                            case "NRW" -> parent = selectionNRW(child);
+                            case "ERW" -> parent = selectionERW(child);
+                            case "elitist" -> parent = selectionBest(child);
+                            case "rand" -> parent = selectionRand(child);
+                            case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+                            default -> {
+                                System.out.println("[ERROR] Invalid selection function configured. Exiting...");
+                                Runtime.getRuntime().exit(0);
+                            }
                         }
-                    }
 
-                    // mutation
-                    switch (mut){
-                        case "global" -> {
-                            if(mutationCheck())globalMutation(child);
+                        // evolution
+                        switch (evo) {
+                            case "copy" -> copyEvolution(child, parent);
+                            case "approach" -> approachEvolution(child, parent);
+                            case "crossover" -> {} // do nothing; already completed above.
+                            default -> {
+                                System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
+                                Runtime.getRuntime().exit(0);
+                            }
                         }
-                        case "local" -> {
-                            if(mutationCheck())localMutation(child);
+
+                        // mutation
+                        switch (mut){
+                            case "global" -> {
+                                if(mutationCheck())globalMutation(child);
+                            }
+                            case "local" -> {
+                                if(mutationCheck())localMutation(child);
+                            }
                         }
                     }
                 }
@@ -738,7 +743,6 @@ public class Env extends Thread{ // simulated game environment
 //            }
 //        }
 //    }
-    // todo continue implementing function
     /**
      * player performs edge weight learning (EWL) with all of its edges.
      * @param a player performing EWL
@@ -774,6 +778,8 @@ public class Env extends Thread{ // simulated game environment
                     w_ab = 1.0;
                 else if(w_ab < 0.0)
                     w_ab = 0.0;
+                weights.set(i, w_ab);
+
 
 
                 // the function of this code block is to round the weight, thus removing the issue with how doubles are not
@@ -808,7 +814,7 @@ public class Env extends Thread{ // simulated game environment
 
         double y = ThreadLocalRandom.current().nextDouble();
 
-        boolean z = x < y;
+        boolean z = x > y;
 
         return z;
     }
@@ -1503,8 +1509,8 @@ public class Env extends Thread{ // simulated game environment
         }
         String[] mut_params = settings[CI++].split(" "); // mutation parameters
         CI2 = 0;
+        mut = mut_params[CI2++];
         if(!mut_params[0].equals("")){
-            mut = mut_params[CI2++];
             mutRate = Double.parseDouble(mut_params[CI2++]);
             if(mut.equals("local")){
                 mutBound = Double.parseDouble(mut_params[CI2++]);
@@ -1514,9 +1520,9 @@ public class Env extends Thread{ // simulated game environment
         dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
         CI++;
         String[] series_params = settings[CI++].split(" ");
+        CI2 = 0;
+        varying = series_params[CI2++];
         if(!series_params[0].equals("")){
-            CI2 = 0;
-            varying = settings[CI2++];
             variation = Double.parseDouble(series_params[CI2++]);
             numExp = Integer.parseInt(series_params[CI2++]);
         }
@@ -2288,7 +2294,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public int rewireAway0EWMany(Player a){
+    public int rewireAway0Many(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
@@ -2365,7 +2371,7 @@ public class Env extends Thread{ // simulated game environment
     as a result of cutting ties, rewiring will not occur. in that case, a will NOT
     look for a new c. by this point, a has lost its opportunity to rewire this gen.
      */
-    public int rewireAway0EWSingle(Player a){
+    public int rewireAway0Single(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
@@ -2446,7 +2452,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     // incomplete
-    public int rewireAwayEWRW(Player a){
+    public int rewireAwayRW(Player a){
 
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
@@ -2505,7 +2511,6 @@ public class Env extends Thread{ // simulated game environment
         String settings = "";
         try{
             if(experiment_num == 1){
-                // TODO update the order of settings to match config file argument order.
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
                 settings += ",runs";
@@ -2522,30 +2527,32 @@ public class Env extends Thread{ // simulated game environment
                 settings += RA.equals("")? "": ",RA";
                 settings += RT.equals("")? "": ",RT";
 //                settings += !EWLC.equals("")? "": ",EWLC";
-                settings += !EWLF.equals("")? "": ",EWLF";
+                settings += EWLF.equals("")? "": ",EWLF";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
+                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
+                settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
+                settings += EWLP.equals("")? "": ",EWLP";
                 settings += ",sel";
-                settings += (selNoise==0)? "": ",selNoise";
+                settings += selNoise == 0.0 && !varying.equals("selNoise")? "": ",selNoise";
                 settings += ",evo";
-                settings += (evoNoise==0)? "": ",evoNoise";
-                settings += (mut.isEmpty())? "": ",mut";
-                settings += (mutRate==0)? "": ",mutRate";
-                settings += (mutBound==0)? "": ",mutBound";
+                settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
+                settings += mut.equals("")? "": ",mut";
+                settings += mutRate == 0.0 && !varying.equals("mutRate")? "": ",mutRate";
+                settings += mutBound == 0.0 && !varying.equals("mutBound")? "": ",mutBound";
                 settings += ",UF";
-                settings += (injIter==0)? "": ",injIter";
-                settings += (injP==0)? "": ",injP";
-                settings += (injSize==0)? "": ",injSize";
-                settings += (leeway1==0)? "": ",leeway1";
-                settings += (leeway2==0)? "": ",leeway2";
-                settings += (leeway3==0)? "": ",leeway3";
-                settings += (leeway4==0)? "": ",leeway4";
-                settings += (leeway5==0)? "": ",leeway5";
-                settings += (leeway6==0)? "": ",leeway6";
-                settings += (leeway7==0)? "": ",leeway7";
+                settings += leeway1 == 0.0 && !varying.equals("leeway1")? "": ",leeway1";
+                settings += leeway2 == 0.0 && !varying.equals("leeway2")? "": ",leeway2";
+                settings += leeway3 == 0.0 && !varying.equals("leeway3")? "": ",leeway3";
+                settings += leeway4 == 0.0 && !varying.equals("leeway4")? "": ",leeway4";
+                settings += leeway5 == 0.0 && !varying.equals("leeway5")? "": ",leeway5";
+                settings += leeway6 == 0.0 && !varying.equals("leeway6")? "": ",leeway6";
+                settings += leeway7 == 0.0 && !varying.equals("leeway7")? "": ",leeway7";
+                settings += injIter == 0? "": ",injIter";
+                settings += injP == 0.0? "": ",injP";
+                settings += injSize == 0? "": ",injSize";
             } else {
                 fw = new FileWriter(settings_filename, true);
             }
-            // TODO update the order of settings to match config file argument order.
             settings += "\n";
             settings += game;
             settings += "," + runs;
@@ -2562,26 +2569,29 @@ public class Env extends Thread{ // simulated game environment
             settings += RA.equals("")? "": "," + RA;
             settings += RT.equals("")? "": "," + RT;
 //            settings += !EWLC.equals("")? "": "," + EWLC;
-            settings += !EWLF.equals("")? "": "," + EWLF;
-            settings += !EWLF.equals("ROC")? "": "," + ROC;
+            settings += EWLF.equals("")? "": "," + EWLF;
+            settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
+            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
+            settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
+            settings += EWLP.equals("")? "": "," + EWLP;
             settings += "," + sel;
-            settings += (selNoise==0)? "": "," + selNoise;
+            settings += selNoise == 0.0 && !varying.equals("selNoise")? "": "," + selNoise;
             settings += "," + evo;
-            settings += (evoNoise==0)? "": "," + evoNoise;
-            settings += (mut.isEmpty())? "": "," + mut;
-            settings += (mutRate==0)? "": "," + mutRate;
-            settings += (mutBound==0)? "": "," + mutBound;
+            settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
+            settings += mut.equals("")? "": "," + mut;
+            settings += mutRate == 0.0 && !varying.equals("mutRate")? "": "," + mutRate;
+            settings += mutBound == 0.0 && !varying.equals("mutBound")? "": "," + mutBound;
             settings += "," + UF;
-            settings += (injIter==0)? "": "," + injIter;
-            settings += (injP==0)? "": "," + injP;
-            settings += (injSize==0)? "": "," + injSize;
-            settings += (leeway1==0)? "": "," + leeway1;
-            settings += (leeway2==0)? "": "," + leeway2;
-            settings += (leeway3==0)? "": "," + leeway3;
-            settings += (leeway4==0)? "": "," + leeway4;
-            settings += (leeway5==0)? "": "," + leeway5;
-            settings += (leeway6==0)? "": "," + leeway6;
-            settings += (leeway7==0)? "": "," + leeway7;
+            settings += leeway1 == 0.0 && !varying.equals("leeway1")? "": "," + leeway1;
+            settings += leeway2 == 0.0 && !varying.equals("leeway2")? "": "," + leeway2;
+            settings += leeway3 == 0.0 && !varying.equals("leeway3")? "": "," + leeway3;
+            settings += leeway4 == 0.0 && !varying.equals("leeway4")? "": "," + leeway4;
+            settings += leeway5 == 0.0 && !varying.equals("leeway5")? "": "," + leeway5;
+            settings += leeway6 == 0.0 && !varying.equals("leeway6")? "": "," + leeway6;
+            settings += leeway7 == 0.0 && !varying.equals("leeway7")? "": "," + leeway7;
+            settings += injIter == 0? "": "," + injIter;
+            settings += injP == 0.0? "": "," + injP;
+            settings += injSize == 0? "": "," + injSize;
             fw.append(settings);
             fw.close();
         } catch(IOException e) {
@@ -2640,13 +2650,145 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+    // TODO:
+    //  redo this function.
+    //  instead of rewiring and checking for each neighbour, check all then rewire all applicable.
+    //  this way, you avoid the potential for indices to get mixed up.
+    // chance to rewire is equal to 1 - w. as w decreases, prob increases.
+    public int rewireAwayProportional(Player a){
+        // denotes number of rewires a has performed (this gen).
+        int num_rewires = 0;
 
-    // chance to rewire is equal to 1 - w. as w increases, prob decreases.
-    public void rewireAwayProportional(Player a){
-        // omega_a denotes copy of neighbourhood of a.
+        // omega_a denotes (copy of) neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
-        // TODO: implement this function
+        // denotes degree of a
+        int degree_a = omega_a.size();
+
+
+
+
+//        // denotes list of weighted edges connecting a to its neigbours.
+//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
+//        for(int b_index = 0; b_index < degree_a; b_index++){
+//
+//            // b denotes neighbour of a
+//            Player b = omega_a.get(b_index);
+//
+//            // omega_b denotes neighbourhood of b
+//            ArrayList<Player> omega_b = b.getNeighbourhood();
+//
+//            // w_ab denotes edge from a to b
+//            double w_ab = weights.get(b_index);
+//
+//            // c denotes probability for a to rewire away from b.
+//            double c = 1 - w_ab;
+//            double d = ThreadLocalRandom.current().nextDouble();
+////            if(b.getNeighbourhood().size() > 1 && e > c){ // prevent b from becoming isolated?
+//            if(c > d){
+//
+//                // e denotes neighbour of b.
+//                for(int e_index = 0; e_index < omega_b.size(); e_index++){
+//                    Player e = omega_b.get(e_index);
+//
+//                    // if d = a, then d_index is the index of a in omega_c.
+//                    if(e.equals(a)){
+//
+//                        // disconnect a from b.
+//                        omega_a.remove(b_index);
+//                        weights.remove(b_index);
+//
+//                        // disconnect b from a.
+//                        omega_b.remove(e_index);
+//                        b.getEdgeWeights().remove(e_index);
+//                        num_rewires++;
+//
+//                        // once the cutting of edges has been completed, stop innermost loop.
+//                        break;
+//                    }
+//                }
+//            }
+//            a.setNeighbourhood(omega_a);
+//            a.setEdgeWeights(weights);
+//        }
+
+
+
+
+
+        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
+        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
+        for(int i = 0; i < degree_a; i++){
+            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to b
+            double b = 1 - w_ab; // b denotes probability of rewiring
+            double c = ThreadLocalRandom.current().nextDouble();
+            if(b > c){
+                indices_of_edges_to_be_rewired.add(i);
+            }
+        }
+
+//        for(int i = 0; i < indices_of_edges_to_be_rewired.size(); i++){
+        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
+
+
+
+
+            // todo make debug test to see what happens when multiple rewires are to occur.
+            if(indices_of_edges_to_be_rewired.size() > 1){
+                System.out.println("BP");
+            }
+
+
+
+
+            int d = indices_of_edges_to_be_rewired.get(i);
+
+
+            // old version
+            Player e = omega_a.get(d);
+
+
+            // debug version
+//            Player e = null;
+//            try {
+//                e = omega_a.get(d); // denotes player that a is rewiring away from
+//            }catch(IndexOutOfBoundsException exception){
+//                System.out.println("BP");
+//            }
+
+
+            // TODO
+            //  fix code so that it gets neighbour to rewire away
+            //  from even when there are multiple neighbours to rewire away from.
+            //  it has to manage the indices in a good way.
+            //  perhaps we remove the used index from the list of indicues of edges to be rewired.
+            //  it needs to be done so that we account for howt he neighbourhood is changed.
+            //  ACTUALLY, TRY THIS: for the first rewire, select the item at the end of
+            //  indices_of_edges_to_be_rewired then use i-- to move onto the next item in
+            //  indices_of_edges_to_be_rewired.
+            //  replace this: for(int i = 0; i < indices_of_edges_to_be_rewired.size(); i++){
+            //  ... with something like this: (int i=indices_of_edges_to_be_rewired.size()-1;i>=0;i--)
+            //  then we should be able to use Player e = omega_a.get(d);
+
+
+
+            ArrayList<Player> omega_e = e.getNeighbourhood();
+            for(int j = 0; j < omega_e.size(); j++){
+                Player f = omega_e.get(j);
+                if(f.equals(a)){
+                    omega_a.remove(d);
+                    weights.remove(d);
+                    omega_e.remove(j);
+                    e.getEdgeWeights().remove(j);
+                    num_rewires++;
+                    break;
+                }
+            }
+        }
+        a.setNeighbourhood(omega_a);
+        a.setEdgeWeights(weights);
+
+        return num_rewires;
     }
 
 
