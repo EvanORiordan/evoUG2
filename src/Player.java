@@ -193,7 +193,7 @@ public class Player {
         player_desc += " weights=[";
         for(int i=0;i<edge_weights.size();i++){
             player_desc += DF2.format(edge_weights.get(i));
-            if((i + 1) < neighbourhood.size()){
+            if((i + 1) < edge_weights.size()){
                 player_desc += ", ";
             }
         }

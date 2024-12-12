@@ -447,7 +447,9 @@ public class Env extends Thread{ // simulated game environment
                                 case "0Single" -> num_rewires = rewireAway0Single(pop[i]);
                                 case "0Many" -> num_rewires = rewireAway0Many(pop[i]);
 //                                case "RW" -> num_rewires = rewireAwayRW(rewiring_player);
-                                case "proportional" -> num_rewires = rewireAwayProportional(pop[i]);
+                                case "PL" -> num_rewires = rewireAwayProportionalLinear(pop[i]);
+                                case "FD" -> num_rewires = rewireAwayFermiDirac(pop[i]);
+                                case "PE" -> num_rewires = rewireAwayProportionalExponential(pop[i]);
                             }
                             if(num_rewires > 0){
                                 switch (RT){
@@ -2649,7 +2651,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     // chance to rewire is equal to 1 - w. as w decreases, prob increases.
-    public int rewireAwayProportional(Player a){
+    public int rewireAwayProportionalLinear(Player a){
         // denotes number of rewires a has performed (this gen).
         int num_rewires = 0;
 
@@ -2664,10 +2666,10 @@ public class Env extends Thread{ // simulated game environment
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
         for(int i = 0; i < degree_a; i++){
-            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to b
-            double b = 1 - w_ab; // b denotes probability of rewiring
+            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+            double prob_rewire = 1 - w_ab; // denotes probability of rewiring away from b
             double c = ThreadLocalRandom.current().nextDouble();
-            if(b > c){
+            if(prob_rewire > c){
                 indices_of_edges_to_be_rewired.add(i);
             }
         }
@@ -2717,5 +2719,87 @@ public class Env extends Thread{ // simulated game environment
             case "normalised" -> u = score / player.getNeighbourhood().size(); // normalised payoff
         }
         player.setU(u);
+    }
+
+
+
+    // probability for a to rewire away from b is calculated using Fermi-Dirac equation.
+    // disregards weights of edges.
+    public int rewireAwayFermiDirac(Player a){
+        int num_rewires = 0;
+        ArrayList<Player> omega_a = a.getNeighbourhood();
+        int degree_a = omega_a.size();
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
+        double k = 0.1; // noise in F-D eqn
+        for(int i = 0; i < degree_a; i++){
+            Player b = omega_a.get(i);
+            double prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k)); // denotes probability of rewiring away from b
+            double c = ThreadLocalRandom.current().nextDouble();
+            if(prob_rewire > c){
+                indices_of_edges_to_be_rewired.add(i);
+            }
+        }
+        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
+            int d = indices_of_edges_to_be_rewired.get(i);
+            Player e = omega_a.get(d);
+            ArrayList<Player> omega_e = e.getNeighbourhood();
+            for(int j = 0; j < omega_e.size(); j++){
+                Player f = omega_e.get(j);
+                if(f.equals(a)){
+                    omega_a.remove(d);
+                    weights.remove(d);
+                    omega_e.remove(j);
+                    e.getEdgeWeights().remove(j);
+                    num_rewires++;
+                    break;
+                }
+            }
+        }
+        return num_rewires;
+    }
+
+
+
+    // as w decreases, prob to rewire exponentially increases.
+    // see handwritten graph for reference.
+    public int rewireAwayProportionalExponential(Player a){
+        int num_rewires = 0;
+        ArrayList<Player> omega_a = a.getNeighbourhood();
+        int degree_a = omega_a.size();
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
+        double k = 5; // k denotes rate of decay. as k increases,
+        for(int i = 0; i < degree_a; i++){
+            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+
+            // code block for debugging how rewire prob is calculated
+            if(w_ab < 1.0)
+                System.out.println("BP");
+
+            double prob_rewire = Math.exp(-k * w_ab);
+
+            double c = ThreadLocalRandom.current().nextDouble();
+            if(prob_rewire > c){
+                indices_of_edges_to_be_rewired.add(i);
+            }
+        }
+        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
+            int d = indices_of_edges_to_be_rewired.get(i);
+            Player e = omega_a.get(d);
+            ArrayList<Player> omega_e = e.getNeighbourhood();
+            for(int j = 0; j < omega_e.size(); j++){
+                Player f = omega_e.get(j);
+                if(f.equals(a)){
+                    omega_a.remove(d);
+                    weights.remove(d);
+                    omega_e.remove(j);
+                    e.getEdgeWeights().remove(j);
+                    num_rewires++;
+                    break;
+                }
+            }
+        }
+        return num_rewires;
     }
 }
