@@ -2648,75 +2648,20 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-
-    // TODO:
-    //  redo this function.
-    //  instead of rewiring and checking for each neighbour, check all then rewire all applicable.
-    //  this way, you avoid the potential for indices to get mixed up.
     // chance to rewire is equal to 1 - w. as w decreases, prob increases.
     public int rewireAwayProportional(Player a){
         // denotes number of rewires a has performed (this gen).
         int num_rewires = 0;
 
         // omega_a denotes (copy of) neighbourhood of a.
-        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+        ArrayList<Player> omega_a = a.getNeighbourhood();
 
         // denotes degree of a
         int degree_a = omega_a.size();
 
-
-
-
-//        // denotes list of weighted edges connecting a to its neigbours.
 //        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
-//        for(int b_index = 0; b_index < degree_a; b_index++){
-//
-//            // b denotes neighbour of a
-//            Player b = omega_a.get(b_index);
-//
-//            // omega_b denotes neighbourhood of b
-//            ArrayList<Player> omega_b = b.getNeighbourhood();
-//
-//            // w_ab denotes edge from a to b
-//            double w_ab = weights.get(b_index);
-//
-//            // c denotes probability for a to rewire away from b.
-//            double c = 1 - w_ab;
-//            double d = ThreadLocalRandom.current().nextDouble();
-////            if(b.getNeighbourhood().size() > 1 && e > c){ // prevent b from becoming isolated?
-//            if(c > d){
-//
-//                // e denotes neighbour of b.
-//                for(int e_index = 0; e_index < omega_b.size(); e_index++){
-//                    Player e = omega_b.get(e_index);
-//
-//                    // if d = a, then d_index is the index of a in omega_c.
-//                    if(e.equals(a)){
-//
-//                        // disconnect a from b.
-//                        omega_a.remove(b_index);
-//                        weights.remove(b_index);
-//
-//                        // disconnect b from a.
-//                        omega_b.remove(e_index);
-//                        b.getEdgeWeights().remove(e_index);
-//                        num_rewires++;
-//
-//                        // once the cutting of edges has been completed, stop innermost loop.
-//                        break;
-//                    }
-//                }
-//            }
-//            a.setNeighbourhood(omega_a);
-//            a.setEdgeWeights(weights);
-//        }
-
-
-
-
-
-        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
+        ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
         for(int i = 0; i < degree_a; i++){
             double w_ab = weights.get(i); // w_ab denotes weighted edge from a to b
@@ -2727,51 +2672,20 @@ public class Env extends Thread{ // simulated game environment
             }
         }
 
-//        for(int i = 0; i < indices_of_edges_to_be_rewired.size(); i++){
+        // iterating backwards means with multiple edges to rewire,
+        // as items are removed from arraylist, the subsequent shuffling of
+        // items does not cause an IndexOutOfBoundsException.
+        // if removing edges at indices 2 and 3 using forward iteration,
+        // if you remove edge at 2 first, there no longer exists an
+        // edge at index 3. therefore when we then try to remove an edge at 3, we
+        // encounter an IndexOutOfBoundsException.
         for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
-
-
-
-
-            // todo make debug test to see what happens when multiple rewires are to occur.
-            if(indices_of_edges_to_be_rewired.size() > 1){
-                System.out.println("BP");
-            }
-
-
-
-
-            int d = indices_of_edges_to_be_rewired.get(i);
-
-
-            // old version
-            Player e = omega_a.get(d);
-
-
-            // debug version
-//            Player e = null;
-//            try {
-//                e = omega_a.get(d); // denotes player that a is rewiring away from
-//            }catch(IndexOutOfBoundsException exception){
+            // for debugging what happens when multiple edges are to be rewired
+//            if(indices_of_edges_to_be_rewired.size() > 1){
 //                System.out.println("BP");
 //            }
-
-
-            // TODO
-            //  fix code so that it gets neighbour to rewire away
-            //  from even when there are multiple neighbours to rewire away from.
-            //  it has to manage the indices in a good way.
-            //  perhaps we remove the used index from the list of indicues of edges to be rewired.
-            //  it needs to be done so that we account for howt he neighbourhood is changed.
-            //  ACTUALLY, TRY THIS: for the first rewire, select the item at the end of
-            //  indices_of_edges_to_be_rewired then use i-- to move onto the next item in
-            //  indices_of_edges_to_be_rewired.
-            //  replace this: for(int i = 0; i < indices_of_edges_to_be_rewired.size(); i++){
-            //  ... with something like this: (int i=indices_of_edges_to_be_rewired.size()-1;i>=0;i--)
-            //  then we should be able to use Player e = omega_a.get(d);
-
-
-
+            int d = indices_of_edges_to_be_rewired.get(i);
+            Player e = omega_a.get(d);
             ArrayList<Player> omega_e = e.getNeighbourhood();
             for(int j = 0; j < omega_e.size(); j++){
                 Player f = omega_e.get(j);
@@ -2785,8 +2699,6 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }
-        a.setNeighbourhood(omega_a);
-        a.setEdgeWeights(weights);
 
         return num_rewires;
     }
