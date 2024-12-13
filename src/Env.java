@@ -447,9 +447,10 @@ public class Env extends Thread{ // simulated game environment
                                 case "0Single" -> num_rewires = rewireAway0Single(pop[i]);
                                 case "0Many" -> num_rewires = rewireAway0Many(pop[i]);
 //                                case "RW" -> num_rewires = rewireAwayRW(rewiring_player);
-                                case "PL" -> num_rewires = rewireAwayProportionalLinear(pop[i]);
+                                case "linear" -> num_rewires = rewireAwayLinear(pop[i]);
                                 case "FD" -> num_rewires = rewireAwayFermiDirac(pop[i]);
-                                case "PE" -> num_rewires = rewireAwayProportionalExponential(pop[i]);
+                                case "exponential" -> num_rewires = rewireAwayExponential(pop[i]);
+                                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(pop[i]);
                             }
                             if(num_rewires > 0){
                                 switch (RT){
@@ -2650,8 +2651,8 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // chance to rewire is equal to 1 - w. as w decreases, prob increases.
-    public int rewireAwayProportionalLinear(Player a){
+    // chance to rewire is equal to 1 - w. as w decreases, prob linearly increases.
+    public int rewireAwayLinear(Player a){
         // denotes number of rewires a has performed (this gen).
         int num_rewires = 0;
 
@@ -2762,8 +2763,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     // as w decreases, prob to rewire exponentially increases.
-    // see handwritten graph for reference.
-    public int rewireAwayProportionalExponential(Player a){
+    public int rewireAwayExponential(Player a){
         int num_rewires = 0;
         ArrayList<Player> omega_a = a.getNeighbourhood();
         int degree_a = omega_a.size();
@@ -2778,6 +2778,50 @@ public class Env extends Thread{ // simulated game environment
                 System.out.println("BP");
 
             double prob_rewire = Math.exp(-k * w_ab);
+
+            double c = ThreadLocalRandom.current().nextDouble();
+            if(prob_rewire > c){
+                indices_of_edges_to_be_rewired.add(i);
+            }
+        }
+        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
+            int d = indices_of_edges_to_be_rewired.get(i);
+            Player e = omega_a.get(d);
+            ArrayList<Player> omega_e = e.getNeighbourhood();
+            for(int j = 0; j < omega_e.size(); j++){
+                Player f = omega_e.get(j);
+                if(f.equals(a)){
+                    omega_a.remove(d);
+                    weights.remove(d);
+                    omega_e.remove(j);
+                    e.getEdgeWeights().remove(j);
+                    num_rewires++;
+                    break;
+                }
+            }
+        }
+        return num_rewires;
+    }
+
+
+
+
+    // probability to rewire is calculated using smoothstep function.
+    public int rewireAwaySmoothstep(Player a){
+        int num_rewires = 0;
+        ArrayList<Player> omega_a = a.getNeighbourhood();
+        int degree_a = omega_a.size();
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
+        for(int i = 0; i < degree_a; i++){
+            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+
+            // code block for debugging how rewire prob is calculated
+            if(w_ab < 1.0)
+                System.out.println("BP");
+
+//            double prob_rewire = (3 * w ** 2 - 2 * w ** 3)
+            double prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
 
             double c = ThreadLocalRandom.current().nextDouble();
             if(prob_rewire > c){
