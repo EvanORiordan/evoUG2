@@ -4,12 +4,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Evan O'Riordan (e.oriordan3@universityofgalway.ie)<br>
- * 02/10/2023<br>
+ * 10/12/2024<br>
  * School of Computer Science<br>
  * University of Galway<br>
- *
- *
- * Class for instantiating player objects with player information.<br>
  */
 public class Player {
 

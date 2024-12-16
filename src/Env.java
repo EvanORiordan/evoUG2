@@ -89,7 +89,6 @@ public class Env extends Thread{ // simulated game environment
     static String EWT; // EW type
 //    static String EWLC; // EWL condition
     static String EWLF; // EWL formula
-    static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
     static double ROC = 0; // rate of change: fixed learning amount to EW
     static double alpha = 0; // used in alpha-beta rating
     static double beta = 0; // used in alpha-beta rating
@@ -113,6 +112,9 @@ public class Env extends Thread{ // simulated game environment
     static String mut; // indicates which mutation function to call
     static double mutRate = 0; // probability of mutation
     static double mutBound = 0; // denotes max mutation possible
+    static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
+    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
+    static int NIS; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
 
 
     // fields related to rewiring
@@ -186,9 +188,10 @@ public class Env extends Thread{ // simulated game environment
         switch(varying){
             case"runs"->various_amounts.add((double)runs);
             case"iters"->various_amounts.add((double)iters);
-            case"length"->various_amounts.add((double)length);
-            case"width"->various_amounts.add((double)width);
+            case"length"->various_amounts.add((double) length);
+            case"width"->various_amounts.add((double) width);
             case"ER"->various_amounts.add((double)ER);
+            case "NIS" -> various_amounts.add((double) NIS);
             case"ROC"->various_amounts.add(ROC);
             case"leeway1"->various_amounts.add(leeway1);
             case"leeway2"->various_amounts.add(leeway2);
@@ -204,7 +207,7 @@ public class Env extends Thread{ // simulated game environment
             case"injIter"->various_amounts.add((double)injIter);
             case"injP"->various_amounts.add(injP);
             case"injSize"->various_amounts.add((double)injSize);
-            case"RP"->various_amounts.add((double)RP);
+            case"RP"->various_amounts.add(RP);
         }
 
         // run experiment series
@@ -238,6 +241,10 @@ public class Env extends Thread{ // simulated game environment
                 case "ER"->{
                     ER+=(int)variation;
                     various_amounts.add((double)ER);
+                }
+                case "NIS" -> {
+                    NIS += (int) variation;
+                    various_amounts.add((double) NIS);
                 }
                 case "ROC"->{
                     ROC+=variation;
@@ -387,11 +394,10 @@ public class Env extends Thread{ // simulated game environment
         initRandomPop();
 
         for(int i=0;i<N;i++){
-            Player player = pop[i];
             switch(neighType){
-                case"VN","Moore","dia"->assignAdjacentNeighbours(player);
-                case"random"->assignRandomNeighbours(player, neighSize);
-                case"all"->assignAllNeighbours(player);
+                case"VN","Moore","dia"->assignAdjacentNeighbours(pop[i]);
+                case"random"->assignRandomNeighbours(pop[i], neighSize);
+                case"all"->assignAllNeighbours(pop[i]);
                 default -> {
                     System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                     Runtime.getRuntime().exit(0);
@@ -432,82 +438,98 @@ public class Env extends Thread{ // simulated game environment
                 EWL(pop[i]);
             }
 
-            // one generation passes after every ER iterations.
-            // rewiring and strategy evolution may occur every generation.
-            if(iter % ER == 0){
+            switch(EM){
+                // evolution rate
+                case "ER" -> {
+                    // one generation passes after every ER iterations.
+                    // rewiring and strategy evolution may occur every generation.
+                    if(iter % ER == 0){
 
-                // rewiring
-                if(EWT.equals("3")){
-                    for(int i=0;i<N;i++){
-//                        Player rewiring_player = pop[i];
-                        double random_number = ThreadLocalRandom.current().nextDouble();
-                        if(RP > random_number){
-                            int num_rewires = 0;
-                            switch (RA) {
-                                case "0Single" -> num_rewires = rewireAway0Single(pop[i]);
-                                case "0Many" -> num_rewires = rewireAway0Many(pop[i]);
-//                                case "RW" -> num_rewires = rewireAwayRW(rewiring_player);
-                                case "linear" -> num_rewires = rewireAwayLinear(pop[i]);
-                                case "FD" -> num_rewires = rewireAwayFermiDirac(pop[i]);
-                                case "exponential" -> num_rewires = rewireAwayExponential(pop[i]);
-                                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(pop[i]);
-                            }
-                            if(num_rewires > 0){
-                                switch (RT){
-                                    case"local"->rewireToLocal(pop[i], num_rewires);
-                                    case"pop"->rewireToPop(pop[i], num_rewires);
+                        // rewiring
+                        if(EWT.equals("3")){
+                            for(int i=0;i<N;i++){
+                                Player player = pop[i];
+                                double random_number = ThreadLocalRandom.current().nextDouble();
+                                if(RP > random_number){
+                                    int num_rewires = 0;
+                                    switch (RA) {
+                                        case "0Single" -> num_rewires = rewireAway0Single(player);
+                                        case "0Many" -> num_rewires = rewireAway0Many(player);
+                                        case "linear" -> num_rewires = rewireAwayLinear(player);
+                                        case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+                                        case "exponential" -> num_rewires = rewireAwayExponential(player);
+                                        case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+                                    }
+                                    if(num_rewires > 0){
+                                        switch (RT){
+                                            case"local"->rewireToLocal(player, num_rewires);
+                                            case"pop"->rewireToPop(player, num_rewires);
+                                        }
+                                    }
                                 }
                             }
                         }
+
+                        // strategy evolution
+                        for(int i=0;i<N;i++) {
+                            Player child = pop[i];
+
+                            // prevent evolution if child is isolated.
+                            if(pop[i].getNeighbourhood().size() > 0){
+
+                                // selection
+                                Player parent = null;
+                                switch(sel){
+                                    case "NRW" -> parent = selNRW(child);
+                                    case "ERW" -> parent = selERW(child);
+                                    case "elitist" -> parent = selBest(child);
+                                    case "rand" -> parent = selRand(child);
+                                    case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+                                }
+
+                                // evolution
+                                switch (evo) {
+                                    case "copy" -> evoCopy(child, parent);
+                                    case "approach" -> evoApproach(child, parent);
+
+                                }
+
+                                // mutation
+                                switch (mut){
+                                    case "global" -> {
+                                        if(mutationCheck())
+                                            mutGlobal(child);
+                                    }
+                                    case "local" -> {
+                                        if(mutationCheck())
+                                            mutLocal(child);
+                                    }
+                                }
+                            }
+                        }
+
+                        gen++; // move on to the next generation
                     }
                 }
 
-                // strategy evolution
-                for(int i=0;i<N;i++) {
-                    Player child = pop[i];
-
-                    // prevent evolution if child is isolated.
-                    if(child.getNeighbourhood().size() > 0){
-
-                        // selection
-                        Player parent = null;
-                        switch(sel){
-                            case "NRW" -> parent = selectionNRW(child);
-                            case "ERW" -> parent = selectionERW(child);
-                            case "elitist" -> parent = selectionBest(child);
-                            case "rand" -> parent = selectionRand(child);
-                            case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
-                            default -> {
-                                System.out.println("[ERROR] Invalid selection function configured. Exiting...");
-                                Runtime.getRuntime().exit(0);
-                            }
-                        }
-
-                        // evolution
-                        switch (evo) {
-                            case "copy" -> copyEvolution(child, parent);
-                            case "approach" -> approachEvolution(child, parent);
-                            case "crossover" -> {} // do nothing; already completed above.
-                            default -> {
-                                System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
-                                Runtime.getRuntime().exit(0);
-                            }
-                        }
-
-                        // mutation
-                        switch (mut){
-                            case "global" -> {
-                                if(mutationCheck())globalMutation(child);
-                            }
-                            case "local" -> {
-                                if(mutationCheck())localMutation(child);
-                            }
+                // monte carlo
+                case "MC" -> {
+                    for(int i = 0; i < NIS; i++){
+                        int a = ThreadLocalRandom.current().nextInt(NIS);
+                        Player b = findPlayerByID(a);
+                        ArrayList<Player> omega_b = b.getNeighbourhood();
+                        int c = ThreadLocalRandom.current().nextInt();
+                        Player d = omega_b.get(c);
+                        double e = ThreadLocalRandom.current().nextDouble();
+                        double f = (d.getU() - b.getU()) / omega_b.size();
+                        if(e < f){
+                            evoCopy(b, d);
                         }
                     }
                 }
-
-                gen++; // move on to the next generation
             }
+
+
 
             switch(game){
                 case"UG","DG"->calculateStatsUG();
@@ -979,7 +1001,7 @@ public class Env extends Thread{ // simulated game environment
      * parent. If a parent is not selected, the child is selected as parent
      * by default.<br>
      */
-    public Player selectionERW(Player child){
+    public Player selERW(Player child){
 //        ArrayList <Player> neighbourhood = child.getNeighbourhood();
 //        int size = neighbourhood.size();
 //        double fitness = child.getAvgScore(); // fitness equals avg score
@@ -1048,7 +1070,7 @@ public class Env extends Thread{ // simulated game environment
      * parent. If a parent is not selected, the child is selected as parent
      * by default.<br>
      */
-    public Player selectionNRW(Player child){
+    public Player selNRW(Player child){
         Player parent = null;
         ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood());
         pool.add(child);
@@ -1085,7 +1107,7 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Child selects highest scoring neighbour.
      */
-    public Player selectionBest(Player child){
+    public Player selBest(Player child){
         ArrayList <Player> neighbourhood = child.getNeighbourhood();
         double avg_score = child.getAvgScore();
         int size = neighbourhood.size();
@@ -1120,7 +1142,7 @@ public class Env extends Thread{ // simulated game environment
      * @param child
      * @return parent player
      */
-    public Player selectionRand(Player child){
+    public Player selRand(Player child){
         double w = selNoise;
         double[] effective_payoffs = new double[N];
         Player parent = null;
@@ -1197,7 +1219,7 @@ public class Env extends Thread{ // simulated game environment
      * Evolution method where child wholly copies parent's strategy.
      * @param parent is the parent the player is copying.
      */
-    public void copyEvolution(Player child, Player parent){
+    public void evoCopy(Player child, Player parent){
         double old_p = parent.getOldP();
         double old_q = parent.getOldQ();
         setStrategy(child, old_p, old_q);
@@ -1210,7 +1232,7 @@ public class Env extends Thread{ // simulated game environment
      * @param child
      * @param parent
      */
-    public void approachEvolution(Player child, Player parent){
+    public void evoApproach(Player child, Player parent){
         int ID = child.getID();
         int parent_ID = parent.getID();
         double p = child.getP();
@@ -1254,7 +1276,7 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Child's attributes are randomly and independently generated.
      */
-    public void globalMutation(Player child){
+    public void mutGlobal(Player child){
         double new_p = ThreadLocalRandom.current().nextDouble();
         double new_q = ThreadLocalRandom.current().nextDouble();
 
@@ -1266,7 +1288,7 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Slight mutations are independently applied to child's attributes.
      */
-    public void localMutation(Player child){
+    public void mutLocal(Player child){
         double p = child.getP();
         double q = child.getQ();
 
@@ -1373,7 +1395,7 @@ public class Env extends Thread{ // simulated game environment
                         " %-5s |" +//game
                         " %-10s |" +//runs
                         " %-10s |" +//iters
-                        " %-5s |" +//ER
+                        " %-15s |" +//EM
                         " %-15s |" +//space
                         " %-25s |" +//EW
                         " %-25s |" +//EWL
@@ -1391,7 +1413,7 @@ public class Env extends Thread{ // simulated game environment
                 ,"game"
                 ,"runs"
                 ,"iters"
-                ,"ER"
+                ,"EM"
                 ,"space"
                 ,"EW"
                 ,"EWL"
@@ -1417,7 +1439,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-5s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
             System.out.printf("| %-10s ", settings[CI++]); //iters
-            System.out.printf("| %-5s ", settings[CI++]); //ER
+            System.out.printf("| %-15s ", settings[CI++]); //EM
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-25s ", settings[CI++]); //EW
             System.out.printf("| %-25s ", settings[CI++]); //EWL
@@ -1456,7 +1478,11 @@ public class Env extends Thread{ // simulated game environment
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
         iters = Integer.parseInt(settings[CI++]);
-        ER = Integer.parseInt(settings[CI++]);
+
+
+//        ER = Integer.parseInt(settings[CI++]);
+
+
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
         space = space_params[CI2++];
@@ -1465,6 +1491,31 @@ public class Env extends Thread{ // simulated game environment
             width = Integer.parseInt(space_params[CI2++]);
             N = length * width;
         }
+
+
+        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
+        CI2 = 0;
+        neighType = neigh_params[CI2++]; // required field
+        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
+            neighRange = Integer.parseInt(neigh_params[CI2++]);
+        } else if(neighType.equals("random")){
+            neighSize = Integer.parseInt(neigh_params[CI2++]);
+        }
+
+
+        String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
+        CI2 = 0;
+        EM = EM_params[CI2++];
+        if(EM.equals("ER"))
+            ER = Integer.parseInt(EM_params[CI2++]);
+        else if(EM.equals("MC")) {
+            if (EM_params[CI2].equals("N"))
+                NIS = N;
+            else
+                NIS = Integer.parseInt(EM_params[CI2++]);
+        }
+
+
         String[] EW_params = settings[CI++].split(" "); // edge weight parameters
         CI2 = 0;
         EWT = EW_params[CI2++];
@@ -1476,28 +1527,17 @@ public class Env extends Thread{ // simulated game environment
         String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
         if(!EWL_params[0].equals("")){
             CI2 = 0;
-//            EWLC = EWL_params[CI2++];
             EWLF = EWL_params[CI2++];
             if(EWLF.equals("ROC"))
                 ROC = Double.parseDouble(EWL_params[CI2++]);
-//            if(EWLC.equals("AB") || EWLF.equals("AB")){
             if(EWLF.equals("AB")){
                 alpha = Double.parseDouble(EWL_params[CI2++]);
                 beta = Double.parseDouble(EWL_params[CI2++]);
             }
-//            if(EWLC.equals(EWLF)){
-//                EWLP = EWL_params[CI2++];
-//            }
             EWLP = EWL_params[CI2++];
         }
-        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
-        CI2 = 0;
-        neighType = neigh_params[CI2++]; // required field
-        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
-            neighRange = Integer.parseInt(neigh_params[CI2++]);
-        } else if(neighType.equals("random")){
-            neighSize = Integer.parseInt(neigh_params[CI2++]);
-        }
+
+
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
@@ -1547,17 +1587,6 @@ public class Env extends Thread{ // simulated game environment
             injP = Double.parseDouble(inj_params[CI2++]);
             injSize = Integer.parseInt(inj_params[CI2++]);
         }
-
-
-//        injIter=applySettingInt();
-//        if(injIter>iters)
-//            System.out.println("NOTE: injIter > iters, therefore no injection will occur.");
-//        injP=applySettingDouble();
-//        injSize=applySettingInt();
-
-
-
-//        desc = settings[CI].equals("")? "": settings[CI]; // final config param // old line
         desc = settings[CI];
     }
 
@@ -2518,13 +2547,15 @@ public class Env extends Thread{ // simulated game environment
                 settings += "game";
                 settings += ",runs";
                 settings += ",iters";
-                settings += ",ER";
-                settings += "neighType";
-                settings += neighRange == 0 && !varying.equals("neighRange")? "": ",neighRange";
-                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
                 settings += ",space";
                 settings += length == 0 && !varying.equals("length")? "": ",length";
                 settings += width == 0 && !varying.equals("width")? "": ",width";
+                settings += "neighType";
+                settings += neighRange == 0 && !varying.equals("neighRange")? "": ",neighRange";
+                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
+                settings += ",EM";
+                settings += ER == 0 && !varying.equals("ER")? "": ",ER";
+                settings += NIS == 0 && !varying.equals("NIS")? "": ",NIS";
                 settings += ",EWT";
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
@@ -2560,18 +2591,19 @@ public class Env extends Thread{ // simulated game environment
             settings += game;
             settings += "," + runs;
             settings += "," + iters;
-            settings += "," + ER;
-            settings += "," + neighType;
-            settings += neighRange == 0 && !varying.equals("neighRange")? "": "," + neighRange;
-            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
             settings += "," + space;
             settings += length == 0 && !varying.equals("length")? "": "," + length;
             settings += width == 0 && !varying.equals("width")? "": "," + width;
-            settings += ",EWT";
+            settings += "," + neighType;
+            settings += neighRange == 0 && !varying.equals("neighRange")? "": "," + neighRange;
+            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
+            settings += "," + EM;
+            settings += ER == 0 && !varying.equals("ER")? "": "," + ER;
+            settings += NIS == 0 && !varying.equals("NIS")? "": "," + NIS;
+            settings += "," + EWT;
             settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
             settings += RA.equals("")? "": "," + RA;
             settings += RT.equals("")? "": "," + RT;
-//            settings += !EWLC.equals("")? "": "," + EWLC;
             settings += EWLF.equals("")? "": "," + EWLF;
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
             settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
@@ -2636,6 +2668,7 @@ public class Env extends Thread{ // simulated game environment
             switch(varying){
                 case "runs" -> results += "," + runs;
                 case "ER" -> results += "," + ER;
+                case "NIS" -> results += "," + NIS;
                 case "ROC" -> results += "," + ROC;
                 case "length" -> results += "," + length;
                 case "width" -> results += "," + width;
@@ -2774,8 +2807,8 @@ public class Env extends Thread{ // simulated game environment
             double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
 
             // code block for debugging how rewire prob is calculated
-            if(w_ab < 1.0)
-                System.out.println("BP");
+//            if(w_ab < 1.0)
+//                System.out.println("BP");
 
             double prob_rewire = Math.exp(-k * w_ab);
 
