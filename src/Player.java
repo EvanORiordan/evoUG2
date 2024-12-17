@@ -29,8 +29,8 @@ public class Player {
     private ArrayList <Double> edge_weights;
 //    private int NIP = 0; // num of interactions possible (NIP) that the player could have had.
     private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
-    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.
-    private int[] NSI_per_neighbour;
+//    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.
+//    private int[] NSI_per_neighbour;
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
     private double score; // score of player ($\Pi$)
@@ -267,12 +267,12 @@ public class Player {
     public void setMNI(int i){
         MNI=i;
     }
-    public int getNSI(){return NSI;}
-    public void setNSI(int i){
-        NSI=i;
-    }
-    public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
-    public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
+//    public int getNSI(){return NSI;}
+//    public void setNSI(int i){
+//        NSI=i;
+//    }
+//    public int[] getNSIPerNeighbour(){return NSI_per_neighbour;}
+//    public void setNSIPerNeighbour(int[] arr){NSI_per_neighbour=arr;}
     public int getNSP(){return NSP;}
     public void setNSP(int i){
         NSP=i;

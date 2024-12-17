@@ -1,2 +1,3 @@
 game,runs,iters,space,neigh,EM,EW,EWL,sel,evo,mut,UF,datarate,series,leeway,inj,desc
-DG,1,10000,grid 10 10,VN 1,ER 1,3 1.0 smoothstep pop,PD PFD,ERW,copy,,cumulative,,,,,test 123
+DG,1,10000,grid 10 10,VN 1,ER 1,3 1.0 smoothstep pop,PD always,ERW,copy,,cumulative,,,,,test
+DG,20,10000,grid 40 40,VN 1,ER 5,1,PD always,ERW,copy,,MNI,,,,,big test

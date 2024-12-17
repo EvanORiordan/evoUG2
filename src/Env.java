@@ -54,6 +54,8 @@ public class Env extends Thread{ // simulated game environment
     static double experiment_mean_avg_q;
     static double experiment_SD_avg_p;
     static double experiment_SD_avg_q;
+    static double[] experiment_avg_p_values;
+    static double[] experiment_avg_q_values;
 
 
     // fields related to I/O operations
@@ -72,7 +74,7 @@ public class Env extends Thread{ // simulated game environment
     static String series_data_filename;
     static String p_data_filename;
     static String EW_data_filename;
-    static String NSI_data_filename;
+//    static String NSI_data_filename;
     static int dataRate; // factors into which gens have their data recorded. if 0, no gens are recorded.
     static String q_data_filename;
     static String pos_data_filename;
@@ -325,12 +327,30 @@ public class Env extends Thread{ // simulated game environment
      */
     public static void experiment(){
         // stats to be tracked
-        experiment_mean_avg_p = 0;
-        double[] experiment_avg_p_values = new double[runs + 1];
-        experiment_SD_avg_p = 0;
-        experiment_mean_avg_q = 0;
-        double[] experiment_avg_q_values = new double[runs + 1];
-        experiment_SD_avg_q = 0;
+//        experiment_mean_avg_p = 0;
+//        double[] experiment_avg_p_values = new double[runs + 1];
+//        experiment_SD_avg_p = 0;
+//        experiment_mean_avg_q = 0;
+//        double[] experiment_avg_q_values = new double[runs + 1];
+//        experiment_SD_avg_q = 0;
+
+
+        switch(game){
+            case "UG" -> {
+                experiment_mean_avg_p = 0;
+                experiment_avg_p_values = new double[runs + 1];
+                experiment_SD_avg_p = 0;
+                experiment_mean_avg_q = 0;
+                experiment_avg_q_values = new double[runs + 1];
+                experiment_SD_avg_q = 0;
+            }
+            case "DG" -> {
+                experiment_mean_avg_p = 0;
+                experiment_avg_p_values = new double[runs];
+                experiment_SD_avg_p = 0;}
+            case "PD" -> {}
+        }
+
 
         // run experiment x times
         for(run_num = 1; run_num <= runs; run_num++){
@@ -338,44 +358,101 @@ public class Env extends Thread{ // simulated game environment
             run.start();
 
             // collect data
-            experiment_mean_avg_p += run.avg_p;
-            experiment_avg_p_values[run_num] = run.avg_p;
-            experiment_mean_avg_q += run.avg_q;
-            experiment_avg_q_values[run_num] = run.avg_q;
+//            experiment_mean_avg_p += run.avg_p;
+//            experiment_avg_p_values[run_num] = run.avg_p;
+//            experiment_mean_avg_q += run.avg_q;
+//            experiment_avg_q_values[run_num] = run.avg_q;
+
 
             // display run results (varies depending on game)
             String output = "experiment "+experiment_num+", run "+run_num+": ";
-            if(game.equals("UG") || game.equals("DG")){
-                output += "avg p=" + DF4.format(run.avg_p);
-                if(game.equals("UG")){
+//            if(game.equals("UG") || game.equals("DG")){
+//                output += "avg p=" + DF4.format(run.avg_p);
+//                if(game.equals("UG")){
+//                    output += " avg q="+DF4.format(run.avg_q);
+//                }
+//            }
+
+
+            switch(game){
+                case "UG" -> {
+                    experiment_mean_avg_p += run.avg_p;
+                    experiment_avg_p_values[run_num] = run.avg_p;
+                    experiment_mean_avg_q += run.avg_q;
+                    experiment_avg_q_values[run_num] = run.avg_q;
+                    output += "avg p=" + DF4.format(run.avg_p);
                     output += " avg q="+DF4.format(run.avg_q);
                 }
+                case "DG" -> {
+                    experiment_mean_avg_p += run.avg_p;
+                    experiment_avg_p_values[run_num] = run.avg_p;
+                    output += "avg p=" + DF4.format(run.avg_p);
+                }
+                case "PD" -> {} // DESIGN IDEA: if game is PD, then print number of C, D and A players...
             }
-            // MAYBE INSERT THIS: else if game is PD, then print number of C, D and A players...
+
+
             System.out.println(output);
 
         }
 
         // calculate stats of experiment
-        experiment_mean_avg_p /= runs;
-        experiment_mean_avg_q /= runs;
-        for(int i=0;i<runs;i++){
-            experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
-            experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+//        experiment_mean_avg_p /= runs;
+//        experiment_mean_avg_q /= runs;
+//        for(int i=0;i<runs;i++){
+//            experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+//            experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+//        }
+//        experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
+//        experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
+
+
+        switch(game){
+            case "UG" -> {
+                experiment_mean_avg_p /= runs;
+                experiment_mean_avg_q /= runs;
+                for(int i = 0; i < runs; i++){
+                    experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+                    experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+                }
+                experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
+                experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
+            }
+            case "DG" -> {
+                experiment_mean_avg_p /= runs;
+                for(int i = 0; i < runs; i++){
+                    experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+                }
+                experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
+            }
+            case "PD" -> {}
         }
-        experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
-        experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
+
 
         // display experiment results (varies depending on game)
         String output = "";
-        if(game.equals("UG") || game.equals("DG")){
-            output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
-                    + " avg p SD=" + DF4.format(experiment_SD_avg_p);
-            if(game.equals("UG")){
-                output += " mean avg q=" + DF4.format(experiment_mean_avg_q)
-                        + " avg q SD=" + DF4.format(experiment_SD_avg_q);
+
+
+//        if(game.equals("UG") || game.equals("DG")){
+//            output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
+//                    + " avg p SD=" + DF4.format(experiment_SD_avg_p);
+//            if(game.equals("UG")){
+//                output += " mean avg q=" + DF4.format(experiment_mean_avg_q)
+//                        + " avg q SD=" + DF4.format(experiment_SD_avg_q);
+//            }
+//        }
+
+
+        switch(game){
+            case "UG" -> {
+                output += "mean avg p=" + DF4.format(experiment_mean_avg_p) + " avg p SD=" + DF4.format(experiment_SD_avg_p);
+                output += " mean avg q=" + DF4.format(experiment_mean_avg_q) + " avg q SD=" + DF4.format(experiment_SD_avg_q);
             }
+            case "DG" -> output += "mean avg p=" + DF4.format(experiment_mean_avg_p) + " avg p SD=" + DF4.format(experiment_SD_avg_p);
+            case "PD" -> {}
         }
+
+
         System.out.println(output);
 
         writeSettings();
@@ -405,9 +482,9 @@ public class Env extends Thread{ // simulated game environment
             }
         }
 
-        if(space.equals("grid") && run_num == 1){
-            writePosData();
-        }
+//        if(space.equals("grid") && run_num == 1){
+//            writePosData();
+//        }
 
         // initialise neighbourhoods
         for(int i=0;i<N;i++){
@@ -491,7 +568,6 @@ public class Env extends Thread{ // simulated game environment
                                 switch (evo) {
                                     case "copy" -> evoCopy(child, parent);
                                     case "approach" -> evoApproach(child, parent);
-
                                 }
 
                                 // mutation
@@ -554,17 +630,37 @@ public class Env extends Thread{ // simulated game environment
 //                        && gen % dataRate == 0
                 ){
                     String output = "";
-                    if(game.equals("UG") || game.equals("DG")){
-                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
-                        writePData();
-                        writeAvgPData();
-                        writeEdgeCountData();
-                        if(game.equals("UG")){
-                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
+//                    if(game.equals("UG") || game.equals("DG")){
+//                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
+//                        writePData();
+//                        writeAvgPData();
+//                        writeEdgeCountData();
+//                        if(game.equals("UG")){
+//                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
+//                            writeQData();
+//                            writeAvgQData();
+//                        }
+//                    }
+
+
+                    switch(game){
+                        case "UG" -> {
+                            output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
+                            writePData();
+                            writeAvgPData();
+                            writeEdgeCountData();
                             writeQData();
                             writeAvgQData();
                         }
+                        case "DG" -> {
+                            writePData();
+                            writeAvgPData();
+                            writeEdgeCountData();
+                        }
+                        case "PD" -> {}
                     }
+
+
                     System.out.println(output);
 
                     if(!EWT.equals("3") && length==width && neighType.split(" ")[0].equals("VN")){
@@ -584,37 +680,32 @@ public class Env extends Thread{ // simulated game environment
 
 
     // player initiates games with neighbours
-    public void play(Player player) {
-        // find partner
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        for(int i = 0; i < neighbourhood.size(); i++){
-            Player neighbour = neighbourhood.get(i);
-
-            // neighbour finds player
-            ArrayList <Player> neighbourhood2 = neighbour.getNeighbourhood();
-            for (int j = 0; j < neighbourhood2.size(); j++) {
-                Player neighbour2 = neighbourhood2.get(j);
-                if (player.equals(neighbour2)) {
-                    ArrayList <Double> neighbour_edge_weights = neighbour.getEdgeWeights();
-                    double weight = neighbour_edge_weights.get(j);
-
-                    // play
+    public void play(Player a) {
+        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
+        for(int i = 0; i < omega_a.size(); i++){
+            Player b = omega_a.get(i); // neighbour of a
+            ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
+            for (int j = 0; j < omega_b.size(); j++) {
+                Player c = omega_b.get(j); // neighbour of b
+                if (a.equals(c)) {
+                    ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
+                    double w_ba = weights_b.get(j); // weight of edge from b to a
                     boolean interact = true;
                     if(EWT.equals("1")){
-                        double random_number = ThreadLocalRandom.current().nextDouble();
-                        if(weight <= random_number){
+                        double d = ThreadLocalRandom.current().nextDouble();
+                        if(w_ba <= d){
                             interact = false;
 
                             // generically update stats
-                            updateStats(player,0);
-                            updateStats(neighbour,0);
+                            updateStats(a,0);
+                            updateStats(b,0);
 
                         }
                     }
                     if(interact){
                         switch(game){
-                            case"UG","DG"->UG(player, neighbour, weight);
-                            case"PD"->PD(player, neighbour, weight);
+                            case"UG","DG"->UG(a, b, w_ba);
+                            case"PD"->PD(a, b, w_ba);
                         }
                     }
                     break;
@@ -624,26 +715,32 @@ public class Env extends Thread{ // simulated game environment
     }
 
 
+    /**
+     * Proposer initiates ultimatum game interaction with responder.
+     * @param a proposer
+     * @param b responder
+     * @param w_ba weight of edge from b to a
+     */
+    public void UG(Player a, Player b, double w_ba){
+        double p_a = a.getP();
+        double q_b = b.getQ();
+        double pi_a = 0.0;
+        double pi_b = 0.0;
 
-    public void UG(Player proposer, Player responder, double responder_edge_weight){
-        double proposer_p = proposer.getP();
-        double responder_q = responder.getQ();
-        double proposer_payoff = 0;
-        double responder_payoff = 0;
-
-        if(proposer_p >= responder_q){ // if true, accept proposal
-            proposer_payoff = prize - (prize * proposer_p);
-            responder_payoff = prize * proposer_p;
+        if(p_a >= q_b){ // if true, accept proposal
+            pi_b = prize * p_a;
+            pi_a = prize - pi_b;
         } // if false, reject proposal
 
         // apply EWT 2 if applicable
         if(EWT.equals("2")){
-            proposer_payoff *= responder_edge_weight;
-            responder_payoff *= responder_edge_weight;
+            pi_a *= w_ba;
+            pi_b *= w_ba;
         }
 
-        updateStatsUG(proposer, proposer_payoff);
-        updateStatsUG(responder, responder_payoff);
+        // update player stats
+        updateStatsUG(a, pi_a);
+        updateStatsUG(b, pi_b);
     }
 
 
@@ -651,9 +748,9 @@ public class Env extends Thread{ // simulated game environment
     public void updateStatsUG(Player player, double payoff){
         player.setScore(player.getScore() + payoff);
         player.setMNI(player.getMNI() + 1);
-        if(payoff > 0){
-            player.setNSI(player.getNSI() + 1);
-        }
+//        if(payoff > 0){
+//            player.setNSI(player.getNSI() + 1);
+//        }
     }
 
 
@@ -694,16 +791,8 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void updateStatsPD(Player player, double payoff){
-        double score = player.getScore();
-        int MNI = player.getMNI();
-        int NSI = player.getNSI();
-
-        player.setScore(score + payoff);
-        player.setMNI(MNI + 1);
-
-        if(payoff > 0) { // true if interaction didnt occur or if
-            player.setNSI(NSI + 1);
-        }
+        player.setScore(player.getScore() + payoff);
+        player.setMNI(player.getMNI() + 1);
     }
 
 
@@ -775,27 +864,15 @@ public class Env extends Thread{ // simulated game environment
     public void EWL(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getNeighbourhood();
-        int degree_a = omega_a.size();
-        for(int i = 0; i < degree_a; i++){
+        for(int i = 0; i < omega_a.size(); i++){
 
             // b denotes neighbour at end of edge
             Player b = omega_a.get(i);
 
-            // w_ab denotes weight of edge from a to b
+            // w_ab denotes weight of edge from a to b. technically this is a copy of the player's weight; note how this is a double while player's weight is a Double.
             double w_ab = weights.get(i);
 
-            // enable if experimenting with leeway.
-            // c denotes the total amount of leeway given by a to b.
-//            double c = calculateTotalLeeway(a, b, i);
-
-//            // d indicated whether weight will increase
-//            int d = checkEWLC(player, neighbour, total_leeway);
-
-
-
-            // if EWLC equals EWLF, we can skip to calculating learning.
-
-
+            // e indicates whether w_ab will undergo learning
             boolean e = checkEWLP(a, b);
             if(e){
                 w_ab += calculateLearning(a, b);
@@ -803,7 +880,7 @@ public class Env extends Thread{ // simulated game environment
                     w_ab = 1.0;
                 else if(w_ab < 0.0)
                     w_ab = 0.0;
-                weights.set(i, w_ab);
+                weights.set(i, w_ab); // set player's weight to copy.
 
 
 
@@ -998,59 +1075,24 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Exponential Roulette Wheel (ERW) Selection method compares fitness of child to neighbours. The
      * fitter the neighbour, the exponentially more likely they are to be selected as child's
-     * parent. If a parent is not selected, the child is selected as parent
-     * by default.<br>
+     * parent.
+     * @param child
+     * @return parent
      */
     public Player selERW(Player child){
-//        ArrayList <Player> neighbourhood = child.getNeighbourhood();
-//        int size = neighbourhood.size();
-//        double fitness = child.getAvgScore(); // fitness equals avg score
-//        Player parent = child; // default parent is child
-//        double[] pockets = new double[size]; // pockets of roulette wheel
-//        double roulette_total = 0; // total fitness exp diff
-//
-//        // allocate pockets
-//        for(int i = 0 ; i < size; i++){
-//            double neighbour_fitness = neighbourhood.get(i).getAvgScore();
-//            pockets[i] = Math.exp(neighbour_fitness - fitness);
-//            roulette_total += pockets[i];
-//        }
-//
-//        // allocate pocket to child
-//        roulette_total += 1.0; // this is equivalent to the below line of code.
-////        roulette_total += Math.exp(fitness - fitness);
-//
-//        // fitter player ==> more likely to be selected
-//        double tally = 0;
-//        double random_double = ThreadLocalRandom.current().nextDouble();
-//        for(int j = 0; j < size; j++){
-//            tally += pockets[j];
-//            double percentile = tally / roulette_total;
-//            if (random_double < percentile) {
-//                parent = neighbourhood.get(j);
-//                break;
-//            }
-//        }
-//
-//        return parent;
-
-
-
         Player parent = null;
-        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood());
+        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
         pool.add(child);
         int size = pool.size();
         double[] pockets = new double[size];
         double roulette_total = 0;
-        int i;
-        for(i=0;i<size;i++){
-//            pockets[i] = pool.get(i).getAvgScore();
+        for(int i = 0; i < size; i++){
             pockets[i] = pool.get(i).getU();
             roulette_total += pockets[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
         double tally = 0;
-        for(i=0;i<size;i++){
+        for(int i = 0; i < size; i++){
             tally += pockets[i];
             double percentile = tally / roulette_total;
             if(random_double < percentile){
@@ -1058,9 +1100,11 @@ public class Env extends Thread{ // simulated game environment
                 break;
             }
         }
-
         return parent;
     }
+
+
+
 
 
 
@@ -1220,9 +1264,11 @@ public class Env extends Thread{ // simulated game environment
      * @param parent is the parent the player is copying.
      */
     public void evoCopy(Player child, Player parent){
-        double old_p = parent.getOldP();
-        double old_q = parent.getOldQ();
-        setStrategy(child, old_p, old_q);
+        switch(game){
+            case "UG" -> setStrategy(child, parent.getOldP(), parent.getOldQ());
+            case "DG" -> child.setP(parent.getOldP());
+            // case "PD"
+        }
     }
 
 
@@ -1395,11 +1441,13 @@ public class Env extends Thread{ // simulated game environment
                         " %-5s |" +//game
                         " %-10s |" +//runs
                         " %-10s |" +//iters
-                        " %-15s |" +//EM
                         " %-15s |" +//space
+                        " %-15s |" +//neigh
+                        " %-15s |" +//EM
+
                         " %-25s |" +//EW
                         " %-25s |" +//EWL
-                        " %-15s |" +//neigh
+
                         " %-15s |" +//sel
                         " %-15s |" +//evo
                         " %-15s |" +//mut
@@ -1413,11 +1461,13 @@ public class Env extends Thread{ // simulated game environment
                 ,"game"
                 ,"runs"
                 ,"iters"
-                ,"EM"
                 ,"space"
+                ,"neigh"
+                ,"EM"
+
                 ,"EW"
                 ,"EWL"
-                ,"neigh"
+
                 ,"sel"
                 ,"evo"
                 ,"mut"
@@ -1439,11 +1489,13 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-5s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
             System.out.printf("| %-10s ", settings[CI++]); //iters
-            System.out.printf("| %-15s ", settings[CI++]); //EM
             System.out.printf("| %-15s ", settings[CI++]); //space
+            System.out.printf("| %-15s ", settings[CI++]); //neigh
+
+            System.out.printf("| %-15s ", settings[CI++]); //EM
+
             System.out.printf("| %-25s ", settings[CI++]); //EW
             System.out.printf("| %-25s ", settings[CI++]); //EWL
-            System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-15s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", settings[CI++]); //evo
             System.out.printf("| %-15s ", settings[CI++]); //mut
@@ -1643,25 +1695,49 @@ public class Env extends Thread{ // simulated game environment
 
     // Create folders to store data.
     public static void createFolders(){
-        if(game.equals("UG") || game.equals("DG")){
-            p_data_filename = experiment_results_folder_path + "\\p_data";
-            if(game.equals("UG")){
+//        if(game.equals("UG") || game.equals("DG")){
+//            p_data_filename = experiment_results_folder_path + "\\p_data";
+//            if(game.equals("UG")){
+//                q_data_filename = experiment_results_folder_path + "\\q_data";
+//            }
+//        }
+
+
+        switch(game){
+            case "UG" -> {
+                p_data_filename = experiment_results_folder_path + "\\p_data";
                 q_data_filename = experiment_results_folder_path + "\\q_data";
             }
+            case "DG" -> p_data_filename = experiment_results_folder_path + "\\p_data";
+            case "PD" -> {}
         }
+
+
         edge_count_data_filename = experiment_results_folder_path + "\\edge_count_data";
         EW_data_filename = experiment_results_folder_path + "\\EW_data";
-        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
+//        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
         try{
-            if(game.equals("UG") || game.equals("DG")){
-                Files.createDirectories(Paths.get(p_data_filename));
-                if(game.equals("UG")){
+//            if(game.equals("UG") || game.equals("DG")){
+//                Files.createDirectories(Paths.get(p_data_filename));
+//                if(game.equals("UG")){
+//                    Files.createDirectories(Paths.get(q_data_filename));
+//                }
+//            }
+
+
+            switch(game){
+                case "UG" -> {
+                    Files.createDirectories(Paths.get(p_data_filename));
                     Files.createDirectories(Paths.get(q_data_filename));
                 }
+                case "DG" -> Files.createDirectories(Paths.get(p_data_filename));
+                case "PD" -> {}
             }
+
+
             Files.createDirectories(Paths.get(edge_count_data_filename));
             Files.createDirectories(Paths.get(EW_data_filename));
-            Files.createDirectories(Paths.get(NSI_data_filename));
+//            Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -1755,48 +1831,126 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    /**
-     * Calculate the average value of p and the standard deviation of p across the population
-     * at the current generation.<br>
-     * Assumes the game is UG/DG.
-     */
+//    /**
+//     * Calculate the average value of p and the standard deviation of p across the population
+//     * at the current generation.<br>
+//     * Assumes the game is UG/DG.
+//     */
+//    public void calculateStatsUG(){
+//        // calculate average p
+//        avg_p = 0;
+//        for(int i=0;i<N;i++){
+////            Player player = pop[i];
+////            double p = player.getP();
+////            avg_p += p;
+//
+//            avg_p += pop[i].getP();
+//        }
+//        avg_p /= N;
+//
+//        // calculate p SD
+//        p_SD = 0;
+//        for(int i=0;i<N;i++){
+//            Player player = pop[i];
+//            double p = player.getP();
+//            p_SD += Math.pow(p - avg_p, 2);
+//        }
+//        p_SD = Math.pow(p_SD / N, 0.5);
+//
+//
+////        // calculate average q
+////        avg_q = 0;
+////        for(int i=0;i<N;i++){
+//////            Player player = pop[i];
+//////            double q = player.getQ();
+//////            avg_q += q;
+////        }
+////        avg_q /= N;
+////
+////        // calculate p SD
+////        q_SD = 0;
+////        for(int i=0;i<N;i++){
+////            Player player = pop[i];
+////            double q = player.getQ();
+////            q_SD += Math.pow(q - avg_q, 2);
+////        }
+////        q_SD = Math.pow(q_SD / N, 0.5);
+//
+//
+//        if(game.equals("UG")){
+//            avg_p = 0;
+//            for(int i=0;i<N;i++){
+//
+//            }
+//        }
+//    }
+//    // calculate p and/or q stats of population
+//    public void calculateStatsUG(){
+//        avg_p = 0;
+//        for(int i = 0; i < N; i++){
+//            avg_p += pop[i].getP();
+//        }
+//        avg_p /= N;
+//        p_SD = 0;
+//        for(int i = 0; i < N; i++){
+//            p_SD += Math.pow(pop[i].getP() - avg_p, 2);
+//        }
+//        p_SD = Math.pow(p_SD / N, 0.5);
+//        if(game.equals("UG")){
+//            avg_q = 0;
+//            for(int i = 0; i < N; i++){
+//                avg_q += pop[i].getQ();
+//            }
+//            avg_q /= N;
+//            q_SD = 0;
+//            for(int i = 0; i < N; i++){
+//                q_SD += Math.pow(pop[i].getQ() - avg_q, 2);
+//            }
+//            q_SD = Math.pow(q_SD / N, 0.5);
+//        }
+//    }
+    // calculate p and/or q stats of population
     public void calculateStatsUG(){
-        // calculate average p
-        avg_p = 0;
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            double p = player.getP();
-            avg_p += p;
+        switch(game){
+            case "UG" -> {
+                avg_p = 0;
+                for(int i = 0; i < N; i++){
+                    avg_p += pop[i].getP();
+                }
+                avg_p /= N;
+                p_SD = 0;
+                for(int i = 0; i < N; i++){
+                    p_SD += Math.pow(pop[i].getP() - avg_p, 2);
+                }
+                p_SD = Math.pow(p_SD / N, 0.5);
+                avg_q = 0;
+                for(int i = 0; i < N; i++){
+                    avg_q += pop[i].getQ();
+                }
+                avg_q /= N;
+                q_SD = 0;
+                for(int i = 0; i < N; i++){
+                    q_SD += Math.pow(pop[i].getQ() - avg_q, 2);
+                }
+                q_SD = Math.pow(q_SD / N, 0.5);
+            }
+            case "DG" -> {
+                avg_p = 0;
+                for(int i = 0; i < N; i++){
+                    avg_p += pop[i].getP();
+                }
+                avg_p /= N;
+                p_SD = 0;
+                for(int i = 0; i < N; i++){
+                    p_SD += Math.pow(pop[i].getP() - avg_p, 2);
+                }
+                p_SD = Math.pow(p_SD / N, 0.5);
+            }
+            case "PD" -> {}
         }
-        avg_p /= N;
-
-        // calculate p SD
-        p_SD = 0;
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            double p = player.getP();
-            p_SD += Math.pow(p - avg_p, 2);
-        }
-        p_SD = Math.pow(p_SD / N, 0.5);
-
-        // calculate average q
-        avg_q = 0;
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            double q = player.getQ();
-            avg_q += q;
-        }
-        avg_q /= N;
-
-        // calculate p SD
-        q_SD = 0;
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            double q = player.getQ();
-            q_SD += Math.pow(q - avg_q, 2);
-        }
-        q_SD = Math.pow(q_SD / N, 0.5);
     }
+
+
 
 
 
@@ -1810,7 +1964,7 @@ public class Env extends Thread{ // simulated game environment
             Player player = pop[i];
             player.setScore(0);
             player.setMNI(0);
-            player.setNSI(0);
+//            player.setNSI(0);
             switch(game){
                 case"UG","DG"->{
                     player.setOldP(player.getP());
@@ -2642,27 +2796,59 @@ public class Env extends Thread{ // simulated game environment
         try{
             if(experiment_num == 1){
                 fw = new FileWriter(results_filename, false);
-                if(game.equals("UG") || game.equals("DG")){
-                    results += "mean avg p";
-                    results += ",avg p SD";
-                    if(game.equals("UG")){
+//                if(game.equals("UG") || game.equals("DG")){
+//                    results += "mean avg p";
+//                    results += ",avg p SD";
+//                    if(game.equals("UG")){
+//                        results += ",mean avg q";
+//                        results += ",avg q SD";
+//                    }
+//                }
+
+
+                switch(game){
+                    case "UG" -> {
+                        results += "mean avg p";
+                        results += ",avg p SD";
                         results += ",mean avg q";
                         results += ",avg q SD";
                     }
+                    case "DG" -> {
+                        results += "mean avg p";
+                        results += ",avg p SD";
+                    }
+                    case "PD" -> {}
                 }
+
+
                 results += "," + varying;
             }else {
                 fw = new FileWriter(results_filename, true);
             }
             results += "\n";
-            if(game.equals("UG") || game.equals("DG")){
-                results += DF4.format(experiment_mean_avg_p);
-                results += "," + DF4.format(experiment_SD_avg_p);
-                if(game.equals("UG")){
+//            if(game.equals("UG") || game.equals("DG")){
+//                results += DF4.format(experiment_mean_avg_p);
+//                results += "," + DF4.format(experiment_SD_avg_p);
+//                if(game.equals("UG")){
+//                    results += "," + DF4.format(experiment_mean_avg_q);
+//                    results += "," + DF4.format(experiment_SD_avg_q);
+//                }
+//            }
+
+
+            switch(game){
+                case "UG" -> {
+                    results += DF4.format(experiment_mean_avg_p);
+                    results += "," + DF4.format(experiment_SD_avg_p);
                     results += "," + DF4.format(experiment_mean_avg_q);
                     results += "," + DF4.format(experiment_SD_avg_q);
                 }
+                case "DG" -> {
+                    results += DF4.format(experiment_mean_avg_p);
+                    results += "," + DF4.format(experiment_SD_avg_p);}
+                case "PD" -> {}
             }
+
 
             // write value of varying parameter.
             switch(varying){
@@ -2689,14 +2875,12 @@ public class Env extends Thread{ // simulated game environment
         // denotes number of rewires a has performed (this gen).
         int num_rewires = 0;
 
-        // omega_a denotes (copy of) neighbourhood of a.
-//        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
+        // omega_a denotes neighbourhood of a.
         ArrayList<Player> omega_a = a.getNeighbourhood();
 
         // denotes degree of a
         int degree_a = omega_a.size();
 
-//        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
         for(int i = 0; i < degree_a; i++){
@@ -2716,10 +2900,6 @@ public class Env extends Thread{ // simulated game environment
         // edge at index 3. therefore when we then try to remove an edge at 3, we
         // encounter an IndexOutOfBoundsException.
         for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
-            // for debugging what happens when multiple edges are to be rewired
-//            if(indices_of_edges_to_be_rewired.size() > 1){
-//                System.out.println("BP");
-//            }
             int d = indices_of_edges_to_be_rewired.get(i);
             Player e = omega_a.get(d);
             ArrayList<Player> omega_e = e.getNeighbourhood();
@@ -2745,14 +2925,11 @@ public class Env extends Thread{ // simulated game environment
      * with UF MNI, utility is basically equivalent to the old average score metric.
      */
     public void updateUtility(Player player){
-        double score = player.getScore();
-        double u = 0.0;
         switch(UF){
-            case "MNI" -> u = score / player.getMNI(); // minimum number of interactions;
-            case "cumulative" -> u = score; // cumulative payoff
-            case "normalised" -> u = score / player.getNeighbourhood().size(); // normalised payoff
+            case "MNI" -> player.setU(player.getScore() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRange=1, no rewiring, denominator is always 8.
+            case "cumulative" -> player.setU(player.getScore()); // cumulative payoff
+            case "normalised" -> player.setU(player.getScore() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRange=1, no rewiring, denominator is always 4.
         }
-        player.setU(u);
     }
 
 
@@ -2805,13 +2982,7 @@ public class Env extends Thread{ // simulated game environment
         double k = 5; // k denotes rate of decay. as k increases,
         for(int i = 0; i < degree_a; i++){
             double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-
-            // code block for debugging how rewire prob is calculated
-//            if(w_ab < 1.0)
-//                System.out.println("BP");
-
             double prob_rewire = Math.exp(-k * w_ab);
-
             double c = ThreadLocalRandom.current().nextDouble();
             if(prob_rewire > c){
                 indices_of_edges_to_be_rewired.add(i);
@@ -2843,25 +3014,17 @@ public class Env extends Thread{ // simulated game environment
     public int rewireAwaySmoothstep(Player a){
         int num_rewires = 0;
         ArrayList<Player> omega_a = a.getNeighbourhood();
-        int degree_a = omega_a.size();
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-        for(int i = 0; i < degree_a; i++){
+        for(int i = 0; i < omega_a.size(); i++){
             double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-
-            // code block for debugging how rewire prob is calculated
-            if(w_ab < 1.0)
-                System.out.println("BP");
-
-//            double prob_rewire = (3 * w ** 2 - 2 * w ** 3)
             double prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
-
             double c = ThreadLocalRandom.current().nextDouble();
             if(prob_rewire > c){
                 indices_of_edges_to_be_rewired.add(i);
             }
         }
-        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
+        for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
             int d = indices_of_edges_to_be_rewired.get(i);
             Player e = omega_a.get(d);
             ArrayList<Player> omega_e = e.getNeighbourhood();
