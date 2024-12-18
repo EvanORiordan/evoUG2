@@ -19,14 +19,14 @@ public class Player {
     private static final DecimalFormat DF4 = new DecimalFormat("0.0000");
     private static String game; // indicates what game player is playing
     private double p; // proposal value residing within [0,1]
-    private double old_p; // p value held at beginning of gen to be inherited by children
+    private double oldP; // p value held at beginning of gen to be inherited by children
     private double q; // acceptance threshold value residing within [0,1]
-    private double old_q; // q value held at beginning of gen to be inherited by children
+    private double oldQ; // q value held at beginning of gen to be inherited by children
 //    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
     private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
-    private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
-//    private double[] edge_weights; // edge weights in [0,1] connecting player to neighbours
-    private ArrayList <Double> edge_weights;
+//    private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
+//    private double[] edgeWeights; // edge weights in [0,1] connecting player to neighbours
+    private ArrayList <Double> edgeWeights;
 //    private int NIP = 0; // num of interactions possible (NIP) that the player could have had.
     private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
 //    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.
@@ -42,8 +42,8 @@ public class Player {
     private double local_leeway; // inherent leeway of the player
     private ArrayList<Player> margolus_neighbourhood1 = new ArrayList<>();
     private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
-    private double[] margolus_edge_weights1;
-    private double[] margolus_edge_weights2;
+    private double[] margolus_edgeWeights1;
+    private double[] margolus_edgeWeights2;
     private double x; // x position in space
     private double y; // y position in space
     private double u; // utility
@@ -51,41 +51,35 @@ public class Player {
 
 
 
-
-
-    // ===================================== Unique Functions =====================================
     /**
-     * Constructor method for instantiating a Player object.<br>
-     * Since this is the DG, make sure to pass 0 to q.<br>
+     * Constructor method for instantiating a UG/DG Player object.
+     * @param p is the proposal value of the player
+     * @param q is the acceptance threshold value of the player
+     */
+    public Player(double x, double y, double p, double q){
+        ID=count++;
+        this.x=x;
+        this.y=y;
+        this.p=p;
+        this.q=q;
+        oldP=p;
+        oldQ=q;
+    }
+
+    /**
+     * Constructor method for instantiating a UG/DG Player object.
      * @param p is the proposal value of the player
      * @param q is the acceptance threshold value of the player
      * @param leeway2 is a factor used to calculate the player's local leeway
      */
-//    public Player(double p, double q, double leeway2){
-//        ID=count++; // assign this player's ID
-//        setP(p); // assign p value
-//        setQ(q); // assign q value
-//        old_p=p;
-//        old_q=q;
-//
-//        // assign local_leeway value
-//        if(leeway2 == 0){
-//            local_leeway = 0;
-//        } else {
-//            local_leeway = ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
-//        }
-//    }
-
-
-
     public Player(double x, double y, double p, double q, double leeway2){
         ID=count++;
         this.x=x;
         this.y=y;
-        setP(p);
-        setQ(q);
-        old_p=p;
-        old_q=q;
+        this.p=p;
+        this.q=q;
+        oldP=p;
+        oldQ=q;
         if(leeway2==0)
             local_leeway=0;
         else
@@ -94,36 +88,38 @@ public class Player {
 
 
 
+    // PD player constructor method.
+    // public Player(double x, double y, String strategy){}
 
 
 
-    /**
-     * Augmented setter.
-     * p must reside within [0,1].
-      */
-    public void setP(double p){
-        this.p=p;
-        if(this.p>1){
-            this.p=1;
-        } else if(this.p<0){
-            this.p=0;
-        }
-    }
-
-
-
-    /**
-     * Augmented setter.
-     * q must reside within [0,1].
-     */
-    public void setQ(double q){
-        this.q=q;
-        if(this.q>1){
-            this.q=1;
-        } else if(this.q<0){
-            this.q=0;
-        }
-    }
+//    /**
+//     * Augmented setter.
+//     * p must reside within [0,1].
+//      */
+//    public void setP(double p){
+//        this.p=p;
+//        if(this.p>1){
+//            this.p=1;
+//        } else if(this.p<0){
+//            this.p=0;
+//        }
+//    }
+//
+//
+//
+//    /**
+//     * Augmented setter.
+//     * q must reside within [0,1].
+//     */
+//    public void setQ(double q){
+//        this.q=q;
+//        if(this.q>1){
+//            this.q=1;
+//        } else if(this.q<0){
+//            this.q=0;
+//        }
+//    }
 
 
 
@@ -137,11 +133,11 @@ public class Player {
         switch(game){
             case"UG","DG"->{
                 player_desc += " p=" + DF4.format(p) // p
-                        + " ("+DF4.format(old_p) + ")"; // old p
+                        + " ("+DF4.format(oldP) + ")"; // old p
                 switch(game){
                     case"UG"-> {
                         player_desc += " q=" + DF4.format(q) // q
-                                + " (" + DF4.format(old_q) + ")"; // old q
+                                + " (" + DF4.format(oldQ) + ")"; // old q
                     }
                 }
             }
@@ -157,8 +153,8 @@ public class Player {
 //            Player neighbour = neighbourhood.get(i);
 //            player_desc += "("
 //                    + neighbour.ID + ", " // neighbour ID
-////                    + DF2.format(edge_weights[i]) + ", " // EW with neighbour
-//                    + DF2.format(edge_weights.get(i)) + ", "
+////                    + DF2.format(edgeWeights[i]) + ", " // EW with neighbour
+//                    + DF2.format(edgeWeights.get(i)) + ", "
 //                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
 //            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
 //                player_desc +=", ";
@@ -167,8 +163,8 @@ public class Player {
 //        player_desc +="]";
 
 //        player_desc += " weights=[";
-//        for(int i=0;i<edge_weights.length;i++){
-//            player_desc += DF2.format(edge_weights[i]);
+//        for(int i=0;i<edgeWeights.length;i++){
+//            player_desc += DF2.format(edgeWeights[i]);
 //            if((i+1) < neighbourhood.size()){
 //                player_desc +=", ";
 //            }
@@ -188,9 +184,9 @@ public class Player {
 
 
         player_desc += " weights=[";
-        for(int i=0;i<edge_weights.size();i++){
-            player_desc += DF2.format(edge_weights.get(i));
-            if((i + 1) < edge_weights.size()){
+        for(int i=0;i<edgeWeights.size();i++){
+            player_desc += DF2.format(edgeWeights.get(i));
+            if((i + 1) < edgeWeights.size()){
                 player_desc += ", ";
             }
         }
@@ -221,12 +217,13 @@ public class Player {
 
         Player obj2 = (Player) obj;
 
-        return Integer.compare(ID, obj2.ID) == 0;
+//        return Integer.compare(ID, obj2.ID) == 0;
+        return ID == obj2.ID;
     }
 
 
 
-    // ===================================== Generic Functions =====================================
+    // generic functions
     public int getID(){
         return ID;
     }
@@ -239,30 +236,32 @@ public class Player {
     public double getP(){
         return p;
     }
-    public double getOldP(){return old_p;}
-    public void setOldP(double old_p){
-        this.old_p=old_p;
+    public void setP(double d){p=d;}
+    public double getOldP(){return oldP;}
+    public void setOldP(double oldP){
+        this.oldP=oldP;
     }
     public double getQ(){return q;}
-    public double getOldQ(){return old_q;}
-    public void setOldQ(double old_q){
-        this.old_q=old_q;
+    public void setQ(double d){q=d;}
+    public double getOldQ(){return oldQ;}
+    public void setOldQ(double oldQ){
+        this.oldQ=oldQ;
     }
     public double getLocalLeeway(){return local_leeway;}
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }
     public void setNeighbourhood(ArrayList <Player> x){neighbourhood=x;}
-    public int[] getNeighbourIDs(){return neighbour_IDs;}
-    public void setNeighbourIDs(int[] arr){
-        neighbour_IDs=arr;
-    }
-//    public double[] getEdgeWeights(){
-//        return edge_weights;
+//    public int[] getNeighbourIDs(){return neighbour_IDs;}
+//    public void setNeighbourIDs(int[] arr){
+//        neighbour_IDs=arr;
 //    }
-//    public void setEdgeWeights(double[] d){edge_weights=d;}
-    public ArrayList <Double> getEdgeWeights(){return edge_weights;}
-    public void setEdgeWeights(ArrayList <Double> x){edge_weights=x;}
+//    public double[] getEdgeWeights(){
+//        return edgeWeights;
+//    }
+//    public void setEdgeWeights(double[] d){edgeWeights=d;}
+    public ArrayList <Double> getEdgeWeights(){return edgeWeights;}
+    public void setEdgeWeights(ArrayList <Double> x){edgeWeights=x;}
     public int getMNI(){return MNI;}
     public void setMNI(int i){
         MNI=i;
