@@ -326,22 +326,13 @@ public class Env extends Thread{ // simulated game environment
      * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        // stats to be tracked
-//        experiment_mean_avg_p = 0;
-//        double[] experiment_avg_p_values = new double[runs + 1];
-//        experiment_SD_avg_p = 0;
-//        experiment_mean_avg_q = 0;
-//        double[] experiment_avg_q_values = new double[runs + 1];
-//        experiment_SD_avg_q = 0;
-
-
         switch(game){
             case "UG" -> {
                 experiment_mean_avg_p = 0;
-                experiment_avg_p_values = new double[runs + 1];
+                experiment_avg_p_values = new double[runs];
                 experiment_SD_avg_p = 0;
                 experiment_mean_avg_q = 0;
-                experiment_avg_q_values = new double[runs + 1];
+                experiment_avg_q_values = new double[runs];
                 experiment_SD_avg_q = 0;
             }
             case "DG" -> {
@@ -350,30 +341,10 @@ public class Env extends Thread{ // simulated game environment
                 experiment_SD_avg_p = 0;}
             case "PD" -> {}
         }
-
-
-        // run experiment x times
         for(run_num = 1; run_num <= runs; run_num++){
             Env run = new Env(); // represents one run of experiment
             run.start();
-
-            // collect data
-//            experiment_mean_avg_p += run.avg_p;
-//            experiment_avg_p_values[run_num] = run.avg_p;
-//            experiment_mean_avg_q += run.avg_q;
-//            experiment_avg_q_values[run_num] = run.avg_q;
-
-
-            // display run results (varies depending on game)
             String output = "experiment "+experiment_num+", run "+run_num+": ";
-//            if(game.equals("UG") || game.equals("DG")){
-//                output += "avg p=" + DF4.format(run.avg_p);
-//                if(game.equals("UG")){
-//                    output += " avg q="+DF4.format(run.avg_q);
-//                }
-//            }
-
-
             switch(game){
                 case "UG" -> {
                     experiment_mean_avg_p += run.avg_p;
@@ -388,25 +359,11 @@ public class Env extends Thread{ // simulated game environment
                     experiment_avg_p_values[run_num - 1] = run.avg_p;
                     output += "avg p=" + DF4.format(run.avg_p);
                 }
-                case "PD" -> {} // DESIGN IDEA: if game is PD, then print number of C, D and A players...
+                case "PD" -> {} // IDEA: if game is PD, then print number of C, D and A strategy players...
             }
-
-
             System.out.println(output);
-
         }
-
-        // calculate stats of experiment
-//        experiment_mean_avg_p /= runs;
-//        experiment_mean_avg_q /= runs;
-//        for(int i=0;i<runs;i++){
-//            experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
-//            experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
-//        }
-//        experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
-//        experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
-
-
+        String output = "";
         switch(game){
             case "UG" -> {
                 experiment_mean_avg_p /= runs;
@@ -417,6 +374,10 @@ public class Env extends Thread{ // simulated game environment
                 }
                 experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
                 experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
+                output += "mean avg p=" + DF4.format(experiment_mean_avg_p);
+                output += " avg p SD=" + DF4.format(experiment_SD_avg_p);
+                output += " mean avg q=" + DF4.format(experiment_mean_avg_q);
+                output += " avg q SD=" + DF4.format(experiment_SD_avg_q);
             }
             case "DG" -> {
                 experiment_mean_avg_p /= runs;
@@ -424,45 +385,16 @@ public class Env extends Thread{ // simulated game environment
                     experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
                 }
                 experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
-            }
-            case "PD" -> {}
-        }
-
-
-        // display experiment results (varies depending on game)
-        String output = "";
-
-
-//        if(game.equals("UG") || game.equals("DG")){
-//            output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
-//                    + " avg p SD=" + DF4.format(experiment_SD_avg_p);
-//            if(game.equals("UG")){
-//                output += " mean avg q=" + DF4.format(experiment_mean_avg_q)
-//                        + " avg q SD=" + DF4.format(experiment_SD_avg_q);
-//            }
-//        }
-
-
-        switch(game){
-            case "UG" -> {
-                output += "mean avg p=" + DF4.format(experiment_mean_avg_p);
-                output += " avg p SD=" + DF4.format(experiment_SD_avg_p);
-                output += " mean avg q=" + DF4.format(experiment_mean_avg_q);
-                output += " avg q SD=" + DF4.format(experiment_SD_avg_q);
-            }
-            case "DG" -> {
                 output += "mean avg p=" + DF4.format(experiment_mean_avg_p);
                 output += " avg p SD=" + DF4.format(experiment_SD_avg_p);
             }
             case "PD" -> {}
         }
-
-
         System.out.println(output);
+
 
         writeSettings();
         writeResults();
-
         experiment_num++; // move on to the next experiment in the series
     }
 
