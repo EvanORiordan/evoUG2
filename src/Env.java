@@ -1506,10 +1506,8 @@ public class Env extends Thread{ // simulated game environment
                         " %-15s |" +//space
                         " %-15s |" +//neigh
                         " %-15s |" +//EM
-
                         " %-30s |" +//EW
                         " %-25s |" +//EWL
-
                         " %-15s |" +//sel
                         " %-15s |" +//evo
                         " %-15s |" +//mut
@@ -1526,10 +1524,8 @@ public class Env extends Thread{ // simulated game environment
                 ,"space"
                 ,"neigh"
                 ,"EM"
-
                 ,"EW"
                 ,"EWL"
-
                 ,"sel"
                 ,"evo"
                 ,"mut"
@@ -1553,9 +1549,7 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-10s ", settings[CI++]); //iters
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-15s ", settings[CI++]); //neigh
-
             System.out.printf("| %-15s ", settings[CI++]); //EM
-
             System.out.printf("| %-30s ", settings[CI++]); //EW
             System.out.printf("| %-25s ", settings[CI++]); //EWL
             System.out.printf("| %-15s ", settings[CI++]); //sel
@@ -1573,16 +1567,16 @@ public class Env extends Thread{ // simulated game environment
 
         // ask user which config they wish to use
         System.out.println("Which config would you like to use? (int)");
-        boolean config_found = false;
+        boolean config_selected = false;
         int config_num;
         do{ // ensure user selects valid config
             config_num = scanner.nextInt();
             if(0 <= config_num && config_num < configurations.size()){
-                config_found = true;
+                config_selected = true;
             } else{
                 System.out.println("ERROR: invalid config number, try again");
             }
-        }while(!config_found);
+        }while(!config_selected);
 
         // apply config
         settings = configurations.get(config_num).split(",");
@@ -1593,10 +1587,6 @@ public class Env extends Thread{ // simulated game environment
         runs = Integer.parseInt(settings[CI++]);
         iters = Integer.parseInt(settings[CI++]);
 
-
-//        ER = Integer.parseInt(settings[CI++]);
-
-
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
         space = space_params[CI2++];
@@ -1606,7 +1596,6 @@ public class Env extends Thread{ // simulated game environment
             N = length * width;
         }
 
-
         String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
         CI2 = 0;
         neighType = neigh_params[CI2++]; // required field
@@ -1615,7 +1604,6 @@ public class Env extends Thread{ // simulated game environment
         } else if(neighType.equals("random")){
             neighSize = Integer.parseInt(neigh_params[CI2++]);
         }
-
 
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
         CI2 = 0;
@@ -1629,16 +1617,15 @@ public class Env extends Thread{ // simulated game environment
                 NIS = Integer.parseInt(EM_params[CI2++]);
         }
 
-
         String[] EW_params = settings[CI++].split(" "); // edge weight parameters
         CI2 = 0;
         EWT = EW_params[CI2++];
-//        if(EWT.equals("3")){
         if(EWT.equals("rewire")){
             RP = Double.parseDouble(EW_params[CI2++]);
             RA = EW_params[CI2++];
             RT = EW_params[CI2++];
         }
+
         String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
         if(!EWL_params[0].equals("")){
             CI2 = 0;
@@ -1652,19 +1639,20 @@ public class Env extends Thread{ // simulated game environment
             EWLP = EWL_params[CI2++];
         }
 
-
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
         if(sel.equals("rand")){
             selNoise = Double.parseDouble(sel_params[CI2++]);
         }
+
         String[] evo_params = settings[CI++].split(" "); // evolution parameters
         CI2 = 0;
         evo = evo_params[CI2++];
         if(evo.equals("approach")){
             evoNoise = Double.parseDouble(evo_params[CI2++]);
         }
+
         String[] mut_params = settings[CI++].split(" "); // mutation parameters
         CI2 = 0;
         mut = mut_params[CI2++];
@@ -1674,9 +1662,11 @@ public class Env extends Thread{ // simulated game environment
                 mutBound = Double.parseDouble(mut_params[CI2++]);
             }
         }
+
         UF = settings[CI++];
         dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
         CI++;
+
         String[] series_params = settings[CI++].split(" ");
         CI2 = 0;
         varying = series_params[CI2++];
@@ -1684,6 +1674,7 @@ public class Env extends Thread{ // simulated game environment
             variation = Double.parseDouble(series_params[CI2++]);
             numExp = Integer.parseInt(series_params[CI2++]);
         }
+
         String[] leeway_params = settings[CI++].split(" "); // leeway parameters
         if(!leeway_params[0].equals("")){
             CI2 = 0;
@@ -1695,6 +1686,7 @@ public class Env extends Thread{ // simulated game environment
             leeway6 = Double.parseDouble(leeway_params[CI2++]);
             leeway7 = Double.parseDouble(leeway_params[CI2++]);
         }
+
         String[] inj_params = settings[CI++].split(" "); // injection parameters
         if(!inj_params[0].equals("")){
             CI2 = 0;
@@ -1702,6 +1694,7 @@ public class Env extends Thread{ // simulated game environment
             injP = Double.parseDouble(inj_params[CI2++]);
             injSize = Integer.parseInt(inj_params[CI2++]);
         }
+
         desc = settings[CI];
     }
 
