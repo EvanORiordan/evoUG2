@@ -26,7 +26,7 @@ public class Player {
     private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
 //    private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
 //    private double[] edgeWeights; // edge weights in [0,1] connecting player to neighbours
-    private ArrayList <Double> edgeWeights;
+    private ArrayList <Double> edgeWeights; // using Double arraylist rather than double array allows us to use ArrayList.add() to add things to the collection without an index.
 //    private int NIP = 0; // num of interactions possible (NIP) that the player could have had.
     private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
 //    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.

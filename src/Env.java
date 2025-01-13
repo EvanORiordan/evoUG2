@@ -447,20 +447,13 @@ public class Env extends Thread{ // simulated game environment
             }
 
 
-            // edge weight learning
-            for(int i=0;i<N;i++){
-                EWL(pop[i]);
-            }
 
             switch(EM){
-                // evolution rate
                 case "ER" -> {
-                    // one generation passes after every ER iterations.
-                    // rewiring and strategy evolution may occur every generation.
+                    for(int i=0;i<N;i++){
+                        EWL(pop[i]); // edge weight learning
+                    }
                     if(iter % ER == 0){
-
-                        // rewiring
-//                        if(EWT.equals("3")){
                         if(EWT.equals("rewire")){
                             for(int i=0;i<N;i++){
                                 Player player = pop[i];
@@ -484,13 +477,12 @@ public class Env extends Thread{ // simulated game environment
                                 }
                             }
                         }
-
                         // strategy evolution
                         for(int i=0;i<N;i++) {
                             Player child = pop[i];
 
                             // prevent evolution if child is isolated.
-                            if(pop[i].getNeighbourhood().size() > 0){
+                            if(child.getNeighbourhood().size() > 0){
 
                                 // selection
                                 Player parent = null;
@@ -498,8 +490,10 @@ public class Env extends Thread{ // simulated game environment
                                     case "NRW" -> parent = selNRW(child);
                                     case "ERW" -> parent = selERW(child);
                                     case "fittest" -> parent = selFittest(child);
-                                    case "rand" -> parent = selRand(child);
+                                    case "intensity" -> parent = selIntensity(child);
                                     case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+                                    case "randomNeigh" -> parent = selRandomNeigh(child);
+                                    case "randomPop" -> parent = selRandomPop();
                                 }
 
                                 // evolution
@@ -521,27 +515,50 @@ public class Env extends Thread{ // simulated game environment
                                 }
                             }
                         }
-
-                        gen++; // move on to the next generation
                     }
                 }
-
-                // monte carlo
                 case "MC" -> {
                     for(int i = 0; i < NIS; i++){
-                        int a = ThreadLocalRandom.current().nextInt(NIS);
-                        Player b = findPlayerByID(a);
-                        ArrayList<Player> omega_b = b.getNeighbourhood();
-                        int c = ThreadLocalRandom.current().nextInt();
-                        Player d = omega_b.get(c);
-                        double e = ThreadLocalRandom.current().nextDouble();
-                        double f = (d.getU() - b.getU()) / omega_b.size();
-                        if(e < f){
-                            evoCopy(b, d);
+//                        Player player = findPlayerByID(ThreadLocalRandom.current().nextInt(N)); // select random player from pop
+                        Player player = selRandomPop();
+                        EWL(player); // edge weight learning
+                        if(EWT.equals("rewire")){ // rewiring
+                            double random_number = ThreadLocalRandom.current().nextDouble();
+                            if(RP > random_number){
+                                int num_rewires = 0;
+                                switch (RA) {
+                                    case "0Single" -> num_rewires = rewireAway0Single(player);
+                                    case "0Many" -> num_rewires = rewireAway0Many(player);
+                                    case "linear" -> num_rewires = rewireAwayLinear(player);
+                                    case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+                                    case "exponential" -> num_rewires = rewireAwayExponential(player);
+                                    case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+                                }
+                                if(num_rewires > 0){
+                                    switch (RT){
+                                        case"local"->rewireToLocal(player, num_rewires);
+                                        case"pop"->rewireToPop(player, num_rewires);
+                                    }
+                                }
+                            }
                         }
+
+                        // this evolution segment is inspired by cardinot2016optional
+                        if(player.getNeighbourhood().size() > 0) {
+                            Player parent = selRandomNeigh(player);
+                            double random_number = ThreadLocalRandom.current().nextDouble();
+                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
+                            if(random_number < prob_evolve)
+                                evoCopy(player, parent);
+                        }
+
                     }
                 }
             }
+            gen++; // progress to next generation
+
+
+            // NEXT TIME: IMPLEMENT STAT TRACKING SUCH AS AVG U, DEV(U)
 
 
 
@@ -919,19 +936,6 @@ public class Env extends Thread{ // simulated game environment
                 else if(w_ab < 0.0)
                     w_ab = 0.0;
                 weights.set(i, w_ab); // set player's weight to copy.
-
-
-
-                // the function of this code block is to round the weight, thus removing the issue with how doubles are not
-                // fully accurate such that a weight should be 1 but is like 0.9999 instead.
-                // i hope this isnt having an unintended effect, messing up in some other way. maybe the
-                // rounding is adversely affecting the program in a way that is more damaging than without it.
-//                String str = DF2.format(w_ab);
-//                double x = Double.parseDouble(str);
-//                weights.set(i, x);
-
-
-
             }
         }
     }
@@ -1238,7 +1242,8 @@ public class Env extends Thread{ // simulated game environment
      * @param child
      * @return parent player
      */
-    public Player selRand(Player child){
+//    public Player selRand(Player child){
+    public Player selIntensity(Player child){
         double w = selNoise;
         double[] effective_payoffs = new double[N];
         Player parent = null;
@@ -3125,5 +3130,18 @@ public class Env extends Thread{ // simulated game environment
             }
         }
         return num_rewires;
+    }
+
+
+
+    public Player selRandomNeigh(Player a){
+        ArrayList<Player> omega_a = a.getNeighbourhood();
+        return omega_a.get(ThreadLocalRandom.current().nextInt(omega_a.size()));
+    }
+
+
+
+    public Player selRandomPop(){
+        return findPlayerByID(ThreadLocalRandom.current().nextInt(N));
     }
 }
