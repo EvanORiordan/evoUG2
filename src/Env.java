@@ -17,17 +17,27 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Env extends Thread{ // simulated game environment
 
     // fields related to the game environment
-    static String game; // what game is being played
+    static String game; // indicates what game is being played
+    static String space; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
+    int avg_degree; // average degree of population
+    double sigma_degree; // standard deviation of degree
     static int N; // population size
-    static int iters; // how many iterations occur per experiment run
-    static int runs; // how many times this experiment will be run.
+    static int runs; // number of experiment runs to occur
     Player[] pop; // array of players; assumes 2D space
-    double avg_p; // the average value of p across the population.
+    double avg_p; // average proposal value
     double sigma_p; // standard deviation of p
-    int gen = 0; // indicates current generation. indicates how many generations have passed.
-    int iter = 1; // indicates current iteration of the core algorithm (play + EWL)
+    double avg_q; // average acceptance threshold
+    double sigma_q; // standard deviation of q
+    static int gens; // number of generations to occur per experiment run
+    int gen = 1; // number of iterations that have occurred
+    static int iters; // number of iterations to occur
+    int iter = 1; // number of iterations that have occurred
+    static double M = 1.0; // default prize amount during a UG/DG
+    static String UF; // utility formula: indicates how utility is calculated
+    double avg_u; // average utility
+    double sigma_u; // standard deviation of utility
     static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
@@ -36,15 +46,6 @@ public class Env extends Thread{ // simulated game environment
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
-    static double M = 1.0; // default prize amount in an UG/DG interaction
-    static String UF; // utility formula: indicates how utility is calculated
-    double avg_q; // average acceptance threshold across population
-    double sigma_q; // standard deviation of q
-    static String space; // the space the population exists within
-    double avg_u; // average utility
-    double sigma_u; // standard deviation of utility
-    int avg_degree; // average degree
-    double sigma_degree; // standard deviation of degree
 
 
     // fields related to experiment statistics
@@ -195,7 +196,8 @@ public class Env extends Thread{ // simulated game environment
         various_amounts = new ArrayList<>(); // stores initial value of varying parameter
         switch(varying){
             case"runs"->various_amounts.add((double)runs);
-            case"iters"->various_amounts.add((double)iters);
+//            case"iters"->various_amounts.add((double)iters);
+            case"gens"->various_amounts.add((double)gens);
             case"length"->various_amounts.add((double) length);
             case"width"->various_amounts.add((double) width);
             case"ER"->various_amounts.add((double)ER);
@@ -232,9 +234,13 @@ public class Env extends Thread{ // simulated game environment
                     runs+=(int)variation;
                     various_amounts.add((double)runs);
                 }
-                case "iters"->{
-                    iters+=(int)variation;
-                    various_amounts.add((double)iters);
+//                case "iters"->{
+//                    iters+=(int)variation;
+//                    various_amounts.add((double)iters);
+//                }
+                case "gens"->{
+                    gens+=(int)variation;
+                    various_amounts.add((double)gens);
                 }
                 case "length"->{
                     length+=(int)variation;
@@ -434,101 +440,483 @@ public class Env extends Thread{ // simulated game environment
             initialiseEdgeWeights(pop[i]);
         }
 
-        // the algorithm iterates.
-        while(iter <= iters) {
 
-            // injection
-//            if(iter == injIter){
-//                injectStrategyCluster();
+
+//        // the algorithm iterates.
+//        while(iter <= iters) {
+//
+//            // injection
+////            if(iter == injIter){
+////                injectStrategyCluster();
+////            }
+//
+//            // playing
+//            for(int i=0;i<N;i++){
+//                play(pop[i]);
 //            }
+//
+//            // update utility
+//            for(int i=0;i<N;i++){
+//                updateUtility(pop[i]);
+//            }
+//
+//
+//
+//            switch(EM){
+//                case "ER" -> {
+//                    for(int i=0;i<N;i++){
+//                        EWL(pop[i]); // edge weight learning
+//                    }
+//                    if(iter % ER == 0){
+//                        if(EWT.equals("rewire")){
+//                            for(int i=0;i<N;i++){
+//                                Player player = pop[i];
+//                                double random_number = ThreadLocalRandom.current().nextDouble();
+//                                if(RP > random_number){
+//                                    int num_rewires = 0;
+//                                    switch (RA) {
+//                                        case "0Single" -> num_rewires = rewireAway0Single(player);
+//                                        case "0Many" -> num_rewires = rewireAway0Many(player);
+//                                        case "linear" -> num_rewires = rewireAwayLinear(player);
+//                                        case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+//                                        case "exponential" -> num_rewires = rewireAwayExponential(player);
+//                                        case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+//                                    }
+//                                    if(num_rewires > 0){
+//                                        switch (RT){
+//                                            case"local"->rewireToLocal(player, num_rewires);
+//                                            case"pop"->rewireToPop(player, num_rewires);
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        // strategy evolution
+//                        for(int i=0;i<N;i++) {
+//                            Player child = pop[i];
+//
+//                            // prevent evolution if child is isolated.
+//                            if(child.getNeighbourhood().size() > 0){
+//
+//                                // selection
+//                                Player parent = null;
+//                                switch(sel){
+//                                    case "NRW" -> parent = selNRW(child);
+//                                    case "ERW" -> parent = selERW(child);
+//                                    case "fittest" -> parent = selFittest(child);
+//                                    case "intensity" -> parent = selIntensity(child);
+//                                    case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+//                                    case "randomNeigh" -> parent = selRandomNeigh(child);
+//                                    case "randomPop" -> parent = selRandomPop();
+//                                }
+//
+//                                // evolution
+//                                switch (evo) {
+//                                    case "copy" -> evoCopy(child, parent);
+//                                    case "approach" -> evoApproach(child, parent);
+//                                }
+//
+//                                // mutation
+//                                switch (mut){
+//                                    case "global" -> {
+//                                        if(mutationCheck())
+//                                            mutGlobal(child);
+//                                    }
+//                                    case "local" -> {
+//                                        if(mutationCheck())
+//                                            mutLocal(child);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                case "MC" -> {
+//                    for(int i = 0; i < NIS; i++){
+////                        Player player = findPlayerByID(ThreadLocalRandom.current().nextInt(N)); // select random player from pop
+//                        Player player = selRandomPop();
+//                        EWL(player); // edge weight learning
+//                        if(EWT.equals("rewire")){ // rewiring
+//                            double random_number = ThreadLocalRandom.current().nextDouble();
+//                            if(RP > random_number){
+//                                int num_rewires = 0;
+//                                switch (RA) {
+//                                    case "0Single" -> num_rewires = rewireAway0Single(player);
+//                                    case "0Many" -> num_rewires = rewireAway0Many(player);
+//                                    case "linear" -> num_rewires = rewireAwayLinear(player);
+//                                    case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+//                                    case "exponential" -> num_rewires = rewireAwayExponential(player);
+//                                    case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+//                                }
+//                                if(num_rewires > 0){
+//                                    switch (RT){
+//                                        case"local"->rewireToLocal(player, num_rewires);
+//                                        case"pop"->rewireToPop(player, num_rewires);
+//                                    }
+//                                }
+//                            }
+//                        }
+//
+//                        // this evolution segment is inspired by cardinot2016optional
+//                        if(player.getNeighbourhood().size() > 0) {
+//                            Player parent = selRandomNeigh(player);
+//                            double random_number = ThreadLocalRandom.current().nextDouble();
+//                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
+//                            if(random_number < prob_evolve)
+//                                evoCopy(player, parent);
+//                        }
+//
+//                    }
+//                }
+//            }
+//            gen++; // progress to next generation
+//
+//
+//
+//            // calculate stats
+//            switch(game){
+////                case"UG","DG"->calculateStatsUG();
+//                case "UG" -> {
+//                    calculateAvgP();
+//                    calculateStandardDeviationP();
+//                    calculateAvgQ();
+//                    calculateStandardDeviationQ();
+//                }
+//                case "DG" -> {
+//                    calculateAvgP();
+//                    calculateStandardDeviationP();
+//                }
+//                case "PD" -> {}
+//            }
+//            calculateAvgU();
+//            calculateStandardDeviationU();
+//            for(int i = 0; i < N; i++){
+//                pop[i].calculateDegree();
+//            }
+//            calculateAvgDegree();
+//            calculateStandardDeviationDegree();
+//
+//
+//
+//
+//
+////            // save data.
+////            // do not save data if dataRate has not been initialised past 0.
+////            // must check this before future dataRate checks that assume dataRate != 0
+////            if(dataRate != 0){
+////
+////                // do not save data if not the first run
+////                if(run_num == 1
+////
+////                        // do not save data if not the first experiment
+////                        && experiment_num == 1
+////
+////                        // data rate is used to determine rate at which data is saved.
+////                        // save data every x gens where x = dataRate.
+////                        // e.g. dataRate = 10 ==> save data every 10 gens.
+////                        && iter % (ER * dataRate) == 0
+//////                        && gen % dataRate == 0
+////                ){
+////                    String output = "";
+////                    switch(game){
+////                        case "UG" -> {
+////                            output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(sigma_p);
+////                            writePData();
+////                            writeAvgPData();
+////                            writeEdgeCountData();
+////                            writeQData();
+////                            writeAvgQData();
+////                        }
+////                        case "DG" -> {
+////                            writePData();
+////                            writeAvgPData();
+////                            writeEdgeCountData();
+////                        }
+////                        case "PD" -> {}
+////                    }
+////
+////                    System.out.println(output);
+////
+////                    if(!EWT.equals("rewire") && length==width && neighType.split(" ")[0].equals("VN")){
+////                        calculateAvgEdgeWeights();
+////                        writeEWData();
+//////                        writeNSIData();
+////                    }
+////
+////                }
+////            }
+//
+//
+//            // do not save data if dataRate not initialised past 0.
+//            // do not save data if not the first run.
+//            // do not save data if not the first experiment.
+//            // do not save data for the very first generation.
+//            // save data every dataRate gens.
+//            if(dataRate != 0){
+//                if(run_num == 1 && experiment_num == 1 && gen != 0 && gen % dataRate == 0){
+////                if(run_num == 1 && experiment_num == 1 && gen % dataRate == 0){
+//                    switch(game){
+//                        case "UG" -> {
+//                            System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(sigma_p));
+//                            writePData();
+//                            writeAvgPData();
+//                            writeEdgeCountData();
+//                            writeQData();
+//                            writeAvgQData();
+//                        }
+//                        case "DG" -> {
+//                            writePData();
+//                            writeAvgPData();
+//                            writeEdgeCountData();
+//                        }
+//                        case "PD" -> {}
+//                    }
+//                    writeUData();
+//                    writeAvgUData();
+//                    writeDegreeData();
+//                    writeAvgDegreeData();
+////                    calculateAvgEdgeWeights();
+////                    writeEWData();
+////                    writeNSIData();
+//                }
+//            }
+//
+//
+//            prepare();
+////            iter++; // move on to the next iteration
+//        }
 
-            // playing
-            for(int i=0;i<N;i++){
-                play(pop[i]);
-            }
-
-            // update utility
-            for(int i=0;i<N;i++){
-                updateUtility(pop[i]);
-            }
 
 
+
+//        switch(EM){
+//            case "ER" -> {
+//                while(iter <= iters) {
+//                    for(int i=0;i<N;i++){
+//                        play(pop[i]);
+//                    }
+//                    for(int i=0;i<N;i++){
+//                        updateUtility(pop[i]);
+//                    }
+//                    for(int i=0;i<N;i++){
+//                        EWL(pop[i]);
+//                    }
+//                    if(iter % ER == 0){
+//                        if(EWT.equals("rewire")){
+//                            for(int i=0;i<N;i++){
+//                                Player player = pop[i];
+//                                double random_number = ThreadLocalRandom.current().nextDouble();
+//                                if(RP > random_number){
+//                                    int num_rewires = 0;
+//                                    switch (RA) {
+//                                        case "0Single" -> num_rewires = rewireAway0Single(player);
+//                                        case "0Many" -> num_rewires = rewireAway0Many(player);
+//                                        case "linear" -> num_rewires = rewireAwayLinear(player);
+//                                        case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+//                                        case "exponential" -> num_rewires = rewireAwayExponential(player);
+//                                        case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+//                                    }
+//                                    if(num_rewires > 0){
+//                                        switch (RT){
+//                                            case"local"->rewireToLocal(player, num_rewires);
+//                                            case"pop"->rewireToPop(player, num_rewires);
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        for(int i=0;i<N;i++) {
+//                            Player child = pop[i];
+//                            if(child.getNeighbourhood().size() > 0){ // prevent evolution if child is isolated.
+//                                Player parent = null;
+//                                switch(sel){
+//                                    case "NRW" -> parent = selNRW(child);
+//                                    case "ERW" -> parent = selERW(child);
+//                                    case "fittest" -> parent = selFittest(child);
+//                                    case "intensity" -> parent = selIntensity(child);
+//                                    case "crossover" -> crossover(child); // sel and evo effectively occur at once in one function
+//                                    case "randomNeigh" -> parent = selRandomNeigh(child);
+//                                    case "randomPop" -> parent = selRandomPop();
+//                                }
+//                                switch (evo) {
+//                                    case "copy" -> evoCopy(child, parent);
+//                                    case "approach" -> evoApproach(child, parent);
+//                                }
+//                                switch (mut){
+//                                    case "global" -> {
+//                                        if(mutationCheck())
+//                                            mutGlobal(child);
+//                                    }
+//                                    case "local" -> {
+//                                        if(mutationCheck())
+//                                            mutLocal(child);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                    iter++;
+//                }
+//            }
+//        }
+
+
+
+
+
+//        while(gen <= gens){
+//            switch(EM){
+//                case "ER" -> {
+//
+//                }
+//                case "MC" -> {
+//
+//                }
+//            }
+//        }
+
+
+
+
+//        switch(EM){
+//            case "ER" -> {
+//                while(gen <= gens){
+//
+//                    // iterations of playing and edge weight learning
+//                    iter = 1;
+//                    do{
+//                        for(int i = 0; i < N; i++){
+//                            play(pop[i]);
+//                        }
+//                        for(int i=0;i<N;i++){
+//                            updateUtility(pop[i]);
+//                        }
+//                        for(int i=0;i<N;i++){
+//                            EWL(pop[i]);
+//                        }
+//                        iter++;
+//                    } while(iter % ER != 0);
+//
+//                    // rewire if applicable
+//                    if(EWT.equals("rewire")){
+//                        for(int i=0;i<N;i++){
+//                            Player player = pop[i];
+//                            double random_number = ThreadLocalRandom.current().nextDouble();
+//                            if(RP > random_number){
+//                                int num_rewires = 0;
+//                                switch (RA) {
+//                                    case "0Single" -> num_rewires = rewireAway0Single(player);
+//                                    case "0Many" -> num_rewires = rewireAway0Many(player);
+//                                    case "linear" -> num_rewires = rewireAwayLinear(player);
+//                                    case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+//                                    case "exponential" -> num_rewires = rewireAwayExponential(player);
+//                                    case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+//                                }
+//                                if(num_rewires > 0){
+//                                    switch (RT){
+//                                        case"local"->rewireToLocal(player, num_rewires);
+//                                        case"pop"->rewireToPop(player, num_rewires);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                    // evolution
+//                    for(int i=0;i<N;i++) {
+//                        Player child = pop[i];
+//                        if(child.getNeighbourhood().size() > 0){ // prevent evolution if child is isolated.
+//                            Player parent = null;
+//                            switch(sel){
+//                                case "NRW" -> parent = selNRW(child);
+//                                case "ERW" -> parent = selERW(child);
+//                                case "fittest" -> parent = selFittest(child);
+//                                case "intensity" -> parent = selIntensity(child);
+//                                case "crossover" -> crossover(child); // sel and evo effectively occur at once in one function
+//                                case "randomNeigh" -> parent = selRandomNeigh(child);
+//                                case "randomPop" -> parent = selRandomPop();
+//                            }
+//                            switch (evo) {
+//                                case "copy" -> evoCopy(child, parent);
+//                                case "approach" -> evoApproach(child, parent);
+//                            }
+//                            switch (mut){
+//                                case "global" -> {
+//                                    if(mutationCheck())
+//                                        mutGlobal(child);
+//                                }
+//                                case "local" -> {
+//                                    if(mutationCheck())
+//                                        mutLocal(child);
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                    // progress to the next generation
+//                    gen++;
+//                    prepare();
+//                }
+//            }
+//            case "MC" -> {
+//                while(gen <= gens){
+//
+//                    // all players play
+//                    for(int i = 0; i < N; i++){
+//                        play(pop[i]);
+//                    }
+//                    for(int i=0;i<N;i++){
+//                        updateUtility(pop[i]);
+//                    }
+//
+//                    // randomly select a player NIS times to learn, rewire and evolve. evolution segment is inspired by cardinot2016optional.
+//                    for(int i = 0; i < NIS; i++){
+//                        Player player = selRandomPop();
+//                        EWL(player);
+//                        if(EWT.equals("rewire"))
+//                            rewire(player);
+//                        if(player.getNeighbourhood().size() > 0) {
+//                            Player parent = selRandomNeigh(player);
+//                            double random_number = ThreadLocalRandom.current().nextDouble();
+//                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
+//                            if(random_number < prob_evolve)
+//                                evoCopy(player, parent);
+//                        }
+//                    }
+//
+//                    // progress to the next generation
+//                    gen++;
+//                    prepare();
+//                }
+//            }
+//        }
+
+
+
+
+        while(gen <= gens){
 
             switch(EM){
                 case "ER" -> {
-                    for(int i=0;i<N;i++){
-                        EWL(pop[i]); // edge weight learning
-                    }
-                    if(iter % ER == 0){
-                        if(EWT.equals("rewire")){
-                            for(int i=0;i<N;i++){
-                                Player player = pop[i];
-                                double random_number = ThreadLocalRandom.current().nextDouble();
-                                if(RP > random_number){
-                                    int num_rewires = 0;
-                                    switch (RA) {
-                                        case "0Single" -> num_rewires = rewireAway0Single(player);
-                                        case "0Many" -> num_rewires = rewireAway0Many(player);
-                                        case "linear" -> num_rewires = rewireAwayLinear(player);
-                                        case "FD" -> num_rewires = rewireAwayFermiDirac(player);
-                                        case "exponential" -> num_rewires = rewireAwayExponential(player);
-                                        case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
-                                    }
-                                    if(num_rewires > 0){
-                                        switch (RT){
-                                            case"local"->rewireToLocal(player, num_rewires);
-                                            case"pop"->rewireToPop(player, num_rewires);
-                                        }
-                                    }
-                                }
-                            }
+                    // iterations of playing and edge weight learning
+                    iter = 1;
+                    do{
+                        for(int i = 0; i < N; i++){
+                            play(pop[i]);
                         }
-                        // strategy evolution
-                        for(int i=0;i<N;i++) {
-                            Player child = pop[i];
-
-                            // prevent evolution if child is isolated.
-                            if(child.getNeighbourhood().size() > 0){
-
-                                // selection
-                                Player parent = null;
-                                switch(sel){
-                                    case "NRW" -> parent = selNRW(child);
-                                    case "ERW" -> parent = selERW(child);
-                                    case "fittest" -> parent = selFittest(child);
-                                    case "intensity" -> parent = selIntensity(child);
-                                    case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
-                                    case "randomNeigh" -> parent = selRandomNeigh(child);
-                                    case "randomPop" -> parent = selRandomPop();
-                                }
-
-                                // evolution
-                                switch (evo) {
-                                    case "copy" -> evoCopy(child, parent);
-                                    case "approach" -> evoApproach(child, parent);
-                                }
-
-                                // mutation
-                                switch (mut){
-                                    case "global" -> {
-                                        if(mutationCheck())
-                                            mutGlobal(child);
-                                    }
-                                    case "local" -> {
-                                        if(mutationCheck())
-                                            mutLocal(child);
-                                    }
-                                }
-                            }
+                        for(int i=0;i<N;i++){
+                            updateUtility(pop[i]);
                         }
-                    }
-                }
-                case "MC" -> {
-                    for(int i = 0; i < NIS; i++){
-//                        Player player = findPlayerByID(ThreadLocalRandom.current().nextInt(N)); // select random player from pop
-                        Player player = selRandomPop();
-                        EWL(player); // edge weight learning
-                        if(EWT.equals("rewire")){ // rewiring
+                        for(int i=0;i<N;i++){
+                            EWL(pop[i]);
+                        }
+                        iter++;
+                    } while(iter % ER != 0);
+
+                    // rewire if applicable
+                    if(EWT.equals("rewire")){
+                        for(int i=0;i<N;i++){
+                            Player player = pop[i];
                             double random_number = ThreadLocalRandom.current().nextDouble();
                             if(RP > random_number){
                                 int num_rewires = 0;
@@ -548,8 +936,56 @@ public class Env extends Thread{ // simulated game environment
                                 }
                             }
                         }
+                    }
 
-                        // this evolution segment is inspired by cardinot2016optional
+                    // evolution
+                    for(int i=0;i<N;i++) {
+                        Player child = pop[i];
+                        if(child.getNeighbourhood().size() > 0){ // prevent evolution if child is isolated.
+                            Player parent = null;
+                            switch(sel){
+                                case "NRW" -> parent = selNRW(child);
+                                case "ERW" -> parent = selERW(child);
+                                case "fittest" -> parent = selFittest(child);
+                                case "intensity" -> parent = selIntensity(child);
+                                case "crossover" -> crossover(child); // sel and evo effectively occur at once in one function
+                                case "randomNeigh" -> parent = selRandomNeigh(child);
+                                case "randomPop" -> parent = selRandomPop();
+                            }
+                            switch (evo) {
+                                case "copy" -> evoCopy(child, parent);
+                                case "approach" -> evoApproach(child, parent);
+                            }
+                            switch (mut){
+                                case "global" -> {
+                                    if(mutationCheck())
+                                        mutGlobal(child);
+                                }
+                                case "local" -> {
+                                    if(mutationCheck())
+                                        mutLocal(child);
+                                }
+                            }
+                        }
+                    }
+                }
+                case "MC" -> {
+
+                    // all players play
+                    for(int i = 0; i < N; i++){
+                        play(pop[i]);
+                    }
+                    for(int i=0;i<N;i++){
+                        updateUtility(pop[i]);
+                    }
+
+                    // randomly select a player NIS times to learn, rewire and evolve.
+                    // evolution segment is inspired by cardinot2016optional.
+                    for(int i = 0; i < NIS; i++){
+                        Player player = selRandomPop();
+                        EWL(player);
+                        if(EWT.equals("rewire"))
+                            rewire(player);
                         if(player.getNeighbourhood().size() > 0) {
                             Player parent = selRandomNeigh(player);
                             double random_number = ThreadLocalRandom.current().nextDouble();
@@ -557,86 +993,9 @@ public class Env extends Thread{ // simulated game environment
                             if(random_number < prob_evolve)
                                 evoCopy(player, parent);
                         }
-
                     }
                 }
             }
-            gen++; // progress to next generation
-
-
-
-            // calculate stats
-            switch(game){
-//                case"UG","DG"->calculateStatsUG();
-                case "UG" -> {
-                    calculateAvgP();
-                    calculateStandardDeviationP();
-                    calculateAvgQ();
-                    calculateStandardDeviationQ();
-                }
-                case "DG" -> {
-                    calculateAvgP();
-                    calculateStandardDeviationP();
-                }
-                case "PD" -> {}
-            }
-            calculateAvgU();
-            calculateStandardDeviationU();
-            for(int i = 0; i < N; i++){
-                pop[i].calculateDegree();
-            }
-            calculateAvgDegree();
-            calculateStandardDeviationDegree();
-
-
-            // TODO when do we want to write stats?
-
-
-//            // save data.
-//            // do not save data if dataRate has not been initialised past 0.
-//            // must check this before future dataRate checks that assume dataRate != 0
-//            if(dataRate != 0){
-//
-//                // do not save data if not the first run
-//                if(run_num == 1
-//
-//                        // do not save data if not the first experiment
-//                        && experiment_num == 1
-//
-//                        // data rate is used to determine rate at which data is saved.
-//                        // save data every x gens where x = dataRate.
-//                        // e.g. dataRate = 10 ==> save data every 10 gens.
-//                        && iter % (ER * dataRate) == 0
-////                        && gen % dataRate == 0
-//                ){
-//                    String output = "";
-//                    switch(game){
-//                        case "UG" -> {
-//                            output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(sigma_p);
-//                            writePData();
-//                            writeAvgPData();
-//                            writeEdgeCountData();
-//                            writeQData();
-//                            writeAvgQData();
-//                        }
-//                        case "DG" -> {
-//                            writePData();
-//                            writeAvgPData();
-//                            writeEdgeCountData();
-//                        }
-//                        case "PD" -> {}
-//                    }
-//
-//                    System.out.println(output);
-//
-//                    if(!EWT.equals("rewire") && length==width && neighType.split(" ")[0].equals("VN")){
-//                        calculateAvgEdgeWeights();
-//                        writeEWData();
-////                        writeNSIData();
-//                    }
-//
-//                }
-//            }
 
 
             // do not save data if dataRate not initialised past 0.
@@ -645,8 +1004,8 @@ public class Env extends Thread{ // simulated game environment
             // do not save data for the very first generation.
             // save data every dataRate gens.
             if(dataRate != 0){
-                if(run_num == 1 && experiment_num == 1 && gen != 0 && gen % dataRate == 0){
-//                if(run_num == 1 && experiment_num == 1 && gen % dataRate == 0){
+//            if(run_num == 1 && experiment_num == 1 && gen != 0 && gen % dataRate == 0){
+                if(run_num == 1 && experiment_num == 1 && gen % dataRate == 0){
                     switch(game){
                         case "UG" -> {
                             System.out.println("iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(sigma_p));
@@ -673,13 +1032,10 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
 
-
+            // progress to the next generation
+            gen++;
             prepare();
-//            iter++; // move on to the next iteration
         }
-
-
-
 
     }
 
@@ -1552,7 +1908,8 @@ public class Env extends Thread{ // simulated game environment
         System.out.printf("%-10s |" +//config
                         " %-5s |" +//game
                         " %-10s |" +//runs
-                        " %-10s |" +//iters
+//                        " %-10s |" +//iters
+                        " %-10s |" +//gens
                         " %-15s |" +//space
                         " %-15s |" +//neigh
                         " %-15s |" +//EM
@@ -1570,7 +1927,8 @@ public class Env extends Thread{ // simulated game environment
                 ,"config"
                 ,"game"
                 ,"runs"
-                ,"iters"
+//                ,"iters"
+                ,"gens"
                 ,"space"
                 ,"neigh"
                 ,"EM"
@@ -1596,7 +1954,8 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("%-10d ", i); //config
             System.out.printf("| %-5s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
-            System.out.printf("| %-10s ", settings[CI++]); //iters
+//            System.out.printf("| %-10s ", settings[CI++]); //iters
+            System.out.printf("| %-10s ", settings[CI++]); //gens
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-15s ", settings[CI++]); //EM
@@ -1635,7 +1994,8 @@ public class Env extends Thread{ // simulated game environment
         game = settings[CI++];
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
-        iters = Integer.parseInt(settings[CI++]);
+//        iters = Integer.parseInt(settings[CI++]);
+        gens = Integer.parseInt(settings[CI++]);
 
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
@@ -2887,7 +3247,8 @@ public class Env extends Thread{ // simulated game environment
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
                 settings += ",runs";
-                settings += ",iters";
+//                settings += ",iters";
+                settings += ",gens";
                 settings += ",space";
                 settings += length == 0 && !varying.equals("length")? "": ",length";
                 settings += width == 0 && !varying.equals("width")? "": ",width";
@@ -2931,7 +3292,8 @@ public class Env extends Thread{ // simulated game environment
             settings += "\n";
             settings += game;
             settings += "," + runs;
-            settings += "," + iters;
+//            settings += "," + iters;
+            settings += "," + gens;
             settings += "," + space;
             settings += length == 0 && !varying.equals("length")? "": "," + length;
             settings += width == 0 && !varying.equals("width")? "": "," + width;
@@ -3046,7 +3408,8 @@ public class Env extends Thread{ // simulated game environment
                 case "length" -> results += "," + length;
                 case "width" -> results += "," + width;
                 case "RP" -> results += "," + RP;
-                case "iters" -> results += "," + iters;
+//                case "iters" -> results += "," + iters;
+                case "gens" -> results += "," + gens;
             }
             fw.append(results);
             fw.close();
@@ -3334,6 +3697,33 @@ public class Env extends Thread{ // simulated game environment
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
+        }
+    }
+
+
+
+
+    /**
+     * Player may rewire their edges.
+      */
+    public void rewire(Player player){
+        double random_number = ThreadLocalRandom.current().nextDouble();
+        if(RP > random_number){
+            int num_rewires = 0;
+            switch (RA) {
+                case "0Single" -> num_rewires = rewireAway0Single(player);
+                case "0Many" -> num_rewires = rewireAway0Many(player);
+                case "linear" -> num_rewires = rewireAwayLinear(player);
+                case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+                case "exponential" -> num_rewires = rewireAwayExponential(player);
+                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+            }
+            if(num_rewires > 0){
+                switch (RT){
+                    case"local"->rewireToLocal(player, num_rewires);
+                    case"pop"->rewireToPop(player, num_rewires);
+                }
+            }
         }
     }
 }
