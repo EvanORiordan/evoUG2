@@ -1,2 +1,2 @@
 game,runs,iters,space,neigh,EM,EW,EWL,sel,evo,mut,UF,datarate,series,leeway,inj,desc
-DG,1,10000,grid 10 10,VN 1,MC N,rewire 1.0 smoothstep pop,PD always,ERW,copy,,cumulative,,,,,test
+DG,1,10000,grid 10 10,VN 1,MC N,rewire 1.0 smoothstep pop,PD always,ERW,copy,,cumulative,100,,,,test

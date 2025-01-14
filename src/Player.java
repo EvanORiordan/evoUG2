@@ -47,6 +47,7 @@ public class Player {
     private double x; // x position in space
     private double y; // y position in space
     private double u; // utility
+    private int degree;
 
 
 
@@ -222,6 +223,12 @@ public class Player {
     }
 
 
+    // degree is equal to number of edges i.e. number of neighbours i.e. size of neighbourhood
+    public void calculateDegree(){
+        degree = neighbourhood.size();
+    }
+
+
 
     // generic functions
     public int getID(){
@@ -303,4 +310,6 @@ public class Player {
     public static void setCount(int i){count=i;}
     public double getU(){return u;}
     public void setU(double d){u=d;}
+    public int getDegree(){return degree;}
+    public void setDegree(int i){degree=i;}
 }
