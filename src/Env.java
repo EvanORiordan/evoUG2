@@ -90,7 +90,7 @@ public class Env extends Thread{ // simulated game environment
 
     // fields related to neighbourhoods
     static String neighType; // indicates type of neighbourhood players will have.
-    static int neighRange; // range of neighbourhood with von Neumann / Moore / diamond neighbourhood type.
+    static int neighRadius; // radius of neighbourhood
     static int neighSize; // size of neighbours with random neighbourhood type.
 
 
@@ -356,22 +356,22 @@ public class Env extends Thread{ // simulated game environment
         for(run_num = 1; run_num <= runs; run_num++){
             Env run = new Env(); // represents one run of experiment
             run.start();
-            String output = "experiment "+experiment_num+", run "+run_num+": ";
+            String output = "experiment "+experiment_num+" run "+run_num;
             switch(game){
                 case "UG" -> {
                     experiment_mean_avg_p += run.avg_p;
                     experiment_avg_p_values[run_num] = run.avg_p;
                     experiment_mean_avg_q += run.avg_q;
                     experiment_avg_q_values[run_num] = run.avg_q;
-                    output += "avg p=" + DF4.format(run.avg_p);
+                    output += " avg p=" + DF4.format(run.avg_p);
                     output += " avg q="+DF4.format(run.avg_q);
                 }
                 case "DG" -> {
                     experiment_mean_avg_p += run.avg_p;
                     experiment_avg_p_values[run_num - 1] = run.avg_p;
-                    output += "avg p=" + DF4.format(run.avg_p);
+                    output += " avg p=" + DF4.format(run.avg_p);
                 }
-                case "PD" -> {} // IDEA: if game is PD, then print number of C, D and A strategy players...
+                case "PD" -> {} // IDEA: if game is PD, then print number of cooperators, defectors and abstainers.
             }
             System.out.println(output);
         }
@@ -920,8 +920,8 @@ public class Env extends Thread{ // simulated game environment
 
         double x = 0.0;
         switch(EWLP){
-            case "UFD" -> x = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
-            case "PFD" -> x = 1 / (1 + Math.exp((a.getP() - b.getP()) / k));
+            case "UFD" -> x = 1 / (1 + Math.exp((a.getU() - b.getU()) / k)); // utility fermi-dirac
+            case "PFD" -> x = 1 / (1 + Math.exp((a.getP() - b.getP()) / k)); // proposal value fermi-dirac
             case "always" -> x = 1.0;
         }
 
@@ -1077,6 +1077,15 @@ public class Env extends Thread{ // simulated game environment
             case "PEAD" -> learning = Math.exp(Math.abs(b.getP() - a.getP()));
             case "UAD" -> learning = Math.abs(b.getU() - a.getU());
             case "UEAD" -> learning = Math.exp(Math.abs(b.getU() - a.getU()));
+            case "PDR" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b){ // if b fairer than a, a wants to increase w_ab
+                    learning = ThreadLocalRandom.current().nextDouble(0, p_b - p_a);
+                } else if(p_a > p_b){ // if a is fairer than b, a wants to decrease w_ab
+                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a, 0);
+                }
+            }
         }
 
         return learning;
@@ -1576,7 +1585,7 @@ public class Env extends Thread{ // simulated game environment
         CI2 = 0;
         neighType = neigh_params[CI2++]; // required field
         if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
-            neighRange = Integer.parseInt(neigh_params[CI2++]);
+            neighRadius = Integer.parseInt(neigh_params[CI2++]);
         } else if(neighType.equals("random")){
             neighSize = Integer.parseInt(neigh_params[CI2++]);
         }
@@ -1618,7 +1627,7 @@ public class Env extends Thread{ // simulated game environment
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
-        if(sel.equals("rand")){
+        if(sel.equals("intensity")){
             selNoise = Double.parseDouble(sel_params[CI2++]);
         }
 
@@ -1797,7 +1806,7 @@ public class Env extends Thread{ // simulated game environment
         ArrayList<Player> neighbourhood = new ArrayList<>();
         double y = player.getY();
         double x = player.getX();
-        for(int i=1;i<=neighRange;i++){
+        for(int i=1;i<=neighRadius;i++){
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
@@ -2784,7 +2793,7 @@ public class Env extends Thread{ // simulated game environment
                 settings += length == 0 && !varying.equals("length")? "": ",length";
                 settings += width == 0 && !varying.equals("width")? "": ",width";
                 settings += ",neighType";
-                settings += neighRange == 0 && !varying.equals("neighRange")? "": ",neighRange";
+                settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
                 settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
                 settings += ",EM";
                 settings += ER == 0 && !varying.equals("ER")? "": ",ER";
@@ -2829,7 +2838,7 @@ public class Env extends Thread{ // simulated game environment
             settings += length == 0 && !varying.equals("length")? "": "," + length;
             settings += width == 0 && !varying.equals("width")? "": "," + width;
             settings += "," + neighType;
-            settings += neighRange == 0 && !varying.equals("neighRange")? "": "," + neighRange;
+            settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
             settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
             settings += "," + EM;
             settings += ER == 0 && !varying.equals("ER")? "": "," + ER;
@@ -2985,9 +2994,9 @@ public class Env extends Thread{ // simulated game environment
      */
     public void updateUtility(Player player){
         switch(UF){
-            case "MNI" -> player.setU(player.getScore() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRange=1, no rewiring, denominator is always 8.
+            case "MNI" -> player.setU(player.getScore() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
             case "cumulative" -> player.setU(player.getScore()); // cumulative payoff
-            case "normalised" -> player.setU(player.getScore() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRange=1, no rewiring, denominator is always 4.
+            case "normalised" -> player.setU(player.getScore() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
         }
     }
 
