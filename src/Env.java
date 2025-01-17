@@ -104,14 +104,6 @@ public class Env extends Thread{ // simulated game environment
     static String EWLP; // EWL probability
 
 
-    static double leeway1 = 0; // defines global leeway affecting all players.
-    static double leeway2 = 0; // defines bounds of interval that local leeway is generated from.
-    static double leeway3 = 0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
-    static double leeway4 = 0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
-    static double leeway5 = 0; // defines factor used in calculation of leeway given wrt neighbour p.
-    static double leeway6 = 0; // defines bounds of interval that random leeway is generated from.
-    static double leeway7 = 0; // defines avg score comparison leeway factor.
-
 
     // fields related to evolution, selection, mutation
     static String evo; // indicates which evolution function to call
@@ -203,13 +195,6 @@ public class Env extends Thread{ // simulated game environment
             case"ER"->various_amounts.add((double)ER);
             case "NIS" -> various_amounts.add((double) NIS);
             case"ROC"->various_amounts.add(ROC);
-            case"leeway1"->various_amounts.add(leeway1);
-            case"leeway2"->various_amounts.add(leeway2);
-            case"leeway3"->various_amounts.add(leeway3);
-            case"leeway4"->various_amounts.add(leeway4);
-            case"leeway5"->various_amounts.add(leeway5);
-            case"leeway6"->various_amounts.add(leeway6);
-            case"leeway7"->various_amounts.add(leeway7);
             case"selNoise"->various_amounts.add(selNoise);
             case"evoNoise"->various_amounts.add(evoNoise);
             case"mutRate"->various_amounts.add(mutRate);
@@ -263,34 +248,6 @@ public class Env extends Thread{ // simulated game environment
                 case "ROC"->{
                     ROC+=variation;
                     various_amounts.add(ROC);
-                }
-                case "leeway1"->{
-                    leeway1+=variation;
-                    various_amounts.add(leeway1);
-                }
-                case "leeway2"->{
-                    leeway2+=variation;
-                    various_amounts.add(leeway2);
-                }
-                case "leeway3"->{
-                    leeway3+=variation;
-                    various_amounts.add(leeway3);
-                }
-                case "leeway4"->{
-                    leeway4+=variation;
-                    various_amounts.add(leeway4);
-                }
-                case "leeway5"->{
-                    leeway5+=variation;
-                    various_amounts.add(leeway5);
-                }
-                case "leeway6"->{
-                    leeway6+=variation;
-                    various_amounts.add(leeway6);
-                }
-                case "leeway7"->{
-                    leeway7+=variation;
-                    various_amounts.add(leeway7);
                 }
                 case "selNoise"->{
                     selNoise+=variation;
@@ -837,53 +794,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public void EWL(Player player){
-//        if(EWLT.equals("")) { // old implementation of EWL
-//            ArrayList<Player> neighbourhood = player.getNeighbourhood();
-//            for (int i = 0; i < neighbourhood.size(); i++) {
-//                Player neighbour = neighbourhood.get(i);
-//                double total_leeway = calculateTotalLeeway(player, neighbour, i);
-//                int option = checkEWLC(player, neighbour, total_leeway);
-//                ArrayList<Double> weights = player.getEdgeWeights();
-//                double weight = weights.get(i);
-//                if (option == 0) {
-//                    weight += calculateLearning(player, neighbour);
-//                    if (weight > 1)
-//                        weight = 1;
-//                } else if (option == 1) {
-//                    weight -= calculateLearning(player, neighbour);
-//                    if (weight < 0)
-//                        weight = 0;
-//                }
-//                String str = DF2.format(weight);
-//                double x = Double.parseDouble(str);
-//                weights.set(i, x);
-//            }
-//        } else { // new way of EWL; might eventually replace old way.
-//
-//
-//            Player a = player;
-//            ArrayList<Player> omega_a = a.getNeighbourhood();
-//            for (int i = 0; i < omega_a.size(); i++) {
-//                Player b = omega_a.get(i);
-//                ArrayList<Double> weights = a.getEdgeWeights();
-//                double weight = weights.get(i);
-//                double k = 0.1; // SHORTCUT WAY OF ASSIGNING NOISE; CAN IMPLEMENT BETTER WAY IN FUTURE
-//                switch (EWLT) {
-//                    case "pfixed" -> weight += b.getP() > a.getP()? ROC: -ROC; // increment or decrement by fixed amount ROC depending on p_a and p_b
-//                    case "pD" -> weight += b.getP() - a.getP();
-//                    case "pFD" -> weight += 1 / (1 + Math.exp((a.getUtility() - b.getUtility()) / k)); // fermi-dirac equation
-//                }
-//                if(weight > 1.0)
-//                    weight = 1.0;
-//                else if(weight < 0.0)
-//                    weight = 0.0;
-//                String str = DF2.format(weight);
-//                double x = Double.parseDouble(str);
-//                weights.set(i, x);
-//            }
-//        }
-//    }
     /**
      * player performs edge weight learning (EWL) with all of its edges.
      * @param a player performing EWL
@@ -938,133 +848,9 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    public double calculateTotalLeeway(Player player, Player neighbour, int i) {
-////        double[] edge_weights = player.getEdgeWeights();
-//        ArrayList <Double> weights = player.getEdgeWeights();
-//        double weight = weights.get(i);
-//        double p = player.getP();
-//        double neighbour_p = neighbour.getP();
-//        double avg_score = player.getAvgScore();
-//        double neighbour_avg_score = player.getAvgScore();
-//        double local_leeway = player.getLocalLeeway();
-//
-//
-//        double global_leeway = leeway1;
-////        double edge_weight_leeway = edge_weights[i] * leeway3;
-//        double edge_weight_leeway = weight * leeway3;
-//        double p_comparison_leeway = (neighbour_p - p) * leeway4;
-//        double p_leeway = neighbour_p * leeway5;
-//        double random_leeway;
-//        if(leeway6 == 0){
-//            random_leeway = 0;
-//        } else{
-//            random_leeway = ThreadLocalRandom.current().nextDouble(-leeway6, leeway6);
-//        }
-//        double avg_score_comparison_leeway = (avg_score - neighbour_avg_score) * leeway7;
-//
-//        double total_leeway = global_leeway
-//                + local_leeway
-//                + edge_weight_leeway
-//                + p_comparison_leeway
-//                + p_leeway
-//                + random_leeway
-//                + avg_score_comparison_leeway;
-//
-//        return total_leeway;
-//    }
 
-
-
-//    /**
-//     * Checks the edge weight learning condition to determine what kind of edge weight
-//     * learning should occur, if any.
-//     *
-//     * @param neighbour is the neighbour being pointed at by the edge
-//     * @param total_leeway is the leeway being given to the neighbour by the edge's owner
-//     * @return 0 for positive edge weight learning, 1 for negative, 2 for none
-//     */
-//    public int checkEWLC(Player player, Player neighbour, double total_leeway) {
-//        double p = player.getP();
-//        double p2 = neighbour.getP();
-//        double avg_score = player.getAvgScore();
-//        double avg_score2 = neighbour.getAvgScore();
-//        double q = player.getQ();
-//        double q2 = neighbour.getQ();
-//
-//        int option = 2;
-//        switch(EWLC){
-//
-//            case"p"->{
-//                if (p2 + total_leeway > p){
-//                    option = 0;
-//                } else if (p2 + total_leeway < p){
-//                    option = 1;
-//                }
-//            }
-//
-//            case"avgscore"->{
-//                if (avg_score2 < avg_score + total_leeway){
-//                    option = 0;
-//                } else if (avg_score2 > avg_score + total_leeway){
-//                    option = 1;
-//                }
-//            }
-//
-//            case"AB"->{
-//                double AB_rating1 = ((alpha * p) + (beta * avg_score)) / (alpha + beta);
-//                double AB_rating2 = ((alpha * p2) + (beta * avg_score2)) / (alpha + beta);
-//                if(AB_rating1 < AB_rating2)
-//                    option = 0;
-//                else if(AB_rating1 > AB_rating2)
-//                    option = 1;
-//            }
-//
-//            case"q"->{
-//                if(q2 > q)
-//                    option = 0;
-//                else if(q2 < q)
-//                    option = 1;
-//            }
-//        }
-//
-//        return option;
-//    }
-
-
-
-//    /**
-//     * Calculate amount of edge weight learning to be applied to the weight of the edge.
-//     */
-//    public double calculateLearning(Player player, Player neighbour){
-//        double p = player.getP();
-//        double neighbour_p = neighbour.getP();
-//        double avg_score = player.getAvgScore();
-//        double neighbour_avg_score = neighbour.getAvgScore();
-//        double q = player.getQ();
-//        double neighbour_q = neighbour.getQ();
-//
-//
-//
-//        double learning = 0;
-//        switch(EWLF){
-//            case"ROC"->         learning = ROC;
-//            case"PD"->         learning = Math.abs(neighbour_p - p);
-//            case"PED"->        learning = Math.exp(Math.abs(neighbour_p - p));
-//            case"avgscoreAD"->  learning = Math.abs(neighbour_avg_score - avg_score);
-//            case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour_avg_score - avg_score));
-//            case"pAD2"->        learning = Math.pow(Math.abs(neighbour_p - p), 2);
-//            case"pAD3"->        learning = Math.pow(Math.abs(neighbour_p - p), 3);
-//            case"AB"->          learning = Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta)) - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
-//            case"qAD"->         learning = Math.abs(neighbour_q - q);
-//            case"qEAD"->        learning = Math.exp(Math.abs(neighbour_q - q));
-//            case"qAD2"->        learning = Math.pow(Math.abs(neighbour_q - q), 2);
-//            case"qAD3"->        learning = Math.pow(Math.abs(neighbour_q - q), 3);
-//            case"UD"->learning=
-//        }
-//
-//        return learning;
-//    }
     public double calculateLearning(Player a, Player b){
+        
         double learning = 0.0;
 
         switch(EWLF){
@@ -1496,7 +1282,6 @@ public class Env extends Thread{ // simulated game environment
                         " %-10s |" +//UF
                         " %-10s |" +//dataRate
                         " %-25s |" +//series
-                        " %-20s |" +//leeway
                         " %-15s |" +//inj
                         " desc%n" // ensure desc is the last column
                 ,"config"
@@ -1515,7 +1300,6 @@ public class Env extends Thread{ // simulated game environment
                 ,"UF"
                 ,"dataRate"
                 ,"series"
-                ,"leeway"
                 ,"inj"
         );
         printTableBorder();
@@ -1542,7 +1326,6 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("| %-10s ", settings[CI++]); //UF
             System.out.printf("| %-10s ", settings[CI++]); //dataRate
             System.out.printf("| %-25s ", settings[CI++]); //series
-            System.out.printf("| %-20s ", settings[CI++]); //leeway
             System.out.printf("| %-15s ", settings[CI++]); //inj
             System.out.printf("| %s ", settings[CI]); //desc
             System.out.println();
@@ -1660,17 +1443,6 @@ public class Env extends Thread{ // simulated game environment
             numExp = Integer.parseInt(series_params[CI2++]);
         }
 
-        String[] leeway_params = settings[CI++].split(" "); // leeway parameters
-        if(!leeway_params[0].equals("")){
-            CI2 = 0;
-            leeway1 = Double.parseDouble(leeway_params[CI2++]);
-            leeway2 = Double.parseDouble(leeway_params[CI2++]);
-            leeway3 = Double.parseDouble(leeway_params[CI2++]);
-            leeway4 = Double.parseDouble(leeway_params[CI2++]);
-            leeway5 = Double.parseDouble(leeway_params[CI2++]);
-            leeway6 = Double.parseDouble(leeway_params[CI2++]);
-            leeway7 = Double.parseDouble(leeway_params[CI2++]);
-        }
 
         String[] inj_params = settings[CI++].split(" "); // injection parameters
         if(!inj_params[0].equals("")){
@@ -1696,35 +1468,18 @@ public class Env extends Thread{ // simulated game environment
             for(int y=0;y<length;y++){
                 for(int x=0;x<width;x++){
                     Player new_player = null;
-//                    switch(game){
-//                        case"UG","DG"->{
-//                            double p = ThreadLocalRandom.current().nextDouble();
-//                            double q = 0;
-//                            switch(game){
-//                                case"UG"->q=ThreadLocalRandom.current().nextDouble();
-//                                case"DG"->q=0;
-//                            }
-//                            new_player=new Player(x,y,p,q,leeway2);
-//                        }
-//                    }
-
-
                     switch(game){
                         case "UG" -> {
                             double p = ThreadLocalRandom.current().nextDouble();
                             double q = ThreadLocalRandom.current().nextDouble();
-//                            new_player = new Player(x, y, p, q, leeway2);
                             new_player = new Player(x, y, p, q);
                         }
                         case "DG" -> {
                             double p = ThreadLocalRandom.current().nextDouble();
-//                            new_player = new Player(x, y, p, 0.0, leeway2);
                             new_player = new Player(x, y, p, 0.0);
                         }
                         case "PD" -> {}
                     }
-
-
                     pop[index] = new_player;
                     index++;
                 }
@@ -2816,13 +2571,6 @@ public class Env extends Thread{ // simulated game environment
                 settings += mutRate == 0.0 && !varying.equals("mutRate")? "": ",mutRate";
                 settings += mutBound == 0.0 && !varying.equals("mutBound")? "": ",mutBound";
                 settings += ",UF";
-                settings += leeway1 == 0.0 && !varying.equals("leeway1")? "": ",leeway1";
-                settings += leeway2 == 0.0 && !varying.equals("leeway2")? "": ",leeway2";
-                settings += leeway3 == 0.0 && !varying.equals("leeway3")? "": ",leeway3";
-                settings += leeway4 == 0.0 && !varying.equals("leeway4")? "": ",leeway4";
-                settings += leeway5 == 0.0 && !varying.equals("leeway5")? "": ",leeway5";
-                settings += leeway6 == 0.0 && !varying.equals("leeway6")? "": ",leeway6";
-                settings += leeway7 == 0.0 && !varying.equals("leeway7")? "": ",leeway7";
                 settings += injIter == 0? "": ",injIter";
                 settings += injP == 0.0? "": ",injP";
                 settings += injSize == 0? "": ",injSize";
@@ -2860,13 +2608,6 @@ public class Env extends Thread{ // simulated game environment
             settings += mutRate == 0.0 && !varying.equals("mutRate")? "": "," + mutRate;
             settings += mutBound == 0.0 && !varying.equals("mutBound")? "": "," + mutBound;
             settings += "," + UF;
-            settings += leeway1 == 0.0 && !varying.equals("leeway1")? "": "," + leeway1;
-            settings += leeway2 == 0.0 && !varying.equals("leeway2")? "": "," + leeway2;
-            settings += leeway3 == 0.0 && !varying.equals("leeway3")? "": "," + leeway3;
-            settings += leeway4 == 0.0 && !varying.equals("leeway4")? "": "," + leeway4;
-            settings += leeway5 == 0.0 && !varying.equals("leeway5")? "": "," + leeway5;
-            settings += leeway6 == 0.0 && !varying.equals("leeway6")? "": "," + leeway6;
-            settings += leeway7 == 0.0 && !varying.equals("leeway7")? "": "," + leeway7;
             settings += injIter == 0? "": "," + injIter;
             settings += injP == 0.0? "": "," + injP;
             settings += injSize == 0? "": "," + injSize;

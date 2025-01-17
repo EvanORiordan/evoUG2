@@ -39,7 +39,6 @@ public class Player {
     private double mean_neighbour_edge_weight; // mean of edge weights directed at player
     private String[] strategies_PD = {"C","D","A","TFT"};
     private String strategy_PD = "";
-    private double local_leeway; // inherent leeway of the player
     private ArrayList<Player> margolus_neighbourhood1 = new ArrayList<>();
     private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
     private double[] margolus_edgeWeights1;
@@ -65,26 +64,6 @@ public class Player {
         this.q=q;
         oldP=p;
         oldQ=q;
-    }
-
-    /**
-     * Constructor method for instantiating a UG/DG Player object.
-     * @param p is the proposal value of the player
-     * @param q is the acceptance threshold value of the player
-     * @param leeway2 is a factor used to calculate the player's local leeway
-     */
-    public Player(double x, double y, double p, double q, double leeway2){
-        ID=count++;
-        this.x=x;
-        this.y=y;
-        this.p=p;
-        this.q=q;
-        oldP=p;
-        oldQ=q;
-        if(leeway2==0)
-            local_leeway=0;
-        else
-            local_leeway=ThreadLocalRandom.current().nextDouble(-leeway2,leeway2);
     }
 
 
@@ -254,7 +233,6 @@ public class Player {
     public void setOldQ(double oldQ){
         this.oldQ=oldQ;
     }
-    public double getLocalLeeway(){return local_leeway;}
     public ArrayList<Player> getNeighbourhood() {
         return neighbourhood;
     }
