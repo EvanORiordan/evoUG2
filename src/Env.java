@@ -32,8 +32,6 @@ public class Env extends Thread{ // simulated game environment
     double sigma_q; // standard deviation of q
     static int gens; // number of generations to occur per experiment run
     int gen = 1; // number of iterations that have occurred
-    static int iters; // number of iterations to occur
-    int iter = 1; // number of iterations that have occurred
     static double M = 1.0; // default prize amount during a UG/DG
     static String UF; // utility formula: indicates how utility is calculated
     double avg_u; // average utility
@@ -116,6 +114,7 @@ public class Env extends Thread{ // simulated game environment
     static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
     static String EM; // evolution mechanism: the mechanism by which evolution occurs.
     static int NIS; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
+    static String RWT; // roulette wheel type
 
 
     // fields related to rewiring
@@ -403,8 +402,7 @@ public class Env extends Thread{ // simulated game environment
                 case "ER" -> {
 
                     // iterations of playing and edge weight learning
-                    iter = 1;
-                    do{
+                    for(int j=0;j<ER;j++){
                         for(int i = 0; i < N; i++){
                             play(pop[i]);
                         }
@@ -414,8 +412,7 @@ public class Env extends Thread{ // simulated game environment
                         for(int i=0;i<N;i++){
                             EWL(pop[i]);
                         }
-                        iter++;
-                    } while(iter % ER != 0);
+                    }
 
                     // rewire if applicable
                     if(EWT.equals("rewire")){
@@ -448,8 +445,7 @@ public class Env extends Thread{ // simulated game environment
                         if(child.getNeighbourhood().size() > 0){ // prevent evolution if child is isolated.
                             Player parent = null;
                             switch(sel){
-                                case "NRW" -> parent = selNRW(child);
-                                case "ERW" -> parent = selERW(child);
+                                case "RW" -> parent = selRW(child);
                                 case "fittest" -> parent = selFittest(child);
                                 case "intensity" -> parent = selIntensity(child);
                                 case "crossover" -> crossover(child); // sel and evo effectively occur at once in one function
@@ -882,13 +878,11 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Exponential Roulette Wheel (ERW) Selection method compares fitness of child to neighbours. The
-     * fitter the neighbour, the exponentially more likely they are to be selected as child's
-     * parent.
-     * @param child
-     * @return parent
+     * Roulette wheel (RW) selection function where the fitter a candidate, the more likely
+     * it is to be selected as parent. Candidates including child and neighbours.
+     * @param child player undergoing roulette wheel selection
      */
-    public Player selERW(Player child){
+    public Player selRW(Player child){
         Player parent = null;
         ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
         pool.add(child);
@@ -896,90 +890,26 @@ public class Env extends Thread{ // simulated game environment
         double[] pockets = new double[size];
         double roulette_total = 0;
         for(int i = 0; i < size; i++){
-            pockets[i] = pool.get(i).getU();
+//            pockets[i] = pool.get(i).getU();
+            switch(RWT){
+                case "normal" -> pockets[i] = pool.get(i).getU();
+                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU());
+            }
             roulette_total += pockets[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
         double tally = 0;
         for(int i = 0; i < size; i++){
             tally += pockets[i];
-            double percentile = tally / roulette_total;
-            if(random_double < percentile){
-                parent = pool.get(i);
+            double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
+            if(random_double < percent_taken){ // if true, the ball landed in the candidate's slot
+                parent = pool.get(i); // select candidate as parent
                 break;
             }
         }
         return parent;
     }
 
-
-
-
-
-
-    /**
-     * Normal Roulette Wheel (NRW) Selection method compares fitness of child to neighbours. The
-     * fitter the neighbour, the exponentially more likely they are to be selected as child's
-     * parent. If a parent is not selected, the child is selected as parent
-     * by default.<br>
-     */
-    public Player selNRW(Player child){
-        Player parent = null;
-        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood());
-        pool.add(child);
-        int size = pool.size();
-        double[] pockets = new double[size];
-        double roulette_total = 0;
-        int i;
-        for(i=0;i<size;i++){
-//            pockets[i] = pool.get(i).getAvgScore();
-            pockets[i] = pool.get(i).getU();
-            roulette_total += pockets[i];
-        }
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        double tally = 0;
-        for(i=0;i<size;i++){
-            tally += pockets[i];
-            double percentile = tally / roulette_total;
-            if(random_double < percentile){
-                parent = pool.get(i);
-                break;
-            }
-        }
-
-        return parent;
-    }
-
-
-
-//    /**
-//     * Child selects highest scoring neighbour.
-//     */
-//    public Player selBest(Player child){
-//        ArrayList <Player> neighbourhood = child.getNeighbourhood();
-//        double avg_score = child.getAvgScore();
-//        int size = neighbourhood.size();
-//        double parent_avg_score;
-//
-//        // find highest scoring neighbour
-//        Player parent = neighbourhood.get(0);
-//        for(int i = 1; i < size; i++){
-//            Player neighbour = neighbourhood.get(i);
-//            double neighbour_avg_score = neighbour.getAvgScore();
-//            parent_avg_score = parent.getAvgScore();
-//            if(neighbour_avg_score > parent_avg_score){
-//                parent = neighbour;
-//            }
-//        }
-//
-//        // if parent score less than child score, parent is child
-//        parent_avg_score = parent.getAvgScore();
-//        if(parent_avg_score <= avg_score){
-//            parent = child;
-//        }
-//
-//        return parent;
-//    }
 
 
     /**
@@ -1410,7 +1340,9 @@ public class Env extends Thread{ // simulated game environment
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
-        if(sel.equals("intensity")){
+        if(sel.equals("RW")){
+            RWT = sel_params[CI2++];
+        } else if(sel.equals("intensity")){
             selNoise = Double.parseDouble(sel_params[CI2++]);
         }
 
@@ -1629,141 +1561,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-//    /**
-//     * Calculate the average value of p and the standard deviation of p across the population
-//     * at the current generation.<br>
-//     * Assumes the game is UG/DG.
-//     */
-//    public void calculateStatsUG(){
-//        // calculate average p
-//        avg_p = 0;
-//        for(int i=0;i<N;i++){
-////            Player player = pop[i];
-////            double p = player.getP();
-////            avg_p += p;
-//
-//            avg_p += pop[i].getP();
-//        }
-//        avg_p /= N;
-//
-//        // calculate p SD
-//        sigma_p = 0;
-//        for(int i=0;i<N;i++){
-//            Player player = pop[i];
-//            double p = player.getP();
-//            sigma_p += Math.pow(p - avg_p, 2);
-//        }
-//        sigma_p = Math.pow(sigma_p / N, 0.5);
-//
-//
-////        // calculate average q
-////        avg_q = 0;
-////        for(int i=0;i<N;i++){
-//////            Player player = pop[i];
-//////            double q = player.getQ();
-//////            avg_q += q;
-////        }
-////        avg_q /= N;
-////
-////        // calculate p SD
-////        sigma_q = 0;
-////        for(int i=0;i<N;i++){
-////            Player player = pop[i];
-////            double q = player.getQ();
-////            sigma_q += Math.pow(q - avg_q, 2);
-////        }
-////        sigma_q = Math.pow(sigma_q / N, 0.5);
-//
-//
-//        if(game.equals("UG")){
-//            avg_p = 0;
-//            for(int i=0;i<N;i++){
-//
-//            }
-//        }
-//    }
-//    // calculate p and/or q stats of population
-//    public void calculateStatsUG(){
-//        avg_p = 0;
-//        for(int i = 0; i < N; i++){
-//            avg_p += pop[i].getP();
-//        }
-//        avg_p /= N;
-//        sigma_p = 0;
-//        for(int i = 0; i < N; i++){
-//            sigma_p += Math.pow(pop[i].getP() - avg_p, 2);
-//        }
-//        sigma_p = Math.pow(sigma_p / N, 0.5);
-//        if(game.equals("UG")){
-//            avg_q = 0;
-//            for(int i = 0; i < N; i++){
-//                avg_q += pop[i].getQ();
-//            }
-//            avg_q /= N;
-//            sigma_q = 0;
-//            for(int i = 0; i < N; i++){
-//                sigma_q += Math.pow(pop[i].getQ() - avg_q, 2);
-//            }
-//            sigma_q = Math.pow(sigma_q / N, 0.5);
-//        }
-//    }
-//    // calculate p and/or q stats of population
-//    public void calculateStatsUG(){
-//        switch(game){
-//            case "UG" -> {
-//                avg_p = 0;
-//                for(int i = 0; i < N; i++){
-//                    avg_p += pop[i].getP();
-//                }
-//                avg_p /= N;
-//                sigma_p = 0;
-//                for(int i = 0; i < N; i++){
-//                    sigma_p += Math.pow(pop[i].getP() - avg_p, 2);
-//                }
-//                sigma_p = Math.pow(sigma_p / N, 0.5);
-//                avg_q = 0;
-//                for(int i = 0; i < N; i++){
-//                    avg_q += pop[i].getQ();
-//                }
-//                avg_q /= N;
-//                sigma_q = 0;
-//                for(int i = 0; i < N; i++){
-//                    sigma_q += Math.pow(pop[i].getQ() - avg_q, 2);
-//                }
-//                sigma_q = Math.pow(sigma_q / N, 0.5);
-//            }
-//            case "DG" -> {
-//                avg_p = 0;
-//                for(int i = 0; i < N; i++){
-//                    avg_p += pop[i].getP();
-//                }
-//                avg_p /= N;
-//                sigma_p = 0;
-//                for(int i = 0; i < N; i++){
-//                    sigma_p += Math.pow(pop[i].getP() - avg_p, 2);
-//                }
-//                sigma_p = Math.pow(sigma_p / N, 0.5);
-//            }
-//            case "PD" -> {}
-//        }
-
-
-//        // calculate average utility and utility standard deviation
-//        avg_u = 0;
-//        for(int i = 0; i < N; i++){
-//            avg_u += pop[i].getU();
-//        }
-//        avg_u /= N;
-//        sigma_u = 0;
-//        for(int i = 0; i < N; i++){
-//            sigma_u += Math.pow(pop[i].getU() - avg_u, 2);
-//        }
-//        sigma_u = Math.pow(sigma_u / N, 0.5);
-//
-//    }
-
-
-
     public void calculateAvgP(){
         avg_p = 0;
         for(int i = 0; i < N; i++){
@@ -1869,7 +1666,8 @@ public class Env extends Thread{ // simulated game environment
      */
     public void writeAvgPData(){
         try{
-            String filename = experiment_results_folder_path + "\\avg_p_data.csv";
+//            String filename = experiment_results_folder_path + "\\avg_p_data.csv";
+            String filename = experiment_results_folder_path + "\\macro_p_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
 //                fw = new FileWriter(filename, false); // append set to false means writing mode.
@@ -1894,7 +1692,8 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeAvgQData(){
         try{
-            String filename = experiment_results_folder_path + "\\avg_q_data.csv";
+//            String filename = experiment_results_folder_path + "\\avg_q_data.csv";
+            String filename = experiment_results_folder_path + "\\macro_q_data.csv";
             String output = "";
             if(gen == dataRate){
 //                fw = new FileWriter(filename, false);
@@ -2564,6 +2363,7 @@ public class Env extends Thread{ // simulated game environment
                 settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
                 settings += EWLP.equals("")? "": ",EWLP";
                 settings += ",sel";
+                settings += sel.equals("RW")? ",RWT": "";
                 settings += selNoise == 0.0 && !varying.equals("selNoise")? "": ",selNoise";
                 settings += ",evo";
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
@@ -2601,6 +2401,7 @@ public class Env extends Thread{ // simulated game environment
             settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
             settings += EWLP.equals("")? "": "," + EWLP;
             settings += "," + sel;
+            settings += sel.equals("RW")? "," + RWT: "";
             settings += selNoise == 0.0 && !varying.equals("selNoise")? "": "," + selNoise;
             settings += "," + evo;
             settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
@@ -2892,7 +2693,8 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeAvgUData(){
         try{
-            String filename = experiment_results_folder_path + "\\avg_u_data.csv";
+//            String filename = experiment_results_folder_path + "\\avg_u_data.csv";
+            String filename = experiment_results_folder_path + "\\macro_u_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
 //                fw = new FileWriter(filename, false); // append set to false means writing mode.
@@ -2938,7 +2740,8 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeAvgDegreeData(){
         try{
-            String filename = experiment_results_folder_path + "\\avg_degree_data.csv";
+//            String filename = experiment_results_folder_path + "\\avg_degree_data.csv";
+            String filename = experiment_results_folder_path + "\\macro_degree_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
 //                fw = new FileWriter(filename, false); // append set to false means writing mode.
