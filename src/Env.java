@@ -21,20 +21,20 @@ public class Env extends Thread{ // simulated game environment
     static String space; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-    int avg_degree; // average degree of population
+    int mean_degree; // mean degree of population
     double sigma_degree; // standard deviation of degree
     static int N; // population size
     static int runs; // number of experiment runs to occur
     Player[] pop; // array of players; assumes 2D space
-    double avg_p; // average proposal value
+    double mean_p; // mean proposal value
     double sigma_p; // standard deviation of p
-    double avg_q; // average acceptance threshold
+    double mean_q; // mean acceptance threshold
     double sigma_q; // standard deviation of q
     static int gens; // number of generations to occur per experiment run
     int gen = 1; // number of iterations that have occurred
     static double M = 1.0; // default prize amount during a UG/DG
     static String UF; // utility formula: indicates how utility is calculated
-    double avg_u; // average utility
+    double mean_u; // mean utility
     double sigma_u; // standard deviation of utility
     static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
@@ -53,12 +53,12 @@ public class Env extends Thread{ // simulated game environment
     static int experiment_num = 1; //tracks which experiment is taking place at any given time during a series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
-    static double experiment_mean_avg_p;
-    static double experiment_mean_avg_q;
-    static double experiment_SD_avg_p;
-    static double experiment_SD_avg_q;
-    static double[] experiment_avg_p_values;
-    static double[] experiment_avg_q_values;
+    static double experiment_mean_mean_p; // mean of the mean p of the runs of an experiment
+    static double experiment_mean_mean_q;
+    static double experiment_sigma_mean_p; // standard deviation of the mean p of the runs of an experiment
+    static double experiment_sigma_mean_q;
+    static double[] experiment_mean_p_values;
+    static double[] experiment_mean_q_values;
 
 
     // fields related to I/O operations
@@ -72,7 +72,7 @@ public class Env extends Thread{ // simulated game environment
     static String desc; //description of experiment
     static String start_timestamp_string;
     static String project_path = Paths.get("").toAbsolutePath().toString();
-    static String data_folder_path = project_path + "\\csv_data";
+    static String data_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
     static String series_data_filename;
     static String p_data_filename;
@@ -81,7 +81,6 @@ public class Env extends Thread{ // simulated game environment
     static int dataRate; // indicates how often data is saved. if 0, no gens are recorded.
     static String q_data_filename;
     static String pos_data_filename;
-    static String edge_count_data_filename;
     static String u_data_filename;
     static String degree_data_filename;
 
@@ -132,7 +131,6 @@ public class Env extends Thread{ // simulated game environment
       */
     public static void main(String[] args) {
         configureEnvironment();
-//        setInitialSettings();
         LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
         start_timestamp_string = start_timestamp.getYear()
                 +"-"+start_timestamp.getMonthValue()
@@ -140,7 +138,7 @@ public class Env extends Thread{ // simulated game environment
                 +"_"+start_timestamp.getHour()
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
-        experiment_results_folder_path = data_folder_path+"\\"+start_timestamp_string+" "+desc;
+        experiment_results_folder_path = data_path+"\\"+start_timestamp_string+" "+desc;
         try {
             Files.createDirectories(Paths.get(experiment_results_folder_path)); // create results storage folder
         }catch(IOException e){
@@ -151,7 +149,7 @@ public class Env extends Thread{ // simulated game environment
 
         // create result data folders
         if(dataRate != 0) {
-            createFolders();
+            createMicroDataFolders();
         }
 
 
@@ -296,17 +294,18 @@ public class Env extends Thread{ // simulated game environment
     public static void experiment(){
         switch(game){
             case "UG" -> {
-                experiment_mean_avg_p = 0;
-                experiment_avg_p_values = new double[runs];
-                experiment_SD_avg_p = 0;
-                experiment_mean_avg_q = 0;
-                experiment_avg_q_values = new double[runs];
-                experiment_SD_avg_q = 0;
+                experiment_mean_mean_p = 0;
+                experiment_mean_p_values = new double[runs];
+                experiment_sigma_mean_p = 0;
+                experiment_mean_mean_q = 0;
+                experiment_mean_q_values = new double[runs];
+                experiment_sigma_mean_q = 0;
             }
             case "DG" -> {
-                experiment_mean_avg_p = 0;
-                experiment_avg_p_values = new double[runs];
-                experiment_SD_avg_p = 0;}
+                experiment_mean_mean_p = 0;
+                experiment_mean_p_values = new double[runs];
+                experiment_sigma_mean_p = 0;
+            }
             case "PD" -> {}
         }
         for(run_num = 1; run_num <= runs; run_num++){
@@ -315,17 +314,17 @@ public class Env extends Thread{ // simulated game environment
             String output = "experiment "+experiment_num+" run "+run_num;
             switch(game){
                 case "UG" -> {
-                    experiment_mean_avg_p += run.avg_p;
-                    experiment_avg_p_values[run_num] = run.avg_p;
-                    experiment_mean_avg_q += run.avg_q;
-                    experiment_avg_q_values[run_num] = run.avg_q;
-                    output += " avg p=" + DF4.format(run.avg_p);
-                    output += " avg q="+DF4.format(run.avg_q);
+                    experiment_mean_mean_p += run.mean_p;
+                    experiment_mean_p_values[run_num] = run.mean_p;
+                    experiment_mean_mean_q += run.mean_q;
+                    experiment_mean_q_values[run_num] = run.mean_q;
+                    output += " mean p=" + DF4.format(run.mean_p);
+                    output += " mean q="+DF4.format(run.mean_q);
                 }
                 case "DG" -> {
-                    experiment_mean_avg_p += run.avg_p;
-                    experiment_avg_p_values[run_num - 1] = run.avg_p;
-                    output += " avg p=" + DF4.format(run.avg_p);
+                    experiment_mean_mean_p += run.mean_p;
+                    experiment_mean_p_values[run_num - 1] = run.mean_p;
+                    output += " mean p=" + DF4.format(run.mean_p);
                 }
                 case "PD" -> {} // IDEA: if game is PD, then print number of cooperators, defectors and abstainers.
             }
@@ -334,27 +333,27 @@ public class Env extends Thread{ // simulated game environment
         String output = "";
         switch(game){
             case "UG" -> {
-                experiment_mean_avg_p /= runs;
-                experiment_mean_avg_q /= runs;
+                experiment_mean_mean_p /= runs;
+                experiment_mean_mean_q /= runs;
                 for(int i = 0; i < runs; i++){
-                    experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
-                    experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+                    experiment_sigma_mean_p += Math.pow(experiment_mean_p_values[i] - experiment_mean_mean_p, 2);
+                    experiment_sigma_mean_q += Math.pow(experiment_mean_q_values[i] - experiment_mean_mean_q, 2);
                 }
-                experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
-                experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
-                output += "mean avg p=" + DF4.format(experiment_mean_avg_p);
-                output += " avg p SD=" + DF4.format(experiment_SD_avg_p);
-                output += " mean avg q=" + DF4.format(experiment_mean_avg_q);
-                output += " avg q SD=" + DF4.format(experiment_SD_avg_q);
+                experiment_sigma_mean_p = Math.pow(experiment_sigma_mean_p / runs, 0.5);
+                experiment_sigma_mean_q = Math.pow(experiment_sigma_mean_q / runs, 0.5);
+                output += "mean mean p=" + DF4.format(experiment_mean_mean_p);
+                output += " mean sigma p=" + DF4.format(experiment_sigma_mean_p);
+                output += " mean mean q=" + DF4.format(experiment_mean_mean_q);
+                output += " mean sigma q=" + DF4.format(experiment_sigma_mean_q);
             }
             case "DG" -> {
-                experiment_mean_avg_p /= runs;
+                experiment_mean_mean_p /= runs;
                 for(int i = 0; i < runs; i++){
-                    experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+                    experiment_sigma_mean_p += Math.pow(experiment_mean_p_values[i] - experiment_mean_mean_p, 2);
                 }
-                experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
-                output += "mean avg p=" + DF4.format(experiment_mean_avg_p);
-                output += " avg p SD=" + DF4.format(experiment_SD_avg_p);
+                experiment_sigma_mean_p = Math.pow(experiment_sigma_mean_p / runs, 0.5);
+                output += "mean mean p=" + DF4.format(experiment_mean_mean_p);
+                output += " mean sigma p=" + DF4.format(experiment_sigma_mean_p);
             }
             case "PD" -> {}
         }
@@ -418,24 +417,7 @@ public class Env extends Thread{ // simulated game environment
                     if(EWT.equals("rewire")){
                         for(int i=0;i<N;i++){
                             Player player = pop[i];
-                            double random_number = ThreadLocalRandom.current().nextDouble();
-                            if(RP > random_number){
-                                int num_rewires = 0;
-                                switch (RA) {
-                                    case "0Single" -> num_rewires = rewireAway0Single(player);
-                                    case "0Many" -> num_rewires = rewireAway0Many(player);
-                                    case "linear" -> num_rewires = rewireAwayLinear(player);
-                                    case "FD" -> num_rewires = rewireAwayFermiDirac(player);
-                                    case "exponential" -> num_rewires = rewireAwayExponential(player);
-                                    case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
-                                }
-                                if(num_rewires > 0){
-                                    switch (RT){
-                                        case"local"->rewireToLocal(player, num_rewires);
-                                        case"pop"->rewireToPop(player, num_rewires);
-                                    }
-                                }
-                            }
+                            rewire(player);
                         }
                     }
 
@@ -501,23 +483,23 @@ public class Env extends Thread{ // simulated game environment
             // calculate stats
             switch(game){
                 case "UG" -> {
-                    calculateAvgP();
+                    calculatemeanP();
                     calculateStandardDeviationP();
-                    calculateAvgQ();
+                    calculatemeanQ();
                     calculateStandardDeviationQ();
                 }
                 case "DG" -> {
-                    calculateAvgP();
+                    calculatemeanP();
                     calculateStandardDeviationP();
                 }
                 case "PD" -> {}
             }
-            calculateAvgU();
+            calculatemeanU();
             calculateStandardDeviationU();
             for(int i = 0; i < N; i++){
                 pop[i].calculateDegree();
             }
-            calculateAvgDegree();
+            calculatemeanDegree();
             calculateStandardDeviationDegree();
 
 
@@ -529,24 +511,23 @@ public class Env extends Thread{ // simulated game environment
             if(dataRate != 0 && run_num == 1 && experiment_num == 1 && gen % dataRate == 0){
                 switch(game){
                     case "UG" -> {
-                        System.out.println("gen "+gen+" avg p="+DF4.format(avg_p)+" p SD="+DF4.format(sigma_p)+" avg q="+DF4.format(avg_q)+" q SD="+DF4.format(sigma_q));
+                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p)+" mean q="+DF4.format(mean_q)+" sigma q="+DF4.format(sigma_q));
                         writePData();
-                        writeAvgPData();
+                        writeMeanPData();
                         writeQData();
-                        writeAvgQData();
+                        writeMeanQData();
                     }
                     case "DG" -> {
-                        System.out.println("gen "+gen+" avg p="+DF4.format(avg_p)+" p SD="+DF4.format(sigma_p));
+                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p));
                         writePData();
-                        writeAvgPData();
+                        writeMeanPData();
                     }
                     case "PD" -> {}
                 }
                 writeUData();
-                writeAvgUData();
-                writeDegreeData();
-                writeAvgDegreeData();
-//                    calculateAvgEdgeWeights();
+                writeMeanUData();
+                writeMeanDegreeData();
+//                    calculatemeanEdgeWeights();
 //                    writeEWData();
 //                    writeNSIData();
             }
@@ -950,10 +931,10 @@ public class Env extends Thread{ // simulated game environment
         // calculate effective payoffs
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            double player_avg_score = player.getAvgScore();
-            double player_effective_payoff = Math.exp(w * player_avg_score);
-            effective_payoffs[i] = player_effective_payoff;
-            total += player_effective_payoff;
+            double u = player.getU();
+            double effective_payoff = Math.exp(w * u);
+            effective_payoffs[i] = effective_payoff;
+            total += effective_payoff;
         }
 
         // fitter player ==> more likely to be selected
@@ -973,7 +954,6 @@ public class Env extends Thread{ // simulated game environment
 
 
     // crossover where one child adopts midway point between two parent strategies.
-//    public void crossover(Player child, Player parent1, Player parent2){
     public void crossover(Player child){
 
         // how to select parents?
@@ -984,13 +964,13 @@ public class Env extends Thread{ // simulated game environment
         Player parent2 = child; // second-fittest neighbour
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double neighbour_avg_score = neighbour.getAvgScore();
-            double parent2_avg_score = parent2.getAvgScore();
-            if(neighbour_avg_score > parent2_avg_score){
+            double neighbour_u = neighbour.getU();
+            double parent2_u = parent2.getU();
+            if(neighbour_u > parent2_u){
                 parent2 = neighbourhood.get(i);
-                parent2_avg_score = parent2.getAvgScore();
-                double parent1_avg_score = parent1.getAvgScore();
-                if(parent2_avg_score > parent1_avg_score){
+                parent2_u = parent2.getU();
+                double parent1_mean_score = parent1.getU();
+                if(parent2_u > parent1_mean_score){
                     Player temp = parent1;
                     parent1 = parent2;
                     parent2 = temp;
@@ -1004,12 +984,6 @@ public class Env extends Thread{ // simulated game environment
         child.setP(new_p);
     }
 
-
-
-//    public void setStrategy(Player player, double p, double q){
-//        player.setP(p);
-//        player.setQ(q);
-//    }
 
 
 
@@ -1105,7 +1079,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void calculateAvgEdgeWeights(){
+    public void calculatemeanEdgeWeights(){
         for(int i=0;i<N;i++){
             Player player = pop[i];
             calculateMeanSelfEdgeWeight(player);
@@ -1439,21 +1413,19 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // Create folders to store data.
-    public static void createFolders(){
+    public static void createMicroDataFolders(){
         switch(game){
             case "UG" -> {
-                p_data_filename = experiment_results_folder_path + "\\p_data";
-                q_data_filename = experiment_results_folder_path + "\\q_data";
+                p_data_filename = experiment_results_folder_path + "\\micro_p_data";
+                q_data_filename = experiment_results_folder_path + "\\micro_q_data";
             }
-            case "DG" -> p_data_filename = experiment_results_folder_path + "\\p_data";
+            case "DG" -> p_data_filename = experiment_results_folder_path + "\\micro_p_data";
             case "PD" -> {}
         }
-        edge_count_data_filename = experiment_results_folder_path + "\\edge_count_data";
-        EW_data_filename = experiment_results_folder_path + "\\EW_data";
+//        EW_data_filename = experiment_results_folder_path + "\\EW_data";
 //        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
-        u_data_filename = experiment_results_folder_path + "\\u_data";
-        degree_data_filename = experiment_results_folder_path + "\\degree_data";
+        u_data_filename = experiment_results_folder_path + "\\micro_u_data";
+        degree_data_filename = experiment_results_folder_path + "\\micro_degree_data";
         try{
             switch(game){
                 case "UG" -> {
@@ -1463,8 +1435,7 @@ public class Env extends Thread{ // simulated game environment
                 case "DG" -> Files.createDirectories(Paths.get(p_data_filename));
                 case "PD" -> {}
             }
-            Files.createDirectories(Paths.get(edge_count_data_filename));
-            Files.createDirectories(Paths.get(EW_data_filename));
+//            Files.createDirectories(Paths.get(EW_data_filename));
 //            Files.createDirectories(Paths.get(NSI_data_filename));
             Files.createDirectories(Paths.get(u_data_filename));
             Files.createDirectories(Paths.get(degree_data_filename));
@@ -1561,66 +1532,66 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void calculateAvgP(){
-        avg_p = 0;
+    public void calculatemeanP(){
+        mean_p = 0;
         for(int i = 0; i < N; i++){
-            avg_p += pop[i].getP();
+            mean_p += pop[i].getP();
         }
-        avg_p /= N;
+        mean_p /= N;
     }
 
     public void calculateStandardDeviationP(){
         sigma_p = 0;
         for(int i = 0; i < N; i++){
-            sigma_p += Math.pow(pop[i].getP() - avg_p, 2);
+            sigma_p += Math.pow(pop[i].getP() - mean_p, 2);
         }
         sigma_p = Math.pow(sigma_p / N, 0.5);
     }
 
-    public void calculateAvgQ(){
-        avg_q = 0;
+    public void calculatemeanQ(){
+        mean_q = 0;
         for(int i = 0; i < N; i++){
-            avg_q += pop[i].getQ();
+            mean_q += pop[i].getQ();
         }
-        avg_q /= N;
+        mean_q /= N;
     }
 
     public void calculateStandardDeviationQ(){
         sigma_q = 0;
         for(int i = 0; i < N; i++){
-            sigma_q += Math.pow(pop[i].getQ() - avg_q, 2);
+            sigma_q += Math.pow(pop[i].getQ() - mean_q, 2);
         }
         sigma_q = Math.pow(sigma_q / N, 0.5);
     }
 
-    public void calculateAvgU(){
-        avg_u = 0;
+    public void calculatemeanU(){
+        mean_u = 0;
         for(int i = 0; i < N; i++){
-            avg_u += pop[i].getU();
+            mean_u += pop[i].getU();
         }
-        avg_u /= N;
+        mean_u /= N;
     }
 
     public void calculateStandardDeviationU(){
         sigma_u = 0;
         for(int i = 0; i < N; i++){
-            sigma_u += Math.pow(pop[i].getU() - avg_u, 2);
+            sigma_u += Math.pow(pop[i].getU() - mean_u, 2);
         }
         sigma_u = Math.pow(sigma_u / N, 0.5);
     }
 
-    public void calculateAvgDegree(){
-        avg_degree = 0;
+    public void calculatemeanDegree(){
+        mean_degree = 0;
         for(int i = 0; i < N; i++){
-            avg_degree += pop[i].getDegree();
+            mean_degree += pop[i].getDegree();
         }
-        avg_degree /= N;
+        mean_degree /= N;
     }
 
     public void calculateStandardDeviationDegree(){
         sigma_degree = 0;
         for(int i = 0; i < N; i++){
-            sigma_degree += Math.pow(pop[i].getDegree() - avg_degree, 2);
+            sigma_degree += Math.pow(pop[i].getDegree() - mean_degree, 2);
         }
         sigma_degree = Math.pow(sigma_degree / N, 0.5);
     }
@@ -1654,31 +1625,23 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Allows for the visualisation of the avg p of a run with respect to iteration.<br>
-     * iteration on x-axis.<br>
-     * avg p on y-axis.<br>
-     * collects standard deviation (SD) data.<br>
-     * <br>Steps:<br>
-     * - Export the data of a single run to a .csv file<br>
-     * - Import the .csv data into an Excel sheet<br>
-     * - Separate the data into columns: gen number, avg p and SD for that gen<br>
-     * - Create a line chart with the data.<br>
+     * Records mean p of the population in a csv file.
      */
-    public void writeAvgPData(){
+    public void writeMeanPData(){
         try{
-//            String filename = experiment_results_folder_path + "\\avg_p_data.csv";
             String filename = experiment_results_folder_path + "\\macro_p_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
 //                fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
-                s+=",avg p";
-                s+=",p SD";
+                s+=",mean p";
+                s+=",sigma p";
                 s+="\n";
             }
             fw = new FileWriter(filename, true);
             s+=gen;
-            s+=","+DF4.format(avg_p);
+//            s+=","+DF4.format(mean_p);
+            s+=","+DF4.format(mean_p);
             s+=","+DF4.format(sigma_p);
             s+="\n";
             fw.append(s);
@@ -1690,21 +1653,20 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void writeAvgQData(){
+    public void writeMeanQData(){
         try{
-//            String filename = experiment_results_folder_path + "\\avg_q_data.csv";
             String filename = experiment_results_folder_path + "\\macro_q_data.csv";
             String output = "";
             if(gen == dataRate){
-//                fw = new FileWriter(filename, false);
                 output += "gen";
-                output += ",avg q";
-                output += ",q SD";
+                output += ",mean q";
+                output += ",sigma q";
                 output += "\n";
             }
             fw = new FileWriter(filename, true);
             output += gen;
-            output += ","+DF4.format(avg_q);
+//            output += ","+DF4.format(mean_q);
+            output += ","+DF4.format(mean_q);
             output += ","+DF4.format(sigma_q);
             output += "\n";
             fw.append(output);
@@ -2429,14 +2391,14 @@ public class Env extends Thread{ // simulated game environment
                 fw = new FileWriter(results_filename, false);
                 switch(game){
                     case "UG" -> {
-                        results += "mean avg p";
-                        results += ",avg p SD";
-                        results += ",mean avg q";
-                        results += ",avg q SD";
+                        results += "mean mean p";
+                        results += ",mean sigma p";
+                        results += ",mean mean q";
+                        results += ",mean sigma q";
                     }
                     case "DG" -> {
-                        results += "mean avg p";
-                        results += ",avg p SD";
+                        results += "mean mean p";
+                        results += ",mean sigma p";
                     }
                     case "PD" -> {}
                 }
@@ -2447,14 +2409,14 @@ public class Env extends Thread{ // simulated game environment
             results += "\n";
             switch(game){
                 case "UG" -> {
-                    results += DF4.format(experiment_mean_avg_p);
-                    results += "," + DF4.format(experiment_SD_avg_p);
-                    results += "," + DF4.format(experiment_mean_avg_q);
-                    results += "," + DF4.format(experiment_SD_avg_q);
+                    results += DF4.format(experiment_mean_mean_p);
+                    results += "," + DF4.format(experiment_sigma_mean_p);
+                    results += "," + DF4.format(experiment_mean_mean_q);
+                    results += "," + DF4.format(experiment_sigma_mean_q);
                 }
                 case "DG" -> {
-                    results += DF4.format(experiment_mean_avg_p);
-                    results += "," + DF4.format(experiment_SD_avg_p);}
+                    results += DF4.format(experiment_mean_mean_p);
+                    results += "," + DF4.format(experiment_sigma_mean_p);}
                 case "PD" -> {}
             }
 
@@ -2691,21 +2653,19 @@ public class Env extends Thread{ // simulated game environment
         }
     }
 
-    public void writeAvgUData(){
+    public void writeMeanUData(){
         try{
-//            String filename = experiment_results_folder_path + "\\avg_u_data.csv";
             String filename = experiment_results_folder_path + "\\macro_u_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
-//                fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
-                s+=",avg u";
-                s+=",u SD";
+                s+=",mean u";
+                s+=",sigma u";
                 s+="\n";
             }
             fw = new FileWriter(filename, true);
             s+=gen;
-            s+=","+DF4.format(avg_u);
+            s+=","+DF4.format(mean_u);
             s+=","+DF4.format(sigma_u);
             s+="\n";
             fw.append(s);
@@ -2738,21 +2698,19 @@ public class Env extends Thread{ // simulated game environment
         }
     }
 
-    public void writeAvgDegreeData(){
+    public void writeMeanDegreeData(){
         try{
-//            String filename = experiment_results_folder_path + "\\avg_degree_data.csv";
             String filename = experiment_results_folder_path + "\\macro_degree_data.csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
-//                fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
-                s+=",avg degree";
-                s+=",degree SD";
+                s+=",mean degree";
+                s+=",sigma degree";
                 s+="\n";
             }
             fw = new FileWriter(filename, true);
             s+=gen;
-            s+=","+DF4.format(avg_degree);
+            s+=","+DF4.format(mean_degree);
             s+=","+DF4.format(sigma_degree);
             s+="\n";
             fw.append(s);
