@@ -1,7 +1,2 @@
 game,runs,gens,space,neigh,EM,EW,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,1,10000,grid 10 10,VN 1,MC N,rewire 1.0 smoothstep pop,PDR always,ERW,copy,,cumulative,100,,,test
-DG,10,10000,grid 10 10,VN 1,MC N,rewire 1.0 smoothstep pop,PDR always,ERW,copy,,cumulative,100,RP -0.1 11,,test
-DG,50,10000,grid 30 30,VN 1,ER 1,proposalProb,PD always,RW normal,copy,,MNI,,ER 1 10,,big test RWT normal
-DG,50,10000,grid 30 30,VN 1,ER 1,proposalProb,PD always,RW exponential,copy,,MNI,,ER 1 10,,big test RWT exponential
-DG,5,100,grid 30 30,VN 1,ER 1,proposalProb,PD always,RW exponential,copy,,MNI,,ER 1 10,,big test RWT exponential
-DG,5,500,grid 10 10,VN 1,ER 1,proposalProb,PD always,RW exponential,copy,,MNI,100,ER 1 10,,test
+DG,200,500,grid 10 10,VN 1,ER 1,proposalProb,PD always,RW exponential,copy,,MNI,,ER 1 10,,test

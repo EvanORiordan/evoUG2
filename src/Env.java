@@ -71,6 +71,8 @@ public class Env extends Thread{ // simulated game environment
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static String desc; //description of experiment
     static String start_timestamp_string;
+    static LocalDateTime start_timestamp;
+    static LocalDateTime old_timestamp;
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String data_path = project_path + "\\csv_data";
     static String experiment_results_folder_path;
@@ -131,7 +133,8 @@ public class Env extends Thread{ // simulated game environment
       */
     public static void main(String[] args) {
         configureEnvironment();
-        LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
+        start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
+        old_timestamp = start_timestamp;
         start_timestamp_string = start_timestamp.getYear()
                 +"-"+start_timestamp.getMonthValue()
                 +"-"+start_timestamp.getDayOfMonth()
@@ -2403,6 +2406,10 @@ public class Env extends Thread{ // simulated game environment
                     case "PD" -> {}
                 }
                 results += "," + varying;
+
+//                LocalDateTime current_timestamp = LocalDateTime.now();
+                results += ",duration";
+
             }else {
                 fw = new FileWriter(results_filename, true);
             }
@@ -2433,6 +2440,20 @@ public class Env extends Thread{ // simulated game environment
 //                case "iters" -> results += "," + iters;
                 case "gens" -> results += "," + gens;
             }
+
+            // write duration of experiment
+            LocalDateTime current_timestamp = LocalDateTime.now();
+
+//            results += "," + LocalDateTime.now();
+            Duration duration = Duration.between(old_timestamp, current_timestamp);
+//            long secondsElapsed = duration.toSeconds();
+//            long minutesElapsed = duration.toMinutes();
+//            System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
+            results += ",0:" + duration.toMinutes() + ":" + duration.toSeconds() % 60;
+            old_timestamp = current_timestamp;
+
+
+
             fw.append(results);
             fw.close();
         } catch(IOException e) {
