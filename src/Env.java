@@ -499,48 +499,6 @@ public class Env extends Thread{ // simulated game environment
                 if (a.equals(c)) {
                     ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
                     double w_ba = weights_b.get(j); // weight of edge from b to a
-//                    boolean interact = true;
-////                    if(EWT.equals("1")){
-//                    if(EWT.equals("proposalProb")){
-//                        double d = ThreadLocalRandom.current().nextDouble();
-//                        if(w_ba <= d){
-//                            interact = false;
-//
-//                            // generically update stats
-//                            updateStats(a,0);
-//                            updateStats(b,0);
-//
-//                        }
-//                    }
-//                    if(interact){
-//                        switch(game){
-//                            case"UG","DG"->UG(a, b, w_ba);
-//                            case"PD"->PD(a, b, w_ba);
-//                        }
-//                    }
-//                    break;
-
-
-
-//                    if(EWT.equals("proposalProb")){
-//                        double d = ThreadLocalRandom.current().nextDouble();
-//                        if(w_ba > d){
-//                            switch(game){
-//                                case "UG", "DG" -> UG(a, b);
-//                                case "PD" -> PD(a, b);
-//                            }
-//                        } else{
-//                            updateStats(a,0);
-//                            updateStats(b,0);
-//                        }
-//                    } else if(){
-//                        switch(game){
-//                            case "UG", "DG" -> UG(a, b);
-//                            case "PD" -> PD(a, b);
-//                        }
-//                    }
-
-
                     switch(EWT){
                         case "proposalProb" -> {
                             double d = ThreadLocalRandom.current().nextDouble();
@@ -568,8 +526,6 @@ public class Env extends Thread{ // simulated game environment
                         }
                     }
                     break;
-
-
                 }
             }
         }
@@ -624,9 +580,6 @@ public class Env extends Thread{ // simulated game environment
     public void updateStatsUG(Player player, double payoff){
         player.setScore(player.getScore() + payoff);
         player.setMNI(player.getMNI() + 1);
-//        if(payoff > 0){
-//            player.setNSI(player.getNSI() + 1);
-//        }
     }
 
 
@@ -771,9 +724,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     public double calculateLearning(Player a, Player b){
-        
         double learning = 0.0;
-
         switch(EWLF){
             case "ROC" -> learning = ROC;
             case "PD" -> learning = b.getP() - a.getP();
@@ -794,7 +745,6 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }
-
         return learning;
     }
 
@@ -815,7 +765,6 @@ public class Env extends Thread{ // simulated game environment
         double[] pockets = new double[size];
         double roulette_total = 0;
         for(int i = 0; i < size; i++){
-//            pockets[i] = pool.get(i).getU();
             switch(RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
                 case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU());
@@ -943,7 +892,7 @@ public class Env extends Thread{ // simulated game environment
                 child.setQ(parent.getOldQ());
             }
             case "DG" -> child.setP(parent.getOldP());
-            // case "PD"
+            case "PD" -> {}
         }
     }
 
@@ -1023,7 +972,7 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    public void calculatemeanEdgeWeights(){
+    public void calculateMeanEdgeWeights(){
         for(int i=0;i<N;i++){
             Player player = pop[i];
             calculateMeanSelfEdgeWeight(player);
@@ -1117,7 +1066,6 @@ public class Env extends Thread{ // simulated game environment
         System.out.printf("%-10s |" +//config
                         " %-5s |" +//game
                         " %-10s |" +//runs
-//                        " %-10s |" +//iters
                         " %-10s |" +//gens
                         " %-15s |" +//space
                         " %-15s |" +//neigh
@@ -1135,7 +1083,6 @@ public class Env extends Thread{ // simulated game environment
                 ,"config"
                 ,"game"
                 ,"runs"
-//                ,"iters"
                 ,"gens"
                 ,"space"
                 ,"neigh"
@@ -1161,7 +1108,6 @@ public class Env extends Thread{ // simulated game environment
             System.out.printf("%-10d ", i); //config
             System.out.printf("| %-5s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
-//            System.out.printf("| %-10s ", settings[CI++]); //iters
             System.out.printf("| %-10s ", settings[CI++]); //gens
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-15s ", settings[CI++]); //neigh
@@ -1200,7 +1146,6 @@ public class Env extends Thread{ // simulated game environment
         game = settings[CI++];
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
-//        iters = Integer.parseInt(settings[CI++]);
         gens = Integer.parseInt(settings[CI++]);
 
         String[] space_params = settings[CI++].split(" "); // space parameters
@@ -1293,7 +1238,6 @@ public class Env extends Thread{ // simulated game environment
             numExp = Integer.parseInt(series_params[CI2++]);
         }
 
-
         String[] inj_params = settings[CI++].split(" "); // injection parameters
         if(!inj_params[0].equals("")){
             CI2 = 0;
@@ -1314,28 +1258,29 @@ public class Env extends Thread{ // simulated game environment
         pop = new Player[N];
         Player.setCount(0);
         int index = 0;
-        if(space.equals("grid")){
-            for(int y=0;y<length;y++){
-                for(int x=0;x<width;x++){
-                    Player new_player = null;
-                    switch(game){
-                        case "UG" -> {
-                            double p = ThreadLocalRandom.current().nextDouble();
-                            double q = ThreadLocalRandom.current().nextDouble();
-                            new_player = new Player(x, y, p, q);
+        switch(space){
+            case "grid" -> {
+                for(int y=0;y<length;y++){
+                    for(int x=0;x<width;x++){
+                        Player new_player = null;
+                        switch(game){
+                            case "UG" -> {
+                                double p = ThreadLocalRandom.current().nextDouble();
+                                double q = ThreadLocalRandom.current().nextDouble();
+                                new_player = new Player(x, y, p, q);
+                            }
+                            case "DG" -> {
+                                double p = ThreadLocalRandom.current().nextDouble();
+                                new_player = new Player(x, y, p, 0.0);
+                            }
+                            case "PD" -> {}
                         }
-                        case "DG" -> {
-                            double p = ThreadLocalRandom.current().nextDouble();
-                            new_player = new Player(x, y, p, 0.0);
-                        }
-                        case "PD" -> {}
+                        pop[index] = new_player;
+                        index++;
                     }
-                    pop[index] = new_player;
-                    index++;
                 }
             }
-        }else if(space.equals("hex")){
-            // maybe implement this in future
+            case "hex" -> {}
         }
     }
 
@@ -1536,9 +1481,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
-
-
     /**
      * Prepare program for the next generation.<br>
      * For each player in the population, some attributes are reset in preparation
@@ -1570,7 +1512,6 @@ public class Env extends Thread{ // simulated game environment
             String filename = this_path + "\\" + expNum + "\\macro_" + pDataStr + ".csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
-//                fw = new FileWriter(filename, false); // append set to false means writing mode.
                 s+="gen";
                 s+=",mean p";
                 s+=",sigma p";
@@ -1578,7 +1519,6 @@ public class Env extends Thread{ // simulated game environment
             }
             fw = new FileWriter(filename, true);
             s+=gen;
-//            s+=","+DF4.format(mean_p);
             s+=","+DF4.format(mean_p);
             s+=","+DF4.format(sigma_p);
             s+="\n";
@@ -1603,7 +1543,6 @@ public class Env extends Thread{ // simulated game environment
             }
             fw = new FileWriter(filename, true);
             output += gen;
-//            output += ","+DF4.format(mean_q);
             output += ","+DF4.format(mean_q);
             output += ","+DF4.format(sigma_q);
             output += "\n";
@@ -1749,7 +1688,6 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-
     /**
      * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
      * Assumes von Neumann neighbourhood type and rows=columns.
@@ -1828,10 +1766,6 @@ public class Env extends Thread{ // simulated game environment
 //            e.printStackTrace();
 //        }
     }
-
-
-
-
 
 
 
@@ -1919,7 +1853,6 @@ public class Env extends Thread{ // simulated game environment
         // omega_a denotes neighbourhood of rewirer.
         ArrayList<Player> omega_a = a.getNeighbourhood();
 
-
         // b denotes neighbour of rewirer
         for(Player b: omega_a){
 
@@ -1967,7 +1900,6 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }
-
 
         // if pool empty, default to rewiring to a random player in the pop.
         if(pool.size() == 0){
@@ -2239,7 +2171,6 @@ public class Env extends Thread{ // simulated game environment
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
                 settings += ",runs";
-//                settings += ",iters";
                 settings += ",gens";
                 settings += ",space";
                 settings += length == 0 && !varying.equals("length")? "": ",length";
@@ -2254,7 +2185,6 @@ public class Env extends Thread{ // simulated game environment
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
                 settings += RT.equals("")? "": ",RT";
-//                settings += !EWLC.equals("")? "": ",EWLC";
                 settings += EWLF.equals("")? "": ",EWLF";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
                 settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
@@ -2278,7 +2208,6 @@ public class Env extends Thread{ // simulated game environment
             settings += "\n";
             settings += game;
             settings += "," + runs;
-//            settings += "," + iters;
             settings += "," + gens;
             settings += "," + space;
             settings += length == 0 && !varying.equals("length")? "": "," + length;
@@ -2339,10 +2268,7 @@ public class Env extends Thread{ // simulated game environment
                     case "PD" -> {}
                 }
                 results += "," + varying;
-
-//                LocalDateTime current_timestamp = LocalDateTime.now();
                 results += ",duration";
-
             }else {
                 fw = new FileWriter(results_filename, true);
             }
@@ -2370,22 +2296,14 @@ public class Env extends Thread{ // simulated game environment
                 case "length" -> results += "," + length;
                 case "width" -> results += "," + width;
                 case "RP" -> results += "," + RP;
-//                case "iters" -> results += "," + iters;
                 case "gens" -> results += "," + gens;
             }
 
             // write duration of experiment
             LocalDateTime current_timestamp = LocalDateTime.now();
-
-//            results += "," + LocalDateTime.now();
             Duration duration = Duration.between(old_timestamp, current_timestamp);
-//            long secondsElapsed = duration.toSeconds();
-//            long minutesElapsed = duration.toMinutes();
-//            System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
             results += ",0:" + duration.toMinutes() + ":" + duration.toSeconds() % 60;
             old_timestamp = current_timestamp;
-
-
 
             fw.append(results);
             fw.close();
