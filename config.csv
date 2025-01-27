@@ -1,3 +1,3 @@
 game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,2,100,grid 50 50,VN 1,ER,rewire 1.0 smoothstep,PD always,RW exponential,copy,,MNI,,ER 1 10,,test ER 1 10
-DG,100,10000,grid 50 50,VN 1,MC,proposalProb,PD always,RW exponential,copy,,MNI,,,,test MC
+DG,100,10000,grid 50 50,VN 1,MC N,proposalProb,PD always,RW exponential,copy,,cumulative,100,,,test MC proposalProb
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PD always,RW exponential,copy,,cumulative,100,,,test MC rewire

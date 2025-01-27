@@ -731,10 +731,6 @@ public class Env extends Thread{ // simulated game environment
             case "PED" -> learning = Math.exp(b.getP() - a.getP());
             case "UD" -> learning = b.getU() - a.getU();
             case "UED" -> learning = Math.exp(b.getU() - a.getU());
-            case "PAD" -> learning = Math.abs(b.getP() - a.getP());
-            case "PEAD" -> learning = Math.exp(Math.abs(b.getP() - a.getP()));
-            case "UAD" -> learning = Math.abs(b.getU() - a.getU());
-            case "UEAD" -> learning = Math.exp(Math.abs(b.getU() - a.getU()));
             case "PDR" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
@@ -1172,10 +1168,18 @@ public class Env extends Thread{ // simulated game environment
         if(EM.equals("ER"))
             ER = Integer.parseInt(EM_params[CI2++]);
         else if(EM.equals("MC")) {
-            if (EM_params[CI2].equals("N"))
-                NIS = N;
-            else
-                NIS = Integer.parseInt(EM_params[CI2++]);
+//            if (EM_params[CI2].equals("N"))
+//                NIS = N;
+//            else
+//                NIS = Integer.parseInt(EM_params[CI2++]);
+            String x = EM_params[CI2];
+            switch(x){
+                case ".5N" -> NIS = N / 2;
+                case "N" -> NIS = N;
+                case "2N" -> NIS = N * 2;
+                case "3N" -> NIS = N * 3;
+                default -> NIS = Integer.parseInt(x);
+            }
         }
 
         String[] EWT_params = settings[CI++].split(" "); // edge weight parameters
@@ -2372,7 +2376,8 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * with UF MNI, utility is basically equivalent to the old average score metric.
+     * With UF MNI, utility is basically equivalent to the old average score metric.<br>
+     * With UF normalised, the degree of the player reduces their utility.
      */
     public void updateUtility(Player player){
         switch(UF){
