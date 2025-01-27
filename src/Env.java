@@ -1178,13 +1178,13 @@ public class Env extends Thread{ // simulated game environment
                 NIS = Integer.parseInt(EM_params[CI2++]);
         }
 
-        String[] EW_params = settings[CI++].split(" "); // edge weight parameters
+        String[] EWT_params = settings[CI++].split(" "); // edge weight parameters
         CI2 = 0;
-        EWT = EW_params[CI2++];
+        EWT = EWT_params[CI2++];
         if(EWT.equals("rewire")){
-            RP = Double.parseDouble(EW_params[CI2++]);
-            RA = EW_params[CI2++];
-            RT = EW_params[CI2++];
+            RP = Double.parseDouble(EWT_params[CI2++]);
+            RA = EWT_params[CI2++];
+            RT = EWT_params[CI2++];
         }
 
         String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
@@ -1986,6 +1986,12 @@ public class Env extends Thread{ // simulated game environment
 
 
 
+
+    /**
+     * Player rewires away from all neighbours for which w = 0.0.
+     * @param a
+     * @return number of rewires performed
+     */
     public int rewireAway0Many(Player a){
         // omega_a denotes copy of neighbourhood of a.
         ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
@@ -2598,24 +2604,75 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Player may rewire their edges.
+     * Player may rewire their edges.<br>
+     * Rewiring is guaranteed to occur once the edge is referenced in the
+     * indices_of_edges_to_be_rewired ArrayList.<br>
+     * @param a player who may rewire
       */
-    public void rewire(Player player){
+    public void rewire(Player a){
         double random_number = ThreadLocalRandom.current().nextDouble();
         if(RP > random_number){
             int num_rewires = 0;
-            switch (RA) {
-                case "0Single" -> num_rewires = rewireAway0Single(player);
-                case "0Many" -> num_rewires = rewireAway0Many(player);
-                case "linear" -> num_rewires = rewireAwayLinear(player);
-                case "FD" -> num_rewires = rewireAwayFermiDirac(player);
-                case "exponential" -> num_rewires = rewireAwayExponential(player);
-                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+
+
+//            switch (RA) {
+//                case "0Single" -> num_rewires = rewireAway0Single(player);
+//                case "0Many" -> num_rewires = rewireAway0Many(player);
+//                case "linear" -> num_rewires = rewireAwayLinear(player);
+//                case "FD" -> num_rewires = rewireAwayFermiDirac(player);
+//                case "exponential" -> num_rewires = rewireAwayExponential(player);
+//                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
+//            }
+
+
+            ArrayList<Player> omega_a = a.getNeighbourhood();
+            ArrayList<Double> weights = a.getEdgeWeights();
+            ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
+            for(int i = 0; i < omega_a.size(); i++){
+                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+                double prob_rewire = 0;
+                switch(RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
+                    case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
+                    case "smootherstep" -> prob_rewire = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
+                    case "0Many" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
+                    case "linear" -> prob_rewire = 1 - w_ab;
+                    case "exponential" -> {
+                        double k = 0.1; // manually set noise
+                        prob_rewire = Math.exp(-k * w_ab);
+                    }
+                    case "FD" -> {
+                        Player b = omega_a.get(i);
+                        double k = 0.1; // manually set noise
+                        prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
+                    }
+                }
+                double c = ThreadLocalRandom.current().nextDouble();
+                if(prob_rewire > c){
+                    indices_of_edges_to_be_rewired.add(i);
+                }
             }
+            for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
+                int d = indices_of_edges_to_be_rewired.get(i);
+                Player e = omega_a.get(d);
+                ArrayList<Player> omega_e = e.getNeighbourhood();
+                for(int j = 0; j < omega_e.size(); j++){
+                    Player f = omega_e.get(j);
+                    if(f.equals(a)){
+                        omega_a.remove(d);
+                        weights.remove(d);
+                        omega_e.remove(j);
+                        e.getEdgeWeights().remove(j);
+                        num_rewires++;
+                        break;
+                    }
+                }
+            }
+
+
             if(num_rewires > 0){
                 switch (RT){
-                    case"local"->rewireToLocal(player, num_rewires);
-                    case"pop"->rewireToPop(player, num_rewires);
+                    case"local"->rewireToLocal(a, num_rewires);
+                    case"pop"->rewireToPop(a, num_rewires);
                 }
             }
         }

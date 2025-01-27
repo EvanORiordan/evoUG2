@@ -1,2 +1,3 @@
-game,runs,gens,space,neigh,EM,EW,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,5,1000,grid 10 10,VN 1,ER 1,proposalProb,PD always,RW exponential,copy,,MNI,100,ER 1 10,,test with dataRate
+game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
+DG,2,100,grid 50 50,VN 1,ER,rewire 1.0 smoothstep,PD always,RW exponential,copy,,MNI,,ER 1 10,,test ER 1 10
+DG,100,10000,grid 50 50,VN 1,MC,proposalProb,PD always,RW exponential,copy,,MNI,,,,test MC
