@@ -376,13 +376,14 @@ public class Env extends Thread{ // simulated game environment
                                 case "RW" -> parent = selRW(child);
                                 case "fittest" -> parent = selFittest(child);
                                 case "intensity" -> parent = selIntensity(child);
-                                case "crossover" -> crossover(child); // sel and evo effectively occur at once in one function
+                                case "crossover" -> crossover(child);
                                 case "randomNeigh" -> parent = selRandomNeigh(child);
                                 case "randomPop" -> parent = selRandomPop();
                             }
                             switch (evo) {
                                 case "copy" -> evoCopy(child, parent);
                                 case "approach" -> evoApproach(child, parent);
+                                case "copyFitter" -> evoCopyFitter(child, parent);
                             }
                             switch (mut){
                                 case "global" -> {
@@ -415,11 +416,44 @@ public class Env extends Thread{ // simulated game environment
                         if(EWT.equals("rewire"))
                             rewire(player);
                         if(player.getNeighbourhood().size() > 0) {
-                            Player parent = selRandomNeigh(player);
-                            double random_number = ThreadLocalRandom.current().nextDouble();
-                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
-                            if(random_number < prob_evolve)
-                                evoCopy(player, parent);
+                            Player parent = null;
+
+
+//                            Player parent = selRandomNeigh(player);
+
+
+//                            double random_number = ThreadLocalRandom.current().nextDouble();
+//                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
+//                            if(random_number < prob_evolve)
+//                                evoCopy(player, parent);
+
+
+//                            evoFitnessCheck(player, parent);
+
+
+                            switch(sel){
+                                case "RW" -> parent = selRW(player);
+                                case "fittest" -> parent = selFittest(player);
+                                case "intensity" -> parent = selIntensity(player);
+                                case "crossover" -> crossover(player);
+                                case "randomNeigh" -> parent = selRandomNeigh(player);
+                                case "randomPop" -> parent = selRandomPop();
+                            }
+                            switch (evo) {
+                                case "copy" -> evoCopy(player, parent);
+                                case "approach" -> evoApproach(player, parent);
+                                case "copyFitter" -> evoCopyFitter(player, parent);
+                            }
+                            switch (mut){
+                                case "global" -> {
+                                    if(mutationCheck())
+                                        mutGlobal(player);
+                                }
+                                case "local" -> {
+                                    if(mutationCheck())
+                                        mutLocal(player);
+                                }
+                            }
                         }
                     }
                 }
@@ -684,7 +718,12 @@ public class Env extends Thread{ // simulated game environment
             double w_ab = weights.get(i);
 
             // e indicates whether w_ab will undergo learning
-            boolean e = checkEWLP(a, b);
+//            boolean e = checkEWLP(a, b);
+
+
+            boolean e = true;
+
+
             if(e){
                 w_ab += calculateLearning(a, b);
                 if(w_ab > 1.0)
@@ -842,7 +881,12 @@ public class Env extends Thread{ // simulated game environment
 
 
 
-    // crossover where one child adopts midway point between two parent strategies.
+    /**
+     * sel and evo effectively occur at once in one function.
+     * crossover where one child adopts midway point between two parent strategies.
+     *
+     * @param child
+     */
     public void crossover(Player child){
 
         // how to select parents?
@@ -1201,7 +1245,7 @@ public class Env extends Thread{ // simulated game environment
                 alpha = Double.parseDouble(EWL_params[CI2++]);
                 beta = Double.parseDouble(EWL_params[CI2++]);
             }
-            EWLP = EWL_params[CI2++];
+//            EWLP = EWL_params[CI2++];
         }
 
         String[] sel_params = settings[CI++].split(" "); // selection parameters
@@ -2199,7 +2243,7 @@ public class Env extends Thread{ // simulated game environment
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
                 settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
                 settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
-                settings += EWLP.equals("")? "": ",EWLP";
+//                settings += EWLP.equals("")? "": ",EWLP";
                 settings += ",sel";
                 settings += sel.equals("RW")? ",RWT": "";
                 settings += selNoise == 0.0 && !varying.equals("selNoise")? "": ",selNoise";
@@ -2236,7 +2280,7 @@ public class Env extends Thread{ // simulated game environment
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
             settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
             settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
-            settings += EWLP.equals("")? "": "," + EWLP;
+//            settings += EWLP.equals("")? "": "," + EWLP;
             settings += "," + sel;
             settings += sel.equals("RW")? "," + RWT: "";
             settings += selNoise == 0.0 && !varying.equals("selNoise")? "": "," + selNoise;
@@ -2681,5 +2725,19 @@ public class Env extends Thread{ // simulated game environment
                 }
             }
         }
+    }
+
+
+    /**
+     * Probability to evolve equals utility difference divided by degree.<br>
+     * Evolution cannot occur if child fitter than parent.
+     * @param child
+     * @param parent
+     */
+    public void evoCopyFitter(Player child, Player parent){
+        double random_number = ThreadLocalRandom.current().nextDouble();
+        double prob_evolve = (parent.getU() - child.getU()) / child.getNeighbourhood().size();
+        if(random_number < prob_evolve)
+            evoCopy(child, parent);
     }
 }
