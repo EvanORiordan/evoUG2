@@ -1,3 +1,16 @@
 game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test PDR EWLF with proposalProb EWT
-DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test PDR EWLF with rewire EWT
+DG,100,10000,grid 50 50,VN 1,MC N,proposalProb,PDR,randomNeigh,copyFitter,,cumulative,100,,,test PDR EWLF with proposalProb EWT
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test PDR EWLF with smoothstep RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smootherstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test smootherstep RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 0Many pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test 0Many RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 linear pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test linear RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 exponential pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test exponential RA with k=0.1
+DG,100,10000,grid 50 50,VN 1,MC N,proposalProb,PD,randomNeigh,copyFitter,,cumulative,100,,,test PD EWLF proposalProb EWT
+DG,100,10000,grid 50 50,VN 1,MC N,proposalProb,PDR,randomNeigh,copy,,cumulative,100,,,test PDR EWLF proposalProb EWT copy evo
+DG,10,10000,grid 50 50,VN 1,MC N,rewire 0.05 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,RP 0.05 20,,varying RP
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test PDR EWLF with smoothstep RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,normalised,100,,,normalised UF smoothstep RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 0Many pop,PDR,randomNeigh,copyFitter,,normalised,100,,,normalised UF 0Many RA
+DG,100,10000,grid 50 50,VN 1,MC N,rewire 1.0 linear pop,PDR,randomNeigh,copyFitter,,normalised,100,,,normalised UF linear RA
+DG,1,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,normalised,100,,,test
+DG,1,10000,grid 50 50,VN 1,MC N,rewire 1.0 smoothstep pop,PDR,randomNeigh,copyFitter,,cumulative,100,,,test

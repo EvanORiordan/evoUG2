@@ -33,8 +33,8 @@ public class Player {
 //    private int[] NSI_per_neighbour;
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
-    private double score; // score of player ($\Pi$)
-    private double avg_score; // average score of player ($\overline{\Pi}$)
+//    private double score; // score of player ($\Pi$)
+    private double pi; // score of player ($\Pi$)
     private double mean_self_edge_weight; // mean of edge weights from player to its neighbours
     private double mean_neighbour_edge_weight; // mean of edge weights directed at player
     private String[] strategies_PD = {"C","D","A","TFT"};
@@ -105,8 +105,6 @@ public class Player {
 
     @Override
     public String toString(){ // document details relating to the player
-
-        // key player attributes
         String player_desc = "";
         player_desc += "ID="+ID;
 //        player_desc += " pos=("+x+","+y+")";
@@ -122,35 +120,8 @@ public class Player {
                 }
             }
         }
-        player_desc+=" score="+DF4.format(score); // score
-//        player_desc+=" ("+DF4.format(avg_score)+")"; // avg score
-        player_desc += " u=" + DF4.format(u);
-
-
-        // EW and NSI per neighbour
-//        player_desc += " neighbourhood=[";
-//        for(int i=0;i<neighbourhood.size();i++){
-//            Player neighbour = neighbourhood.get(i);
-//            player_desc += "("
-//                    + neighbour.ID + ", " // neighbour ID
-////                    + DF2.format(edgeWeights[i]) + ", " // EW with neighbour
-//                    + DF2.format(edgeWeights.get(i)) + ", "
-//                    + NSI_per_neighbour[i] + ")"; // NSI with neighbour
-//            if((i+1) < neighbourhood.size()){ // check if there are any neighbours left to document
-//                player_desc +=", ";
-//            }
-//        }
-//        player_desc +="]";
-
-//        player_desc += " weights=[";
-//        for(int i=0;i<edgeWeights.length;i++){
-//            player_desc += DF2.format(edgeWeights[i]);
-//            if((i+1) < neighbourhood.size()){
-//                player_desc +=", ";
-//            }
-//        }
-//        player_desc +="]";
-
+        player_desc+=" pi="+DF4.format(pi); // score
+        player_desc += " u=" + DF4.format(u); // utility
 
         player_desc += " neighbourhood=[";
         for(int i=0;i<neighbourhood.size();i++){
@@ -161,8 +132,6 @@ public class Player {
         }
         player_desc += "]";
 
-
-
         player_desc += " weights=[";
         for(int i=0;i<edgeWeights.size();i++){
             player_desc += DF2.format(edgeWeights.get(i));
@@ -171,8 +140,6 @@ public class Player {
             }
         }
         player_desc += "]";
-
-
 
         // interaction stats
 //        player_desc += " NI="+ NI;
@@ -265,12 +232,10 @@ public class Player {
     public void setNSR(int i){
         NSR=i;
     }
-    public double getScore(){return score;}
-    public void setScore(double score){
-        this.score=score;
+    public double getPi(){return pi;}
+    public void setPi(double pi){
+        this.pi=pi;
     }
-    public double getAvgScore(){return avg_score;}
-    public void setAvgScore(double d){avg_score=d;}
     public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
     public void setMeanSelfEdgeWeight(double d){mean_self_edge_weight=d;}
     public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}

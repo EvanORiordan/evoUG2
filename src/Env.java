@@ -612,7 +612,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void updateStatsUG(Player player, double payoff){
-        player.setScore(player.getScore() + payoff);
+        player.setPi(player.getPi() + payoff);
         player.setMNI(player.getMNI() + 1);
     }
 
@@ -683,7 +683,7 @@ public class Env extends Thread{ // simulated game environment
 
 
     public void updateStatsPD(Player player, double payoff){
-        player.setScore(player.getScore() + payoff);
+        player.setPi(player.getPi() + payoff);
         player.setMNI(player.getMNI() + 1);
     }
 
@@ -765,18 +765,36 @@ public class Env extends Thread{ // simulated game environment
     public double calculateLearning(Player a, Player b){
         double learning = 0.0;
         switch(EWLF){
-            case "ROC" -> learning = ROC;
+//            case "ROC" -> learning = ROC;
+            case "ROC" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b) // if b fairer than a, increase weight
+                    learning = ROC;
+                else if(p_a > p_b) // else if a fairer than b, decrease weight
+                    learning = -ROC;
+            }
             case "PD" -> learning = b.getP() - a.getP();
             case "PED" -> learning = Math.exp(b.getP() - a.getP());
             case "UD" -> learning = b.getU() - a.getU();
             case "UED" -> learning = Math.exp(b.getU() - a.getU());
+//            case "PDR" -> {
+//                double p_a = a.getP();
+//                double p_b = b.getP();
+//                if(p_a < p_b){ // if b fairer than a, a wants to increase w_ab
+//                    learning = ThreadLocalRandom.current().nextDouble(0, p_b - p_a);
+//                } else if(p_a > p_b){ // if a is fairer than b, a wants to decrease w_ab
+//                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a, 0);
+//                }
+//            }
             case "PDR" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
-                if(p_a < p_b){ // if b fairer than a, a wants to increase w_ab
-                    learning = ThreadLocalRandom.current().nextDouble(0, p_b - p_a);
-                } else if(p_a > p_b){ // if a is fairer than b, a wants to decrease w_ab
-                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a, 0);
+                double diff = p_b - p_a;
+                if(p_a < p_b){
+                    learning = ThreadLocalRandom.current().nextDouble(0, diff);
+                } else if(p_a > p_b){
+                    learning = -ThreadLocalRandom.current().nextDouble(0, -(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
                 }
             }
         }
@@ -1537,7 +1555,7 @@ public class Env extends Thread{ // simulated game environment
     public void prepare(){
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            player.setScore(0);
+            player.setPi(0);
             player.setMNI(0);
             switch(game){
                 case "UG" -> {
@@ -2028,7 +2046,7 @@ public class Env extends Thread{ // simulated game environment
      * Generic function to update stats
      */
     public void updateStats(Player player, double payoff){
-        player.setScore(player.getScore() + payoff);
+        player.setPi(player.getPi() + payoff);
         player.setMNI(player.getMNI() + 1);
     }
 
@@ -2321,7 +2339,8 @@ public class Env extends Thread{ // simulated game environment
                     }
                     case "PD" -> {}
                 }
-                results += "," + varying;
+                if(!varying.equals(""))
+                    results += "," + varying;
                 results += ",duration";
             }else {
                 fw = new FileWriter(results_filename, true);
@@ -2425,10 +2444,20 @@ public class Env extends Thread{ // simulated game environment
      */
     public void updateUtility(Player player){
         switch(UF){
-            case "MNI" -> player.setU(player.getScore() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
-            case "cumulative" -> player.setU(player.getScore()); // cumulative payoff
-            case "normalised" -> player.setU(player.getScore() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
+            case "MNI" -> player.setU(player.getPi() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
+            case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
+//            case "normalised" -> player.setU(player.getPi() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
+            case "normalised" -> {
+                if(player.getNeighbourhood().size() == 0){
+                    player.setU(0.0);
+                }else{
+                    player.setU(player.getPi() / player.getNeighbourhood().size());
+                }
+            }
         }
+//        if(Double.isNaN(player.getU())){
+//            System.out.println("BP");
+//        }
     }
 
 
