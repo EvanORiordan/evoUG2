@@ -44,10 +44,11 @@ public class Env extends Thread{ // simulated game environment
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
-    static String varying; // indicates which parameter will be varied in experiment series
+    static String varying = ""; // indicates which parameter will be varied in experiment series
     static double variation; // amount by which varying parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-    static int numExp = 1; // number of experiments to occur; indicates whether series of experiments to occur; set to 1 by default.
-    static int expNum = 1; //tracks which experiment is taking place at any given time during a series
+    static String[] str_variations;
+    static int numExp; // number of experiments to occur
+    static int expNum; // indicates how far along we are through the experiment series
     static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
     static double experiment_mean_mean_p; // mean of the mean p of the runs of an experiment
@@ -67,7 +68,8 @@ public class Env extends Thread{ // simulated game environment
     static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
-    static String this_path; // address where results of specific experimentation is recorded
+    static String this_path; // address where results of current experimentation is recorded
+    static String experiment_path; // address where results of current experiment are stored
     static int dataRate; // indicates how often data is saved. if 0, no gens are recorded.
     static String pos_data_filename;
     static String neighType; // indicates type of neighbourhood players will have.
@@ -84,8 +86,8 @@ public class Env extends Thread{ // simulated game environment
     static String sel; // indicates which selection function to call
     static double selNoise = 0; // noise affecting selection
     static String mut; // indicates which mutation function to call
-    static double mutRate = 0; // probability of mutation
-    static double mutBound = 0; // denotes max mutation possible
+    static double mutRate = 0.0; // probability of mutation
+    static double mutBound = 0.0; // denotes max mutation possible
     static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
     static String EM; // evolution mechanism: the mechanism by which evolution occurs.
     static int NIS; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
@@ -114,32 +116,35 @@ public class Env extends Thread{ // simulated game environment
                 +"_"+start_timestamp.getHour()
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
-        this_path = general_path+"\\"+start_timestamp_string+" "+desc;
+//        this_path = general_path+"\\"+start_timestamp_string+" "+desc;
+        this_path = general_path+"\\"+start_timestamp_string;
         try {
             Files.createDirectories(Paths.get(this_path)); // create results storage folder
         }catch(IOException e){
             e.printStackTrace();
         }
-        printExperimentResultsFolderPath();
+        printPath();
 
-        // create result data folders
-        if(dataRate != 0) {
-            createExperimentDataFolders();
-        }
+//        // create result data folders
+//        if(dataRate != 0) {
+//            createExperimentDataFolders();
+//        }
 
         System.out.println("Starting timestamp: "+start_timestamp);
-        if(numExp > 1){
-            experimentSeries(); // run an experiment series
-        } else {
-            experiment(); // run a single experiment
-        }
+//        if(numExp > 1){
+//            experimentSeries(); // run an experiment series
+//        } else {
+//            experiment(); // run a single experiment
+//        }
+        experimentSeries();
         LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
         System.out.println("Finishing timestamp: "+finish_timestamp);
         Duration duration = Duration.between(start_timestamp, finish_timestamp);
         long secondsElapsed = duration.toSeconds();
         long minutesElapsed = duration.toMinutes();
-        System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
-        printExperimentResultsFolderPath();
+        long hoursElapsed = duration.toHours();
+        System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
+        printPath();
     }
 
 
@@ -150,7 +155,7 @@ public class Env extends Thread{ // simulated game environment
     public static void experimentSeries(){
         various_amounts = new ArrayList<>(); // stores values of varying parameter
         switch(varying){
-            case"runs"->various_amounts.add((double)runs);
+//            case"runs"->various_amounts.add((double)runs);
             case"gens"->various_amounts.add((double)gens);
             case"length"->various_amounts.add((double) length);
             case"width"->various_amounts.add((double) width);
@@ -166,14 +171,28 @@ public class Env extends Thread{ // simulated game environment
             case"injSize"->various_amounts.add((double)injSize);
             case"RP"->various_amounts.add(RP);
         }
-        for(int i=1;i<=numExp;i++){
-            System.out.println("\n===================\nNOTE: Start of experiment "+expNum+": "+varying+"="+DF4.format(various_amounts.get(i - 1))+".");
+        for(expNum = 1; expNum <= numExp; expNum++){
+            System.out.println("\nstart experiment " + expNum);
+            experiment_path = this_path + "\\" + expNum;
+//            if(expNum == 1 && dataRate != 0)
+            if(dataRate != 0)
+                createExperimentDataFolders();
             experiment(); // run an experiment of the series
             switch(varying){ // after experiment, adjust the value of the varying parameter
-                case "runs"->{
-                    runs+=(int)variation;
-                    various_amounts.add((double)runs);
-                }
+
+                // non-numerical parameters
+                case "EWLF" -> EWLF = str_variations[expNum - 1];
+                case "RA" -> RA = str_variations[expNum - 1];
+                case "RT" -> RT = str_variations[expNum - 1];
+                case "sel" -> sel = str_variations[expNum - 1];
+                case "evo" -> evo = str_variations[expNum - 1];
+                case "EWT" -> EWT = str_variations[expNum - 1];
+
+                // numerical parameters
+//                case "runs"->{
+//                    runs+=(int)variation;
+//                    various_amounts.add((double)runs);
+//                }
                 case "gens"->{
                     gens+=(int)variation;
                     various_amounts.add((double)gens);
@@ -233,7 +252,7 @@ public class Env extends Thread{ // simulated game environment
                     various_amounts.add(RP);
                 }
             }
-            System.out.println("NOTE: End of "+varying+"="+DF4.format(various_amounts.get(i - 1))+".\n===================");
+//            System.out.println("NOTE: End of "+varying+"="+DF4.format(various_amounts.get(i))+".\n===================");
         }
     }
 
@@ -311,7 +330,7 @@ public class Env extends Thread{ // simulated game environment
         System.out.println(output);
         writeSettings();
         writeResults();
-        expNum++; // move on to the next experiment in the series
+//        expNum++; // move on to the next experiment in the series
     }
 
 
@@ -1296,13 +1315,50 @@ public class Env extends Thread{ // simulated game environment
         dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
         CI++;
 
+//        String[] series_params = settings[CI++].split(" ");
+//        CI2 = 0;
+//        varying = series_params[CI2++];
+//        if(!series_params[0].equals("")){
+//            variation = Double.parseDouble(series_params[CI2++]);
+//            numExp = Integer.parseInt(series_params[CI2++]);
+//        }
+
+//        String[] series_params = settings[CI++].split(" ");
+//        CI2 = 0;
+//        varying = series_params[CI2++];
+//        if (!series_params[0].equals("")) {
+//            numExp = Integer.parseInt(series_params[CI2++]);
+//            switch(varying){
+//                // non-string parameter
+//                case "length", "width", "ER", "ROC", "gens", "RP" -> variation = Double.parseDouble(series_params[CI2++]);
+//
+//                case "EWLF", "EWT", "evo", "sel", "RA", "RT" -> {
+//                    str_variations = new String[numExp]; // last entry is null which is fine since it is unused by design (if size is numExp, error occurs after last experiment ends in experimentSeries()).
+//                    for(int i = 0; i < numExp - 1; i++)
+//                        str_variations[i] = series_params[i + 2];
+//                }
+//            }
+//        }
+
         String[] series_params = settings[CI++].split(" ");
         CI2 = 0;
-        varying = series_params[CI2++];
-        if(!series_params[0].equals("")){
-            variation = Double.parseDouble(series_params[CI2++]);
-            numExp = Integer.parseInt(series_params[CI2++]);
+        numExp = Integer.parseInt(series_params[CI2++]);
+        if(numExp > 1){
+            varying = series_params[CI2++];
+            switch(varying){
+                case "EWLF", "EWT", "evo", "sel", "RA", "RT" -> {
+                    str_variations = new String[numExp]; // last entry is null which is fine since it is unused by design (if size is numExp, error occurs after last experiment ends in experimentSeries()).
+                    for(int i = 0; i < numExp - 1; i++)
+                        str_variations[i] = series_params[i + 2];
+                }
+                case "length", "width", "ER", "ROC", "gens", "RP" ->
+                        variation = Double.parseDouble(series_params[CI2++]);
+            }
         }
+
+
+
+
 
         String[] inj_params = settings[CI++].split(" "); // injection parameters
         if(!inj_params[0].equals("")){
@@ -1373,23 +1429,39 @@ public class Env extends Thread{ // simulated game environment
      * Then within each experiment folder, create data folders.
       */
     public static void createExperimentDataFolders(){
-        for(int i = 1; i <= numExp; i++){
-            String experiment_path = this_path + "\\" + i; // address of this experiment
-            try{
-                Files.createDirectories(Paths.get(experiment_path));
-                switch(game){
-                    case "UG" -> {
-                        Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-                        Files.createDirectories(Paths.get(experiment_path + "\\" + qDataStr));
-                    }
-                    case "DG" -> Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-                    case "PD" -> {}
+//        for(expNum = 1; expNum <= numExp; expNum++){
+//            try{
+//                Files.createDirectories(Paths.get(experiment_path));
+//                switch(game){
+//                    case "UG" -> {
+//                        Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
+//                        Files.createDirectories(Paths.get(experiment_path + "\\" + qDataStr));
+//                    }
+//                    case "DG" -> Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
+//                    case "PD" -> {}
+//                }
+//                Files.createDirectories(Paths.get(experiment_path + "\\" + uDataStr));
+//                Files.createDirectories(Paths.get(experiment_path + "\\" + degreeDataStr));
+//            }catch(IOException e){
+//                e.printStackTrace();
+//            }
+//        }
+
+
+        try{
+            Files.createDirectories(Paths.get(experiment_path));
+            switch(game){
+                case "UG" -> {
+                    Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
+                    Files.createDirectories(Paths.get(experiment_path + "\\" + qDataStr));
                 }
-                Files.createDirectories(Paths.get(experiment_path + "\\" + uDataStr));
-                Files.createDirectories(Paths.get(experiment_path + "\\" + degreeDataStr));
-            }catch(IOException e){
-                e.printStackTrace();
+                case "DG" -> Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
+                case "PD" -> {}
             }
+            Files.createDirectories(Paths.get(experiment_path + "\\" + uDataStr));
+            Files.createDirectories(Paths.get(experiment_path + "\\" + degreeDataStr));
+        }catch(IOException e){
+            e.printStackTrace();
         }
     }
 
@@ -1398,8 +1470,8 @@ public class Env extends Thread{ // simulated game environment
     /**
      * Prints path of experiment results folder.
      */
-    public static void printExperimentResultsFolderPath(){
-        System.out.println("Experiment results folder path: \n" + this_path);
+    public static void printPath(){
+        System.out.println("Experimentation data: \n" + this_path);
     }
 
 
@@ -1575,7 +1647,7 @@ public class Env extends Thread{ // simulated game environment
      */
     public void writeMacroPData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\macro_" + pDataStr + ".csv";
+            String filename = experiment_path + "\\macro_" + pDataStr + ".csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
                 s+="gen";
@@ -1599,7 +1671,7 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeMacroQData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\macro_" + qDataStr + ".csv";
+            String filename = experiment_path + "\\macro_" + qDataStr + ".csv";
             String output = "";
             if(gen == dataRate){
                 output += "gen";
@@ -1647,7 +1719,7 @@ public class Env extends Thread{ // simulated game environment
     // Records acceptance thresholds of the population to a .csv file.
     public void writePData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\" + pDataStr + "\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\" + pDataStr + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
@@ -1673,7 +1745,7 @@ public class Env extends Thread{ // simulated game environment
     // Records acceptance thresholds of the population to a .csv file.
     public void writeQData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\" + qDataStr + "\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\" + qDataStr + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String output = "";
             for(int y=length-1;y>=0;y--){
@@ -2269,7 +2341,8 @@ public class Env extends Thread{ // simulated game environment
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
                 settings += mut.equals("")? "": ",mut";
                 settings += mutRate == 0.0 && !varying.equals("mutRate")? "": ",mutRate";
-                settings += mutBound == 0.0 && !varying.equals("mutBound")? "": ",mutBound";
+//                settings += mutBound == 0.0 && !varying.equals("mutBound")? "": ",mutBound";
+                settings += mut.equals("local")? ",mutBound": "";
                 settings += ",UF";
                 settings += injIter == 0? "": ",injIter";
                 settings += injP == 0.0? "": ",injP";
@@ -2362,7 +2435,7 @@ public class Env extends Thread{ // simulated game environment
 
             // write value of varying parameter.
             switch(varying){
-                case "runs" -> results += "," + runs;
+//                case "runs" -> results += "," + runs;
                 case "ER" -> results += "," + ER;
                 case "NIS" -> results += "," + NIS;
                 case "ROC" -> results += "," + ROC;
@@ -2370,12 +2443,18 @@ public class Env extends Thread{ // simulated game environment
                 case "width" -> results += "," + width;
                 case "RP" -> results += "," + RP;
                 case "gens" -> results += "," + gens;
+                case "EWLF" -> results += "," + EWLF;
+                case "EWT" -> results += "," + EWT;
+                case "RA" -> results += "," + RA;
+                case "RT" -> results += "," + RT;
+                case "sel" -> results += "," + sel;
+                case "evo" -> results += "," + evo;
             }
 
             // write duration of experiment
             LocalDateTime current_timestamp = LocalDateTime.now();
             Duration duration = Duration.between(old_timestamp, current_timestamp);
-            results += ",0:" + duration.toMinutes() + ":" + duration.toSeconds() % 60;
+            results += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
             old_timestamp = current_timestamp;
 
             fw.append(results);
@@ -2589,7 +2668,7 @@ public class Env extends Thread{ // simulated game environment
     // Records utilities of the population to a .csv file.
     public void writeUData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\" + uDataStr + "\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\" + uDataStr + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
@@ -2612,7 +2691,7 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeMacroUData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\macro_" + uDataStr + ".csv";
+            String filename = experiment_path + "\\macro_" + uDataStr + ".csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
                 s+="gen";
@@ -2635,7 +2714,7 @@ public class Env extends Thread{ // simulated game environment
     // Records degrees of the population to a .csv file.
     public void writeDegreeData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\" + degreeDataStr + "\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\" + degreeDataStr + "\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
@@ -2658,7 +2737,7 @@ public class Env extends Thread{ // simulated game environment
 
     public void writeMacroDegreeData(){
         try{
-            String filename = this_path + "\\" + expNum + "\\macro_" + degreeDataStr + ".csv";
+            String filename = experiment_path + "\\macro_" + degreeDataStr + ".csv";
             String s="";
             if(gen == dataRate){ // apply headings to file before writing data
                 s+="gen";
