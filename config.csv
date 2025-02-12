@@ -1,3 +1,4 @@
 game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,3,10000,grid 10 10,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,test EWLF series
-DG,3,10000,grid 10 10,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,1,,test 1 numExp
+DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series
+DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,1,,1 numExp
+DG,20,10000,grid 30 30,VN 1,MC 900,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series MC EM 900 NIS

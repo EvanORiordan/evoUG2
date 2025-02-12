@@ -150,7 +150,8 @@ public class Env extends Thread{ // simulated game environment
 
 
     /**
-     * Runs a series of experiments.
+     * Runs an experiment series. If varying parameter defined, vary it after each
+     * subsequent experiment in the series.
      */
     public static void experimentSeries(){
         various_amounts = new ArrayList<>(); // stores values of varying parameter
@@ -1253,14 +1254,15 @@ public class Env extends Thread{ // simulated game environment
 //                NIS = N;
 //            else
 //                NIS = Integer.parseInt(EM_params[CI2++]);
-            String x = EM_params[CI2];
-            switch(x){
-                case ".5N" -> NIS = N / 2;
-                case "N" -> NIS = N;
-                case "2N" -> NIS = N * 2;
-                case "3N" -> NIS = N * 3;
-                default -> NIS = Integer.parseInt(x);
-            }
+//            String x = EM_params[CI2];
+//            switch(x){
+//                case ".5N" -> NIS = N / 2;
+//                case "N" -> NIS = N;
+//                case "2N" -> NIS = N * 2;
+//                case "3N" -> NIS = N * 3;
+//                default -> NIS = Integer.parseInt(x);
+//            }
+            NIS = Integer.parseInt(EM_params[CI2]);
         }
 
         String[] EWT_params = settings[CI++].split(" "); // edge weight parameters
@@ -1368,7 +1370,7 @@ public class Env extends Thread{ // simulated game environment
             injSize = Integer.parseInt(inj_params[CI2++]);
         }
 
-        desc = settings[CI];
+//        desc = settings[CI];
     }
 
 
