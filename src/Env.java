@@ -14,31 +14,30 @@ import java.util.concurrent.ThreadLocalRandom;
  * School of Computer Science<br>
  * University of Galway<br>
  */
-public class Env extends Thread{ // simulated game environment
-
-    // fields related to the game environment
+public class Env extends Thread{ // environment simulator
     static String game; // indicates what game is being played
+    static double M = 1.0; // default prize amount during a UG/DG
     static String space; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-    int mean_degree; // mean degree of population
-    double sigma_degree; // standard deviation of degree
+    static String neighType; // indicates type of neighbourhood players will have.
+    static int neighRadius; // radius of neighbourhood
+    static int neighSize; // size of neighbours with random neighbourhood type.
     static int N; // population size
     static int runs; // number of experiment runs to occur
+    static int run_num; // current run
     Player[] pop; // array of players; assumes 2D space
-    double mean_p; // mean proposal value
-    double sigma_p; // standard deviation of p
+    double mean_p; // mean proposal value; informally referred to as the performance of an experiment
     double mean_q; // mean acceptance threshold
-    double sigma_q; // standard deviation of q
-    static int gens; // number of generations to occur per experiment run
-    int gen = 1; // number of iterations that have occurred
-    static double M = 1.0; // default prize amount during a UG/DG
-    static String UF; // utility formula: indicates how utility is calculated
     double mean_u; // mean utility
+    double mean_degree; // mean degree of population
+    double sigma_p; // standard deviation of p
+    double sigma_q; // standard deviation of q
     double sigma_u; // standard deviation of utility
-    static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
-    static double injP = 0.0; // injection p: indicates p value to be injected
-    static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
+    double sigma_degree; // standard deviation of degree
+    int gen = 1; // current generation
+    static int gens; // number of generations to occur per experiment run
+    static String UF; // utility formula: indicates how utility is calculated
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
     static double P; // PD: punishment for mutual defection
@@ -49,14 +48,20 @@ public class Env extends Thread{ // simulated game environment
     static String[] str_variations;
     static int numExp; // number of experiments to occur
     static int expNum; // indicates how far along we are through the experiment series
-    static int run_num; // tracks which of the runs is currently executing
     static ArrayList<Double> various_amounts;
-    static double experiment_mean_mean_p; // mean of the mean p of the runs of an experiment
-    static double experiment_mean_mean_q;
-    static double experiment_sigma_mean_p; // standard deviation of the mean p of the runs of an experiment
-    static double experiment_sigma_mean_q;
-    static double[] experiment_mean_p_values;
-    static double[] experiment_mean_q_values;
+    static double mean_mean_p; // mean of the mean p of the runs of an experiment
+    static double mean_mean_q;
+    static double mean_mean_u;
+    static double mean_mean_degree;
+    static double sigma_mean_p; // standard deviation of the mean p of the runs of an experiment
+    static double sigma_mean_q;
+    static double sigma_mean_u;
+    static double sigma_mean_degree;
+    static double mean_sigma_degree; // mean of the standard deviations of degree of the runs of an experiment
+    static double[] mean_p_values; // mean p values of the runs of an experiment
+    static double[] mean_q_values;
+    static double[] mean_u_values;
+    static double[] mean_degree_values;
     static FileWriter fw;
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
@@ -64,7 +69,7 @@ public class Env extends Thread{ // simulated game environment
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
-    static String desc; //description of experiment
+//    static String desc; //description of experiment
     static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
@@ -72,9 +77,6 @@ public class Env extends Thread{ // simulated game environment
     static String experiment_path; // address where results of current experiment are stored
     static int dataRate; // indicates how often data is saved. if 0, no gens are recorded.
     static String pos_data_filename;
-    static String neighType; // indicates type of neighbourhood players will have.
-    static int neighRadius; // radius of neighbourhood
-    static int neighSize; // size of neighbours with random neighbourhood type.
     static String EWT; // EW type
     static String EWLF; // EWL formula
     static double ROC = 0; // rate of change: fixed learning amount to EW
@@ -88,8 +90,8 @@ public class Env extends Thread{ // simulated game environment
     static String mut; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
-    static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
     static String EM; // evolution mechanism: the mechanism by which evolution occurs.
+    static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
     static int NIS; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT; // roulette wheel type
     static String RA = ""; // rewire away
@@ -99,6 +101,9 @@ public class Env extends Thread{ // simulated game environment
     static String qDataStr = "q_data";
     static String uDataStr = "u_data";
     static String degreeDataStr = "degree_data";
+    static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
+    static double injP = 0.0; // injection p: indicates p value to be injected
+    static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
 
 
 
@@ -124,18 +129,7 @@ public class Env extends Thread{ // simulated game environment
             e.printStackTrace();
         }
         printPath();
-
-//        // create result data folders
-//        if(dataRate != 0) {
-//            createExperimentDataFolders();
-//        }
-
         System.out.println("Starting timestamp: "+start_timestamp);
-//        if(numExp > 1){
-//            experimentSeries(); // run an experiment series
-//        } else {
-//            experiment(); // run a single experiment
-//        }
         experimentSeries();
         LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
         System.out.println("Finishing timestamp: "+finish_timestamp);
@@ -265,69 +259,96 @@ public class Env extends Thread{ // simulated game environment
     public static void experiment(){
         switch(game){
             case "UG" -> {
-                experiment_mean_mean_p = 0;
-                experiment_mean_p_values = new double[runs];
-                experiment_sigma_mean_p = 0;
-                experiment_mean_mean_q = 0;
-                experiment_mean_q_values = new double[runs];
-                experiment_sigma_mean_q = 0;
+                mean_mean_p = 0;
+                mean_p_values = new double[runs];
+                sigma_mean_p = 0;
+                mean_mean_q = 0;
+                mean_q_values = new double[runs];
+                sigma_mean_q = 0;
             }
             case "DG" -> {
-                experiment_mean_mean_p = 0;
-                experiment_mean_p_values = new double[runs];
-                experiment_sigma_mean_p = 0;
+                mean_mean_p = 0;
+                mean_p_values = new double[runs];
+                sigma_mean_p = 0;
             }
             case "PD" -> {}
         }
+        mean_mean_u = 0.0;
+        mean_u_values = new double[runs];
+        sigma_mean_u = 0.0;
+        mean_mean_degree = 0.0;
+        mean_degree_values = new double[runs];
+        sigma_mean_degree = 0.0;
+        mean_sigma_degree = 0.0;
         for(run_num = 1; run_num <= runs; run_num++){
             Env run = new Env(); // represents one run of the experiment
             run.start();
             String output = "experiment "+expNum+" run "+run_num;
             switch(game){
                 case "UG" -> {
-                    experiment_mean_mean_p += run.mean_p;
-                    experiment_mean_p_values[run_num] = run.mean_p;
-                    experiment_mean_mean_q += run.mean_q;
-                    experiment_mean_q_values[run_num] = run.mean_q;
+                    mean_mean_p += run.mean_p;
+                    mean_p_values[run_num - 1] = run.mean_p;
+                    mean_mean_q += run.mean_q;
+                    mean_q_values[run_num - 1] = run.mean_q;
                     output += " mean p=" + DF4.format(run.mean_p);
                     output += " mean q="+DF4.format(run.mean_q);
                 }
                 case "DG" -> {
-                    experiment_mean_mean_p += run.mean_p;
-                    experiment_mean_p_values[run_num - 1] = run.mean_p;
+                    mean_mean_p += run.mean_p;
+                    mean_p_values[run_num - 1] = run.mean_p;
                     output += " mean p=" + DF4.format(run.mean_p);
                 }
                 case "PD" -> {} // IDEA: if game is PD, then print number of cooperators, defectors and abstainers.
             }
+            mean_mean_u += run.mean_u;
+            mean_u_values[run_num - 1] = run.mean_p;
+            mean_mean_degree += run.mean_degree;
+            mean_degree_values[run_num - 1] = run.mean_degree;
+            mean_sigma_degree += run.sigma_degree;
+            output += " mean u=" + DF4.format(run.mean_u);
             System.out.println(output);
         }
         String output = "";
         switch(game){
             case "UG" -> {
-                experiment_mean_mean_p /= runs;
-                experiment_mean_mean_q /= runs;
+                mean_mean_p /= runs;
+                mean_mean_q /= runs;
                 for(int i = 0; i < runs; i++){
-                    experiment_sigma_mean_p += Math.pow(experiment_mean_p_values[i] - experiment_mean_mean_p, 2);
-                    experiment_sigma_mean_q += Math.pow(experiment_mean_q_values[i] - experiment_mean_mean_q, 2);
+                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
+                    sigma_mean_q += Math.pow(mean_q_values[i] - mean_mean_q, 2);
                 }
-                experiment_sigma_mean_p = Math.pow(experiment_sigma_mean_p / runs, 0.5);
-                experiment_sigma_mean_q = Math.pow(experiment_sigma_mean_q / runs, 0.5);
-                output += "mean mean p=" + DF4.format(experiment_mean_mean_p);
-                output += " mean sigma p=" + DF4.format(experiment_sigma_mean_p);
-                output += " mean mean q=" + DF4.format(experiment_mean_mean_q);
-                output += " mean sigma q=" + DF4.format(experiment_sigma_mean_q);
+                sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
+                sigma_mean_q = Math.pow(sigma_mean_q / runs, 0.5);
+                output += "mean mean p=" + DF4.format(mean_mean_p);
+                output += " sigma mean p=" + DF4.format(sigma_mean_p);
+                output += " mean mean q=" + DF4.format(mean_mean_q);
+                output += " sigma mean q=" + DF4.format(sigma_mean_q);
             }
             case "DG" -> {
-                experiment_mean_mean_p /= runs;
+                mean_mean_p /= runs;
                 for(int i = 0; i < runs; i++){
-                    experiment_sigma_mean_p += Math.pow(experiment_mean_p_values[i] - experiment_mean_mean_p, 2);
+                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
                 }
-                experiment_sigma_mean_p = Math.pow(experiment_sigma_mean_p / runs, 0.5);
-                output += "mean mean p=" + DF4.format(experiment_mean_mean_p);
-                output += " mean sigma p=" + DF4.format(experiment_sigma_mean_p);
+                sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
+                output += "mean mean p=" + DF4.format(mean_mean_p);
+                output += " sigma mean p=" + DF4.format(sigma_mean_p);
             }
             case "PD" -> {}
         }
+        mean_mean_u /= runs;
+        mean_mean_degree /= runs;
+        for(int i = 0; i < runs; i++){
+            sigma_mean_u += Math.pow(mean_u_values[i] - mean_mean_u, 2);
+            sigma_mean_degree += Math.pow(mean_degree_values[i] - mean_mean_degree, 2);
+        }
+        sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
+        sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
+        mean_sigma_degree /= runs;
+        output += " mean mean u=" + DF4.format(mean_mean_p);
+        output += " sigma mean u=" + DF4.format(sigma_mean_p);
+        output += " mean mean degree=" + DF4.format(mean_mean_degree);
+        output += " sigma mean degree=" + DF4.format(sigma_mean_degree);
+        output += " mean sigma degree=" + DF4.format(mean_sigma_degree);
         System.out.println(output);
         writeSettings();
         writeResults();
@@ -2404,16 +2425,21 @@ public class Env extends Thread{ // simulated game environment
                 switch(game){
                     case "UG" -> {
                         results += "mean mean p";
-                        results += ",mean sigma p";
+                        results += ",sigma mean p";
                         results += ",mean mean q";
-                        results += ",mean sigma q";
+                        results += ",sigma mean q";
                     }
                     case "DG" -> {
                         results += "mean mean p";
-                        results += ",mean sigma p";
+                        results += ",sigma mean p";
                     }
                     case "PD" -> {}
                 }
+                results += ",mean mean u";
+                results += ",sigma mean u";
+                results += ",mean mean degree";
+                results += ",sigma mean degree";
+                results += ",mean sigma degree";
                 if(!varying.equals(""))
                     results += "," + varying;
                 results += ",duration";
@@ -2423,16 +2449,21 @@ public class Env extends Thread{ // simulated game environment
             results += "\n";
             switch(game){
                 case "UG" -> {
-                    results += DF4.format(experiment_mean_mean_p);
-                    results += "," + DF4.format(experiment_sigma_mean_p);
-                    results += "," + DF4.format(experiment_mean_mean_q);
-                    results += "," + DF4.format(experiment_sigma_mean_q);
+                    results += DF4.format(mean_mean_p);
+                    results += "," + DF4.format(sigma_mean_p);
+                    results += "," + DF4.format(mean_mean_q);
+                    results += "," + DF4.format(sigma_mean_q);
                 }
                 case "DG" -> {
-                    results += DF4.format(experiment_mean_mean_p);
-                    results += "," + DF4.format(experiment_sigma_mean_p);}
+                    results += DF4.format(mean_mean_p);
+                    results += "," + DF4.format(sigma_mean_p);}
                 case "PD" -> {}
             }
+            results += "," + DF4.format(mean_mean_u);
+            results += "," + DF4.format(sigma_mean_u);
+            results += "," + DF4.format(mean_mean_degree);
+            results += "," + DF4.format(sigma_mean_degree);
+            results += "," + DF4.format(mean_sigma_degree);
 
 
             // write value of varying parameter.

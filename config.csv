@@ -2,3 +2,10 @@ game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
 DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series
 DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,1,,1 numExp
 DG,20,10000,grid 30 30,VN 1,MC 900,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series MC EM 900 NIS
+DG,5,10000,grid 10 10,VN 1,MC 900,proposalProb,PD,RW exponential,copy,,normalised,100,2 EWLF PED,,test
+DG,5,10000,grid 10 10,VN 1,MC 900,rewire 1.0 smoothstep pop,PD,RW exponential,copy,,normalised,100,2 EWLF PED,,test
+DG,5,500,grid 10 10,VN 1,MC 100,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,test
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RP series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.01 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.01,,RP series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RA series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RT series
