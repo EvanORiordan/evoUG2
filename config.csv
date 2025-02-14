@@ -7,5 +7,9 @@ DG,5,10000,grid 10 10,VN 1,MC 900,rewire 1.0 smoothstep pop,PD,RW exponential,co
 DG,5,500,grid 10 10,VN 1,MC 100,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,test
 DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RP series
 DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.01 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.01,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RA series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RT series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.05,,RP series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.5 smoothstep pop,PDR,RW exponential,copy,,normalised,100,5 RP 0.1,,RP series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 smoothstep pop,PDR,randomNeigh,copyFitter,,normalised,1000,10 RP 0.1,,RP series
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 linear pop,PDR,randomNeigh,copyFitter,,normalised,1000,4 RA smoothstep smootherstep 0Many,,RA series
+DG,2,10000,grid 5 5,VN 1,MC 5,rewire 0.1 linear pop,PDR,randomNeigh,copyFitter,,normalised,1000,4 RA smoothstep smootherstep 0Many,,test
+DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,x,x,,normalised,1000,x,,RT series (PROVIDE X)

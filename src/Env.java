@@ -308,7 +308,7 @@ public class Env extends Thread{ // environment simulator
             output += " mean u=" + DF4.format(run.mean_u);
             System.out.println(output);
         }
-        String output = "";
+        String output = "experiment " + expNum + ":";
         switch(game){
             case "UG" -> {
                 mean_mean_p /= runs;
@@ -319,10 +319,10 @@ public class Env extends Thread{ // environment simulator
                 }
                 sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
                 sigma_mean_q = Math.pow(sigma_mean_q / runs, 0.5);
-                output += "mean mean p=" + DF4.format(mean_mean_p);
-                output += " sigma mean p=" + DF4.format(sigma_mean_p);
-                output += " mean mean q=" + DF4.format(mean_mean_q);
-                output += " sigma mean q=" + DF4.format(sigma_mean_q);
+                output += "\nmean mean p=" + DF4.format(mean_mean_p);
+                output += "\nsigma mean p=" + DF4.format(sigma_mean_p);
+                output += "\nmean mean q=" + DF4.format(mean_mean_q);
+                output += "\nsigma mean q=" + DF4.format(sigma_mean_q);
             }
             case "DG" -> {
                 mean_mean_p /= runs;
@@ -330,8 +330,8 @@ public class Env extends Thread{ // environment simulator
                     sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
                 }
                 sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-                output += "mean mean p=" + DF4.format(mean_mean_p);
-                output += " sigma mean p=" + DF4.format(sigma_mean_p);
+                output += "\nmean mean p=" + DF4.format(mean_mean_p);
+                output += "\nsigma mean p=" + DF4.format(sigma_mean_p);
             }
             case "PD" -> {}
         }
@@ -344,11 +344,11 @@ public class Env extends Thread{ // environment simulator
         sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
         sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
         mean_sigma_degree /= runs;
-        output += " mean mean u=" + DF4.format(mean_mean_p);
-        output += " sigma mean u=" + DF4.format(sigma_mean_p);
-        output += " mean mean degree=" + DF4.format(mean_mean_degree);
-        output += " sigma mean degree=" + DF4.format(sigma_mean_degree);
-        output += " mean sigma degree=" + DF4.format(mean_sigma_degree);
+        output += "\nmean mean u=" + DF4.format(mean_mean_p);
+        output += "\nsigma mean u=" + DF4.format(sigma_mean_p);
+        output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
+        output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
+        output += "\nmean sigma degree=" + DF4.format(mean_sigma_degree);
         System.out.println(output);
         writeSettings();
         writeResults();
