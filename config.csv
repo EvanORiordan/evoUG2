@@ -1,15 +1,10 @@
-game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series,inj,desc
-DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series
-DG,20,10000,grid 30 30,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,100,1,,1 numExp
-DG,20,10000,grid 30 30,VN 1,MC 900,proposalProb,PD,RW exponential,copy,,normalised,100,3 EWLF PED PDR,,EWLF series MC EM 900 NIS
-DG,5,10000,grid 10 10,VN 1,MC 900,proposalProb,PD,RW exponential,copy,,normalised,100,2 EWLF PED,,test
-DG,5,10000,grid 10 10,VN 1,MC 900,rewire 1.0 smoothstep pop,PD,RW exponential,copy,,normalised,100,2 EWLF PED,,test
-DG,5,500,grid 10 10,VN 1,MC 100,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,test
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.001 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.001,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.01 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.01,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 smoothstep pop,PDR,RW exponential,copy,,normalised,100,10 RP 0.05,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.5 smoothstep pop,PDR,RW exponential,copy,,normalised,100,5 RP 0.1,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 smoothstep pop,PDR,randomNeigh,copyFitter,,normalised,1000,10 RP 0.1,,RP series
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire 0.1 linear pop,PDR,randomNeigh,copyFitter,,normalised,1000,4 RA smoothstep smootherstep 0Many,,RA series
-DG,2,10000,grid 5 5,VN 1,MC 5,rewire 0.1 linear pop,PDR,randomNeigh,copyFitter,,normalised,1000,4 RA smoothstep smootherstep 0Many,,test
-DG,20,10000,grid 50 50,VN 1,MC 2500,rewire x smoothstep pop,PDR,x,x,,normalised,1000,x,,RT series (PROVIDE X)
+game,runs,gens,space,neigh,EM,EWT,EWL,sel,evo,mut,UF,dataRate,series
+DG 1.0,2,2,grid 50 50,VN 1,MC 2500,rewire 1.0 smoothstep pop,PDR,RW exponential,copy,,cumulative,1000,1
+DG 1.0,2,2,grid 50 50,VN 1,MC 2500,rewire 1.0 linear pop,PDR,RW exponential,copy,,cumulative,1000,4 RA smoothstep smootherstep 0Many
+DG 1.0,2,2,grid 50 50,VN 1,MC 2500,rewire 0.1 linear pop,PDR,RW exponential,copy,,cumulative,1000,5 RP 0.2 0.3 0.4 0.5
+DG 1.0,20,10000,grid 50 50,VN 1,MC 2500,rewire 1.0 smoothstep pop,PDR,RW exponential,copy,,cumulative,1000,1
+DG 1.0,20,10000,grid 50 50,VN 1,MC 2500,rewire 1.0 smoothstep pop,PDR,RW exponential,copy,,normalised,1000,1
+DG 0.5,1,10,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,,3 M 1.0 1.5
+DG 0.5,20,10000,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,,3 M 1.0 1.5
+DG 0.5,1,10,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,MNI,,3 M 1.0 1.5
+DG 0.5,20,10000,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,MNI,,3 M 1.0 1.5
