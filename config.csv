@@ -8,3 +8,11 @@ DG 0.5,1,10,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised
 DG 0.5,20,10000,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,normalised,,3 M 1.0 1.5
 DG 0.5,1,10,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,MNI,,3 M 1.0 1.5
 DG 0.5,20,10000,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,MNI,,3 M 1.0 1.5
+DG 0.5,1,10,grid 50 50,VN 1,ER 5,proposalProb,PD,RW exponential,copy,,MNI,,M 1.0 1.5
+DG 1.0,20,10000,grid 40 40,VN 1,ER 1,proposalProb,PD,RW exponential,copy,,MNI,,
+DG 1.0,1,10000,grid 10 10,VN 1,ER 1,proposalProb,PD,RW exponential,copy,,MNI,,ER 2 3 4 5 6 7 8 9 10
+DG 1.0,20,10000,grid 40 40,VN 1,ER 1,proposalProb,PD,RW exponential,copy,,MNI,,ER 2 3 4 5 6 7 8 9 10
+DG 1.0,1,10000,grid 10 10,VN 1,oldER 3,proposalProb,PD,RW exponential,copy,,MNI,,
+DG 1.0,1,10000,grid 10 10,VN 1,oldER 1,proposalProb,PD,RW exponential,copy,,MNI,,ER 2 3 4 5 6 7 8 9 10
+DG 1.0,20,10000,grid 40 40,VN 1,oldER 1,proposalProb,PD,RW exponential,copy,,MNI,,ER 2 3 4 5 6 7 8 9 10
+DG 1.0,10,10000,grid 40 40,VN 1,oldER 1,proposalProb,PD,RW exponential,copy,,MNI,,ER 2 3 4 5 6 7 8 9 10

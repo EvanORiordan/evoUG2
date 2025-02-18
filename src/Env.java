@@ -45,8 +45,9 @@ public class Env extends Thread{ // environment simulator
     static double l; // loner's payoff
     static String varying = ""; // indicates which parameter will be varied in experiment series
 //    static double variation; // amount by which varying parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-    static String[] str_variations;
-    static int numExp; // number of experiments to occur
+//    static String[] str_variations;
+    static ArrayList<String> str_variations = new ArrayList<>();
+//    static int numExp; // number of experiments to occur
     static int expNum; // indicates how far along we are through the experiment series
 //    static ArrayList<Double> various_amounts;
     static double mean_mean_p; // mean of the mean p of the runs of an experiment
@@ -148,125 +149,31 @@ public class Env extends Thread{ // environment simulator
      * subsequent experiment in the series.
      */
     public static void experimentSeries(){
-//        various_amounts = new ArrayList<>(); // stores values of varying parameter
-//        switch(varying){
-////            case"runs"->various_amounts.add((double)runs);
-//            case"gens"->various_amounts.add((double)gens);
-//            case"length"->various_amounts.add((double) length);
-//            case"width"->various_amounts.add((double) width);
-//            case"ER"->various_amounts.add((double)ER);
-//            case "NIS" -> various_amounts.add((double) NIS);
-//            case"ROC"->various_amounts.add(ROC);
-//            case"selNoise"->various_amounts.add(selNoise);
-//            case"evoNoise"->various_amounts.add(evoNoise);
-//            case"mutRate"->various_amounts.add(mutRate);
-//            case"mutBound"->various_amounts.add(mutBound);
-//            case"injIter"->various_amounts.add((double)injIter);
-//            case"injP"->various_amounts.add(injP);
-//            case"injSize"->various_amounts.add((double)injSize);
-//            case"RP"->various_amounts.add(RP);
-//        }
-        for(expNum = 1; expNum <= numExp; expNum++){
+        for(expNum = 1; expNum <= str_variations.size() + 1; expNum++){
             System.out.println("\nstart experiment " + expNum);
-//            System.out.println("\nstart experiment " + expNum + " (" + varying + " = " + str_variations[expNum - 1] + ")");
             experiment_path = this_path + "\\" + expNum;
-//            if(expNum == 1 && dataRate != 0)
             if(dataRate != 0)
                 createExperimentDataFolders();
             experiment(); // run an experiment of the series
-            if(expNum <= str_variations.length){ // do not try to vary after the last experiment has ended
+            if(expNum <= str_variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
-                    case "EWLF" -> EWLF = str_variations[expNum - 1];
-                    case "RA" -> RA = str_variations[expNum - 1];
-                    case "RT" -> RT = str_variations[expNum - 1];
-                    case "sel" -> sel = str_variations[expNum - 1];
-                    case "evo" -> evo = str_variations[expNum - 1];
-                    case "EWT" -> EWT = str_variations[expNum - 1];
-                    case "gens" -> gens = Integer.parseInt(str_variations[expNum - 1]);
-                    case "length" -> length = Integer.parseInt(str_variations[expNum - 1]);
-                    case "width" -> width = Integer.parseInt(str_variations[expNum - 1]);
-                    case "ER" -> ER = Integer.parseInt(str_variations[expNum - 1]);
-                    case "NIS" -> NIS = Integer.parseInt(str_variations[expNum - 1]);
-                    case "ROC" -> ROC = Double.parseDouble(str_variations[expNum - 1]);
-                    case "RP" -> RP = Double.parseDouble(str_variations[expNum - 1]);
-                    case "M" -> M = Double.parseDouble(str_variations[expNum - 1]);
+                    case "EWLF" -> EWLF = str_variations.get(expNum - 1);
+                    case "RA" -> RA = str_variations.get(expNum - 1);
+                    case "RT" -> RT = str_variations.get(expNum - 1);
+                    case "sel" -> sel = str_variations.get(expNum - 1);
+                    case "evo" -> evo = str_variations.get(expNum - 1);
+                    case "EWT" -> EWT = str_variations.get(expNum - 1);
+                    case "gens" -> gens = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "length" -> length = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "width" -> width = Integer.parseInt(str_variations.get(expNum - 1));
+//                    case "ER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "ER", "oldER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "NIS" -> NIS = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "ROC" -> ROC = Double.parseDouble(str_variations.get(expNum - 1));
+                    case "RP" -> RP = Double.parseDouble(str_variations.get(expNum - 1));
+                    case "M" -> M = Double.parseDouble(str_variations.get(expNum - 1));
                 }
             }
-//            switch(varying){ // after experiment, adjust the value of the varying parameter
-//
-//                // non-numerical parameters
-//                case "EWLF" -> EWLF = str_variations[expNum - 1];
-//                case "RA" -> RA = str_variations[expNum - 1];
-//                case "RT" -> RT = str_variations[expNum - 1];
-//                case "sel" -> sel = str_variations[expNum - 1];
-//                case "evo" -> evo = str_variations[expNum - 1];
-//                case "EWT" -> EWT = str_variations[expNum - 1];
-//
-//                // numerical parameters
-////                case "runs"->{
-////                    runs+=(int)variation;
-////                    various_amounts.add((double)runs);
-////                }
-//                case "gens"->{
-//                    gens+=(int)variation;
-//                    various_amounts.add((double)gens);
-//                }
-//                case "length"->{
-//                    length+=(int)variation;
-//                    N = length * width;
-//                    various_amounts.add((double)length);
-//                }
-//                case"width"->{
-//                    width+=(int)variation;
-//                    N = length * width;
-//                    various_amounts.add((double)width);
-//                }
-//                case "ER"->{
-//                    ER+=(int)variation;
-//                    various_amounts.add((double)ER);
-//                }
-//                case "NIS" -> {
-//                    NIS += (int) variation;
-//                    various_amounts.add((double) NIS);
-//                }
-//                case "ROC"->{
-//                    ROC+=variation;
-//                    various_amounts.add(ROC);
-//                }
-//                case "selNoise"->{
-//                    selNoise+=variation;
-//                    various_amounts.add(selNoise);
-//                }
-//                case "evoNoise"->{
-//                    evoNoise+=variation;
-//                    various_amounts.add(evoNoise);
-//                }
-//                case "mutRate"->{
-//                    mutRate+=variation;
-//                    various_amounts.add(mutRate);
-//                }
-//                case "mutBound"->{
-//                    mutBound+=variation;
-//                    various_amounts.add(mutBound);
-//                }
-//                case "injIter"->{
-//                    injIter += (int) variation;
-//                    various_amounts.add((double) injIter);
-//                }
-//                case "injP"->{
-//                    injP += variation;
-//                    various_amounts.add(injP);
-//                }
-//                case "injSize"->{
-//                    injSize += (int) variation;
-//                    various_amounts.add((double) injSize);
-//                }
-//                case"RP"->{
-//                    RP+=variation;
-//                    various_amounts.add(RP);
-//                }
-//            }
-//            System.out.println("NOTE: End of "+varying+"="+DF4.format(various_amounts.get(i))+".\n===================");
         }
     }
 
@@ -408,7 +315,7 @@ public class Env extends Thread{ // environment simulator
                 case "ER" -> {
 
                     // iterations of playing and edge weight learning
-                    for(int j=0;j<ER;j++){
+                    for(int j = 0; j < ER; j++){
                         for(int i = 0; i < N; i++){
                             play(pop[i]);
                         }
@@ -477,20 +384,6 @@ public class Env extends Thread{ // environment simulator
                             rewire(player);
                         if(player.getNeighbourhood().size() > 0) {
                             Player parent = null;
-
-
-//                            Player parent = selRandomNeigh(player);
-
-
-//                            double random_number = ThreadLocalRandom.current().nextDouble();
-//                            double prob_evolve = (parent.getU() - player.getU()) / player.getNeighbourhood().size();
-//                            if(random_number < prob_evolve)
-//                                evoCopy(player, parent);
-
-
-//                            evoFitnessCheck(player, parent);
-
-
                             switch(sel){
                                 case "RW" -> parent = selRW(player);
                                 case "fittest" -> parent = selFittest(player);
@@ -517,8 +410,36 @@ public class Env extends Thread{ // environment simulator
                         }
                     }
                 }
-            }
 
+                case "oldER" -> { // for the program to function as if its using the old ER system, remember that ive added a bit later on that breaks the gen loop to essentially nullify it.
+                    int iters = 15000;
+                    int iter = 1;
+                    int gensOccurred = 0;
+                    while(iter <= iters) {
+                        for(int i=0;i<N;i++){
+                            play(pop[i]);
+                        }
+                        for(int i=0;i<N;i++){
+                            updateUtility(pop[i]);
+                        }
+                        for(int i=0;i<N;i++){
+                            EWL(pop[i]);
+                        }
+                        if(iter % ER == 0){
+                            for(int i=0;i<N;i++) {
+                                Player child = pop[i];
+                                Player parent = selRW(child);
+                                evoCopy(child, parent);
+                            }
+                            gensOccurred++;
+                        }
+                        prepare();
+                        iter++; // move on to the next iteration
+                    }
+//                    System.out.println("gens occurred = " + gensOccurred);
+                    gens = gensOccurred;
+                }
+            }
 
             // calculate stats
             switch(game){
@@ -541,6 +462,16 @@ public class Env extends Thread{ // environment simulator
             }
             calculatemeanDegree();
             calculateStandardDeviationDegree();
+
+
+
+            // temp bit for oldER testing
+            if(EM.equals("oldER"))
+                break;
+
+
+
+
 
 
             // save data every dataRate gens where:
@@ -1234,12 +1165,36 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-25s ", settings[CI++]); //EWL
             System.out.printf("| %-15s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", settings[CI++]); //evo
-            System.out.printf("| %-15s ", settings[CI++]); //mut
+            /*
+            this try catch template serves to handle ArrayIndexOutOfBoundsException.
+            use it whenever printing a param / param group where the param / the first param
+            in the group is unrequired.
+
+            i came up with it because settings[] wouldnt have an entry for
+            unrequired params that arent eventually followed up by a required param.
+            specifically, i was trying to print dataRate (unrequired) but since there were no more
+            required params coming anytime afterward, there was no "" entry in
+            settings corresponding to dataRate hence ArrayIndexOutOfBoundsException would occur.
+             */
+            try{
+                System.out.printf("| %-15s ", settings[CI++]);//mut
+            }catch(ArrayIndexOutOfBoundsException e){
+                System.out.printf("| %-15s ", " ");
+                CI++;
+            }
             System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-10s ", settings[CI++]); //dataRate
-            System.out.printf("| %s ", settings[CI++]); //series
-//            System.out.printf("| %-15s ", settings[CI++]); //inj
-//            System.out.printf("| %s ", settings[CI]); //desc
+            try{
+                System.out.printf("| %-10s ", settings[CI++]);//dataRate
+            }catch(ArrayIndexOutOfBoundsException e){
+                System.out.printf("| %-10s ", " ");
+                CI++;
+            }
+            try{
+                System.out.printf("| %s ", settings[CI++]);//series
+            }catch(ArrayIndexOutOfBoundsException e){
+                System.out.printf("| %s ", " ");
+                CI++;
+            }
             System.out.println();
         }
         printTableBorder();
@@ -1293,7 +1248,8 @@ public class Env extends Thread{ // environment simulator
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
         CI2 = 0;
         EM = EM_params[CI2++];
-        if(EM.equals("ER"))
+//        if(EM.equals("ER"))
+        if(EM.equals("ER") || EM.equals("oldER"))
             ER = Integer.parseInt(EM_params[CI2++]);
         else if(EM.equals("MC")) {
 //            if (EM_params[CI2].equals("N"))
@@ -1360,63 +1316,38 @@ public class Env extends Thread{ // environment simulator
         }
 
         UF = settings[CI++];
-        dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
+//        dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
+
+        try{
+//            dataRate = Integer.parseInt(settings[CI]);
+            dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
+        }catch(IndexOutOfBoundsException e){
+            dataRate = 0;
+        }
+
         CI++;
-
-//        String[] series_params = settings[CI++].split(" ");
-//        CI2 = 0;
-//        varying = series_params[CI2++];
-//        if(!series_params[0].equals("")){
-//            variation = Double.parseDouble(series_params[CI2++]);
-//            numExp = Integer.parseInt(series_params[CI2++]);
-//        }
-
-//        String[] series_params = settings[CI++].split(" ");
-//        CI2 = 0;
-//        varying = series_params[CI2++];
-//        if (!series_params[0].equals("")) {
-//            numExp = Integer.parseInt(series_params[CI2++]);
-//            switch(varying){
-//                // non-string parameter
-//                case "length", "width", "ER", "ROC", "gens", "RP" -> variation = Double.parseDouble(series_params[CI2++]);
-//
-//                case "EWLF", "EWT", "evo", "sel", "RA", "RT" -> {
-//                    str_variations = new String[numExp]; // last entry is null which is fine since it is unused by design (if size is numExp, error occurs after last experiment ends in experimentSeries()).
-//                    for(int i = 0; i < numExp - 1; i++)
-//                        str_variations[i] = series_params[i + 2];
-//                }
-//            }
-//        }
 
 //        String[] series_params = settings[CI++].split(" ");
 //        CI2 = 0;
 //        numExp = Integer.parseInt(series_params[CI2++]);
 //        if(numExp > 1){
 //            varying = series_params[CI2++];
-//            switch(varying){
-//                case "EWLF", "EWT", "evo", "sel", "RA", "RT" -> {
-//                    str_variations = new String[numExp]; // last entry is null which is fine since it is unused by design (if size is numExp, error occurs after last experiment ends in experimentSeries()).
-//                    for(int i = 0; i < numExp - 1; i++)
-//                        str_variations[i] = series_params[i + 2];
-//                }
-//                case "length", "width", "ER", "ROC", "gens", "RP" ->
-//                        variation = Double.parseDouble(series_params[CI2++]);
-//            }
+//
+//            // store variations in a string array. when its time to vary param and its a numerical
+//            // param, parse to int/double.
+//            str_variations = new String[numExp - 1];
+//            for(int i = 0; i < numExp - 1; i++)
+//                str_variations[i] = series_params[CI2++];
 //        }
 
-
-        String[] series_params = settings[CI++].split(" ");
-        CI2 = 0;
-        numExp = Integer.parseInt(series_params[CI2++]);
-        if(numExp > 1){
+        try{
+            String[] series_params = settings[CI++].split(" ");
+            CI2 = 0;
             varying = series_params[CI2++];
-
-            // store variations in a string array. when its time to vary param and its a numerical
-            // param, parse to int/double.
-            str_variations = new String[numExp - 1];
-            for(int i = 0; i < numExp - 1; i++)
-                str_variations[i] = series_params[CI2++];
-        }
+//            str_variations = new ArrayList<>();
+            for(int i = 1; i < series_params.length; i++)
+                str_variations.add(series_params[i]);
+        }catch(ArrayIndexOutOfBoundsException e){}
 
 
 
@@ -2510,7 +2441,8 @@ public class Env extends Thread{ // environment simulator
             // write value of varying parameter.
             switch(varying){
 //                case "runs" -> results += "," + runs;
-                case "ER" -> results += "," + ER;
+//                case "ER" -> results += "," + ER;
+                case "ER", "oldER" -> results += "," + ER;
                 case "NIS" -> results += "," + NIS;
                 case "ROC" -> results += "," + ROC;
                 case "length" -> results += "," + length;
