@@ -92,8 +92,8 @@ public class Env extends Thread{ // environment simulator
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
     static String EM; // evolution mechanism: the mechanism by which evolution occurs.
-    static int ER; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
-    static int NIS; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
+    static int ER = 0; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
+    static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT; // roulette wheel type
     static String RA = ""; // rewire away
     static String RT = ""; // rewire to
@@ -166,8 +166,8 @@ public class Env extends Thread{ // environment simulator
                     case "gens" -> gens = Integer.parseInt(str_variations.get(expNum - 1));
                     case "length" -> length = Integer.parseInt(str_variations.get(expNum - 1));
                     case "width" -> width = Integer.parseInt(str_variations.get(expNum - 1));
-//                    case "ER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "ER", "oldER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "ER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
+//                    case "newER", "oldER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
                     case "NIS" -> NIS = Integer.parseInt(str_variations.get(expNum - 1));
                     case "ROC" -> ROC = Double.parseDouble(str_variations.get(expNum - 1));
                     case "RP" -> RP = Double.parseDouble(str_variations.get(expNum - 1));
@@ -312,7 +312,8 @@ public class Env extends Thread{ // environment simulator
 
         while(gen <= gens){
             switch(EM){
-                case "ER" -> {
+//                case "ER" -> {
+                case "newER" -> {
 
                     // iterations of playing and edge weight learning
                     for(int j = 0; j < ER; j++){
@@ -428,8 +429,10 @@ public class Env extends Thread{ // environment simulator
                         if(iter % ER == 0){
                             for(int i=0;i<N;i++) {
                                 Player child = pop[i];
-                                Player parent = selRW(child);
-                                evoCopy(child, parent);
+                                if(child.getNeighbourhood().size() > 0) { // prevent evolution if child is isolated.
+                                    Player parent = selRW(child);
+                                    evoCopy(child, parent);
+                                }
                             }
                             gensOccurred++;
                         }
@@ -465,7 +468,7 @@ public class Env extends Thread{ // environment simulator
 
 
 
-            // temp bit for oldER testing
+            // this block of code is required for oldER EM to operate as intended.
             if(EM.equals("oldER"))
                 break;
 
@@ -1221,9 +1224,9 @@ public class Env extends Thread{ // environment simulator
         CI2 = 0;
         game = game_params[CI2++];
         Player.setGame(game);
-        switch(game){
-            case "UG", "DG" -> M = Double.parseDouble(game_params[CI2++]);
-        }
+//        switch(game){
+//            case "UG", "DG" -> M = Double.parseDouble(game_params[CI2++]);
+//        }
         runs = Integer.parseInt(settings[CI++]);
         gens = Integer.parseInt(settings[CI++]);
 
@@ -1249,7 +1252,7 @@ public class Env extends Thread{ // environment simulator
         CI2 = 0;
         EM = EM_params[CI2++];
 //        if(EM.equals("ER"))
-        if(EM.equals("ER") || EM.equals("oldER"))
+        if(EM.equals("newER") || EM.equals("oldER"))
             ER = Integer.parseInt(EM_params[CI2++]);
         else if(EM.equals("MC")) {
 //            if (EM_params[CI2].equals("N"))
@@ -2307,18 +2310,23 @@ public class Env extends Thread{ // environment simulator
             if(expNum == 1){
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
-                settings += varying.equals("M")? ",M": "";
+//                settings += varying.equals("M")? ",M": "";
                 settings += ",runs";
                 settings += ",gens";
                 settings += ",space";
-                settings += length == 0 && !varying.equals("length")? "": ",length";
-                settings += width == 0 && !varying.equals("width")? "": ",width";
+//                settings += length == 0 && !varying.equals("length")? "": ",length";
+//                settings += width == 0 && !varying.equals("width")? "": ",width";
+                settings += ",length";
+                settings += ",width";
                 settings += ",neighType";
                 settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
                 settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
                 settings += ",EM";
-                settings += ER == 0 && !varying.equals("ER")? "": ",ER";
-                settings += NIS == 0 && !varying.equals("NIS")? "": ",NIS";
+//                settings += ER == 0 && !varying.equals("ER")? "": ",ER";
+//                settings += ER == 0 && !varying.equals("newER") || !varying.equals("oldER")? "": ",ER";
+                settings += ER != 0? ",ER": "";
+//                settings += NIS == 0 && !varying.equals("NIS")? "": ",NIS";
+                settings += NIS != 0? ",NIS": "";
                 settings += ",EWT";
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
@@ -2346,7 +2354,7 @@ public class Env extends Thread{ // environment simulator
             }
             settings += "\n";
             settings += game;
-            settings += varying.equals("M")? "," + M: "";
+//            settings += varying.equals("M")? "," + M: "";
             settings += "," + runs;
             settings += "," + gens;
             settings += "," + space;
@@ -2356,8 +2364,11 @@ public class Env extends Thread{ // environment simulator
             settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
             settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
             settings += "," + EM;
-            settings += ER == 0 && !varying.equals("ER")? "": "," + ER;
-            settings += NIS == 0 && !varying.equals("NIS")? "": "," + NIS;
+//            settings += ER == 0 && !varying.equals("ER")? "": "," + ER;
+//            settings += ER == 0 && !varying.equals("newER") || !varying.equals("newER")? "": "," + ER;
+            settings += ER != 0? "," + ER: "";
+//            settings += NIS == 0 && !varying.equals("NIS")? "": "," + NIS;
+            settings += NIS != 0? "," + NIS: "";
             settings += "," + EWT;
             settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
             settings += RA.equals("")? "": "," + RA;
@@ -2441,8 +2452,8 @@ public class Env extends Thread{ // environment simulator
             // write value of varying parameter.
             switch(varying){
 //                case "runs" -> results += "," + runs;
-//                case "ER" -> results += "," + ER;
-                case "ER", "oldER" -> results += "," + ER;
+                case "ER" -> results += "," + ER;
+//                case "newER", "oldER" -> results += "," + ER;
                 case "NIS" -> results += "," + NIS;
                 case "ROC" -> results += "," + ROC;
                 case "length" -> results += "," + length;
@@ -2455,7 +2466,7 @@ public class Env extends Thread{ // environment simulator
                 case "RT" -> results += "," + RT;
                 case "sel" -> results += "," + sel;
                 case "evo" -> results += "," + evo;
-                case "M" -> results += "," + M;
+//                case "M" -> results += "," + M;
             }
 
             // write duration of experiment
@@ -2525,15 +2536,21 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
+     * Calculate utility of player.
      * With UF MNI, utility is basically equivalent to the old average score metric.<br>
      * With UF normalised, the degree of the player reduces their utility.
      */
     public void updateUtility(Player player){
         switch(UF){
-            case "MNI" -> player.setU(player.getPi() / player.getMNI()); // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
+            case "MNI" -> { // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
+                if(player.getNeighbourhood().size() == 0)
+                    player.setU(0.0);
+                else
+                    player.setU(player.getPi() / player.getMNI());
+            }
             case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
-//            case "normalised" -> player.setU(player.getPi() / player.getNeighbourhood().size()); // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
-            case "normalised" -> {
+//            case "normalised" -> player.setU(player.getPi() / player.getNeighbourhood().size());
+            case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
                 if(player.getNeighbourhood().size() == 0){
                     player.setU(0.0);
                 }else{
