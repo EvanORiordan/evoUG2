@@ -28,3 +28,4 @@ DG,1,1000,grid 10 10,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,RW exponential,cop
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,RW exponential,copy,,normalised,,NIS 1200 1600 2000 2400
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,randomNeigh,copy,,normalised,,NIS 1200 1600 2000 2400
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,randomNeigh,copyFitter,,normalised,,NIS 1200 1600 2000 2400
+DG,1,10000,grid 10 10,VN 1,newER 1,rewire 0.1 linear pop,PD,RW exponential 0.5,copy,,normalised,,

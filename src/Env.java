@@ -343,7 +343,7 @@ public class Env extends Thread{ // environment simulator
                             switch(sel){
                                 case "RW" -> parent = selRW(child);
                                 case "fittest" -> parent = selFittest(child);
-                                case "intensity" -> parent = selIntensity(child);
+//                                case "intensity" -> parent = selIntensity(child);
                                 case "crossover" -> crossover(child);
                                 case "randomNeigh" -> parent = selRandomNeigh(child);
                                 case "randomPop" -> parent = selRandomPop();
@@ -388,7 +388,7 @@ public class Env extends Thread{ // environment simulator
                             switch(sel){
                                 case "RW" -> parent = selRW(player);
                                 case "fittest" -> parent = selFittest(player);
-                                case "intensity" -> parent = selIntensity(player);
+//                                case "intensity" -> parent = selIntensity(player);
                                 case "crossover" -> crossover(player);
                                 case "randomNeigh" -> parent = selRandomNeigh(player);
                                 case "randomPop" -> parent = selRandomPop();
@@ -814,7 +814,8 @@ public class Env extends Thread{ // environment simulator
         for(int i = 0; i < size; i++){
             switch(RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
-                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU());
+//                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU());
+                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU() * selNoise);
             }
             roulette_total += pockets[i];
         }
@@ -853,43 +854,43 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
-     * The greater w (intensity of selection) is,
-     * the more likely a fitter player is selected as child's parent.
-     * @param child
-     * @return parent player
-     */
-//    public Player selRand(Player child){
-    public Player selIntensity(Player child){
-        double w = selNoise;
-        double[] effective_payoffs = new double[N];
-        Player parent = null;
-        double total = 0.0;
-        double tally = 0.0;
-
-        // calculate effective payoffs
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            double u = player.getU();
-            double effective_payoff = Math.exp(w * u);
-            effective_payoffs[i] = effective_payoff;
-            total += effective_payoff;
-        }
-
-        // fitter player ==> more likely to be selected
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        for(int i = 0; i < N; i++){
-            tally += effective_payoffs[i];
-            double percentile = tally / total;
-            if(random_double < percentile){
-                parent = pop[i];
-                break;
-            }
-        }
-
-        return parent;
-    }
+//    /**
+//     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
+//     * The greater w (intensity of selection) is,
+//     * the more likely a fitter player is selected as child's parent.
+//     * @param child
+//     * @return parent player
+//     */
+////    public Player selRand(Player child){
+//    public Player selIntensity(Player child){
+//        double w = selNoise;
+//        double[] effective_payoffs = new double[N];
+//        Player parent = null;
+//        double total = 0.0;
+//        double tally = 0.0;
+//
+//        // calculate effective payoffs
+//        for(int i=0;i<N;i++){
+//            Player player = pop[i];
+//            double u = player.getU();
+//            double effective_payoff = Math.exp(w * u);
+//            effective_payoffs[i] = effective_payoff;
+//            total += effective_payoff;
+//        }
+//
+//        // fitter player ==> more likely to be selected
+//        double random_double = ThreadLocalRandom.current().nextDouble();
+//        for(int i = 0; i < N; i++){
+//            tally += effective_payoffs[i];
+//            double percentile = tally / total;
+//            if(random_double < percentile){
+//                parent = pop[i];
+//                break;
+//            }
+//        }
+//
+//        return parent;
+//    }
 
 
 
@@ -1295,11 +1296,20 @@ public class Env extends Thread{ // environment simulator
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
+
+//        if(sel.equals("RW")){
+//            RWT = sel_params[CI2++];
+//        } else if(sel.equals("intensity")){
+//            selNoise = Double.parseDouble(sel_params[CI2++]);
+//        }
+
         if(sel.equals("RW")){
             RWT = sel_params[CI2++];
-        } else if(sel.equals("intensity")){
-            selNoise = Double.parseDouble(sel_params[CI2++]);
+            if(RWT.equals("exponential")){
+                selNoise = Double.parseDouble(sel_params[CI2++]);
+            }
         }
+
 
         String[] evo_params = settings[CI++].split(" "); // evolution parameters
         CI2 = 0;
