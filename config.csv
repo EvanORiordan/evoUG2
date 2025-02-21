@@ -28,4 +28,17 @@ DG,1,1000,grid 10 10,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,RW exponential,cop
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,RW exponential,copy,,normalised,,NIS 1200 1600 2000 2400
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,randomNeigh,copy,,normalised,,NIS 1200 1600 2000 2400
 DG,20,10000,grid 40 40,VN 1,MC 800,rewire 0.1 smoothstep pop,PD,randomNeigh,copyFitter,,normalised,,NIS 1200 1600 2000 2400
-DG,1,10000,grid 10 10,VN 1,newER 1,rewire 0.1 linear pop,PD,RW exponential 0.5,copy,,normalised,,
+DG,1,1,grid 10 10,VN 1,oldER 5 20000,proposalProb,PD,RW exponential 0.5,copy,,MNI,,selNoise 0.75 1.0 1.25 1.5
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.5,copy,,MNI,,selNoise 0.75 1.0 1.25 1.5
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.5,copy,,normalised,,selNoise 0.75 1.0 1.25 1.5
+DG,1,1,grid 5 5,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.01,copy,,normalised,,selNoise 0.1 1.0 10.0 100.0
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.01,copy,,normalised,,selNoise 0.1 1.0 10.0 100.0
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.1,copy,,normalised,,selNoise 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+DG,1,1,grid 5 5,VN 1,oldER 5 100,proposalProb,PD,RW exponential 1.0,copy,,normalised,,selNoise 2 3 4 5 6 7 8 9 10
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 1.0,copy,,normalised,,selNoise 2 3 4 5 6 7 8 9 10
+DG,20,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 1.0,copy,,normalised,,selNoise 5 10 15 20
+DG,50,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.5,copy,,normalised,,selNoise 1 2 3 4 5 6 7
+DG,1,1,grid 5 5,VN 1,oldER 1 10000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
+DG,50,1,grid 40 40,VN 1,oldER 1 10000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
+DG,50,1,grid 40 40,VN 1,oldER 1 20000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
+DG,50,1,grid 40 40,VN 1,oldER 1 30000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15

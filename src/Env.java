@@ -37,6 +37,7 @@ public class Env extends Thread{ // environment simulator
     double sigma_degree; // standard deviation of degree
     int gen = 1; // current generation
     static int gens; // number of generations to occur per experiment run
+    static int iters; // temp var: number of iterations of play and EWL
     static String UF; // utility formula: indicates how utility is calculated
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
@@ -87,12 +88,12 @@ public class Env extends Thread{ // environment simulator
     static String evo; // indicates which evolution function to call
     static double evoNoise = 0; // noise affecting evolution
     static String sel; // indicates which selection function to call
-    static double selNoise = 0; // noise affecting selection
+    static double selNoise = 0.0; // noise affecting selection
     static String mut; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
     static String EM; // evolution mechanism: the mechanism by which evolution occurs.
-    static int ER = 0; // evolution rate: indicates how many iterations pass before a generation occurs e.g. ER=5 means every gen has 5 iters
+    static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
     static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT; // roulette wheel type
     static String RA = ""; // rewire away
@@ -172,6 +173,7 @@ public class Env extends Thread{ // environment simulator
                     case "ROC" -> ROC = Double.parseDouble(str_variations.get(expNum - 1));
                     case "RP" -> RP = Double.parseDouble(str_variations.get(expNum - 1));
                     case "M" -> M = Double.parseDouble(str_variations.get(expNum - 1));
+                    case "selNoise" -> selNoise = Double.parseDouble(str_variations.get(expNum - 1));
                 }
             }
         }
@@ -413,7 +415,7 @@ public class Env extends Thread{ // environment simulator
                 }
 
                 case "oldER" -> { // for the program to function as if its using the old ER system, remember that ive added a bit later on that breaks the gen loop to essentially nullify it.
-                    int iters = 15000;
+//                    int iters = 10000;
                     int iter = 1;
                     int gensOccurred = 0;
                     while(iter <= iters) {
@@ -1252,24 +1254,15 @@ public class Env extends Thread{ // environment simulator
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
         CI2 = 0;
         EM = EM_params[CI2++];
-//        if(EM.equals("ER"))
-        if(EM.equals("newER") || EM.equals("oldER"))
-            ER = Integer.parseInt(EM_params[CI2++]);
-        else if(EM.equals("MC")) {
-//            if (EM_params[CI2].equals("N"))
-//                NIS = N;
-//            else
-//                NIS = Integer.parseInt(EM_params[CI2++]);
-//            String x = EM_params[CI2];
-//            switch(x){
-//                case ".5N" -> NIS = N / 2;
-//                case "N" -> NIS = N;
-//                case "2N" -> NIS = N * 2;
-//                case "3N" -> NIS = N * 3;
-//                default -> NIS = Integer.parseInt(x);
-//            }
-            NIS = Integer.parseInt(EM_params[CI2]);
+        switch(EM){
+            case "newER" -> ER = Integer.parseInt(EM_params[CI2++]);
+            case "oldER" -> {
+                ER = Integer.parseInt(EM_params[CI2++]);
+                iters = Integer.parseInt(EM_params[CI2++]);
+            }
+            case "MC" -> NIS = Integer.parseInt(EM_params[CI2]);
         }
+
 
         String[] EWT_params = settings[CI++].split(" "); // edge weight parameters
         CI2 = 0;
@@ -2336,6 +2329,7 @@ public class Env extends Thread{ // environment simulator
 //                settings += ER == 0 && !varying.equals("newER") || !varying.equals("oldER")? "": ",ER";
                 settings += ER != 0? ",ER": "";
 //                settings += NIS == 0 && !varying.equals("NIS")? "": ",NIS";
+                settings += iters != 0? ",iters": "";
                 settings += NIS != 0? ",NIS": "";
                 settings += ",EWT";
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
@@ -2377,6 +2371,7 @@ public class Env extends Thread{ // environment simulator
 //            settings += ER == 0 && !varying.equals("ER")? "": "," + ER;
 //            settings += ER == 0 && !varying.equals("newER") || !varying.equals("newER")? "": "," + ER;
             settings += ER != 0? "," + ER: "";
+            settings += iters != 0? "," + iters: "";
 //            settings += NIS == 0 && !varying.equals("NIS")? "": "," + NIS;
             settings += NIS != 0? "," + NIS: "";
             settings += "," + EWT;
@@ -2477,6 +2472,7 @@ public class Env extends Thread{ // environment simulator
                 case "sel" -> results += "," + sel;
                 case "evo" -> results += "," + evo;
 //                case "M" -> results += "," + M;
+                case "selNoise" -> results += "," + selNoise;
             }
 
             // write duration of experiment
