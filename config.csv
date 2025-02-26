@@ -42,3 +42,21 @@ DG,1,1,grid 5 5,VN 1,oldER 1 10000,proposalProb,PD,RW exponential 1,copy,,normal
 DG,50,1,grid 40 40,VN 1,oldER 1 10000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
 DG,50,1,grid 40 40,VN 1,oldER 1 20000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
 DG,50,1,grid 40 40,VN 1,oldER 1 30000,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13 15
+DG,1,123,grid 5 5,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13
+DG,50,10000,grid 40 40,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 3 5 7 9 11 13
+DG,1,123,grid 10 10,VN 1,MC 800,proposalProb,PD,RW exponential 1,copy,,normalised,,NIS 1200 1600 2000 2400
+DG,25,10000,grid 40 40,VN 1,MC 800,proposalProb,PD,RW exponential 1,copy,,normalised,,NIS 1200 1600 2000 2400
+DG,25,10000,grid 40 40,VN 1,MC 80,proposalProb,PD,RW exponential 1,copy,,normalised,,NIS 160 320 1760 2800 4000 4800
+DG,20,10000,grid 20 20,VN 1,newER 15,proposalProb,PD,RW exponential 1,copy,,normalised,,ER 17 19 21 23 25
+DG,1,10000,grid 40 40,VN 1,newER 5,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,
+DG,1,100,grid 5 5,VN 1,newER 15,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 17 19 21 23 25
+DG,20,10000,grid 20 20,VN 1,newER 15,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 17 19 21 23 25
+DG,1,123,grid 5 5,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 3 5 7 9 11 13
+DG,30,10000,grid 20 20,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 3 5 7 9 11 13
+DG,30,10000,grid 20 20,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 3 5 7 9 11 13
+DG,1,123,grid 5 5,VN 1,newER 30,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 35 40
+DG,30,10000,grid 20 20,VN 1,newER 30,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 35 40
+DG,30,10000,grid 20 20,VN 1,newER 50,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 60
+DG,15,10000,grid 20 20,VN 1,newER 70,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 100
+DG,5,10000,grid 20 20,VN 1,newER 125,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,,ER 150
+DG,2,1000,grid 10 10,VN 1,newER 1,proposalProb,PD,RW exponential 1,copy,local 0.01 0.01,normalised,1111,ER 2

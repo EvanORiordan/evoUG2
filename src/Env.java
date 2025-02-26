@@ -24,8 +24,9 @@ public class Env extends Thread{ // environment simulator
     static int neighRadius; // radius of neighbourhood
     static int neighSize; // size of neighbours with random neighbourhood type.
     static int N; // population size
+//    static int run_num; // current run
+    static int run; // current run
     static int runs; // number of experiment runs to occur
-    static int run_num; // current run
     Player[] pop; // array of players; assumes 2D space
     double mean_p; // mean proposal value; informally referred to as the performance of an experiment
     double mean_q; // mean acceptance threshold
@@ -45,12 +46,8 @@ public class Env extends Thread{ // environment simulator
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
     static String varying = ""; // indicates which parameter will be varied in experiment series
-//    static double variation; // amount by which varying parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
-//    static String[] str_variations;
     static ArrayList<String> str_variations = new ArrayList<>();
-//    static int numExp; // number of experiments to occur
     static int expNum; // indicates how far along we are through the experiment series
-//    static ArrayList<Double> various_amounts;
     static double mean_mean_p; // mean of the mean p of the runs of an experiment
     static double mean_mean_q;
     static double mean_mean_u;
@@ -71,13 +68,20 @@ public class Env extends Thread{ // environment simulator
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
-//    static String desc; //description of experiment
     static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
     static String this_path; // address where results of current experimentation is recorded
     static String experiment_path; // address where results of current experiment are stored
-    static int dataRate; // indicates how often data is saved. if 0, no gens are recorded.
+//    static int dataRate;
+//    static int dataRateGens; // store ??? HWO DO I WANT DATARATE TO WORK??
+//    static int dataRateRuns???
+//    static boolean writeP;
+    static boolean writePPop;
+    static boolean writeUPop;
+//    static boolean writeDegree;
+    static boolean writePStats;
+    static boolean writeUStats;
     static String pos_data_filename;
     static String EWT; // EW type
     static String EWLF; // EWL formula
@@ -99,9 +103,9 @@ public class Env extends Thread{ // environment simulator
     static String RA = ""; // rewire away
     static String RT = ""; // rewire to
     static double RP = 0.0; // rewire probability
-    static String pDataStr = "p_data";
-    static String qDataStr = "q_data";
-    static String uDataStr = "u_data";
+//    static String pDataStr = "p_data";
+//    static String qDataStr = "q_data";
+//    static String uDataStr = "u_data";
     static String degreeDataStr = "degree_data";
     static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
@@ -152,9 +156,10 @@ public class Env extends Thread{ // environment simulator
     public static void experimentSeries(){
         for(expNum = 1; expNum <= str_variations.size() + 1; expNum++){
             System.out.println("\nstart experiment " + expNum);
-            experiment_path = this_path + "\\" + expNum;
-            if(dataRate != 0)
-                createExperimentDataFolders();
+            experiment_path = this_path + "\\exp" + expNum;
+//            if(dataRate != 0)
+//                createExperimentDataFolders();
+            createExperimentDataFolders();
             experiment(); // run an experiment of the series
             if(expNum <= str_variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
@@ -208,32 +213,39 @@ public class Env extends Thread{ // environment simulator
         mean_degree_values = new double[runs];
         sigma_mean_degree = 0.0;
         mean_sigma_degree = 0.0;
-        for(run_num = 1; run_num <= runs; run_num++){
-            Env run = new Env(); // represents one run of the experiment
-            run.start();
-            String output = "experiment "+expNum+" run "+run_num;
+        for(run = 1; run <= runs; run++){
+            Env pop = new Env();
+            pop.start();
+
+
+//            if(writeP){
+//                writePRun();
+//            }
+
+
+            String output = "experiment "+expNum+" run "+run;
             switch(game){
                 case "UG" -> {
-                    mean_mean_p += run.mean_p;
-                    mean_p_values[run_num - 1] = run.mean_p;
-                    mean_mean_q += run.mean_q;
-                    mean_q_values[run_num - 1] = run.mean_q;
-                    output += " mean p=" + DF4.format(run.mean_p);
-                    output += " mean q="+DF4.format(run.mean_q);
+                    mean_mean_p += pop.mean_p;
+                    mean_p_values[run - 1] = pop.mean_p;
+                    mean_mean_q += pop.mean_q;
+                    mean_q_values[run - 1] = pop.mean_q;
+                    output += " mean p=" + DF4.format(pop.mean_p);
+                    output += " mean q="+DF4.format(pop.mean_q);
                 }
                 case "DG" -> {
-                    mean_mean_p += run.mean_p;
-                    mean_p_values[run_num - 1] = run.mean_p;
-                    output += " mean p=" + DF4.format(run.mean_p);
+                    mean_mean_p += pop.mean_p;
+                    mean_p_values[run - 1] = pop.mean_p;
+                    output += " mean p=" + DF4.format(pop.mean_p);
                 }
                 case "PD" -> {} // IDEA: if game is PD, then print number of cooperators, defectors and abstainers.
             }
-            mean_mean_u += run.mean_u;
-            mean_u_values[run_num - 1] = run.mean_p;
-            mean_mean_degree += run.mean_degree;
-            mean_degree_values[run_num - 1] = run.mean_degree;
-            mean_sigma_degree += run.sigma_degree;
-            output += " mean u=" + DF4.format(run.mean_u);
+            mean_mean_u += pop.mean_u;
+            mean_u_values[run - 1] = pop.mean_p;
+            mean_mean_degree += pop.mean_degree;
+            mean_degree_values[run - 1] = pop.mean_degree;
+            mean_sigma_degree += pop.sigma_degree;
+            output += " mean u=" + DF4.format(pop.mean_u);
             System.out.println(output);
         }
         String output = "experiment " + expNum + ":";
@@ -272,8 +284,8 @@ public class Env extends Thread{ // environment simulator
         sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
         sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
         mean_sigma_degree /= runs;
-        output += "\nmean mean u=" + DF4.format(mean_mean_p);
-        output += "\nsigma mean u=" + DF4.format(sigma_mean_p);
+        output += "\nmean mean u=" + DF4.format(mean_mean_u);
+        output += "\nsigma mean u=" + DF4.format(sigma_mean_u);
         output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
         output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
         output += "\nmean sigma degree=" + DF4.format(mean_sigma_degree);
@@ -286,7 +298,10 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Method for running the core algorithm at the heart of the program.
+     * Core algorithm of the program.
+     * Initialise population.
+     * Initialise neighbourhoods and weights.
+     * Execute generations.
      */
     @Override
     public void start(){
@@ -469,47 +484,57 @@ public class Env extends Thread{ // environment simulator
             calculateStandardDeviationDegree();
 
 
-
             // this block of code is required for oldER EM to operate as intended.
             if(EM.equals("oldER"))
                 break;
 
 
+//            // save non-result and non-setting data every dataRate gens when:
+//            // dataRate has been initialised past 0, AND
+//            // it is the first run of the experiment, AND
+//            //// it is the only or first experiment in the series, AND
+//            // it is not the first generation of the run.
+//            if(dataRate != 0 && run_num == 1 && gen % dataRate == 0){
+//                switch(game){
+//                    case "UG" -> {
+//                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p)+" mean q="+DF4.format(mean_q)+" sigma q="+DF4.format(sigma_q));
+//                        writePData();
+//                        writeMacroPData();
+//                        writeQData();
+//                        writeMacroQData();
+//                    }
+//                    case "DG" -> {
+//                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p));
+//                        writePData();
+//                        writeMacroPData();
+//                    }
+//                    case "PD" -> {}
+//                }
+//                writeUData();
+//                writeMacroUData();
+//                writeDegreeData();
+//                writeMacroDegreeData();
+//            }
+
+
+            if(writePPop) writePPop();
+            if(writePStats) writePStats();
+            if(writeUPop) writeUPop();
+            if(writeUStats) writeUStats();
 
 
 
-
-            // save data every dataRate gens where:
-            // dataRate has been initialised past 0, AND
-            // it is the first run of the experiment, AND
-            //// it is the only or first experiment in the series, AND
-            // it is not the first generation of the run.
-            if(dataRate != 0 && run_num == 1 && gen % dataRate == 0){
-                switch(game){
-                    case "UG" -> {
-                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p)+" mean q="+DF4.format(mean_q)+" sigma q="+DF4.format(sigma_q));
-                        writePData();
-                        writeMacroPData();
-                        writeQData();
-                        writeMacroQData();
-                    }
-                    case "DG" -> {
-                        System.out.println("gen "+gen+" mean p="+DF4.format(mean_p)+" sigma p="+DF4.format(sigma_p));
-                        writePData();
-                        writeMacroPData();
-                    }
-                    case "PD" -> {}
-                }
-                writeUData();
-                writeMacroUData();
-                writeDegreeData();
-                writeMacroDegreeData();
-            }
 
             // progress to the next generation
             gen++;
             prepare();
         }
+
+
+//        if(writeP){
+//            writePRun();
+//        }
+
 
     }
 
@@ -1232,6 +1257,10 @@ public class Env extends Thread{ // environment simulator
 //        }
         runs = Integer.parseInt(settings[CI++]);
         gens = Integer.parseInt(settings[CI++]);
+        if(gens < 1){
+            System.out.println("ERROR: cannot have gens < 1");
+            System.exit(0);
+        }
 
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
@@ -1324,14 +1353,35 @@ public class Env extends Thread{ // environment simulator
         UF = settings[CI++];
 //        dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
 
-        try{
-//            dataRate = Integer.parseInt(settings[CI]);
-            dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
-        }catch(IndexOutOfBoundsException e){
-            dataRate = 0;
-        }
 
-        CI++;
+//        try{
+////            dataRate = Integer.parseInt(settings[CI]);
+//            dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
+//        }catch(IndexOutOfBoundsException e){
+//            dataRate = 0;
+//        }
+//
+//        CI++;
+
+
+//        String[] write_params = settings[CI++].split(" "); // optional parameters for writing player attribute data
+//        CI2 = 0;
+//        writeP = Boolean.parseBoolean(write_params[CI2++]);
+////        writeU = write_params[CI2++];
+////        writeDeg = write_params[CI2++];
+
+
+        String write_params = settings[CI++];
+        writePPop = write_params.charAt(0) == '1'? true: false;
+        writePStats = write_params.charAt(1) == '1'? true: false;
+        writeUPop = write_params.charAt(2) == '1'? true: false;
+        writeUStats = write_params.charAt(3) == '1'? true: false;
+
+
+
+
+
+
 
 //        String[] series_params = settings[CI++].split(" ");
 //        CI2 = 0;
@@ -1423,42 +1473,13 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Create experiment folders using experiment number.<br>
-     * Then within each experiment folder, create data folders.
-      */
     public static void createExperimentDataFolders(){
-//        for(expNum = 1; expNum <= numExp; expNum++){
-//            try{
-//                Files.createDirectories(Paths.get(experiment_path));
-//                switch(game){
-//                    case "UG" -> {
-//                        Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-//                        Files.createDirectories(Paths.get(experiment_path + "\\" + qDataStr));
-//                    }
-//                    case "DG" -> Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-//                    case "PD" -> {}
-//                }
-//                Files.createDirectories(Paths.get(experiment_path + "\\" + uDataStr));
-//                Files.createDirectories(Paths.get(experiment_path + "\\" + degreeDataStr));
-//            }catch(IOException e){
-//                e.printStackTrace();
-//            }
-//        }
-
-
         try{
-            Files.createDirectories(Paths.get(experiment_path));
-            switch(game){
-                case "UG" -> {
-                    Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-                    Files.createDirectories(Paths.get(experiment_path + "\\" + qDataStr));
-                }
-                case "DG" -> Files.createDirectories(Paths.get(experiment_path + "\\" + pDataStr));
-                case "PD" -> {}
+            for(int i=1;i<=runs;i++){
+                Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+                if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
+                if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
             }
-            Files.createDirectories(Paths.get(experiment_path + "\\" + uDataStr));
-            Files.createDirectories(Paths.get(experiment_path + "\\" + degreeDataStr));
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -1644,11 +1665,19 @@ public class Env extends Thread{ // environment simulator
     /**
      * Records mean p of the population in a csv file.
      */
-    public void writeMacroPData(){
+//    public void writeMacroPData(){
+//    public void writePRun(){
+//    public static void writePRun(){
+    public void writePStats(){
         try{
-            String filename = experiment_path + "\\macro_" + pDataStr + ".csv";
+//            String filename = experiment_path + "\\macro_" + pDataStr + ".csv";
+//            String filename = experiment_path + "\\p_stats.csv";
+//            String filename = experiment_path + "\\run" + run + "\\p_stats\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\run" + run + "\\p_stats.csv";
+
             String s="";
-            if(gen == dataRate){ // apply headings to file before writing data
+//            if(gen == dataRate){ // apply headings to file before writing data
+            if(gen == 1){ // apply headings to file before writing data
                 s+="gen";
                 s+=",mean p";
                 s+=",sigma p";
@@ -1669,25 +1698,25 @@ public class Env extends Thread{ // environment simulator
 
 
     public void writeMacroQData(){
-        try{
-            String filename = experiment_path + "\\macro_" + qDataStr + ".csv";
-            String output = "";
-            if(gen == dataRate){
-                output += "gen";
-                output += ",mean q";
-                output += ",sigma q";
-                output += "\n";
-            }
-            fw = new FileWriter(filename, true);
-            output += gen;
-            output += ","+DF4.format(mean_q);
-            output += ","+DF4.format(sigma_q);
-            output += "\n";
-            fw.append(output);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+//        try{
+//            String filename = experiment_path + "\\macro_" + qDataStr + ".csv";
+//            String output = "";
+//            if(gen == dataRate){
+//                output += "gen";
+//                output += ",mean q";
+//                output += ",sigma q";
+//                output += "\n";
+//            }
+//            fw = new FileWriter(filename, true);
+//            output += gen;
+//            output += ","+DF4.format(mean_q);
+//            output += ","+DF4.format(sigma_q);
+//            output += "\n";
+//            fw.append(output);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -1716,9 +1745,13 @@ public class Env extends Thread{ // environment simulator
 
 
     // Records acceptance thresholds of the population to a .csv file.
-    public void writePData(){
+//    public void writePData(){
+    public void writePPop(){
         try{
-            String filename = experiment_path + "\\" + pDataStr + "\\gen" + gen + ".csv";
+//            String filename = experiment_path + "\\" + pDataStr + "\\gen" + gen + ".csv";
+//            String filename = experiment_path + "\\p_pop\\gen" + gen + ".csv";
+//            String filename = experiment_path + "\\p_pop\\" + run + "\\" + gen + ".csv";
+            String filename = experiment_path + "\\run" + run + "\\p_pop\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
@@ -1736,6 +1769,7 @@ public class Env extends Thread{ // environment simulator
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
+            System.exit(0);
         }
     }
 
@@ -1743,23 +1777,23 @@ public class Env extends Thread{ // environment simulator
 
     // Records acceptance thresholds of the population to a .csv file.
     public void writeQData(){
-        try{
-            String filename = experiment_path + "\\" + qDataStr + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename, false);
-            String output = "";
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
-                    Player player = findPlayerByPos(y,x);
-                    double q = player.getQ();
-                    output += DF4.format(q) + ",";
-                }
-                output += "\n";
-            }
-            fw.append(output);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+//        try{
+//            String filename = experiment_path + "\\" + qDataStr + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename, false);
+//            String output = "";
+//            for(int y=length-1;y>=0;y--){
+//                for(int x=0;x<width;x++){
+//                    Player player = findPlayerByPos(y,x);
+//                    double q = player.getQ();
+//                    output += DF4.format(q) + ",";
+//                }
+//                output += "\n";
+//            }
+//            fw.append(output);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -2696,9 +2730,10 @@ public class Env extends Thread{ // environment simulator
 
 
     // Records utilities of the population to a .csv file.
-    public void writeUData(){
+//    public void writeUData(){
+    public void writeUPop(){
         try{
-            String filename = experiment_path + "\\" + uDataStr + "\\gen" + gen + ".csv";
+            String filename = experiment_path + "\\run" + run + "\\u_pop\\gen" + gen + ".csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
@@ -2719,11 +2754,12 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public void writeMacroUData(){
+//    public void writeMacroUData(){
+    public void writeUStats(){
         try{
-            String filename = experiment_path + "\\macro_" + uDataStr + ".csv";
+            String filename = experiment_path + "\\run" + run + "\\u_stats.csv";
             String s="";
-            if(gen == dataRate){ // apply headings to file before writing data
+            if(gen == 1){ // apply headings to file before writing data
                 s+="gen";
                 s+=",mean u";
                 s+=",sigma u";
@@ -2769,12 +2805,12 @@ public class Env extends Thread{ // environment simulator
         try{
             String filename = experiment_path + "\\macro_" + degreeDataStr + ".csv";
             String s="";
-            if(gen == dataRate){ // apply headings to file before writing data
-                s+="gen";
-                s+=",mean degree";
-                s+=",sigma degree";
-                s+="\n";
-            }
+//            if(gen == dataRate){ // apply headings to file before writing data
+//                s+="gen";
+//                s+=",mean degree";
+//                s+=",sigma degree";
+//                s+="\n";
+//            }
             fw = new FileWriter(filename, true);
             s+=gen;
             s+=","+DF4.format(mean_degree);
