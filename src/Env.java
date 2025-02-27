@@ -158,8 +158,8 @@ public class Env extends Thread{ // environment simulator
             System.out.println("\nstart experiment " + expNum);
             experiment_path = this_path + "\\exp" + expNum;
 //            if(dataRate != 0)
-//                createExperimentDataFolders();
-            createExperimentDataFolders();
+//                createDataFolders();
+            createDataFolders();
             experiment(); // run an experiment of the series
             if(expNum <= str_variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
@@ -241,7 +241,7 @@ public class Env extends Thread{ // environment simulator
                 case "PD" -> {} // IDEA: if game is PD, then print number of cooperators, defectors and abstainers.
             }
             mean_mean_u += pop.mean_u;
-            mean_u_values[run - 1] = pop.mean_p;
+            mean_u_values[run - 1] = pop.mean_u;
             mean_mean_degree += pop.mean_degree;
             mean_degree_values[run - 1] = pop.mean_degree;
             mean_sigma_degree += pop.sigma_degree;
@@ -523,8 +523,6 @@ public class Env extends Thread{ // environment simulator
             if(writeUStats) writeUStats();
 
 
-
-
             // progress to the next generation
             gen++;
             prepare();
@@ -535,6 +533,8 @@ public class Env extends Thread{ // environment simulator
 //            writePRun();
 //        }
 
+
+        writeResultsExperiment();
 
     }
 
@@ -1473,13 +1473,21 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public static void createExperimentDataFolders(){
+    public static void createDataFolders(){
         try{
+            Files.createDirectories(Paths.get(experiment_path));
             for(int i=1;i<=runs;i++){
                 Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
                 if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
                 if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
             }
+//            if(writePPop || writeUPop){
+//                for(int i=1;i<=runs;i++){
+//                    Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+//                    if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
+//                    if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
+//                }
+//            }
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -1491,7 +1499,7 @@ public class Env extends Thread{ // environment simulator
      * Prints path of experiment results folder.
      */
     public static void printPath(){
-        System.out.println("Experimentation data: \n" + this_path);
+        System.out.println("Address of experimentation data: \n" + this_path);
     }
 
 
@@ -2913,5 +2921,38 @@ public class Env extends Thread{ // environment simulator
         double prob_evolve = (parent.getU() - child.getU()) / child.getNeighbourhood().size();
         if(random_number < prob_evolve)
             evoCopy(child, parent);
+    }
+
+
+
+    public void writeResultsExperiment(){
+        String filename = experiment_path + "\\exp_results.csv";
+        String output = "";
+        try{
+            if(run == 1){
+                fw = new FileWriter(filename, false);
+                output += "mean p";
+                output += ",sigma p";
+                output += ",mean u";
+                output += ",sigma u";
+                output += ",mean degree";
+                output += ",sigma degree";
+            } else{
+                fw = new FileWriter(filename, true);
+            }
+            output += "\n";
+            output += DF4.format(mean_p);
+            output += "," + DF4.format(sigma_p);
+            output += "," + DF4.format(mean_u);
+            output += "," + DF4.format(sigma_u);
+            output += "," + DF4.format(mean_degree);
+            output += "," + DF4.format(sigma_degree);
+            fw.append(output);
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+            System.exit(0);
+        }
+
     }
 }
