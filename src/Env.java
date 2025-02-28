@@ -1,6 +1,5 @@
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Duration;
@@ -36,6 +35,7 @@ public class Env extends Thread{ // environment simulator
     double sigma_q; // standard deviation of q
     double sigma_u; // standard deviation of utility
     double sigma_degree; // standard deviation of degree
+    double p_max; // highest p in population at a time
     int gen = 1; // current generation
     static int gens; // number of generations to occur per experiment run
     static int iters; // temp var: number of iterations of play and EWL
@@ -73,13 +73,8 @@ public class Env extends Thread{ // environment simulator
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
     static String this_path; // address where results of current experimentation is recorded
     static String experiment_path; // address where results of current experiment are stored
-//    static int dataRate;
-//    static int dataRateGens; // store ??? HWO DO I WANT DATARATE TO WORK??
-//    static int dataRateRuns???
-//    static boolean writeP;
     static boolean writePPop;
     static boolean writeUPop;
-//    static boolean writeDegree;
     static boolean writePStats;
     static boolean writeUStats;
     static String pos_data_filename;
@@ -103,10 +98,6 @@ public class Env extends Thread{ // environment simulator
     static String RA = ""; // rewire away
     static String RT = ""; // rewire to
     static double RP = 0.0; // rewire probability
-//    static String pDataStr = "p_data";
-//    static String qDataStr = "q_data";
-//    static String uDataStr = "u_data";
-    static String degreeDataStr = "degree_data";
     static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
@@ -319,7 +310,7 @@ public class Env extends Thread{ // environment simulator
             }
         }
 
-//        if(space.equals("grid") && run_num == 1){
+//        if(space.equals("grid") && run == 1){
 //            writePosData();
 //        }
 
@@ -472,6 +463,7 @@ public class Env extends Thread{ // environment simulator
                 case "DG" -> {
                     calculateMeanP();
                     calculateStandardDeviationP();
+                    calculatePMax();
                 }
                 case "PD" -> {}
             }
@@ -1152,7 +1144,7 @@ public class Env extends Thread{ // environment simulator
                         " %-15s |" +//EM
                         " %-30s |" +//EW
                         " %-25s |" +//EWL
-                        " %-15s |" +//sel
+                        " %-20s |" +//sel
                         " %-15s |" +//evo
                         " %-15s |" +//mut
                         " %-10s |" +//UF
@@ -1194,7 +1186,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-15s ", settings[CI++]); //EM
             System.out.printf("| %-30s ", settings[CI++]); //EW
             System.out.printf("| %-25s ", settings[CI++]); //EWL
-            System.out.printf("| %-15s ", settings[CI++]); //sel
+            System.out.printf("| %-20s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", settings[CI++]); //evo
             /*
             this try catch template serves to handle ArrayIndexOutOfBoundsException.
@@ -1662,7 +1654,10 @@ public class Env extends Thread{ // environment simulator
                     player.setOldP(player.getP());
                     player.setOldQ(player.getQ());
                 }
-                case "DG" -> player.setOldP(player.getP());
+                case "DG" -> {
+                    player.setOldP(player.getP());
+                    p_max = 0.0;
+                }
                 case "PD" -> {}
             }
         }
@@ -1670,31 +1665,22 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Records mean p of the population in a csv file.
-     */
-//    public void writeMacroPData(){
-//    public void writePRun(){
-//    public static void writePRun(){
     public void writePStats(){
         try{
-//            String filename = experiment_path + "\\macro_" + pDataStr + ".csv";
-//            String filename = experiment_path + "\\p_stats.csv";
-//            String filename = experiment_path + "\\run" + run + "\\p_stats\\gen" + gen + ".csv";
             String filename = experiment_path + "\\run" + run + "\\p_stats.csv";
-
             String s="";
-//            if(gen == dataRate){ // apply headings to file before writing data
             if(gen == 1){ // apply headings to file before writing data
                 s+="gen";
                 s+=",mean p";
                 s+=",sigma p";
+                s+=",p max";
                 s+="\n";
             }
             fw = new FileWriter(filename, true);
             s+=gen;
             s+=","+DF4.format(mean_p);
             s+=","+DF4.format(sigma_p);
+            s+=","+DF4.format(p_max);
             s+="\n";
             fw.append(s);
             fw.close();
@@ -1732,14 +1718,18 @@ public class Env extends Thread{ // environment simulator
     // writes IDs and positions of players
     public void writePosData(){
         try{
-            String filename = this_path + "\\pos_data.csv";
+//            String filename = this_path + "\\pos_data.csv";
+            String filename = experiment_path + "\\pos_data.csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
                     int ID = player.getID();
-                    s += ID + " ("+x+" "+y+"),";
+//                    s += ID + " ("+x+" "+y+")";
+                    s += ID;
+                    if (x + 1 < width)
+                        s += ",";
                 }
                 s += "\n";
             }
@@ -2787,48 +2777,48 @@ public class Env extends Thread{ // environment simulator
 
     // Records degrees of the population to a .csv file.
     public void writeDegreeData(){
-        try{
-            String filename = experiment_path + "\\" + degreeDataStr + "\\gen" + gen + ".csv";
-            fw = new FileWriter(filename, false);
-            String s = "";
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
-                    Player player = findPlayerByPos(y,x);
-                    int degree = player.getDegree();
-                    s += degree;
-                    if(x + 1 < length){
-                        s += ",";
-                    }
-                }
-                s += "\n";
-            }
-            fw.append(s);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+//        try{
+//            String filename = experiment_path + "\\" + degreeDataStr + "\\gen" + gen + ".csv";
+//            fw = new FileWriter(filename, false);
+//            String s = "";
+//            for(int y=length-1;y>=0;y--){
+//                for(int x=0;x<width;x++){
+//                    Player player = findPlayerByPos(y,x);
+//                    int degree = player.getDegree();
+//                    s += degree;
+//                    if(x + 1 < length){
+//                        s += ",";
+//                    }
+//                }
+//                s += "\n";
+//            }
+//            fw.append(s);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
     }
 
     public void writeMacroDegreeData(){
-        try{
-            String filename = experiment_path + "\\macro_" + degreeDataStr + ".csv";
-            String s="";
-//            if(gen == dataRate){ // apply headings to file before writing data
-//                s+="gen";
-//                s+=",mean degree";
-//                s+=",sigma degree";
-//                s+="\n";
-//            }
-            fw = new FileWriter(filename, true);
-            s+=gen;
-            s+=","+DF4.format(mean_degree);
-            s+=","+DF4.format(sigma_degree);
-            s+="\n";
-            fw.append(s);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
+//        try{
+//            String filename = experiment_path + "\\macro_" + degreeDataStr + ".csv";
+//            String s="";
+////            if(gen == dataRate){ // apply headings to file before writing data
+////                s+="gen";
+////                s+=",mean degree";
+////                s+=",sigma degree";
+////                s+="\n";
+////            }
+//            fw = new FileWriter(filename, true);
+//            s+=gen;
+//            s+=","+DF4.format(mean_degree);
+//            s+=","+DF4.format(sigma_degree);
+//            s+="\n";
+//            fw.append(s);
+//            fw.close();
+//        } catch(IOException e){
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -2953,6 +2943,15 @@ public class Env extends Thread{ // environment simulator
             e.printStackTrace();
             System.exit(0);
         }
+    }
 
+
+
+    public void calculatePMax(){
+        for(int i=0;i<N;i++){
+            double p = pop[i].getP();
+            if(p > p_max)
+                p_max = p;
+        }
     }
 }
