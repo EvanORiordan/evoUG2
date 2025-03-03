@@ -75,8 +75,10 @@ public class Env extends Thread{ // environment simulator
     static String experiment_path; // address where results of current experiment are stored
     static boolean writePPop;
     static boolean writeUPop;
+    static boolean writeDegPop;
     static boolean writePStats;
     static boolean writeUStats;
+    static boolean writeDegStats;
     static String pos_data_filename;
     static String EWT; // EW type
     static String EWLF; // EWL formula
@@ -347,30 +349,47 @@ public class Env extends Thread{ // environment simulator
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         if(child.getNeighbourhood().size() > 0){ // prevent evolution if child is isolated.
-                            Player parent = null;
-                            switch(sel){
-                                case "RW" -> parent = selRW(child);
-                                case "fittest" -> parent = selFittest(child);
-//                                case "intensity" -> parent = selIntensity(child);
-                                case "crossover" -> crossover(child);
-                                case "randomNeigh" -> parent = selRandomNeigh(child);
-                                case "randomPop" -> parent = selRandomPop();
-                            }
-                            switch (evo) {
-                                case "copy" -> evoCopy(child, parent);
-                                case "approach" -> evoApproach(child, parent);
-                                case "copyFitter" -> evoCopyFitter(child, parent);
-                            }
-                            switch (mut){
-                                case "global" -> {
-                                    if(mutationCheck())
-                                        mutGlobal(child);
-                                }
-                                case "local" -> {
-                                    if(mutationCheck())
-                                        mutLocal(child);
-                                }
-                            }
+
+
+//                            Player parent = null;
+//                            switch(sel){
+//                                case "RW" -> parent = selRW(child);
+//                                case "fittest" -> parent = selFittest(child);
+////                                case "intensity" -> parent = selIntensity(child);
+//                                case "crossover" -> crossover(child);
+//                                case "randomNeigh" -> parent = selRandomNeigh(child);
+//                                case "randomPop" -> parent = selRandomPop();
+//                            }
+
+
+                            Player parent = sel(child);
+
+
+//                            switch (evo) {
+//                                case "copy" -> evoCopy(child, parent);
+//                                case "approach" -> evoApproach(child, parent);
+//                                case "copyFitter" -> evoCopyFitter(child, parent);
+//                            }
+
+
+                            evo(child, parent);
+
+
+//                            switch (mut){
+//                                case "global" -> {
+//                                    if(mutationCheck())
+//                                        mutGlobal(child);
+//                                }
+//                                case "local" -> {
+//                                    if(mutationCheck())
+//                                        mutLocal(child);
+//                                }
+//                            }
+
+
+                            mut(child);
+
+
                         }
                     }
                 }
@@ -392,30 +411,40 @@ public class Env extends Thread{ // environment simulator
                         if(EWT.equals("rewire"))
                             rewire(player);
                         if(player.getNeighbourhood().size() > 0) {
-                            Player parent = null;
-                            switch(sel){
-                                case "RW" -> parent = selRW(player);
-                                case "fittest" -> parent = selFittest(player);
-//                                case "intensity" -> parent = selIntensity(player);
-                                case "crossover" -> crossover(player);
-                                case "randomNeigh" -> parent = selRandomNeigh(player);
-                                case "randomPop" -> parent = selRandomPop();
-                            }
-                            switch (evo) {
-                                case "copy" -> evoCopy(player, parent);
-                                case "approach" -> evoApproach(player, parent);
-                                case "copyFitter" -> evoCopyFitter(player, parent);
-                            }
-                            switch (mut){
-                                case "global" -> {
-                                    if(mutationCheck())
-                                        mutGlobal(player);
-                                }
-                                case "local" -> {
-                                    if(mutationCheck())
-                                        mutLocal(player);
-                                }
-                            }
+
+
+//                            Player parent = null;
+//                            switch(sel){
+//                                case "RW" -> parent = selRW(player);
+//                                case "fittest" -> parent = selFittest(player);
+////                                case "intensity" -> parent = selIntensity(player);
+//                                case "crossover" -> crossover(player);
+//                                case "randomNeigh" -> parent = selRandomNeigh(player);
+//                                case "randomPop" -> parent = selRandomPop();
+//                            }
+//                            switch (evo) {
+//                                case "copy" -> evoCopy(player, parent);
+//                                case "approach" -> evoApproach(player, parent);
+//                                case "copyFitter" -> evoCopyFitter(player, parent);
+//                            }
+//                            switch (mut){
+//                                case "global" -> {
+//                                    if(mutationCheck())
+//                                        mutGlobal(player);
+//                                }
+//                                case "local" -> {
+//                                    if(mutationCheck())
+//                                        mutLocal(player);
+//                                }
+//                            }
+
+
+                            // TODO DEBUG ME
+                            Player parent = sel(player);
+                            evo(player, parent);
+//                            mut()
+
+
                         }
                     }
                 }
@@ -513,6 +542,8 @@ public class Env extends Thread{ // environment simulator
             if(writePStats) writePStats();
             if(writeUPop) writeUPop();
             if(writeUStats) writeUStats();
+            if(writeDegPop) writeDegPop();
+            if(writeDegStats) writeDegStats();
 
 
             // progress to the next generation
@@ -833,7 +864,6 @@ public class Env extends Thread{ // environment simulator
         for(int i = 0; i < size; i++){
             switch(RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
-//                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU());
                 case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU() * selNoise);
             }
             roulette_total += pockets[i];
@@ -1148,11 +1178,9 @@ public class Env extends Thread{ // environment simulator
                         " %-15s |" +//evo
                         " %-15s |" +//mut
                         " %-10s |" +//UF
-                        " %-10s |" +//dataRate
+                        " %-10s |" +//writing
                         " %s%n"//series
-//                        " %-25s |" +//series
 //                        " %-15s |" +//inj
-//                        " desc%n" // ensure desc is the last column
                 ,"config"
                 ,"game"
                 ,"runs"
@@ -1166,7 +1194,7 @@ public class Env extends Thread{ // environment simulator
                 ,"evo"
                 ,"mut"
                 ,"UF"
-                ,"dataRate"
+                ,"writing"
                 ,"series"
         );
         printTableBorder();
@@ -1206,12 +1234,9 @@ public class Env extends Thread{ // environment simulator
                 CI++;
             }
             System.out.printf("| %-10s ", settings[CI++]); //UF
-            try{
-                System.out.printf("| %-10s ", settings[CI++]);//dataRate
-            }catch(ArrayIndexOutOfBoundsException e){
-                System.out.printf("| %-10s ", " ");
-                CI++;
-            }
+            System.out.printf("| %-10s ", settings[CI++]); //writing
+
+
             try{
                 System.out.printf("| %s ", settings[CI++]);//series
             }catch(ArrayIndexOutOfBoundsException e){
@@ -1235,10 +1260,12 @@ public class Env extends Thread{ // environment simulator
             }
         }while(!config_selected);
 
+
         // apply config
         settings = configurations.get(config_num).split(",");
         CI = 0;
         int CI2;
+
 
         String[] game_params = settings[CI++].split(" ");
         CI2 = 0;
@@ -1254,6 +1281,7 @@ public class Env extends Thread{ // environment simulator
             System.exit(0);
         }
 
+
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
         space = space_params[CI2++];
@@ -1263,6 +1291,7 @@ public class Env extends Thread{ // environment simulator
             N = length * width;
         }
 
+
         String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
         CI2 = 0;
         neighType = neigh_params[CI2++]; // required field
@@ -1271,6 +1300,7 @@ public class Env extends Thread{ // environment simulator
         } else if(neighType.equals("random")){
             neighSize = Integer.parseInt(neigh_params[CI2++]);
         }
+
 
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
         CI2 = 0;
@@ -1294,6 +1324,7 @@ public class Env extends Thread{ // environment simulator
             RT = EWT_params[CI2++];
         }
 
+
         String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
         if(!EWL_params[0].equals("")){
             CI2 = 0;
@@ -1304,18 +1335,15 @@ public class Env extends Thread{ // environment simulator
                 alpha = Double.parseDouble(EWL_params[CI2++]);
                 beta = Double.parseDouble(EWL_params[CI2++]);
             }
+            // tentatively removed EWLP functionality.
 //            EWLP = EWL_params[CI2++];
         }
+
 
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
 
-//        if(sel.equals("RW")){
-//            RWT = sel_params[CI2++];
-//        } else if(sel.equals("intensity")){
-//            selNoise = Double.parseDouble(sel_params[CI2++]);
-//        }
 
         if(sel.equals("RW")){
             RWT = sel_params[CI2++];
@@ -1332,6 +1360,7 @@ public class Env extends Thread{ // environment simulator
             evoNoise = Double.parseDouble(evo_params[CI2++]);
         }
 
+
         String[] mut_params = settings[CI++].split(" "); // mutation parameters
         CI2 = 0;
         mut = mut_params[CI2++];
@@ -1342,65 +1371,30 @@ public class Env extends Thread{ // environment simulator
             }
         }
 
+
         UF = settings[CI++];
-//        dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
 
 
-//        try{
-////            dataRate = Integer.parseInt(settings[CI]);
-//            dataRate = settings[CI].equals("")? 0: Integer.parseInt(settings[CI]);
-//        }catch(IndexOutOfBoundsException e){
-//            dataRate = 0;
-//        }
-//
-//        CI++;
-
-
-//        String[] write_params = settings[CI++].split(" "); // optional parameters for writing player attribute data
-//        CI2 = 0;
-//        writeP = Boolean.parseBoolean(write_params[CI2++]);
-////        writeU = write_params[CI2++];
-////        writeDeg = write_params[CI2++];
-
-
+        // experiment run data writing params
         String write_params = settings[CI++];
         writePPop = write_params.charAt(0) == '1'? true: false;
         writePStats = write_params.charAt(1) == '1'? true: false;
         writeUPop = write_params.charAt(2) == '1'? true: false;
         writeUStats = write_params.charAt(3) == '1'? true: false;
+        writeDegPop = write_params.charAt(4) == '1'? true: false;
+        writeDegStats = write_params.charAt(5) == '1'? true: false;
 
-
-
-
-
-
-
-//        String[] series_params = settings[CI++].split(" ");
-//        CI2 = 0;
-//        numExp = Integer.parseInt(series_params[CI2++]);
-//        if(numExp > 1){
-//            varying = series_params[CI2++];
-//
-//            // store variations in a string array. when its time to vary param and its a numerical
-//            // param, parse to int/double.
-//            str_variations = new String[numExp - 1];
-//            for(int i = 0; i < numExp - 1; i++)
-//                str_variations[i] = series_params[CI2++];
-//        }
 
         try{
             String[] series_params = settings[CI++].split(" ");
             CI2 = 0;
             varying = series_params[CI2++];
-//            str_variations = new ArrayList<>();
             for(int i = 1; i < series_params.length; i++)
                 str_variations.add(series_params[i]);
         }catch(ArrayIndexOutOfBoundsException e){}
 
 
-
-
-
+        // tentatively removed injection functionality.
 //        String[] inj_params = settings[CI++].split(" "); // injection parameters
 //        if(!inj_params[0].equals("")){
 //            CI2 = 0;
@@ -1408,8 +1402,6 @@ public class Env extends Thread{ // environment simulator
 //            injP = Double.parseDouble(inj_params[CI2++]);
 //            injSize = Integer.parseInt(inj_params[CI2++]);
 //        }
-
-//        desc = settings[CI];
     }
 
 
@@ -1469,17 +1461,11 @@ public class Env extends Thread{ // environment simulator
         try{
             Files.createDirectories(Paths.get(experiment_path));
             for(int i=1;i<=runs;i++){
-                Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+                if(writePPop || writeUPop || writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
                 if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
                 if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
+                if(writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\deg_pop"));
             }
-//            if(writePPop || writeUPop){
-//                for(int i=1;i<=runs;i++){
-//                    Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
-//                    if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
-//                    if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
-//                }
-//            }
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -1666,22 +1652,22 @@ public class Env extends Thread{ // environment simulator
 
 
     public void writePStats(){
-        try{
-            String filename = experiment_path + "\\run" + run + "\\p_stats.csv";
-            String s="";
-            if(gen == 1){ // apply headings to file before writing data
-                s+="gen";
-                s+=",mean p";
-                s+=",sigma p";
-                s+=",p max";
-                s+="\n";
-            }
-            fw = new FileWriter(filename, true);
-            s+=gen;
-            s+=","+DF4.format(mean_p);
-            s+=","+DF4.format(sigma_p);
-            s+=","+DF4.format(p_max);
+        String filename = experiment_path + "\\run" + run + "\\p_stats.csv";
+        String s="";
+        if(gen == 1){ // apply headings to file before writing data
+            s+="gen";
+            s+=",mean p";
+            s+=",sigma p";
+            s+=",p max";
             s+="\n";
+        }
+        s+=gen;
+        s+=","+DF4.format(mean_p);
+        s+=","+DF4.format(sigma_p);
+        s+=","+DF4.format(p_max);
+        s+="\n";
+        try{
+            fw = new FileWriter(filename, true);
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -1742,27 +1728,23 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    // Records acceptance thresholds of the population to a .csv file.
-//    public void writePData(){
+    // Records proposal values of the population to a .csv file.
     public void writePPop(){
-        try{
-//            String filename = experiment_path + "\\" + pDataStr + "\\gen" + gen + ".csv";
-//            String filename = experiment_path + "\\p_pop\\gen" + gen + ".csv";
-//            String filename = experiment_path + "\\p_pop\\" + run + "\\" + gen + ".csv";
-            String filename = experiment_path + "\\run" + run + "\\p_pop\\gen" + gen + ".csv";
-            fw = new FileWriter(filename, false);
-            String s = "";
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
-                    Player player = findPlayerByPos(y,x);
-                    double p = player.getP();
-                    s += DF4.format(p);
-                    if(x + 1 < length){
-                        s += ",";
-                    }
+        String filename = experiment_path + "\\run" + run + "\\p_pop\\gen" + gen + ".csv";
+        String s = "";
+        for(int y=length-1;y>=0;y--){
+            for(int x=0;x<width;x++){
+                Player player = findPlayerByPos(y,x);
+                double p = player.getP();
+                s += DF4.format(p);
+                if(x + 1 < length){
+                    s += ",";
                 }
-                s += "\n";
             }
+            s += "\n";
+        }
+        try{
+            fw = new FileWriter(filename, false);
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -2015,7 +1997,7 @@ public class Env extends Thread{ // environment simulator
      * Find new neighbour by randomly choosing a neighbour of a neighbour.<br>
      * New neighbour cannot be rewirer or already a neighbour.<br>
      */
-    public void rewireToLocal(Player a, int num_rewires){
+    public void RTLocal(Player a, int num_rewires){
         // pool of candidates the rewirer could rewire to to form a new edge.
         ArrayList<Player> pool = new ArrayList<>();
 
@@ -2072,7 +2054,7 @@ public class Env extends Thread{ // environment simulator
 
         // if pool empty, default to rewiring to a random player in the pop.
         if(pool.size() == 0){
-            rewireToPop(a, num_rewires);
+            RTPop(a, num_rewires);
         } else{ // connect to local player.
             for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
 
@@ -2098,7 +2080,7 @@ public class Env extends Thread{ // environment simulator
      * @param a rewirer
      * @param b number of rewires to do
      */
-    public void rewireToPop(Player a, int b){
+    public void RTPop(Player a, int b){
         // c denotes number of rewires done so far.
         for(int c=0;c<b;c++){
 
@@ -2156,80 +2138,7 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Player rewires away from all neighbours for which w = 0.0.
-     * @param a
-     * @return number of rewires performed
-     */
-    public int rewireAway0Many(Player a){
-        // omega_a denotes copy of neighbourhood of a.
-        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
 
-        // denotes list of weighted edges connecting a to its neigbours.
-        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
-
-        // denotes pool of rewireable edges represented by their indices.
-        ArrayList<Integer> rewire_edge_indices = new ArrayList();
-
-        // b_index denotes index of edge w_ab that connects a to neighbour b.
-        for(int b_index = 0; b_index < weights.size(); b_index++){
-            double w = weights.get(b_index);
-            if(w == 0){
-                rewire_edge_indices.add(b_index);
-            }
-        }
-
-        int num_rewirable_edges = rewire_edge_indices.size();
-
-        // supports the process of rewiring to new neighbour.
-        int num_rewires = num_rewirable_edges;
-
-        // you could use a while loop like this if you were rewiring multiple edges.
-        while(num_rewirable_edges > 0){
-
-            // randomly select an edge to cut. the randomness here makes it so that we dont know which neighbour is necessarily going to be rewired away from first. relevant if rewiring is isolation is being prevented (since we then dont know which neighbour is going to get away with being pointed at by a 0 weight edge!)
-            int c_index = rewire_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
-
-            // c denotes neighbour of a.
-            Player c = omega_a.get(c_index);
-
-            // omega_c denotes neighbourhood of c.
-            ArrayList<Player> omega_c = c.getNeighbourhood();
-
-            // do not rewire if c has < 2 edges.
-            //if(omega_c.size() > 1){
-
-
-            // d denotes neighbour of c.
-            for(int d_index = 0; d_index < omega_c.size(); d_index++){
-                Player d = omega_c.get(d_index);
-
-                // if d = a, then d_index is the index/location of a in omega_c.
-                if(d.equals(a)){
-
-                    // disconnect a from c.
-                    omega_a.remove(c_index);
-                    weights.remove(c_index);
-
-                    // disconnect c from a.
-                    omega_c.remove(d_index);
-                    c.getEdgeWeights().remove(d_index);
-
-                    // once the cutting of edges has been completed, stop looping.
-                    break;
-                }
-            }
-
-            num_rewirable_edges--; // you could do this if you were rewiring multiple edges.
-
-        }
-
-        a.setNeighbourhood(omega_a);
-        a.setEdgeWeights(weights);
-
-        return num_rewires;
-
-    }
 
 
 
@@ -2522,57 +2431,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    // chance to rewire is equal to 1 - w. as w decreases, prob linearly increases.
-    public int rewireAwayLinear(Player a){
-        // denotes number of rewires a has performed (this gen).
-        int num_rewires = 0;
-
-        // omega_a denotes neighbourhood of a.
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-
-        // denotes degree of a
-        int degree_a = omega_a.size();
-
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-        for(int i = 0; i < degree_a; i++){
-            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-            double prob_rewire = 1 - w_ab; // denotes probability of rewiring away from b
-            double c = ThreadLocalRandom.current().nextDouble();
-            if(prob_rewire > c){
-                indices_of_edges_to_be_rewired.add(i);
-            }
-        }
-
-        // iterating backwards means with multiple edges to rewire,
-        // as items are removed from arraylist, the subsequent shuffling of
-        // items does not cause an IndexOutOfBoundsException.
-        // if removing edges at indices 2 and 3 using forward iteration,
-        // if you remove edge at 2 first, there no longer exists an
-        // edge at index 3. therefore when we then try to remove an edge at 3, we
-        // encounter an IndexOutOfBoundsException.
-        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
-            int d = indices_of_edges_to_be_rewired.get(i);
-            Player e = omega_a.get(d);
-            ArrayList<Player> omega_e = e.getNeighbourhood();
-            for(int j = 0; j < omega_e.size(); j++){
-                Player f = omega_e.get(j);
-                if(f.equals(a)){
-                    omega_a.remove(d);
-                    weights.remove(d);
-                    omega_e.remove(j);
-                    e.getEdgeWeights().remove(j);
-                    num_rewires++;
-                    break;
-                }
-            }
-        }
-
-        return num_rewires;
-    }
-
-
-
     /**
      * Calculate utility of player.
      * With UF MNI, utility is basically equivalent to the old average score metric.<br>
@@ -2678,42 +2536,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-
-    // probability to rewire is calculated using smoothstep function.
-    public int rewireAwaySmoothstep(Player a){
-        int num_rewires = 0;
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-        for(int i = 0; i < omega_a.size(); i++){
-            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-            double prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
-            double c = ThreadLocalRandom.current().nextDouble();
-            if(prob_rewire > c){
-                indices_of_edges_to_be_rewired.add(i);
-            }
-        }
-        for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
-            int d = indices_of_edges_to_be_rewired.get(i);
-            Player e = omega_a.get(d);
-            ArrayList<Player> omega_e = e.getNeighbourhood();
-            for(int j = 0; j < omega_e.size(); j++){
-                Player f = omega_e.get(j);
-                if(f.equals(a)){
-                    omega_a.remove(d);
-                    weights.remove(d);
-                    omega_e.remove(j);
-                    e.getEdgeWeights().remove(j);
-                    num_rewires++;
-                    break;
-                }
-            }
-        }
-        return num_rewires;
-    }
-
-
-
     public Player selRandomNeigh(Player a){
         ArrayList<Player> omega_a = a.getNeighbourhood();
         return omega_a.get(ThreadLocalRandom.current().nextInt(omega_a.size()));
@@ -2728,23 +2550,22 @@ public class Env extends Thread{ // environment simulator
 
 
     // Records utilities of the population to a .csv file.
-//    public void writeUData(){
     public void writeUPop(){
-        try{
-            String filename = experiment_path + "\\run" + run + "\\u_pop\\gen" + gen + ".csv";
-            fw = new FileWriter(filename, false);
-            String s = "";
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
-                    Player player = findPlayerByPos(y,x);
-                    double u = player.getU();
-                    s += DF4.format(u);
-                    if(x + 1 < length){
-                        s += ",";
-                    }
+        String filename = experiment_path + "\\run" + run + "\\u_pop\\gen" + gen + ".csv";
+        String s = "";
+        for(int y=length-1;y>=0;y--){
+            for(int x=0;x<width;x++){
+                Player player = findPlayerByPos(y,x);
+                double u = player.getU();
+                s += DF4.format(u);
+                if(x + 1 < length){
+                    s += ",";
                 }
-                s += "\n";
             }
+            s += "\n";
+        }
+        try{
+            fw = new FileWriter(filename, false);
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -2752,75 +2573,80 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-//    public void writeMacroUData(){
+
+
     public void writeUStats(){
-        try{
-            String filename = experiment_path + "\\run" + run + "\\u_stats.csv";
-            String s="";
-            if(gen == 1){ // apply headings to file before writing data
-                s+="gen";
-                s+=",mean u";
-                s+=",sigma u";
-                s+="\n";
-            }
-            fw = new FileWriter(filename, true);
-            s+=gen;
-            s+=","+DF4.format(mean_u);
-            s+=","+DF4.format(sigma_u);
+        String filename = experiment_path + "\\run" + run + "\\u_stats.csv";
+        String s="";
+        if(gen == 1){ // apply headings to file before writing data
+            s+="gen";
+            s+=",mean u";
+            s+=",sigma u";
             s+="\n";
+        }
+        s+=gen;
+        s+=","+DF4.format(mean_u);
+        s+=","+DF4.format(sigma_u);
+        s+="\n";
+        try{
+            fw = new FileWriter(filename, true);
             fw.append(s);
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
         }
     }
+
+
 
     // Records degrees of the population to a .csv file.
-    public void writeDegreeData(){
-//        try{
-//            String filename = experiment_path + "\\" + degreeDataStr + "\\gen" + gen + ".csv";
-//            fw = new FileWriter(filename, false);
-//            String s = "";
-//            for(int y=length-1;y>=0;y--){
-//                for(int x=0;x<width;x++){
-//                    Player player = findPlayerByPos(y,x);
-//                    int degree = player.getDegree();
-//                    s += degree;
-//                    if(x + 1 < length){
-//                        s += ",";
-//                    }
-//                }
-//                s += "\n";
-//            }
-//            fw.append(s);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//        }
+    public void writeDegPop(){
+        String filename = experiment_path + "\\run" + run + "\\deg_pop\\gen" + gen + ".csv";
+        String s = "";
+        for(int y=length-1;y>=0;y--){
+            for(int x=0;x<width;x++){
+                Player player = findPlayerByPos(y,x);
+                int degree = player.getDegree();
+                s += degree;
+                if(x + 1 < length){
+                    s += ",";
+                }
+            }
+            s += "\n";
+        }
+        try{
+            fw = new FileWriter(filename, false);
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+            System.exit(0);
+        }
     }
 
-    public void writeMacroDegreeData(){
-//        try{
-//            String filename = experiment_path + "\\macro_" + degreeDataStr + ".csv";
-//            String s="";
-////            if(gen == dataRate){ // apply headings to file before writing data
-////                s+="gen";
-////                s+=",mean degree";
-////                s+=",sigma degree";
-////                s+="\n";
-////            }
-//            fw = new FileWriter(filename, true);
-//            s+=gen;
-//            s+=","+DF4.format(mean_degree);
-//            s+=","+DF4.format(sigma_degree);
-//            s+="\n";
-//            fw.append(s);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//        }
-    }
 
+
+    public void writeDegStats() {
+        String filename = experiment_path + "\\run" + run + "\\deg_stats.csv";
+        String s="";
+        if(gen == 1){ // apply headings to file before writing data
+            s+="gen";
+            s+=",mean deg";
+            s+=",sigma deg";
+            s+="\n";
+        }
+        s+=gen;
+        s+=","+DF4.format(mean_degree);
+        s+=","+DF4.format(sigma_degree);
+        s+="\n";
+        try{
+            fw = new FileWriter(filename, true);
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
 
 
 
@@ -2834,18 +2660,6 @@ public class Env extends Thread{ // environment simulator
         double random_number = ThreadLocalRandom.current().nextDouble();
         if(RP > random_number){
             int num_rewires = 0;
-
-
-//            switch (RA) {
-//                case "0Single" -> num_rewires = rewireAway0Single(player);
-//                case "0Many" -> num_rewires = rewireAway0Many(player);
-//                case "linear" -> num_rewires = rewireAwayLinear(player);
-//                case "FD" -> num_rewires = rewireAwayFermiDirac(player);
-//                case "exponential" -> num_rewires = rewireAwayExponential(player);
-//                case "smoothstep" -> num_rewires = rewireAwaySmoothstep(player);
-//            }
-
-
             ArrayList<Player> omega_a = a.getNeighbourhood();
             ArrayList<Double> weights = a.getEdgeWeights();
             ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
@@ -2892,8 +2706,8 @@ public class Env extends Thread{ // environment simulator
 
             if(num_rewires > 0){
                 switch (RT){
-                    case"local"->rewireToLocal(a, num_rewires);
-                    case"pop"->rewireToPop(a, num_rewires);
+                    case"local"->RTLocal(a, num_rewires);
+                    case"pop"->RTPop(a, num_rewires);
                 }
             }
         }
@@ -2952,6 +2766,45 @@ public class Env extends Thread{ // environment simulator
             double p = pop[i].getP();
             if(p > p_max)
                 p_max = p;
+        }
+    }
+
+
+
+    public Player sel(Player child){
+        Player parent = null;
+        switch(sel){
+            case "RW" -> parent = selRW(child);
+            case "fittest" -> parent = selFittest(child);
+            case "crossover" -> crossover(child);
+            case "randomNeigh" -> parent = selRandomNeigh(child);
+            case "randomPop" -> parent = selRandomPop();
+        }
+        return parent;
+    }
+
+
+
+    public void evo(Player child, Player parent){
+        switch (evo) {
+            case "copy" -> evoCopy(child, parent);
+            case "approach" -> evoApproach(child, parent);
+            case "copyFitter" -> evoCopyFitter(child, parent);
+        }
+    }
+
+
+
+    public void mut(Player child){
+        switch (mut){
+            case "global" -> {
+                if(mutationCheck())
+                    mutGlobal(child);
+            }
+            case "local" -> {
+                if(mutationCheck())
+                    mutLocal(child);
+            }
         }
     }
 }
