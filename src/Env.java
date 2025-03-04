@@ -360,21 +360,11 @@ public class Env extends Thread{ // environment simulator
 //                                case "randomNeigh" -> parent = selRandomNeigh(child);
 //                                case "randomPop" -> parent = selRandomPop();
 //                            }
-
-
-                            Player parent = sel(child);
-
-
 //                            switch (evo) {
 //                                case "copy" -> evoCopy(child, parent);
 //                                case "approach" -> evoApproach(child, parent);
 //                                case "copyFitter" -> evoCopyFitter(child, parent);
 //                            }
-
-
-                            evo(child, parent);
-
-
 //                            switch (mut){
 //                                case "global" -> {
 //                                    if(mutationCheck())
@@ -387,6 +377,8 @@ public class Env extends Thread{ // environment simulator
 //                            }
 
 
+                            Player parent = sel(child);
+                            evo(child, parent);
                             mut(child);
 
 
@@ -439,10 +431,9 @@ public class Env extends Thread{ // environment simulator
 //                            }
 
 
-                            // TODO DEBUG ME
                             Player parent = sel(player);
                             evo(player, parent);
-//                            mut()
+                            mut(player);
 
 
                         }
@@ -467,8 +458,17 @@ public class Env extends Thread{ // environment simulator
                             for(int i=0;i<N;i++) {
                                 Player child = pop[i];
                                 if(child.getNeighbourhood().size() > 0) { // prevent evolution if child is isolated.
-                                    Player parent = selRW(child);
-                                    evoCopy(child, parent);
+
+
+//                                    Player parent = selRW(child);
+//                                    evoCopy(child, parent);
+
+
+                                    Player parent = sel(child);
+                                    evo(child, parent);
+                                    mut(child);
+
+
                                 }
                             }
                             gensOccurred++;
@@ -2283,7 +2283,8 @@ public class Env extends Thread{ // environment simulator
 //                settings += EWLP.equals("")? "": ",EWLP";
                 settings += ",sel";
                 settings += sel.equals("RW")? ",RWT": "";
-                settings += selNoise == 0.0 && !varying.equals("selNoise")? "": ",selNoise";
+//                settings += selNoise == 0.0 && !varying.equals("selNoise")? "": ",selNoise";
+                settings += RWT.equals("exponential")? ",selNoise": "";
                 settings += ",evo";
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
                 settings += mut.equals("")? "": ",mut";
@@ -2326,7 +2327,8 @@ public class Env extends Thread{ // environment simulator
 //            settings += EWLP.equals("")? "": "," + EWLP;
             settings += "," + sel;
             settings += sel.equals("RW")? "," + RWT: "";
-            settings += selNoise == 0.0 && !varying.equals("selNoise")? "": "," + selNoise;
+//            settings += selNoise == 0.0 && !varying.equals("selNoise")? "": "," + selNoise;
+            settings += settings += RWT.equals("exponential")? "," + selNoise: "";
             settings += "," + evo;
             settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
             settings += mut.equals("")? "": "," + mut;

@@ -13,3 +13,10 @@ DG,1,10000,grid 10 10,VN 1,MC 100,rewire 0.1 linear pop,PD,randomNeigh,copy,,nor
 DG,1,10000,grid 40 40,VN 1,MC 1600,rewire 0.1 linear pop,PD,randomNeigh,copy,,normalised,111111,
 DG,1,10000,grid 40 40,VN 1,MC 1600,rewire 0.1 linear pop,PD,randomNeigh,copy,,normalised,000000,
 DG,1,10000,grid 10 10,VN 1,newER 1,proposalProb,PD,randomNeigh,copy,,normalised,000000,
+DG,10,10000,grid 40 40,VN 1,MC 1600,rewire 0.1 linear pop,PD,randomNeigh,copy,,normalised,000000,
+DG,10,10000,grid 40 40,VN 1,MC 1600,rewire 0.1 linear pop,PD,randomNeigh,copy,,normalised,000000,
+DG,10,10000,grid 40 40,VN 1,MC 1600,rewire 0.1 linear pop,PD,randomNeigh,copy,,normalised,000000,
+DG,25,10000,grid 40 40,VN 1,MC 800,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,,normalised,000000,NIS 1200 1600 2000 2400
+DG,25,10000,grid 40 40,VN 1,newER 1,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,,normalised,000000,ER 2 4 7 10
+DG,50,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW exponential 0.0,copy,,normalised,000000,
+DG,50,1,grid 40 40,VN 1,oldER 5 10000,proposalProb,PD,RW normal,copy,,normalised,000000,
