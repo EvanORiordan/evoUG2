@@ -4,7 +4,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Evan O'Riordan (e.oriordan3@universityofgalway.ie)<br>
- * 10/12/2024<br>
  * School of Computer Science<br>
  * University of Galway<br>
  */
@@ -73,18 +72,18 @@ public class Player {
 
 
 
-//    /**
-//     * Augmented setter.
-//     * p must reside within [0,1].
-//      */
-//    public void setP(double p){
-//        this.p=p;
-//        if(this.p>1){
-//            this.p=1;
-//        } else if(this.p<0){
-//            this.p=0;
-//        }
-//    }
+    /**
+     * Augmented setter.
+     * p must reside within [0,1].
+      */
+    public void setP(double p){
+        this.p=p;
+        if(this.p>1){
+            this.p=1;
+        } else if(this.p<0){
+            this.p=0;
+        }
+    }
 //
 //
 //
@@ -189,7 +188,7 @@ public class Player {
     public double getP(){
         return p;
     }
-    public void setP(double d){p=d;}
+//    public void setP(double d){p=d;}
     public double getOldP(){return oldP;}
     public void setOldP(double oldP){
         this.oldP=oldP;

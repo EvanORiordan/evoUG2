@@ -7,3 +7,29 @@ DG,3,grid 20 20,VN 1,oldER 1 10000,rewire 1.0 linear pop,PD,fittest,copy,,normal
 DG,3,grid 20 20,VN 1,newER 1 10000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,,normalised,0000000,ER 2 3
 DG,3,grid 20 20,VN 1,newER 1 4,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,,normalised,0000000,ER 2 3
 DG,3,grid 10 10,VN 1,MC 100 10000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,,normalised,0000000,NIS 200 300
+DG,5,grid 40 40,VN 1,MC 800 10000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,,normalised,0000000,NIS 1200 1600 2000 2400
+DG,5,grid 40 40,VN 1,MC 800 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,,normalised,0000000,NIS 1200 1600 2000 2400
+DG,5,grid 40 40,VN 1,MC 800 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,NIS 1200 1600 2000 2400
+DG,3,grid 5 5,VN 1,MC 12 12,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,mutBound 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+DG,5,grid 40 40,VN 1,MC 1600 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,mutBound 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+DG,5,grid 40 40,VN 1,MC 1600 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,mutRate 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+DG,2,grid 4 4,VN 1,MC 16 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,gens 20000 30000 40000 50000
+DG,5,grid 40 40,VN 1,MC 1600 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,gens 20000 30000 40000 50000
+DG,5,grid 40 40,VN 1,newER 1 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,gens 20000 30000 40000 50000 60000 70000 80000 90000 100000
+DG,5,grid 4 4,VN 1,newER 5 123,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,RP 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,RP 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,RP 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,RP 0.09 0.08 0.07 0.06 0.05 0.04 0.03 0.02 0.01
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.01 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,RP 0.009 0.008 0.007 0.006 0.005 0.004 0.003 0.002 0.001
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.001 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,RP 0.0009 0.0008 0.0007 0.0006 0.0005 0.0004 0.0003 0.0002 0.0001
+DG,3,grid 4 4,VN 1,newER 5 123,rewire 0.001 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,
+DG,50,grid 40 40,VN 1,newER 5 10000,rewire 0.001 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,
+DG,50,grid 40 40,VN 1,newER 5 10000,rewire 0.0001 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,
+DG,50,grid 40 40,VN 1,newER 5 10000,rewire 0.00001 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copyFitter,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,UD,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,randomNeigh,copyFitter,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,randomNeigh,UD,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
