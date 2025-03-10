@@ -578,28 +578,18 @@ public class Env extends Thread{ // environment simulator
     public double calculateLearning(Player a, Player b){
         double learning = 0.0;
         switch(EWLF){
-//            case "ROC" -> learning = ROC;
             case "ROC" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
-                if(p_a < p_b) // if b fairer than a, increase weight
+                if(p_a < p_b) // if a unfairer than b, increase weight
                     learning = ROC;
-                else if(p_a > p_b) // else if a fairer than b, decrease weight
+                else if(p_a > p_b) // else if a fairer than b, decrease weight; else no change
                     learning = -ROC;
             }
             case "PD" -> learning = b.getP() - a.getP();
             case "PED" -> learning = Math.exp(b.getP() - a.getP());
             case "UD" -> learning = b.getU() - a.getU();
             case "UED" -> learning = Math.exp(b.getU() - a.getU());
-//            case "PDR" -> {
-//                double p_a = a.getP();
-//                double p_b = b.getP();
-//                if(p_a < p_b){ // if b fairer than a, a wants to increase w_ab
-//                    learning = ThreadLocalRandom.current().nextDouble(0, p_b - p_a);
-//                } else if(p_a > p_b){ // if a is fairer than b, a wants to decrease w_ab
-//                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a, 0);
-//                }
-//            }
             case "PDR" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
@@ -608,6 +598,15 @@ public class Env extends Thread{ // environment simulator
                     learning = ThreadLocalRandom.current().nextDouble(0, diff);
                 } else if(p_a > p_b){
                     learning = -ThreadLocalRandom.current().nextDouble(0, -(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
+                }
+            }
+            case "PEDv2" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b){ // if a unfairer than b, raise weight
+                    learning = Math.pow((p_b - p_a), Math.exp(1));
+                } else { // if a fairer than b, reduce weight
+                    learning = - Math.pow((p_a - p_b), Math.exp(1));
                 }
             }
         }
@@ -624,45 +623,6 @@ public class Env extends Thread{ // environment simulator
      * @param child player undergoing roulette wheel selection
      */
     public Player selRW(Player child){
-//        try{
-//            int x = child.getNeighbourhood().size();
-//            if(x == 0)
-//                System.out.println("BP");
-//
-//
-//            Player parent = null;
-//            ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
-//            pool.add(child);
-//            int size = pool.size();
-//            double[] pockets = new double[size];
-//            double roulette_total = 0;
-//            for(int i = 0; i < size; i++){
-//                switch(RWT){
-//                    case "normal" -> pockets[i] = pool.get(i).getU();
-//                    case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU() * selNoise);
-//                }
-//                roulette_total += pockets[i];
-//            }
-//            double random_double = ThreadLocalRandom.current().nextDouble();
-//            double tally = 0;
-//            for(int i = 0; i < size; i++){
-//                tally += pockets[i];
-//                double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
-//                if(random_double < percent_taken){ // if true, the ball landed in the candidate's slot
-//                    parent = pool.get(i); // select candidate as parent
-//                    break;
-//                }
-//            }
-//            return parent;
-//        }
-//        catch(Exception e){
-//            e.printStackTrace();
-//            System.out.println("ERROR: cannot do RW sel without neighbours");
-//            System.exit(0);
-//            return null;
-//        }
-
-
         Player parent = null;
         ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
         pool.add(child);
