@@ -42,3 +42,6 @@ DG,5,grid 40 40,VN 1,newER 1 10000,rewire 0.1 linear pop,PEDv2,RW exponential 1.
 DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
 DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PED,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
 DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PEDv2,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PEDv4,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,20,grid 100 100,VN 1,newER 1 10000,proposalProb,PEDv4,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,stepwise,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10

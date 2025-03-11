@@ -587,7 +587,14 @@ public class Env extends Thread{ // environment simulator
                     learning = -ROC;
             }
             case "PD" -> learning = b.getP() - a.getP();
-            case "PED" -> learning = Math.exp(b.getP() - a.getP());
+//            case "PED" -> learning = Math.exp(b.getP() - a.getP());
+            case "PED" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b){
+
+                }
+            }
             case "UD" -> learning = b.getU() - a.getU();
             case "UED" -> learning = Math.exp(b.getU() - a.getU());
             case "PDR" -> {
@@ -607,6 +614,29 @@ public class Env extends Thread{ // environment simulator
                     learning = Math.pow((p_b - p_a), Math.exp(1));
                 } else { // if a fairer than b, reduce weight
                     learning = - Math.pow((p_a - p_b), Math.exp(1));
+                }
+            }
+            case "PEDv4" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                double exp = Math.exp(Math.abs(p_b - p_a));
+                if(p_a < p_b){
+                    learning = exp;
+                } else if(p_a > p_b){
+                    learning = -exp;
+                } else{
+                    learning = 0.0;
+                }
+            }
+            case "stepwise" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b){
+                    learning = 1.0;
+                } else if(p_a > p_b){
+                    learning = -1.0;
+                } else{
+                    learning = 0.0;
                 }
             }
         }
