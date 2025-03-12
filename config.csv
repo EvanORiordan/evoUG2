@@ -45,3 +45,15 @@ DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PEDv2,RW exponential 1.0,copy,lo
 DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PEDv4,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
 DG,20,grid 100 100,VN 1,newER 1 10000,proposalProb,PEDv4,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5
 DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,stepwise,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copy,,normalised,0000000,ER 2 3 4 5 6 7 8 9 10
+DG,5,grid 40 40,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,gens 20000 30000 40000 50000
+DG,20,grid 100 100,VN 1,newER 1 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,ER 2 3 4 5
+DG,20,grid 40 10,VN 1,newER 5 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,
+DG,20,grid 20 20,VN 1,newER 5 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,
+DG,1,grid 40,VN 1,newER 5 123,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,
+DG,5,grid 40,VN 1,newER 5 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,length 50 60 70 80 90 100
+DG,5,grid 40,VN 1,newER 5 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,gens 20000 30000 40000 50000 60000 70000 80000 90000 100000
+DG,1,grid 4,VN 1,newER 1 123,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,EWLF PDR PDRv2
+DG,20,grid 40,VN 1,newER 5 10000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,EWLF PDR PDRv2
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linearR pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,0000000,RP 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+DG,5,grid 40 40,VN 1,newER 5 10000,rewire 0.1 linearR pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,0000000,RP 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0

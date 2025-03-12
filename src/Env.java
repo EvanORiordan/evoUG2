@@ -86,7 +86,6 @@ public class Env extends Thread{ // environment simulator
     static double ROC = 0; // rate of change: fixed learning amount to EW
     static double alpha = 0; // used in alpha-beta rating
     static double beta = 0; // used in alpha-beta rating
-    static String EWLP; // EWL probability
     static String evo; // indicates which evolution function to call
     static double evoNoise = 0; // noise affecting evolution
     static String sel; // indicates which selection function to call
@@ -162,8 +161,11 @@ public class Env extends Thread{ // environment simulator
                     case "evo" -> evo = str_variations.get(expNum - 1);
                     case "EWT" -> EWT = str_variations.get(expNum - 1);
                     case "gens" -> gens = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "length" -> length = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "width" -> width = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "length" -> {
+                        length = Integer.parseInt(str_variations.get(expNum - 1));
+                        N = length * width;
+                    }
+//                    case "width" -> width = Integer.parseInt(str_variations.get(expNum - 1));
                     case "ER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
                     case "NIS" -> NIS = Integer.parseInt(str_variations.get(expNum - 1));
                     case "ROC" -> ROC = Double.parseDouble(str_variations.get(expNum - 1));
@@ -245,6 +247,7 @@ public class Env extends Thread{ // environment simulator
      */
     @Override
     public void start(){
+//        N = length * width;
         initRandomPop();
         for(int i=0;i<N;i++){
             switch(neighType){
@@ -523,55 +526,14 @@ public class Env extends Thread{ // environment simulator
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getNeighbourhood();
         for(int i = 0; i < omega_a.size(); i++){
-
-            // b denotes neighbour at end of edge
-            Player b = omega_a.get(i);
-
-            // w_ab denotes weight of edge from a to b. technically this is a copy of the player's weight; note how this is a double while player's weight is a Double.
-            double w_ab = weights.get(i);
-
-            // e indicates whether w_ab will undergo learning
-//            boolean e = checkEWLP(a, b);
-
-
-            boolean e = true;
-
-
-            if(e){
-                w_ab += calculateLearning(a, b);
-                if(w_ab > 1.0)
-                    w_ab = 1.0;
-                else if(w_ab < 0.0)
-                    w_ab = 0.0;
-                weights.set(i, w_ab); // set player's weight to copy.
-            }
+            Player b = omega_a.get(i); // neighbour of a
+            double w_ab = weights.get(i); // weight from a to b
+            w_ab += calculateLearning(a, b);
+            if(w_ab > 1.0) w_ab = 1.0;
+            else if(w_ab < 0.0) w_ab = 0.0;
+            weights.set(i, w_ab); // set player's weight to copy.
         }
     }
-
-
-
-    public boolean checkEWLP(Player a, Player b){
-        // manually set noise k.
-        double k = 0.1;
-
-        double x = 0.0;
-        switch(EWLP){
-            case "UFD" -> x = 1 / (1 + Math.exp((a.getU() - b.getU()) / k)); // utility fermi-dirac
-            case "PFD" -> x = 1 / (1 + Math.exp((a.getP() - b.getP()) / k)); // proposal value fermi-dirac
-            case "always" -> x = 1.0;
-        }
-
-//        System.out.println(a.getP() + "\t" + b.getP() + "\t" + x);
-//        System.out.println(a.getU() + "\t" + b.getU() + "\t" + x);
-
-        double y = ThreadLocalRandom.current().nextDouble();
-
-        boolean z = x > y;
-
-        return z;
-    }
-
-
 
 
 
@@ -588,23 +550,25 @@ public class Env extends Thread{ // environment simulator
             }
             case "PD" -> learning = b.getP() - a.getP();
 //            case "PED" -> learning = Math.exp(b.getP() - a.getP());
-            case "PED" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                if(p_a < p_b){
-
-                }
-            }
             case "UD" -> learning = b.getU() - a.getU();
-            case "UED" -> learning = Math.exp(b.getU() - a.getU());
+//            case "UED" -> learning = Math.exp(b.getU() - a.getU());
             case "PDR" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
                 double diff = p_b - p_a;
                 if(p_a < p_b){
-                    learning = ThreadLocalRandom.current().nextDouble(0, diff);
+                    learning = ThreadLocalRandom.current().nextDouble(diff);
                 } else if(p_a > p_b){
-                    learning = -ThreadLocalRandom.current().nextDouble(0, -(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
+                    learning = -ThreadLocalRandom.current().nextDouble(-(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
+                }
+            }
+            case "PDRv2" -> {
+                double p_a = a.getP();
+                double p_b = b.getP();
+                if(p_a < p_b){
+                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a);
+                } else if(p_a > p_b){
+                    learning = -ThreadLocalRandom.current().nextDouble(p_a - p_b);
                 }
             }
             case "PEDv2" -> {
@@ -698,46 +662,6 @@ public class Env extends Thread{ // environment simulator
         }
         return b;
     }
-
-
-
-//    /**
-//     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
-//     * The greater w (intensity of selection) is,
-//     * the more likely a fitter player is selected as child's parent.
-//     * @param child
-//     * @return parent player
-//     */
-////    public Player selRand(Player child){
-//    public Player selIntensity(Player child){
-//        double w = selNoise;
-//        double[] effective_payoffs = new double[N];
-//        Player parent = null;
-//        double total = 0.0;
-//        double tally = 0.0;
-//
-//        // calculate effective payoffs
-//        for(int i=0;i<N;i++){
-//            Player player = pop[i];
-//            double u = player.getU();
-//            double effective_payoff = Math.exp(w * u);
-//            effective_payoffs[i] = effective_payoff;
-//            total += effective_payoff;
-//        }
-//
-//        // fitter player ==> more likely to be selected
-//        double random_double = ThreadLocalRandom.current().nextDouble();
-//        for(int i = 0; i < N; i++){
-//            tally += effective_payoffs[i];
-//            double percentile = tally / total;
-//            if(random_double < percentile){
-//                parent = pop[i];
-//                break;
-//            }
-//        }
-//
-//        return parent;
-//    }
 
 
 
@@ -1072,7 +996,8 @@ public class Env extends Thread{ // environment simulator
         space = space_params[CI2++];
         if(space.equals("grid")){
             length = Integer.parseInt(space_params[CI2++]);
-            width = Integer.parseInt(space_params[CI2++]);
+//            width = Integer.parseInt(space_params[CI2++]);
+            width = length;
             N = length * width;
         }
 
@@ -1139,8 +1064,6 @@ public class Env extends Thread{ // environment simulator
                 alpha = Double.parseDouble(EWL_params[CI2++]);
                 beta = Double.parseDouble(EWL_params[CI2++]);
             }
-            // tentatively removed EWLP functionality.
-//            EWLP = EWL_params[CI2++];
         }
 
 
@@ -1933,106 +1856,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /*
-    a will pick a random c with 0.0 weight. if a or c would be isolated
-    as a result of cutting ties, rewiring will not occur. in that case, a will NOT
-    look for a new c. by this point, a has lost its opportunity to rewire this gen.
-     */
-    public int rewireAway0Single(Player a){
-        // omega_a denotes copy of neighbourhood of a.
-        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
-
-        // denotes list of weighted edges connecting a to its neigbours.
-        ArrayList<Double> weights = new ArrayList(a.getEdgeWeights());
-
-        // denotes pool of rewireable edges represented by their indices.
-        ArrayList<Integer> rewirable_edge_indices = new ArrayList();
-
-        // b_index denotes index of weighted edge w_ab that connects a to neighbour b.
-        for(int b_index = 0; b_index < weights.size(); b_index++){
-            double w = weights.get(b_index);
-
-            // can cut the edge if weight w = 0.
-            if(w == 0){
-                rewirable_edge_indices.add(b_index);
-            }
-        }
-
-        // indicates number of 0.0 weights originating at a.
-        int num_rewirable_edges = rewirable_edge_indices.size();
-
-        // supports the process of rewiring to new neighbour.
-        // 1 if successful rewire away, 0 otherwise.
-        int num_rewires = 0;
-
-        // do not rewire if a has < 2 edges.
-        if(omega_a.size() > 1){
-
-            // do not rewire if there are no 0.0 weights to cut.
-            if(num_rewirable_edges > 0){
-
-                // randomly select a 0.0 weight.
-                // c_index denotes the index of c within omega_a.
-                int c_index = rewirable_edge_indices.get(ThreadLocalRandom.current().nextInt(num_rewirable_edges));
-
-                // c denotes neighbour of a that a will try to rewire away from.
-                Player c = omega_a.get(c_index);
-
-                // omega_c denotes neighbourhood of c.
-                ArrayList<Player> omega_c = c.getNeighbourhood();
-
-                // do not rewire if c has < 2 edges.
-                if(omega_c.size() > 1){
-
-                    // d denotes neighbour of c.
-                    for(int d_index = 0; d_index < omega_c.size(); d_index++) {
-                        Player d = omega_c.get(d_index);
-
-                        // if d = a, then c_index is the location of a in omega_b.
-                        if(d.equals(a)){
-
-                            // disconnect a from c.
-                            omega_a.remove(c_index);
-                            weights.remove(c_index);
-
-                            // disconnect c from a.
-                            omega_c.remove(d_index);
-                            c.getEdgeWeights().remove(d_index);
-
-                            num_rewires++;
-
-                            // once the cutting of edges has been completed, stop looping.
-                            break;
-                        }
-                    }
-                } // if false, c would be isolated as a result of a rewiring.
-            } // if false, a has no 0.0 weights to cut.
-
-            a.setNeighbourhood(omega_a);
-            a.setEdgeWeights(weights);
-        } // if false, a would be isolated as a result of rewiring away.
-
-        return num_rewires;
-    }
-
-
-
-
-    // incomplete
-    public int rewireAwayRW(Player a){
-
-        ArrayList<Player> omega_a = new ArrayList<>(a.getNeighbourhood());
-
-        ArrayList<Double> weights = new ArrayList<>(a.getEdgeWeights());
-
-
-        //apply roulette wheel approach to selecting edges...
-
-        return 0;
-    }
-
-
-
     /**
      * use the varying field to help determine whether a field should be
      * included in the settings String. if a field equals 0.0 and is not being
@@ -2067,7 +1890,6 @@ public class Env extends Thread{ // environment simulator
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
                 settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
                 settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
-//                settings += EWLP.equals("")? "": ",EWLP";
                 settings += ",sel";
                 settings += sel.equals("RW")? ",RWT": "";
                 settings += RWT.equals("exponential")? ",selNoise": "";
@@ -2110,7 +1932,6 @@ public class Env extends Thread{ // environment simulator
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
             settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
             settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
-//            settings += EWLP.equals("")? "": "," + EWLP;
             settings += "," + sel;
             settings += sel.equals("RW")? "," + RWT: "";
             settings += RWT.equals("exponential")? "," + selNoise: "";
@@ -2195,7 +2016,7 @@ public class Env extends Thread{ // environment simulator
                 case "NIS" -> results += "," + NIS;
                 case "ROC" -> results += "," + ROC;
                 case "length" -> results += "," + length;
-                case "width" -> results += "," + width;
+//                case "width" -> results += "," + width;
                 case "RP" -> results += "," + RP;
                 case "gens" -> results += "," + gens;
                 case "EWLF" -> results += "," + EWLF;
@@ -2239,7 +2060,6 @@ public class Env extends Thread{ // environment simulator
                     player.setU(player.getPi() / player.getMNI());
             }
             case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
-//            case "normalised" -> player.setU(player.getPi() / player.getNeighbourhood().size());
             case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
                 if(player.getNeighbourhood().size() == 0){
                     player.setU(0.0);
@@ -2248,85 +2068,10 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-//        if(Double.isNaN(player.getU())){
-//            System.out.println("BP");
-//        }
     }
 
 
 
-    // probability for a to rewire away from b is calculated using Fermi-Dirac equation.
-    // disregards weights of edges.
-    public int rewireAwayFermiDirac(Player a){
-        int num_rewires = 0;
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        int degree_a = omega_a.size();
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-        double k = 0.1; // noise in F-D eqn
-        for(int i = 0; i < degree_a; i++){
-            Player b = omega_a.get(i);
-            double prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k)); // denotes probability of rewiring away from b
-            double c = ThreadLocalRandom.current().nextDouble();
-            if(prob_rewire > c){
-                indices_of_edges_to_be_rewired.add(i);
-            }
-        }
-        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
-            int d = indices_of_edges_to_be_rewired.get(i);
-            Player e = omega_a.get(d);
-            ArrayList<Player> omega_e = e.getNeighbourhood();
-            for(int j = 0; j < omega_e.size(); j++){
-                Player f = omega_e.get(j);
-                if(f.equals(a)){
-                    omega_a.remove(d);
-                    weights.remove(d);
-                    omega_e.remove(j);
-                    e.getEdgeWeights().remove(j);
-                    num_rewires++;
-                    break;
-                }
-            }
-        }
-        return num_rewires;
-    }
-
-
-
-    // as w decreases, prob to rewire exponentially increases.
-    public int rewireAwayExponential(Player a){
-        int num_rewires = 0;
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        int degree_a = omega_a.size();
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-        double k = 5; // k denotes rate of decay. as k increases,
-        for(int i = 0; i < degree_a; i++){
-            double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-            double prob_rewire = Math.exp(-k * w_ab);
-            double c = ThreadLocalRandom.current().nextDouble();
-            if(prob_rewire > c){
-                indices_of_edges_to_be_rewired.add(i);
-            }
-        }
-        for(int i=indices_of_edges_to_be_rewired.size()-1;i >= 0;i--){
-            int d = indices_of_edges_to_be_rewired.get(i);
-            Player e = omega_a.get(d);
-            ArrayList<Player> omega_e = e.getNeighbourhood();
-            for(int j = 0; j < omega_e.size(); j++){
-                Player f = omega_e.get(j);
-                if(f.equals(a)){
-                    omega_a.remove(d);
-                    weights.remove(d);
-                    omega_e.remove(j);
-                    e.getEdgeWeights().remove(j);
-                    num_rewires++;
-                    break;
-                }
-            }
-        }
-        return num_rewires;
-    }
 
 
 
@@ -2336,13 +2081,7 @@ public class Env extends Thread{ // environment simulator
         try{
             parent = omega_a.get(ThreadLocalRandom.current().nextInt(omega_a.size()));
         }catch(IllegalArgumentException e){ // if a has no neighbours, it is set as its own parent.
-
-//            e.printStackTrace();
-//            System.out.println("ERROR: cannot do randomNeigh sel without neighbours");
-//            System.exit(0);
-
             parent = a;
-
         }
         return parent;
     }
@@ -2486,6 +2225,7 @@ public class Env extends Thread{ // environment simulator
                         double k = 0.1; // manually set noise
                         prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
                     }
+                    case "linearR" -> prob_rewire = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
                 }
                 double c = ThreadLocalRandom.current().nextDouble();
                 if(prob_rewire > c){
@@ -2522,7 +2262,7 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * evoUD: evolution based on utility difference.<br>
+     * evoUDN: evolution based on normalised utility difference.<br>
      * Probability to evolve equals utility difference divided by degree.<br>
      * Child fitter than parent mean no chance.<br>
      * Fitter parent means greater probability.<br>
@@ -2531,9 +2271,9 @@ public class Env extends Thread{ // environment simulator
      * @param child
      * @param parent
      */
-    public void evoUD(Player child, Player parent){
+//    public void evoUD(Player child, Player parent){
+    public void evoUDN(Player child, Player parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
-//        double prob_evolve = (parent.getU() - child.getU()) / child.getNeighbourhood().size();
         double prob_evolve = (parent.getU() - child.getU()) / child.getDegree();
         if(random_number < prob_evolve)
             evoCopy(child, parent);
@@ -2661,5 +2401,17 @@ public class Env extends Thread{ // environment simulator
      */
     public void evoCopyFitter(Player child, Player parent){
         if(parent.getU() > child.getU()) evoCopy(child, parent);
+    }
+
+
+
+    /**
+     * evoUDN: evolution based on utility difference.<br>
+     */
+    public void evoUD(Player child, Player parent){
+        double random_number = ThreadLocalRandom.current().nextDouble();
+        double prob_evolve = (parent.getU() - child.getU());
+        if(random_number < prob_evolve)
+            evoCopy(child, parent);
     }
 }
