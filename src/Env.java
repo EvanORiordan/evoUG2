@@ -51,14 +51,13 @@ public class Env extends Thread{ // environment simulator
     static double mean_mean_p; // mean of the mean p of the runs of an experiment
     static double mean_mean_q;
     static double mean_mean_u;
-    static double mean_mean_degree;
+//    static double mean_mean_degree;
     static double sigma_mean_p; // standard deviation of the mean p of the runs of an experiment
     static double sigma_mean_q;
-    static double sigma_mean_u;
-    static double sigma_mean_degree;
+//    static double sigma_mean_u;
+//    static double sigma_mean_degree;
     static double mean_sigma_degree; // mean of the standard deviations of degree of the runs of an experiment
     static double[] mean_p_values; // mean p values of the runs of an experiment
-    static double[] mean_q_values;
     static double[] mean_u_values;
     static double[] mean_degree_values;
     static FileWriter fw;
@@ -174,6 +173,7 @@ public class Env extends Thread{ // environment simulator
                     case "selNoise" -> selNoise = Double.parseDouble(str_variations.get(expNum - 1));
                     case "mutRate" -> mutRate = Double.parseDouble(str_variations.get(expNum - 1));
                     case "mutBound" -> mutBound = Double.parseDouble(str_variations.get(expNum - 1));
+                    case "UF" -> UF = str_variations.get(expNum - 1);
                 }
             }
         }
@@ -187,10 +187,10 @@ public class Env extends Thread{ // environment simulator
     public static void experiment(){
         mean_mean_p = 0;
         mean_mean_u = 0.0;
-        mean_mean_degree = 0.0;
+//        mean_mean_degree = 0.0;
         sigma_mean_p = 0;
-        sigma_mean_u = 0.0;
-        sigma_mean_degree = 0.0;
+//        sigma_mean_u = 0.0;
+//        sigma_mean_degree = 0.0;
         mean_sigma_degree = 0.0;
         mean_p_values = new double[runs];
         mean_u_values = new double[runs];
@@ -204,7 +204,7 @@ public class Env extends Thread{ // environment simulator
             output += " mean p=" + DF4.format(pop.mean_p);
             mean_mean_u += pop.mean_u;
             mean_u_values[run - 1] = pop.mean_u;
-            mean_mean_degree += pop.mean_degree;
+//            mean_mean_degree += pop.mean_degree;
             mean_degree_values[run - 1] = pop.mean_degree;
             mean_sigma_degree += pop.sigma_degree;
             output += " mean u=" + DF4.format(pop.mean_u);
@@ -219,18 +219,18 @@ public class Env extends Thread{ // environment simulator
         output += "\nmean mean p=" + DF4.format(mean_mean_p);
         output += "\nsigma mean p=" + DF4.format(sigma_mean_p);
         mean_mean_u /= runs;
-        mean_mean_degree /= runs;
-        for(int i = 0; i < runs; i++){
-            sigma_mean_u += Math.pow(mean_u_values[i] - mean_mean_u, 2);
-            sigma_mean_degree += Math.pow(mean_degree_values[i] - mean_mean_degree, 2);
-        }
-        sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
-        sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
+//        mean_mean_degree /= runs;
+//        for(int i = 0; i < runs; i++){
+//            sigma_mean_u += Math.pow(mean_u_values[i] - mean_mean_u, 2);
+//            sigma_mean_degree += Math.pow(mean_degree_values[i] - mean_mean_degree, 2);
+//        }
+//        sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
+//        sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
         mean_sigma_degree /= runs;
         output += "\nmean mean u=" + DF4.format(mean_mean_u);
-        output += "\nsigma mean u=" + DF4.format(sigma_mean_u);
-        output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
-        output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
+//        output += "\nsigma mean u=" + DF4.format(sigma_mean_u);
+//        output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
+//        output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
         output += "\nmean sigma degree=" + DF4.format(mean_sigma_degree);
         System.out.println(output);
         writeSettings();
@@ -1980,9 +1980,9 @@ public class Env extends Thread{ // environment simulator
                     case "PD" -> {}
                 }
                 results += ",mean mean u";
-                results += ",sigma mean u";
-                results += ",mean mean degree";
-                results += ",sigma mean degree";
+//                results += ",sigma mean u";
+//                results += ",mean mean degree";
+//                results += ",sigma mean degree";
                 results += ",mean sigma degree";
                 if(!varying.equals(""))
                     results += "," + varying;
@@ -2004,9 +2004,9 @@ public class Env extends Thread{ // environment simulator
                 case "PD" -> {}
             }
             results += "," + DF4.format(mean_mean_u);
-            results += "," + DF4.format(sigma_mean_u);
-            results += "," + DF4.format(mean_mean_degree);
-            results += "," + DF4.format(sigma_mean_degree);
+//            results += "," + DF4.format(sigma_mean_u);
+//            results += "," + DF4.format(mean_mean_degree);
+//            results += "," + DF4.format(sigma_mean_degree);
             results += "," + DF4.format(mean_sigma_degree);
 
 
@@ -2029,6 +2029,7 @@ public class Env extends Thread{ // environment simulator
                 case "selNoise" -> results += "," + selNoise;
                 case "mutRate" -> results += "," + mutRate;
                 case "mutBound" -> results += "," + mutBound;
+                case "UF" -> results += "," + UF;
             }
 
             // write duration of experiment
@@ -2347,6 +2348,7 @@ public class Env extends Thread{ // environment simulator
                 case "approach" -> evoApproach(child, parent);
                 case "copyFitter" -> evoCopyFitter(child, parent);
                 case "UD" -> evoUD(child, parent);
+                case "UDN" -> evoUDN(child, parent);
             }
         }
     }
