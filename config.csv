@@ -78,3 +78,7 @@ DG,5,grid 40,VN 1,newER 5 10000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy
 DG,5,grid 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,0000000,
 DG,1,grid 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,0010100,
 DG,1,grid 10,VN 1,newER 5 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,0010100,RP 0.5 1.0
+DG,1,grid 10,VN 1,newER 5 1,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,101000000 1,
+DG,10,grid 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,,
+DG,1,grid 40,VN 1,newER 5 10000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,101000000 1,
+DG,10,grid 5,VN 1,newER 5 100,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,,

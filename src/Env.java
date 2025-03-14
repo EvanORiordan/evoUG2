@@ -73,12 +73,14 @@ public class Env extends Thread{ // environment simulator
     static String this_path; // address where results of current experimentation is recorded
     static String experiment_path; // address where results of current experiment are stored
     static boolean writePPop;
-    static boolean writeUPop;
-    static boolean writeDegPop;
     static boolean writePStats;
+    static boolean writeMeanPOmegaPop;
+    static boolean writeUPop;
     static boolean writeUStats;
+    static boolean writeDegPop;
     static boolean writeDegStats;
     static boolean writePosData;
+    static int writingRate = 1; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
     static String EWLF; // EWL formula
@@ -900,7 +902,7 @@ public class Env extends Thread{ // environment simulator
                         " %-15s |" +//evo
                         " %-15s |" +//mut
                         " %-10s |" +//UF
-                        " %-10s |" +//writing
+                        " %-15s |" +//writing
                         " %s%n"//series
 //                        " %-15s |" +//inj
                 ,"config"
@@ -945,7 +947,12 @@ public class Env extends Thread{ // environment simulator
                 CI++;
             }
             System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-10s ", settings[CI++]); //writing
+//            System.out.printf("| %-10s ", settings[CI++]); //writing
+            try{
+                System.out.printf("| %-15s ", settings[CI++]); //writing
+            }catch(ArrayIndexOutOfBoundsException e){
+                System.out.printf("| %-15s ", " ");
+            }
             try{
                 System.out.printf("| %s ", settings[CI++]);//series
             }catch(ArrayIndexOutOfBoundsException e){
@@ -974,6 +981,7 @@ public class Env extends Thread{ // environment simulator
         settings = configurations.get(config_num).split(",");
         CI = 0;
         int CI2;
+        int CI3;
 
 
         String[] game_params = settings[CI++].split(" ");
@@ -1103,14 +1111,36 @@ public class Env extends Thread{ // environment simulator
 
 
         // experiment run data writing params
-        String write_params = settings[CI++];
-        writePPop = write_params.charAt(0) == '1'? true: false;
-        writePStats = write_params.charAt(1) == '1'? true: false;
-        writeUPop = write_params.charAt(2) == '1'? true: false;
-        writeUStats = write_params.charAt(3) == '1'? true: false;
-        writeDegPop = write_params.charAt(4) == '1'? true: false;
-        writeDegStats = write_params.charAt(5) == '1'? true: false;
-        writePosData = write_params.charAt(6) == '1'? true: false;
+//        String write_params = settings[CI++];
+//        writePPop = write_params.charAt(0) == '1'? true: false;
+//        writePStats = write_params.charAt(1) == '1'? true: false;
+//        writeUPop = write_params.charAt(2) == '1'? true: false;
+//        writeUStats = write_params.charAt(3) == '1'? true: false;
+//        writeDegPop = write_params.charAt(4) == '1'? true: false;
+//        writeDegStats = write_params.charAt(5) == '1'? true: false;
+//        writePosData = write_params.charAt(6) == '1'? true: false;
+
+
+        try{
+            String[] write_params = settings[CI++].split(" ");
+            CI2 = 0;
+            if(!mut_params[0].equals("")){
+                CI3 = 0;
+                writePPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writePStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeMeanPOmegaPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeUPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeUStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeDegPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeDegStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writePosData = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                CI2++;
+                if(writePPop || writePStats || writeUPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop)
+                    writingRate = Integer.parseInt(write_params[1]);
+            }
+        }catch(ArrayIndexOutOfBoundsException e){}
+
+
 
 
         try{
@@ -1189,8 +1219,9 @@ public class Env extends Thread{ // environment simulator
         try{
             Files.createDirectories(Paths.get(experiment_path));
             for(int i=1;i<=runs;i++){
-                if(writePPop || writeUPop || writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+                if(writePPop || writeUPop || writeDegPop || writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
                 if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
+                if(writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\mean_p_omega_pop"));
                 if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
                 if(writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\deg_pop"));
             }
@@ -1387,30 +1418,6 @@ public class Env extends Thread{ // environment simulator
         } catch(IOException e){
             e.printStackTrace();
         }
-    }
-
-
-
-    public void writeMacroQData(){
-//        try{
-//            String filename = experiment_path + "\\macro_" + qDataStr + ".csv";
-//            String output = "";
-//            if(gen == dataRate){
-//                output += "gen";
-//                output += ",mean q";
-//                output += ",sigma q";
-//                output += "\n";
-//            }
-//            fw = new FileWriter(filename, true);
-//            output += gen;
-//            output += ","+DF4.format(mean_q);
-//            output += ","+DF4.format(sigma_q);
-//            output += "\n";
-//            fw.append(output);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//        }
     }
 
 
@@ -2386,12 +2393,15 @@ public class Env extends Thread{ // environment simulator
 
 
     public void writeRunStats(){
-        if(writePPop) writePPop();
-        if(writePStats) writePStats();
-        if(writeUPop) writeUPop();
-        if(writeUStats) writeUStats();
-        if(writeDegPop) writeDegPop();
-        if(writeDegStats) writeDegStats();
+        if(gen % writingRate == 0) {
+            if (writePPop) writePPop();
+            if (writePStats) writePStats();
+            if (writeMeanPOmegaPop) writeMeanPOmegaPop();
+            if (writeUPop) writeUPop();
+            if (writeUStats) writeUStats();
+            if (writeDegPop) writeDegPop();
+            if (writeDegStats) writeDegStats();
+        }
     }
 
 
@@ -2415,5 +2425,41 @@ public class Env extends Thread{ // environment simulator
         double prob_evolve = (parent.getU() - child.getU());
         if(random_number < prob_evolve)
             evoCopy(child, parent);
+    }
+
+
+
+    /**
+     * For every player a in the pop, write the mean p of omega a.<br>
+     * Final state of the .csv file should look like a square grid, the structure of the pop itself.
+     */
+    public void writeMeanPOmegaPop(){
+        String filename = experiment_path + "\\run" + run + "\\mean_p_omega_pop\\gen" + gen + ".csv";
+        String s = "";
+        for(int y=length-1;y>=0;y--){
+            for(int x=0;x<width;x++){
+                Player player = findPlayerByPos(y,x);
+                double mean_p_omega_pop = 0.0;
+                ArrayList<Player> neighbourhood = player.getNeighbourhood();
+                int size = neighbourhood.size();
+                for(int i = 0; i < size; i++){
+                    mean_p_omega_pop += neighbourhood.get(i).getP();
+                }
+                mean_p_omega_pop /= size;
+                s += DF4.format(mean_p_omega_pop);
+                if(x + 1 < length){
+                    s += ",";
+                }
+            }
+            s += "\n";
+        }
+        try{
+            fw = new FileWriter(filename, false);
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+            System.exit(0);
+        }
     }
 }
