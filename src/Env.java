@@ -1124,7 +1124,7 @@ public class Env extends Thread{ // environment simulator
         try{
             String[] write_params = settings[CI++].split(" ");
             CI2 = 0;
-            if(!mut_params[0].equals("")){
+            if(!mut_params[0].equals("")){ // theres currently 8 params covered by write_params[0].
                 CI3 = 0;
                 writePPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writePStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
@@ -1136,7 +1136,7 @@ public class Env extends Thread{ // environment simulator
                 writePosData = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 CI2++;
                 if(writePPop || writePStats || writeUPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop)
-                    writingRate = Integer.parseInt(write_params[1]);
+                    writingRate = Integer.parseInt(write_params[CI2++]);
             }
         }catch(ArrayIndexOutOfBoundsException e){}
 
@@ -1219,7 +1219,8 @@ public class Env extends Thread{ // environment simulator
         try{
             Files.createDirectories(Paths.get(experiment_path));
             for(int i=1;i<=runs;i++){
-                if(writePPop || writeUPop || writeDegPop || writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+                if(writePPop || writePStats || writeUPop || writeMeanPOmegaPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop)
+                    Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
                 if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
                 if(writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\mean_p_omega_pop"));
                 if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
