@@ -1400,11 +1400,13 @@ public class Env extends Thread{ // environment simulator
     public void writePStats(){
         String filename = experiment_path + "\\run" + run + "\\p_stats.csv";
         String s="";
-        if(gen == 1){ // apply headings to file before writing data
+//        if(gen == 1){ // apply headings to file before writing data
+        if(gen / writingRate == 1){ // apply headings to file before writing data
             s+="gen";
             s+=",mean p";
             s+=",sigma p";
-            s+=",p max";
+//            s+=",p max";
+            s+=",max p";
             s+="\n";
         }
         s+=gen;
@@ -2132,7 +2134,7 @@ public class Env extends Thread{ // environment simulator
     public void writeUStats(){
         String filename = experiment_path + "\\run" + run + "\\u_stats.csv";
         String s="";
-        if(gen == 1){ // apply headings to file before writing data
+        if(gen / writingRate == 1){ // apply headings to file before writing data
             s+="gen";
             s+=",mean u";
             s+=",sigma u";
@@ -2183,7 +2185,7 @@ public class Env extends Thread{ // environment simulator
     public void writeDegStats() {
         String filename = experiment_path + "\\run" + run + "\\deg_stats.csv";
         String s="";
-        if(gen == 1){ // apply headings to file before writing data
+        if(gen / writingRate == 1){ // apply headings to file before writing data
             s+="gen";
             s+=",mean deg";
             s+=",sigma deg";
