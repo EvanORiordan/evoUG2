@@ -153,17 +153,9 @@ public class Player {
 
     @Override
     public boolean equals(Object obj){
-        if(this == obj){
-            return true;
-        }
-
-        if(!(obj instanceof Player)){
-            return false;
-        }
-
+        if(this == obj) return true;
+        if(!(obj instanceof Player)) return false;
         Player obj2 = (Player) obj;
-
-//        return Integer.compare(ID, obj2.ID) == 0;
         return ID == obj2.ID;
     }
 
