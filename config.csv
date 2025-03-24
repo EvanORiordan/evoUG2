@@ -111,3 +111,5 @@ DG,20,grid 40,VN 1,newER 10 3000,proposalProb,PD,RW exponential 1.0,copy,local 0
 DG,5,grid 10,VN 1,newER 10 3000,proposalProb,PD,RW exponential 0.2,copy,local 0.01 0.01,cumulative,,selNoise 0.4 0.6 0.8 1.0
 DG,5,grid 10,VN 1,newER 10 2000,proposalProb,PD,RW exponential 0.2,copy,local 0.01 0.01,cumulative,,selNoise 0.4 0.6 0.8 1.0
 DG,5,grid 10,VN 1,oldER 10 2000,proposalProb,PD,RW exponential 0.2,copy,local 0.01 0.01,cumulative,,selNoise 0.4 0.6 0.8 1.0
+DG,5,grid 5,VN 1,newER 10 2000,proposalProb,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,1 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,11 1,
