@@ -34,7 +34,7 @@ public class Env extends Thread{ // environment simulator
     double sigma_p; // standard deviation of p
     double sigma_q; // standard deviation of q
     double sigma_u; // standard deviation of utility
-    double sigma_degree; // standard deviation of degree
+    double sigma_deg; // standard deviation of degree
     double max_p; // highest p in population at a time
     int gen; // current generation
     static int gens; // number of generations to occur per experiment run
@@ -47,7 +47,7 @@ public class Env extends Thread{ // environment simulator
     static double l; // loner's payoff
     static String varying = ""; // indicates which parameter will be varied in experiment series
     static ArrayList<String> str_variations = new ArrayList<>();
-    static int expNum; // indicates how far along we are through the experiment series
+    static int exp; // indicates how far along we are through the experiment series
     static double mean_mean_p; // mean of the mean p of the runs of an experiment
     static double mean_mean_q;
     static double mean_mean_u;
@@ -56,7 +56,7 @@ public class Env extends Thread{ // environment simulator
     static double sigma_mean_q;
 //    static double sigma_mean_u;
 //    static double sigma_mean_degree;
-    static double mean_sigma_degree; // mean of the standard deviations of degree of the runs of an experiment
+    static double mean_sigma_deg; // mean of the standard deviations of degree of the runs of an experiment
     static double[] mean_p_values; // mean p values of the runs of an experiment
     static double[] mean_u_values;
 //    static double[] mean_degree_values;
@@ -70,8 +70,8 @@ public class Env extends Thread{ // environment simulator
     static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
-    static String this_path; // address where results of current experimentation is recorded
-    static String experiment_path; // address where results of current experiment are stored
+    static String this_path; // address where stats for current experimentation is recorded
+    static String experiment_path; // address where stats for current experiment are stored
     static boolean writePPop;
     static boolean writePStats;
     static boolean writeMeanPOmegaPop;
@@ -126,7 +126,7 @@ public class Env extends Thread{ // environment simulator
 //        this_path = general_path+"\\"+start_timestamp_string+" "+desc;
         this_path = general_path+"\\"+start_timestamp_string;
         try {
-            Files.createDirectories(Paths.get(this_path)); // create results storage folder
+            Files.createDirectories(Paths.get(this_path)); // create stats storage folder
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -150,34 +150,34 @@ public class Env extends Thread{ // environment simulator
      * subsequent experiment in the series.
      */
     public static void experimentSeries(){
-        for(expNum = 1; expNum <= str_variations.size() + 1; expNum++){
-            System.out.println("\nstart experiment " + expNum);
-            experiment_path = this_path + "\\exp" + expNum;
+        for(exp = 1; exp <= str_variations.size() + 1; exp++){
+            System.out.println("\nstart experiment " + exp);
+            experiment_path = this_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-            if(expNum <= str_variations.size()){ // do not try to vary after the last experiment has ended
+            if(exp <= str_variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
-                    case "EWLF" -> EWLF = str_variations.get(expNum - 1);
-                    case "RA" -> RA = str_variations.get(expNum - 1);
-                    case "RT" -> RT = str_variations.get(expNum - 1);
-                    case "sel" -> sel = str_variations.get(expNum - 1);
-                    case "evo" -> evo = str_variations.get(expNum - 1);
-                    case "EWT" -> EWT = str_variations.get(expNum - 1);
-                    case "gens" -> gens = Integer.parseInt(str_variations.get(expNum - 1));
+                    case "EWLF" -> EWLF = str_variations.get(exp - 1);
+                    case "RA" -> RA = str_variations.get(exp - 1);
+                    case "RT" -> RT = str_variations.get(exp - 1);
+                    case "sel" -> sel = str_variations.get(exp - 1);
+                    case "evo" -> evo = str_variations.get(exp - 1);
+                    case "EWT" -> EWT = str_variations.get(exp - 1);
+                    case "gens" -> gens = Integer.parseInt(str_variations.get(exp - 1));
                     case "length" -> {
-                        length = Integer.parseInt(str_variations.get(expNum - 1));
+                        length = Integer.parseInt(str_variations.get(exp - 1));
                         N = length * width;
                     }
-//                    case "width" -> width = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "ER" -> ER = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "NIS" -> NIS = Integer.parseInt(str_variations.get(expNum - 1));
-                    case "ROC" -> ROC = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "RP" -> RP = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "M" -> M = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "selNoise" -> selNoise = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "mutRate" -> mutRate = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "mutBound" -> mutBound = Double.parseDouble(str_variations.get(expNum - 1));
-                    case "UF" -> UF = str_variations.get(expNum - 1);
+//                    case "width" -> width = Integer.parseInt(str_variations.get(exp - 1));
+                    case "ER" -> ER = Integer.parseInt(str_variations.get(exp - 1));
+                    case "NIS" -> NIS = Integer.parseInt(str_variations.get(exp - 1));
+                    case "ROC" -> ROC = Double.parseDouble(str_variations.get(exp - 1));
+                    case "RP" -> RP = Double.parseDouble(str_variations.get(exp - 1));
+                    case "M" -> M = Double.parseDouble(str_variations.get(exp - 1));
+                    case "selNoise" -> selNoise = Double.parseDouble(str_variations.get(exp - 1));
+                    case "mutRate" -> mutRate = Double.parseDouble(str_variations.get(exp - 1));
+                    case "mutBound" -> mutBound = Double.parseDouble(str_variations.get(exp - 1));
+                    case "UF" -> UF = str_variations.get(exp - 1);
                 }
             }
         }
@@ -195,26 +195,26 @@ public class Env extends Thread{ // environment simulator
         sigma_mean_p = 0;
 //        sigma_mean_u = 0.0;
 //        sigma_mean_degree = 0.0;
-        mean_sigma_degree = 0.0;
+        mean_sigma_deg = 0.0;
         mean_p_values = new double[runs];
         mean_u_values = new double[runs];
 //        mean_degree_values = new double[runs];
         for(run = 1; run <= runs; run++){
             Env pop = new Env();
             pop.start();
-            String output = "experiment "+expNum+" run "+run;
+            String output = "experiment "+exp+" run "+run;
             mean_mean_p += pop.mean_p;
             mean_p_values[run - 1] = pop.mean_p;
             output += " mean p=" + DF4.format(pop.mean_p);
+            output += " sigma p=" + DF4.format(pop.sigma_deg);
             mean_mean_u += pop.mean_u;
             mean_u_values[run - 1] = pop.mean_u;
-//            mean_mean_degree += pop.mean_degree;
-//            mean_degree_values[run - 1] = pop.mean_degree;
-            mean_sigma_degree += pop.sigma_degree;
             output += " mean u=" + DF4.format(pop.mean_u);
+            output += " sigma u=" + DF4.format(pop.sigma_u);
+            mean_sigma_deg += pop.sigma_deg;
             System.out.println(output);
         }
-        String output = "experiment " + expNum + ":";
+        String output = "experiment " + exp + ":";
         mean_mean_p /= runs;
         for(int i = 0; i < runs; i++){
             sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
@@ -230,15 +230,16 @@ public class Env extends Thread{ // environment simulator
 //        }
 //        sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
 //        sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
-        mean_sigma_degree /= runs;
+        mean_sigma_deg /= runs;
         output += "\nmean mean u=" + DF4.format(mean_mean_u);
 //        output += "\nsigma mean u=" + DF4.format(sigma_mean_u);
 //        output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
 //        output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
-        output += "\nmean sigma degree=" + DF4.format(mean_sigma_degree);
+        output += "\nmean sigma degree=" + DF4.format(mean_sigma_deg);
         System.out.println(output);
         writeSettings();
-        writeResults();
+//        writeResults();
+        writeSeriesStats();
     }
 
 
@@ -333,7 +334,8 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-        writeResultsExperiment();
+//        writeResultsExperiment();
+        writeExpStats();
     }
 
 
@@ -1216,7 +1218,7 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Prints path of experiment results folder.
+     * Prints path of experiment stats folder.
      */
     public static void printPath(){
         System.out.println("Address of experimentation data: \n" + this_path);
@@ -1362,12 +1364,12 @@ public class Env extends Thread{ // environment simulator
      * You can get away with this because mean deg is always 4!
      */
     public void calculateStandardDeviationDegree(){
-        sigma_degree = 0;
+        sigma_deg = 0;
         for(int i = 0; i < N; i++){
-//            sigma_degree += Math.pow(pop[i].getDegree() - mean_degree, 2);
-            sigma_degree += Math.pow(pop[i].getDegree() - 4, 2);
+//            sigma_deg += Math.pow(pop[i].getDegree() - mean_degree, 2);
+            sigma_deg += Math.pow(pop[i].getDegree() - 4, 2);
         }
-        sigma_degree = Math.pow(sigma_degree / N, 0.5);
+        sigma_deg = Math.pow(sigma_deg / N, 0.5);
     }
 
 
@@ -1864,7 +1866,7 @@ public class Env extends Thread{ // environment simulator
         String settings_filename = this_path + "\\" + "settings.csv";
         String settings = "";
         try{
-            if(expNum == 1){
+            if(exp == 1){
                 fw = new FileWriter(settings_filename, false);
                 settings += "game";
 //                settings += varying.equals("M")? ",M": "";
@@ -1954,95 +1956,151 @@ public class Env extends Thread{ // environment simulator
     }
 
 
+//    /**
+//     * Write results/stats of series. Documents how the experiments of the series performed. This tells you how the series went.
+//     * Perhaps since the other func is called writeResultsExperiment(), this one should be called writeResultsSeries().
+//     * I should be careful when considering making this move... though i suppose thats hasnt slowed me down much in the past...
+//     */
+////    public static void writeResults(){
+//    public static void writeSeriesStats(){
+//        String filename = this_path + "\\" + "series_stats.csv";
+//        String s = "";
+//        try{
+//            if(exp == 1){
+//                fw = new FileWriter(filename, false);
+//                switch(game){
+//                    case "UG" -> {
+//                        s += "mean mean p";
+//                        s += ",sigma mean p";
+//                        s += ",mean mean q";
+//                        s += ",sigma mean q";
+//                    }
+//                    case "DG" -> {
+//                        results += "mean mean p";
+//                        results += ",sigma mean p";
+//                    }
+//                    case "PD" -> {}
+//                }
+//                results += ",mean mean u";
+////                results += ",sigma mean u";
+////                results += ",mean mean degree";
+////                results += ",sigma mean degree";
+//                results += ",mean sigma degree";
+//                if(!varying.equals(""))
+//                    results += "," + varying;
+//                results += ",duration";
+//            }else {
+//                fw = new FileWriter(filename, true);
+//            }
+//            results += "\n";
+//            switch(game){
+//                case "UG" -> {
+//                    results += DF4.format(mean_mean_p);
+//                    results += "," + DF4.format(sigma_mean_p);
+//                    results += "," + DF4.format(mean_mean_q);
+//                    results += "," + DF4.format(sigma_mean_q);
+//                }
+//                case "DG" -> {
+//                    results += DF4.format(mean_mean_p);
+//                    results += "," + DF4.format(sigma_mean_p);}
+//                case "PD" -> {}
+//            }
+//            results += "," + DF4.format(mean_mean_u);
+////            results += "," + DF4.format(sigma_mean_u);
+////            results += "," + DF4.format(mean_mean_degree);
+////            results += "," + DF4.format(sigma_mean_degree);
+//            results += "," + DF4.format(mean_sigma_deg);
+//
+//
+//            // write value of varying parameter.
+//            switch(varying){
+//                case "ER" -> results += "," + ER;
+//                case "NIS" -> results += "," + NIS;
+//                case "ROC" -> results += "," + ROC;
+//                case "length" -> results += "," + length;
+////                case "width" -> results += "," + width;
+//                case "RP" -> results += "," + RP;
+//                case "gens" -> results += "," + gens;
+//                case "EWLF" -> results += "," + EWLF;
+//                case "EWT" -> results += "," + EWT;
+//                case "RA" -> results += "," + RA;
+//                case "RT" -> results += "," + RT;
+//                case "sel" -> results += "," + sel;
+//                case "evo" -> results += "," + evo;
+////                case "M" -> results += "," + M;
+//                case "selNoise" -> results += "," + selNoise;
+//                case "mutRate" -> results += "," + mutRate;
+//                case "mutBound" -> results += "," + mutBound;
+//                case "UF" -> results += "," + UF;
+//            }
+//
+//            // write duration of experiment
+//            LocalDateTime current_timestamp = LocalDateTime.now();
+//            Duration duration = Duration.between(old_timestamp, current_timestamp);
+//            results += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
+//            old_timestamp = current_timestamp;
+//
+//            fw.append(results);
+//            fw.close();
+//        } catch(IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+
+
     /**
-     * Write results/stats of series. Documents how the experiments of the series performed. This tells you how the series went.
-     * Perhaps since the other func is called writeResultsExperiment(), this one should be called writeResultsSeries().
-     * I should be careful when considering making this move... though i suppose thats hasnt slowed me down much in the past...
+     * Write stats of series. Documents how the series went.
      */
-    public static void writeResults(){
-        String filename = this_path + "\\" + "results.csv";
-        String results = "";
+    public static void writeSeriesStats(){
+        String filename = this_path + "\\" + "series_stats.csv";
+        String s = "";
+        if(exp == 1) {
+            s += "mean mean p";
+            s += ",sigma mean p";
+            s += ",mean mean u";
+            s += ",mean sigma deg";
+            if (!varying.equals("")) s += "," + varying;
+            s += ",duration"; // duration of current experiment
+        }
+        s += "\n";
+        s += DF4.format(mean_mean_p);
+        s += "," + DF4.format(sigma_mean_p);
+        s += "," + DF4.format(mean_mean_u);
+        s += "," + DF4.format(mean_sigma_deg);
+        switch(varying){
+            case "ER" -> s += "," + ER;
+            case "NIS" -> s += "," + NIS;
+            case "ROC" -> s += "," + ROC;
+            case "length" -> s += "," + length;
+            case "RP" -> s += "," + RP;
+            case "gens" -> s += "," + gens;
+            case "EWLF" -> s += "," + EWLF;
+            case "EWT" -> s += "," + EWT;
+            case "RA" -> s += "," + RA;
+            case "RT" -> s += "," + RT;
+            case "sel" -> s += "," + sel;
+            case "evo" -> s += "," + evo;
+            case "selNoise" -> s += "," + selNoise;
+            case "mutRate" -> s += "," + mutRate;
+            case "mutBound" -> s += "," + mutBound;
+            case "UF" -> s += "," + UF;
+        }
+        LocalDateTime current_timestamp = LocalDateTime.now();
+        Duration duration = Duration.between(old_timestamp, current_timestamp);
+        s += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
+        old_timestamp = current_timestamp;
         try{
-            if(expNum == 1){
-                fw = new FileWriter(filename, false);
-                switch(game){
-                    case "UG" -> {
-                        results += "mean mean p";
-                        results += ",sigma mean p";
-                        results += ",mean mean q";
-                        results += ",sigma mean q";
-                    }
-                    case "DG" -> {
-                        results += "mean mean p";
-                        results += ",sigma mean p";
-                    }
-                    case "PD" -> {}
-                }
-                results += ",mean mean u";
-//                results += ",sigma mean u";
-//                results += ",mean mean degree";
-//                results += ",sigma mean degree";
-                results += ",mean sigma degree";
-                if(!varying.equals(""))
-                    results += "," + varying;
-                results += ",duration";
-            }else {
-                fw = new FileWriter(filename, true);
-            }
-            results += "\n";
-            switch(game){
-                case "UG" -> {
-                    results += DF4.format(mean_mean_p);
-                    results += "," + DF4.format(sigma_mean_p);
-                    results += "," + DF4.format(mean_mean_q);
-                    results += "," + DF4.format(sigma_mean_q);
-                }
-                case "DG" -> {
-                    results += DF4.format(mean_mean_p);
-                    results += "," + DF4.format(sigma_mean_p);}
-                case "PD" -> {}
-            }
-            results += "," + DF4.format(mean_mean_u);
-//            results += "," + DF4.format(sigma_mean_u);
-//            results += "," + DF4.format(mean_mean_degree);
-//            results += "," + DF4.format(sigma_mean_degree);
-            results += "," + DF4.format(mean_sigma_degree);
-
-
-            // write value of varying parameter.
-            switch(varying){
-                case "ER" -> results += "," + ER;
-                case "NIS" -> results += "," + NIS;
-                case "ROC" -> results += "," + ROC;
-                case "length" -> results += "," + length;
-//                case "width" -> results += "," + width;
-                case "RP" -> results += "," + RP;
-                case "gens" -> results += "," + gens;
-                case "EWLF" -> results += "," + EWLF;
-                case "EWT" -> results += "," + EWT;
-                case "RA" -> results += "," + RA;
-                case "RT" -> results += "," + RT;
-                case "sel" -> results += "," + sel;
-                case "evo" -> results += "," + evo;
-//                case "M" -> results += "," + M;
-                case "selNoise" -> results += "," + selNoise;
-                case "mutRate" -> results += "," + mutRate;
-                case "mutBound" -> results += "," + mutBound;
-                case "UF" -> results += "," + UF;
-            }
-
-            // write duration of experiment
-            LocalDateTime current_timestamp = LocalDateTime.now();
-            Duration duration = Duration.between(old_timestamp, current_timestamp);
-            results += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
-            old_timestamp = current_timestamp;
-
-            fw.append(results);
+            fw = new FileWriter(filename, true);
+            fw.append(s);
             fw.close();
-        } catch(IOException e) {
+        } catch(IOException e){
             e.printStackTrace();
+            System.exit(0);
         }
     }
+
+
 
 
 
@@ -2188,7 +2246,7 @@ public class Env extends Thread{ // environment simulator
         }
         s+=gen;
         s+=","+DF4.format(mean_degree);
-        s+=","+DF4.format(sigma_degree);
+        s+=","+DF4.format(sigma_deg);
         s+="\n";
         try{
             fw = new FileWriter(filename, true);
@@ -2288,12 +2346,13 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Write results of experiment.
+     * Write stats of experiment.
      * Documents how the runs of the experiment performed. This tells you how the experiment went.<br>
      * 1 file per exp.
      */
-    public void writeResultsExperiment(){
-        String filename = experiment_path + "\\exp_results.csv";
+//    public void writeResultsExperiment(){
+    public void writeExpStats(){
+        String filename = experiment_path + "\\exp_stats.csv";
         String output = "";
         try{
             if(run == 1){
@@ -2313,7 +2372,7 @@ public class Env extends Thread{ // environment simulator
             output += "," + DF4.format(mean_u);
             output += "," + DF4.format(sigma_u);
 //            output += "," + DF4.format(mean_degree);
-            output += "," + DF4.format(sigma_degree);
+            output += "," + DF4.format(sigma_deg);
             fw.append(output);
             fw.close();
         }catch(IOException e){
@@ -2530,7 +2589,7 @@ public class Env extends Thread{ // environment simulator
         s+=","+DF4.format(mean_u);
         s+=","+DF4.format(sigma_u);
 //        s+=","+DF4.format(mean_degree);
-        s+=","+DF4.format(sigma_degree);
+        s+=","+DF4.format(sigma_deg);
         s+="\n";
         try{
             fw = new FileWriter(filename, true);
