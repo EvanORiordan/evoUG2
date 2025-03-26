@@ -19,6 +19,7 @@ public class Player {
     private static String game; // indicates what game player is playing
     private double p; // proposal value residing within [0,1]
     private double oldP; // p value held at beginning of gen to be inherited by children
+    private double mean_p_omega;
     private double q; // acceptance threshold value residing within [0,1]
     private double oldQ; // q value held at beginning of gen to be inherited by children
 //    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
@@ -166,6 +167,17 @@ public class Player {
     }
 
 
+    // calculate mean p of omega
+    public void calculateMeanPOmega(){
+        mean_p_omega = 0.0;
+        int size = neighbourhood.size();
+        for(int i = 0; i < size; i++){
+            mean_p_omega += neighbourhood.get(i).getP();
+        }
+        mean_p_omega /= size;
+    }
+
+
 
     // generic functions
     public int getID(){
@@ -246,4 +258,6 @@ public class Player {
     public void setU(double d){u=d;}
     public int getDegree(){return degree;}
     public void setDegree(int i){degree=i;}
+    public double getMeanPOmega(){return mean_p_omega;}
+    public void setMeanPOmega(double d){mean_p_omega=d;}
 }

@@ -124,4 +124,4 @@ DG,10,grid 40,VN 1,newER 10 1000,rewire 1.0 linear pop,PD,randomNeigh,copy,local
 DG,5,grid 40,VN 1,newER 10 10000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,,
 DG,5,grid 40,VN 1,newER 10 1000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,,gens 2000 3000 4000 5000
 DG,5,grid 40,VN 1,newER 10 100,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,,
-DG,1,grid 40,VN 1,newER 10 5000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,11 1,
+DG,1,grid 10,VN 1,newER 10 500,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,111111 1,

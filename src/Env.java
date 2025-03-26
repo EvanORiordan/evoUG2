@@ -72,16 +72,28 @@ public class Env extends Thread{ // environment simulator
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
     static String this_path; // address where stats for current experimentation is recorded
     static String experiment_path; // address where stats for current experiment are stored
-    static boolean writePPop;
-    static boolean writePStats;
-    static boolean writeMeanPOmegaPop;
-    static boolean writeUPop;
-    static boolean writeUStats;
-    static boolean writeDegPop;
-    static boolean writeDegStats;
-    static boolean writeGenStats;
+
+
+//    static boolean writePPop;
+//    static boolean writePStats;
+//    static boolean writeMeanPOmegaPop;
+//    static boolean writeUPop;
+//    static boolean writeUStats;
+//    static boolean writeDegPop;
+//    static boolean writeDegStats;
+//    static boolean writeGenStats;
+//    static boolean writeRunStats;
+
+
+    static boolean writePGenStats;
+    static boolean writeUGenStats;
+    static boolean writeDegGenStats;
+    static boolean writePRunStats;
+    static boolean writeURunStats;
+    static boolean writeDegRunStats;
+
+
     static boolean writePosData;
-    static boolean writeRunStats;
     static int writingRate = 1; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
@@ -286,8 +298,8 @@ public class Env extends Thread{ // environment simulator
                             mut(child);
                         }
                         // calculate and write stats at end of gen
-                        calculatePopStats();
-                        tryWritingStats();
+                        calculateStats();
+                        writeStats();
                         gen++;
                         gens++;
                     }
@@ -311,8 +323,8 @@ public class Env extends Thread{ // environment simulator
                         mut(child);
                     }
                     // calculate and write stats at end of gen
-                    calculatePopStats();
-                    tryWritingStats();
+                    calculateStats();
+                    writeStats();
                     prepare(); // reset certain attributes at end of gen
                 }
             }
@@ -328,8 +340,8 @@ public class Env extends Thread{ // environment simulator
                         evo(player, parent);
                         mut(player);
                     }
-                    calculatePopStats();
-                    tryWritingStats();
+                    calculateStats();
+                    writeStats();
                     prepare(); // reset certain attributes at end of gen
                 }
             }
@@ -1107,6 +1119,8 @@ public class Env extends Thread{ // environment simulator
             CI2 = 0;
             if(!write_params[0].equals("")){ // theres currently 8 params covered by write_params[0].
                 CI3 = 0;
+
+
 //                writePPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
 //                writePStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
 //                writeMeanPOmegaPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
@@ -1114,11 +1128,29 @@ public class Env extends Thread{ // environment simulator
 //                writeUStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
 //                writeDegPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
 //                writeDegStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+//                writeGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+//                writeRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
 //                writePosData = write_params[CI2].charAt(CI3++) == '1'? true: false;
+
+
+                writePGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeUGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeDegGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+//                writeMeanPOmegaGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writePRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeURunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+                writeDegRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
+
+
                 CI2++;
-                if(writePPop || writePStats || writeUPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats)
+
+
+//                if(writePPop || writePStats || writeUPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats)
+
+
+                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats)
+
+
                     writingRate = Integer.parseInt(write_params[CI2++]);
             }
         }catch(ArrayIndexOutOfBoundsException e){}
@@ -1202,13 +1234,23 @@ public class Env extends Thread{ // environment simulator
         try{
             Files.createDirectories(Paths.get(experiment_path));
             for(int i=1;i<=runs;i++){
-                if(writePPop || writePStats || writeUPop || writeMeanPOmegaPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats || writeRunStats)
+
+
+//                if(writePPop || writePStats || writeUPop || writeMeanPOmegaPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats || writeRunStats)
+//                    Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
+//                if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
+//                if(writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\mean_p_omega_pop"));
+//                if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
+//                if(writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\deg_pop"));
+//                if(writeGenStats) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\gen_stats"));
+
+
+                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats) // add run stat writing params to this check
                     Files.createDirectories(Paths.get(experiment_path + "\\run" + i));
-                if(writePPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\p_pop"));
-                if(writeMeanPOmegaPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\mean_p_omega_pop"));
-                if(writeUPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\u_pop"));
-                if(writeDegPop) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\deg_pop"));
-                if(writeGenStats) Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\gen_stats"));
+                if(writePGenStats || writeUGenStats || writeDegGenStats)
+                    Files.createDirectories(Paths.get(experiment_path + "\\run" + i + "\\gen_stats"));
+
+
             }
         }catch(IOException e){
             e.printStackTrace();
@@ -2436,21 +2478,43 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Calculate pop stats.
+     * Calculate stats at the end of a generation.
      * E.g. Calculate mean p of the pop at gen t.
-     * calculatePopStats() will be called every generation.
+     * calculateStats() will be called every generation.
      */
-    public void calculatePopStats(){
-        calculateMeanP();
-        calculateStandardDeviationP();
-        calculateMaxP();
-        calculateMeanU();
-        calculateStandardDeviationU();
-        for(int i = 0; i < N; i++){
-            pop[i].calculateDegree();
+    public void calculateStats(){
+
+
+//        calculateMeanP();
+//        calculateStandardDeviationP();
+//        calculateMaxP();
+//        calculateMeanU();
+//        calculateStandardDeviationU();
+//        for(int i = 0; i < N; i++){
+//            pop[i].calculateDegree();
+//        }
+////        calculateMeanDegree(); // no need to calculate mean deg: it's always 4, and it is never used to calculate another stat later downstream in the program.
+//        calculateStandardDeviationDegree();
+
+
+        if(writePGenStats){
+            for(Player player: pop){
+                player.calculateMeanPOmega();
+            }
         }
-//        calculateMeanDegree(); // no need to calculate mean deg: it's always 4, and it is never used to calculate another stat later downstream in the program.
-        calculateStandardDeviationDegree();
+        if(writeDegGenStats){
+            for(Player player: pop){
+                player.calculateDegree();
+            }
+        }
+        if(writePRunStats) {
+            calculateMeanP();
+            calculateStandardDeviationP();
+            calculateMaxP();
+        }
+
+
+
     }
 
 
@@ -2462,7 +2526,7 @@ public class Env extends Thread{ // environment simulator
      * This function will be called every generation so that these stats can be recorded every generation.<br>
      * Whether a stat is recorded depends on the writing boolean params.
      */
-    public void tryWritingStats(){
+    public void writeStats(){
         if(gen % writingRate == 0) {
 //            if (writePPop) writePPop();
 //            if (writePStats) writePStats();
@@ -2471,8 +2535,14 @@ public class Env extends Thread{ // environment simulator
 //            if (writeUStats) writeUStats();
 //            if (writeDegPop) writeDegPop();
 //            if (writeDegStats) writeDegStats();
-            if (writeGenStats) writeGenStats();
-            if (writeRunStats) writeRunStats();
+//            if (writeGenStats) writeGenStats();
+//            if (writeRunStats) writeRunStats();
+
+
+            if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
+            if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
+
+
         }
     }
 
@@ -2543,14 +2613,34 @@ public class Env extends Thread{ // environment simulator
      */
     public void writeGenStats(){
         String filename = experiment_path + "\\run" + run + "\\gen_stats\\gen" + gen + ".csv";
-        String s = "p,u,deg";
+        String s = "";
+
+
+//        s += "p,u,deg";
+//        for(Player player: pop){
+//            double p = player.getP();
+//            // calculate and write mean p omega?
+//            double u = player.getU();
+//            double deg = player.getDegree();
+//            s += "\n" + DF4.format(p) + "," + DF4.format(u) + "," +DF4.format(deg);
+//        }
+
+
+//        if(writePGenStats) s += "p,";
+        if(writePGenStats) s += "p,mean p omega,";
+        if(writeUGenStats) s += "u,";
+        if(writeDegGenStats) s += "deg,";
+        s = removeTrailingComma(s);
         for(Player player: pop){
-            double p = player.getP();
-            // calculate and write mean p omega?
-            double u = player.getU();
-            double deg = player.getDegree();
-            s += "\n" + DF4.format(p) + "," + DF4.format(u) + "," +DF4.format(deg);
+            s += "\n";
+//            if(writePGenStats) s += DF4.format(player.getP()) + ",";
+            if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
+            if(writeUGenStats) s += DF4.format(player.getU()) + ",";
+            if(writeDegGenStats) s += DF4.format(player.getDegree()) + ",";
+            s = removeTrailingComma(s);
         }
+
+
         try{
             fw = new FileWriter(filename);
             fw.append(s);
@@ -2566,31 +2656,48 @@ public class Env extends Thread{ // environment simulator
      * Write aggregate stats of a run at gen t.
      * 1 file per run.
      */
-    public void writeRunStats(){
+    public void writeRunStats() {
         String filename = experiment_path + "\\run" + run + "\\run_stats.csv";
-        String s="";
+        String s = "";
+
+
+//        if(gen / writingRate == 1){ // apply headings to file before writing data
+////            s+="gen";
+////            s+=",mean p";
+//            s+="mean p";
+//            s+=",sigma p";
+//            s+=",max p";
+//            s+=",mean u";
+//            s+=",sigma u";
+////            s+=",mean deg";
+//            s+=",sigma deg";
+//            s+="\n";
+//        }
+////        s+=gen;
+////        s+=","+DF4.format(mean_p);
+//        s+=DF4.format(mean_p);
+//        s+=","+DF4.format(sigma_p);
+//        s+=","+DF4.format(max_p);
+//        s+=","+DF4.format(mean_u);
+//        s+=","+DF4.format(sigma_u);
+////        s+=","+DF4.format(mean_degree);
+//        s+=","+DF4.format(sigma_deg);
+//        s+="\n";
+
+
         if(gen / writingRate == 1){ // apply headings to file before writing data
-//            s+="gen";
-//            s+=",mean p";
-            s+="mean p";
-            s+=",sigma p";
-            s+=",max p";
-            s+=",mean u";
-            s+=",sigma u";
-//            s+=",mean deg";
-            s+=",sigma deg";
-            s+="\n";
+            if (writePRunStats) s += "mean p,sigma p,";
+            if (writeURunStats) s += "mean u,sigma u,";
+//            if (writeDegRunStats) s += "mean deg,";
+            s = removeTrailingComma(s);
+            s += "\n";
         }
-//        s+=gen;
-//        s+=","+DF4.format(mean_p);
-        s+=DF4.format(mean_p);
-        s+=","+DF4.format(sigma_p);
-        s+=","+DF4.format(max_p);
-        s+=","+DF4.format(mean_u);
-        s+=","+DF4.format(sigma_u);
-//        s+=","+DF4.format(mean_degree);
-        s+=","+DF4.format(sigma_deg);
+        if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + ",";
+        if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
+//        if(writeDegRunStats) s += DF4.format(mean_p) + ",";
+        s = removeTrailingComma(s);
         s+="\n";
+
         try{
             fw = new FileWriter(filename, true);
             fw.append(s);
@@ -2599,5 +2706,17 @@ public class Env extends Thread{ // environment simulator
             e.printStackTrace();
             System.exit(0);
         }
+    }
+
+
+
+    /**
+     * If last char of string is a comma, get rid of it.
+      */
+    public String removeTrailingComma(String s){
+        if(s.length() > 0 && s.charAt(s.length() - 1) == ','){
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
     }
 }
