@@ -2032,35 +2032,58 @@ public class Env extends Thread{ // environment simulator
         String series_stats_filename = this_path + "\\series_stats.csv";
         String exp_stats_filename = exp_path + "\\exp_stats.csv";
         String output = "";
-        if(exp == 1)
+        if(exp == 1) {
             output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
+            if (!varying.equals("")) output += "," + varying;
+        }
         double mean_mean_p = 0.0;
         double sigma_mean_p = 0.0;
         double mean_mean_u = 0.0;
         double mean_sigma_deg = 0.0;
         double[] mean_p_values = new double[runs];
+        double[] mean_u_values = new double[runs];
+        double[] sigma_deg_values = new double[runs];
         try{
             fw = new FileWriter(series_stats_filename, true);
             br = new BufferedReader(new FileReader(exp_stats_filename));
-            String line = br.readLine();
+            br.readLine();
             for(int i=0;i<runs;i++){
-                line = br.readLine();
-                String[] row_contents = line.split(",");
+                String[] row_contents = br.readLine().split(",");
                 mean_p_values[i] = Double.parseDouble(row_contents[0]);
+                mean_u_values[i] = Double.parseDouble(row_contents[3]);
+                sigma_deg_values[i] = Double.parseDouble(row_contents[5]);
             }
             for(int i=0;i<runs;i++){
                 mean_mean_p += mean_p_values[i];
+                mean_mean_u += mean_u_values[i];
+                mean_sigma_deg += sigma_deg_values[i];
             }
             mean_mean_p /= runs;
+            mean_mean_u /= runs;
+            mean_sigma_deg /= runs;
             for(int i=0;i<runs;i++){
                 sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
             }
             sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-
-
-
             output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
-
+            switch(varying){
+                case "ER" -> output += "," + ER;
+                case "NIS" -> output += "," + NIS;
+                case "ROC" -> output += "," + ROC;
+                case "length" -> output += "," + length;
+                case "RP" -> output += "," + RP;
+                case "gens" -> output += "," + gens;
+                case "EWLF" -> output += "," + EWLF;
+                case "EWT" -> output += "," + EWT;
+                case "RA" -> output += "," + RA;
+                case "RT" -> output += "," + RT;
+                case "sel" -> output += "," + sel;
+                case "evo" -> output += "," + evo;
+                case "selNoise" -> output += "," + selNoise;
+                case "mutRate" -> output += "," + mutRate;
+                case "mutBound" -> output += "," + mutBound;
+                case "UF" -> output += "," + UF;
+            }
             fw.append(output);
             fw.close();
         }catch(Exception e){
