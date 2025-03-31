@@ -61,29 +61,14 @@ public class Env extends Thread{ // environment simulator
     static String this_path; // address where stats for current experimentation is recorded
     static String exp_path; // address where stats for current experiment are stored
     static String run_path; // address where stats for current run are stored
-
-
-//    static boolean writePPop;
-//    static boolean writePStats;
-//    static boolean writeMeanPOmegaPop;
-//    static boolean writeUPop;
-//    static boolean writeUStats;
-//    static boolean writeDegPop;
-//    static boolean writeDegStats;
-//    static boolean writeGenStats;
-//    static boolean writeRunStats;
-
-
     static boolean writePGenStats;
     static boolean writeUGenStats;
     static boolean writeDegGenStats;
     static boolean writePRunStats;
     static boolean writeURunStats;
     static boolean writeDegRunStats;
-
-
     static boolean writePosData;
-    static int writingRate = 1; // write data every x gens
+    static int writingRate = 0; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
     static String EWLF; // EWL formula
@@ -124,10 +109,9 @@ public class Env extends Thread{ // environment simulator
                 +"_"+start_timestamp.getHour()
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
-//        this_path = general_path+"\\"+start_timestamp_string+" "+desc;
         this_path = general_path+"\\"+start_timestamp_string;
         try {
-            Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+            if(writingRate > 0) Files.createDirectories(Paths.get(this_path)); // create stats storage folder
         }catch(IOException e){
             e.printStackTrace();
         }
@@ -151,9 +135,8 @@ public class Env extends Thread{ // environment simulator
      * subsequent experiment in the series.
      */
     public static void experimentSeries(){
-//        for(exp = 1; exp <= str_variations.size() + 1; exp++){
         for(exp = 1; exp <= exps; exp++){
-            System.out.println("\nstart experiment " + exp);
+            System.out.println("start experiment " + exp);
             exp_path = this_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
@@ -170,7 +153,6 @@ public class Env extends Thread{ // environment simulator
                         length = Integer.parseInt(str_variations.get(exp - 1));
                         N = length * width;
                     }
-//                    case "width" -> width = Integer.parseInt(str_variations.get(exp - 1));
                     case "ER" -> ER = Integer.parseInt(str_variations.get(exp - 1));
                     case "NIS" -> NIS = Integer.parseInt(str_variations.get(exp - 1));
                     case "ROC" -> ROC = Double.parseDouble(str_variations.get(exp - 1));
@@ -188,74 +170,19 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
+     * Run an experiment.
+     * An experiment consists of runs.
+     * Data is collected after each experiment.
      */
     public static void experiment(){
-
-
-//        mean_mean_p = 0;
-//        mean_mean_u = 0.0;
-////        mean_mean_degree = 0.0;
-//        sigma_mean_p = 0;
-////        sigma_mean_u = 0.0;
-////        sigma_mean_degree = 0.0;
-//        mean_sigma_deg = 0.0;
-//        mean_p_values = new double[runs];
-//        mean_u_values = new double[runs];
-////        mean_degree_values = new double[runs];
-//        for(run = 1; run <= runs; run++){
-//            Env pop = new Env();
-//            pop.start();
-//            String output = "experiment "+exp+" run "+run;
-//            mean_mean_p += pop.mean_p;
-//            mean_p_values[run - 1] = pop.mean_p;
-//            output += " mean p=" + DF4.format(pop.mean_p);
-//            output += " sigma p=" + DF4.format(pop.sigma_deg);
-//            mean_mean_u += pop.mean_u;
-//            mean_u_values[run - 1] = pop.mean_u;
-//            output += " mean u=" + DF4.format(pop.mean_u);
-//            output += " sigma u=" + DF4.format(pop.sigma_u);
-//            mean_sigma_deg += pop.sigma_deg;
-//            System.out.println(output);
-//        }
-//        String output = "experiment " + exp + ":";
-//        mean_mean_p /= runs;
-//        for(int i = 0; i < runs; i++){
-//            sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
-//        }
-//        sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-//        output += "\nmean mean p=" + DF4.format(mean_mean_p);
-//        output += "\nsigma mean p=" + DF4.format(sigma_mean_p);
-//        mean_mean_u /= runs;
-////        mean_mean_degree /= runs;
-////        for(int i = 0; i < runs; i++){
-////            sigma_mean_u += Math.pow(mean_u_values[i] - mean_mean_u, 2);
-////            sigma_mean_degree += Math.pow(mean_degree_values[i] - mean_mean_degree, 2);
-////        }
-////        sigma_mean_u = Math.pow(sigma_mean_u / runs, 0.5);
-////        sigma_mean_degree = Math.pow(sigma_mean_degree / runs, 0.5);
-//        mean_sigma_deg /= runs;
-//        output += "\nmean mean u=" + DF4.format(mean_mean_u);
-////        output += "\nsigma mean u=" + DF4.format(sigma_mean_u);
-////        output += "\nmean mean degree=" + DF4.format(mean_mean_degree);
-////        output += "\nsigma mean degree=" + DF4.format(sigma_mean_degree);
-//        output += "\nmean sigma degree=" + DF4.format(mean_sigma_deg);
-//        System.out.println(output);
-//        writeSettings();
-////        writeResults();
-//        writeSeriesStats();
-
-
         for(run = 1; run <= runs; run++){
+            System.out.println("start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
-
         }
         writeSettings();
         writeSeriesStats();
-
-
     }
 
 
@@ -268,7 +195,6 @@ public class Env extends Thread{ // environment simulator
      */
     @Override
     public void start(){
-//        N = length * width;
         initRandomPop();
         for(int i=0;i<N;i++){
             switch(neighType){
@@ -349,7 +275,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-//        writeResultsExperiment();
         writeExpStats();
     }
 
@@ -911,7 +836,6 @@ public class Env extends Thread{ // environment simulator
         System.out.printf("%-10s |" +//config
                         " %-10s |" +//game
                         " %-10s |" +//runs
-//                        " %-10s |" +//gens
                         " %-15s |" +//space
                         " %-15s |" +//neigh
                         " %-20s |" +//EM
@@ -923,11 +847,9 @@ public class Env extends Thread{ // environment simulator
                         " %-10s |" +//UF
                         " %-15s |" +//writing
                         " %s%n"//series
-//                        " %-15s |" +//inj
                 ,"config"
                 ,"game"
                 ,"runs"
-//                ,"gens"
                 ,"space"
                 ,"neigh"
                 ,"EM"
@@ -951,7 +873,6 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("%-10d ", i); //config
             System.out.printf("| %-10s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
-//            System.out.printf("| %-10s ", settings[CI++]); //gens
             System.out.printf("| %-15s ", settings[CI++]); //space
             System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-20s ", settings[CI++]); //EM
@@ -1007,15 +928,7 @@ public class Env extends Thread{ // environment simulator
         CI2 = 0;
         game = game_params[CI2++];
         Player.setGame(game);
-//        switch(game){
-//            case "UG", "DG" -> M = Double.parseDouble(game_params[CI2++]);
-//        }
         runs = Integer.parseInt(settings[CI++]);
-//        gens = Integer.parseInt(settings[CI++]);
-//        if(gens < 1){
-//            System.out.println("ERROR: cannot have gens < 1");
-//            System.exit(0);
-//        }
 
 
         String[] space_params = settings[CI++].split(" "); // space parameters
@@ -1023,7 +936,6 @@ public class Env extends Thread{ // environment simulator
         space = space_params[CI2++];
         if(space.equals("grid")){
             length = Integer.parseInt(space_params[CI2++]);
-//            width = Integer.parseInt(space_params[CI2++]);
             width = length;
             N = length * width;
         }
@@ -1122,38 +1034,14 @@ public class Env extends Thread{ // environment simulator
             CI2 = 0;
             if(!write_params[0].equals("")){ // theres currently 8 params covered by write_params[0].
                 CI3 = 0;
-
-
-//                writePPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writePStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeMeanPOmegaPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeUPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeUStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeDegPop = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeDegStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writePosData = write_params[CI2].charAt(CI3++) == '1'? true: false;
-
-
                 writePGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writeUGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writeDegGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-//                writeMeanPOmegaGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writePRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writeURunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writeDegRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-
-
                 CI2++;
-
-
-//                if(writePPop || writePStats || writeUPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats)
-
-
                 if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats)
-
-
                     writingRate = Integer.parseInt(write_params[CI2++]);
             }
         }catch(ArrayIndexOutOfBoundsException e){}
@@ -1236,25 +1124,12 @@ public class Env extends Thread{ // environment simulator
 
     public static void createDataFolders(){
         try{
-            Files.createDirectories(Paths.get(exp_path));
+            if(writingRate > 0) Files.createDirectories(Paths.get(exp_path));
             for(int i=1;i<=runs;i++){
-
-
-//                if(writePPop || writePStats || writeUPop || writeMeanPOmegaPop || writeUStats || writeDegPop || writeDegStats || writeMeanPOmegaPop || writeGenStats || writeRunStats)
-//                    Files.createDirectories(Paths.get(exp_path + "\\run" + i));
-//                if(writePPop) Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\p_pop"));
-//                if(writeMeanPOmegaPop) Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\mean_p_omega_pop"));
-//                if(writeUPop) Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\u_pop"));
-//                if(writeDegPop) Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\deg_pop"));
-//                if(writeGenStats) Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
-
-
                 if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats) // add run stat writing params to this check
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i));
                 if(writePGenStats || writeUGenStats || writeDegGenStats)
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
-
-
             }
         }catch(IOException e){
             e.printStackTrace();
@@ -1365,22 +1240,6 @@ public class Env extends Thread{ // environment simulator
         sigma_p = Math.pow(sigma_p / N, 0.5);
     }
 
-    public void calculateMeanQ(){
-        mean_q = 0;
-        for(int i = 0; i < N; i++){
-            mean_q += pop[i].getQ();
-        }
-        mean_q /= N;
-    }
-
-    public void calculateStandardDeviationQ(){
-        sigma_q = 0;
-        for(int i = 0; i < N; i++){
-            sigma_q += Math.pow(pop[i].getQ() - mean_q, 2);
-        }
-        sigma_q = Math.pow(sigma_q / N, 0.5);
-    }
-
     public void calculateMeanU(){
         mean_u = 0;
         for(int i = 0; i < N; i++){
@@ -1443,7 +1302,6 @@ public class Env extends Thread{ // environment simulator
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
                     int ID = player.getID();
-//                    s += ID + " ("+x+" "+y+")";
                     s += ID;
                     if (x + 1 < width)
                         s += ",";
@@ -1456,11 +1314,6 @@ public class Env extends Thread{ // environment simulator
             e.printStackTrace();
         }
     }
-
-
-
-
-
 
 
 
@@ -1540,75 +1393,37 @@ public class Env extends Thread{ // environment simulator
      * New neighbour cannot be rewirer or already a neighbour.<br>
      */
     public void RTLocal(Player a, int num_rewires){
-        // pool of candidates the rewirer could rewire to to form a new edge.
-        ArrayList<Player> pool = new ArrayList<>();
-
-        // omega_a denotes neighbourhood of rewirer.
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-
-        // b denotes neighbour of rewirer
-        for(Player b: omega_a){
-
-            // omega_b denotes neighbourhood of neighbour of rewirer.
-            ArrayList<Player> omega_b = b.getNeighbourhood();
-
-            // c denotes neighbour of neighbour of rewirer.
-            for(Player c: omega_b){
-
-                // do not add c to pool if c = a
-                if(!c.equals(a)){
-
-                    // boolean tracking whether c should be added to pool or not.
-                    boolean add = true;
-
-                    // d denotes candidate in pool
-                    for (Player d : pool) {
-
-                        // if c = d, c must already be in the pool, therefore do not add c to the pool.
-                        if(c.equals(d)){
-                            add = false;
+        ArrayList<Player> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
+        ArrayList<Player> omega_a = a.getNeighbourhood(); // omega_a denotes neighbourhood of rewirer.
+        for(Player b: omega_a){ // b denotes neighbour of rewirer
+            ArrayList<Player> omega_b = b.getNeighbourhood(); // omega_b denotes neighbourhood of neighbour of rewirer.
+            for(Player c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
+                if(!c.equals(a)){ // do not add c to pool if c = a
+                    boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
+                    for (Player d : pool) { // d denotes candidate in pool
+                        if(c.equals(d)){ // if c = d, c must already be in the pool, therefore do not add c to the pool.
+                            add_to_pool = false;
                             break;
                         }
                     }
-
-                    // move on to next c if this c has already been ruled out of contention.
-                    if(!add){
-                        continue;
-                    }
-
-                    // e denotes neighbour of rewirer.
-                    for (Player e : omega_a) {
-
-                        // if c = e, c must already be in omega_a, therefore do not add c to the pool.
-                        if(c.equals(e)){
-                            add = false;
+                    if(!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
+                    for (Player e : omega_a) { // e denotes neighbour of rewirer.
+                        if(c.equals(e)){ // if c = e, c must already be in omega_a, so you do not want to add c to pool.
+                            add_to_pool = false;
                             break;
                         }
                     }
-
-                    // if c has been deemed to be valid, add it to the pool.
-                    if(add){
-                        pool.add(c);
-                    }
+                    if(add_to_pool) pool.add(c); // if deemed valid, add c to pool.
                 }
             }
         }
-
-        // if pool empty, default to rewiring to a random player in the pop.
-        if(pool.size() == 0){
-            RTPop(a, num_rewires);
-        } else{ // connect to local player.
+        if(pool.size() == 0) RTPop(a, num_rewires); // if pool empty, default to rewiring to a random player in the pop.
+        else{ // connect to local player.
             for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
-
-                // f denotes new neighbour of a.
-                Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-
-                // connect a to f.
-                omega_a.add(f);
+                Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
+                omega_a.add(f); // connect a to f.
                 a.getEdgeWeights().add(1.0);
-
-                // connect f to a.
-                f.getNeighbourhood().add(a);
+                f.getNeighbourhood().add(a); // connect f to a.
                 f.getEdgeWeights().add(1.0);
             }
         }
@@ -1623,46 +1438,29 @@ public class Env extends Thread{ // environment simulator
      * @param b number of rewires to do
      */
     public void RTPop(Player a, int b){
-        // c denotes number of rewires done so far.
-        for(int c=0;c<b;c++){
-
-            // denotes neighbourhood of a.
-            ArrayList<Player> omega_a = a.getNeighbourhood();
-
-            // d denotes new neighbour.
-            Player d = null;
-
-            // e indicates: a valid new neighbour d has been found.
-            boolean e = false;
-            while(!e){
-
-                // randomly choose player from the pop.
-                d = pop[ThreadLocalRandom.current().nextInt(pop.length)];
-
-                // do not connect a to d if d = a.
-                if(!d.equals(a)){
-
-                    // f indicates: there does not exist g in omega_a such that g = d.
-                    boolean f = true;
-
-                    // f denotes neighbour of a.
-                    for(Player g: omega_a){
+        for(int c=0;c<b;c++){ // c denotes number of rewires done so far.
+            ArrayList<Player> omega_a = a.getNeighbourhood(); // denotes neighbourhood of a.
+            Player d = null; // d denotes new neighbour.
+            boolean found_new_neighbour = false;
+            while(!found_new_neighbour){ // keep searching until you find a valid new neighbour
+                d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose player from pop.
+                if(!d.equals(a)){ // do not connect a to d if d = a.
+//                    boolean f = true; // f indicates whether there does not exist g in omega_a such that g = d.
+                    boolean already_neighbours = false; // indicates whether a and d are already neighbours
+                    for(Player g: omega_a){ // g denotes neighbour of a.
                         if(d.equals(g)){
-                            f = false;
+//                            f = false;
+                            already_neighbours = true;
                             break;
                         }
                     }
-
-                    e = f;
+//                    found_new_neighbour = f;
+                    found_new_neighbour = !already_neighbours;
                 }
             }
-
-            // connect a to d.
-            omega_a.add(d);
+            omega_a.add(d); // connect a to d.
             a.getEdgeWeights().add(1.0);
-
-            // connect d to a.
-            d.getNeighbourhood().add(a);
+            d.getNeighbourhood().add(a); // connect d to a.
             d.getEdgeWeights().add(1.0);
         }
     }
@@ -1680,25 +1478,18 @@ public class Env extends Thread{ // environment simulator
 
 
 
-
-
-
-
     /**
      * use the varying field to help determine whether a field should be
      * included in the settings String. if a field equals 0.0 and is not being
      * varied, it does not need to be added.<br>
      */
     public static void writeSettings(){
-        String settings_filename = this_path + "\\" + "settings.csv";
-        String settings = "";
-        try{
+        if(writingRate > 0){
+            String settings_filename = this_path + "\\" + "settings.csv";
+            String settings = "";
             if(exp == 1){
-                fw = new FileWriter(settings_filename, false);
                 settings += "game";
-//                settings += varying.equals("M")? ",M": "";
                 settings += ",runs";
-//                settings += ",gens";
                 settings += ",space";
                 settings += ",length";
                 settings += ",width";
@@ -1723,9 +1514,6 @@ public class Env extends Thread{ // environment simulator
                 settings += RWT.equals("exponential")? ",selNoise": "";
                 settings += ",evo";
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
-//                settings += mut.equals("")? "": ",mut";
-//                settings += mutRate == 0.0 && !varying.equals("mutRate")? "": ",mutRate";
-//                settings += mutBound == 0.0 && !varying.equals("mutBound")? "": ",mutBound";
                 settings += !mut.equals("")? ",mut": "";
                 settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
                 settings += mut.equals("local")? ",mutBound": "";
@@ -1733,14 +1521,10 @@ public class Env extends Thread{ // environment simulator
                 settings += injIter == 0? "": ",injIter";
                 settings += injP == 0.0? "": ",injP";
                 settings += injSize == 0? "": ",injSize";
-            } else {
-                fw = new FileWriter(settings_filename, true);
             }
             settings += "\n";
             settings += game;
-//            settings += varying.equals("M")? "," + M: "";
             settings += "," + runs;
-//            settings += "," + gens;
             settings += "," + space;
             settings += length == 0 && !varying.equals("length")? "": "," + length;
             settings += width == 0 && !varying.equals("width")? "": "," + width;
@@ -1765,9 +1549,6 @@ public class Env extends Thread{ // environment simulator
             settings += RWT.equals("exponential")? "," + selNoise: "";
             settings += "," + evo;
             settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
-//            settings += mut.equals("")? "": "," + mut;
-//            settings += mutRate == 0.0 && !varying.equals("mutRate")? "": "," + mutRate;
-//            settings += mutBound == 0.0 && !varying.equals("mutBound")? "": "," + mutBound;
             settings += !mut.equals("")? "," + mut: "";
             settings += mut.equals("local") || mut.equals("global")? "," + mutRate: "";
             settings += mut.equals("local")? "," + mutBound: "";
@@ -1775,104 +1556,16 @@ public class Env extends Thread{ // environment simulator
             settings += injIter == 0? "": "," + injIter;
             settings += injP == 0.0? "": "," + injP;
             settings += injSize == 0? "": "," + injSize;
-            fw.append(settings);
-            fw.close();
-        } catch(IOException e) {
-            e.printStackTrace();
+            try{
+                fw = new FileWriter(settings_filename, true);
+                fw.append(settings);
+                fw.close();
+            } catch(IOException e){
+                e.printStackTrace();
+                System.exit(0);
+            }
         }
     }
-
-
-//    /**
-//     * Write results/stats of series. Documents how the experiments of the series performed. This tells you how the series went.
-//     * Perhaps since the other func is called writeResultsExperiment(), this one should be called writeResultsSeries().
-//     * I should be careful when considering making this move... though i suppose thats hasnt slowed me down much in the past...
-//     */
-////    public static void writeResults(){
-//    public static void writeSeriesStats(){
-//        String filename = this_path + "\\" + "series_stats.csv";
-//        String s = "";
-//        try{
-//            if(exp == 1){
-//                fw = new FileWriter(filename, false);
-//                switch(game){
-//                    case "UG" -> {
-//                        s += "mean mean p";
-//                        s += ",sigma mean p";
-//                        s += ",mean mean q";
-//                        s += ",sigma mean q";
-//                    }
-//                    case "DG" -> {
-//                        results += "mean mean p";
-//                        results += ",sigma mean p";
-//                    }
-//                    case "PD" -> {}
-//                }
-//                results += ",mean mean u";
-////                results += ",sigma mean u";
-////                results += ",mean mean degree";
-////                results += ",sigma mean degree";
-//                results += ",mean sigma degree";
-//                if(!varying.equals(""))
-//                    results += "," + varying;
-//                results += ",duration";
-//            }else {
-//                fw = new FileWriter(filename, true);
-//            }
-//            results += "\n";
-//            switch(game){
-//                case "UG" -> {
-//                    results += DF4.format(mean_mean_p);
-//                    results += "," + DF4.format(sigma_mean_p);
-//                    results += "," + DF4.format(mean_mean_q);
-//                    results += "," + DF4.format(sigma_mean_q);
-//                }
-//                case "DG" -> {
-//                    results += DF4.format(mean_mean_p);
-//                    results += "," + DF4.format(sigma_mean_p);}
-//                case "PD" -> {}
-//            }
-//            results += "," + DF4.format(mean_mean_u);
-////            results += "," + DF4.format(sigma_mean_u);
-////            results += "," + DF4.format(mean_mean_degree);
-////            results += "," + DF4.format(sigma_mean_degree);
-//            results += "," + DF4.format(mean_sigma_deg);
-//
-//
-//            // write value of varying parameter.
-//            switch(varying){
-//                case "ER" -> results += "," + ER;
-//                case "NIS" -> results += "," + NIS;
-//                case "ROC" -> results += "," + ROC;
-//                case "length" -> results += "," + length;
-////                case "width" -> results += "," + width;
-//                case "RP" -> results += "," + RP;
-//                case "gens" -> results += "," + gens;
-//                case "EWLF" -> results += "," + EWLF;
-//                case "EWT" -> results += "," + EWT;
-//                case "RA" -> results += "," + RA;
-//                case "RT" -> results += "," + RT;
-//                case "sel" -> results += "," + sel;
-//                case "evo" -> results += "," + evo;
-////                case "M" -> results += "," + M;
-//                case "selNoise" -> results += "," + selNoise;
-//                case "mutRate" -> results += "," + mutRate;
-//                case "mutBound" -> results += "," + mutBound;
-//                case "UF" -> results += "," + UF;
-//            }
-//
-//            // write duration of experiment
-//            LocalDateTime current_timestamp = LocalDateTime.now();
-//            Duration duration = Duration.between(old_timestamp, current_timestamp);
-//            results += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
-//            old_timestamp = current_timestamp;
-//
-//            fw.append(results);
-//            fw.close();
-//        } catch(IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
 
 
@@ -1880,217 +1573,68 @@ public class Env extends Thread{ // environment simulator
      * Write and calculate stats of series. Documents how the series went.
      */
     public static void writeSeriesStats(){
-
-
-//        String filename = this_path + "\\" + "series_stats.csv";
-//        String s = "";
-//        if(exp == 1) {
-//            s += "mean mean p";
-//            s += ",sigma mean p";
-//            s += ",mean mean u";
-//            s += ",mean sigma deg";
-//            if (!varying.equals("")) s += "," + varying;
-//            s += ",duration"; // duration of current experiment
-//        }
-//        s += "\n";
-//        s += DF4.format(mean_mean_p);
-//        s += "," + DF4.format(sigma_mean_p);
-//        s += "," + DF4.format(mean_mean_u);
-//        s += "," + DF4.format(mean_sigma_deg);
-//        switch(varying){
-//            case "ER" -> s += "," + ER;
-//            case "NIS" -> s += "," + NIS;
-//            case "ROC" -> s += "," + ROC;
-//            case "length" -> s += "," + length;
-//            case "RP" -> s += "," + RP;
-//            case "gens" -> s += "," + gens;
-//            case "EWLF" -> s += "," + EWLF;
-//            case "EWT" -> s += "," + EWT;
-//            case "RA" -> s += "," + RA;
-//            case "RT" -> s += "," + RT;
-//            case "sel" -> s += "," + sel;
-//            case "evo" -> s += "," + evo;
-//            case "selNoise" -> s += "," + selNoise;
-//            case "mutRate" -> s += "," + mutRate;
-//            case "mutBound" -> s += "," + mutBound;
-//            case "UF" -> s += "," + UF;
-//        }
-//        LocalDateTime current_timestamp = LocalDateTime.now();
-//        Duration duration = Duration.between(old_timestamp, current_timestamp);
-//        s += "," + duration.toHours() +":" + duration.toMinutes() % 60 + ":" + duration.toSeconds() % 60;
-//        old_timestamp = current_timestamp;
-//        try{
-//            fw = new FileWriter(filename, true);
-//            fw.append(s);
-//            fw.close();
-//        } catch(IOException e){
-//            e.printStackTrace();
-//            System.exit(0);
-//        }
-
-
-
-
-
-//        String series_stats_filename = this_path + "\\series_stats.csv";
-//        String exp_stats_filename = exp_path + "\\exp_stats.csv";
-//        String s = "";
-//
-//        if(exp == 1){
-//            if(writePRunStats){
-//                s += "mean mean p,sigma mean p";
-//            }
-//        }
-//
-//
-//
-//        if(writePRunStats){
-//            try {
-//                // read mean p and sigma p stats from series_stats_filename
-//                // HOW DO I READ ONLY SPECIFIC COLUMNS, I.E. MEAN P AND SIGMA P, FROM CSV FILE?
-//                br = new BufferedReader(new FileReader(exp_stats_filename));
-//                String line = br.readLine();
-//                String[] row_contents = line.split(",");
-//                int index = 0;
-//                for(int i=0;i<row_contents.length;i++){
-//                    if(row_contents[i].equals("mean p")){
-//                        index = i;
-//                        break;
-//                    }
-//                }
-//                mean_mean_p = 0.0;
-//                while((line = br.readLine()) != null){
-//                    mean_mean_p += Double.parseDouble(line.split(",")[index]);
-//                }
-//                mean_mean_p /= runs;
-//                s += DF4.format(mean_mean_p);
-//                System.out.println("BP");
-//
-//
-//                // write mean mean p and sigma mean p to exp_stats_filename
-////                fw =
-//
-//
-//            }catch(Exception e){
-//                e.printStackTrace();
-//            }
-//        }
-
-
-
-
-
-//        // start off with simply writing all series stats like mean mean p, sigma mean p, etc.
-//        // in exp_stats.csv, there are runs many rows.
-//        // loop thru them to collect data for each stat.
-//        String series_stats_filename = this_path + "\\series_stats.csv";
-//        String exp_stats_filename = exp_path + "\\exp_stats.csv";
-//        String output = "";
-//        try{
-//            fw = new FileWriter(series_stats_filename, true);
-//            br = new BufferedReader(new FileReader(exp_stats_filename));
-//            String line = br.readLine();
-////            if(exp == 1) output += line;
-//            mean_mean_p = 0.0;
-//            sigma_mean_p = 0.0;
-//            for(int i=1;i<=runs;i++){
-//                line = br.readLine();
-//                String[] row_contents = line.split(",");
-//                mean_mean_p += Double.parseDouble(row_contents[0]);
-//            }
-//            mean_mean_p /= runs;
-//            for(int i = 0; i < runs; i++){
-//                sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
-//            }
-//            sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-//            output += "\n";
-//            output += DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p);
-//
-//            fw.append(output);
-//            fw.close();
-//        }catch(Exception e){
-//            e.printStackTrace();
-//        }
-
-
-
-
-
-        // start off with simply writing all series stats like mean mean p, sigma mean p, etc.
-        // in exp_stats.csv, there are runs many rows.
-        // loop thru them to collect data for each stat.
-        // you could still use the "x_values" arrays to help write the series stats.
-        // HARD-CODED VERSION.
-        // e.g. the func assumes the location of the mean p values in row_contents or that there's any at all to begin with.
-        // IDEALLY, IN FUTURE, I MAKE A NON-HARD-CODED VERSION USING WRITING PARAM CHECKS.
-        // MAKE NEW PARAM FOR EACH SERIES STAT?
-        // E.G. WRITEMEANMEANP BOOLEAN PARAM.
-        // or you could make a new param for each player attribute.
-        // so 3 in total: 1 for p, 1 for u, 1 for deg.
-        // it would be similar to how there is a run stat param for each of them.
-        // e.g. if you turn the writePSeriesStats boolean on, you write mean mean p and sigma mean p.
-        String series_stats_filename = this_path + "\\series_stats.csv";
-        String exp_stats_filename = exp_path + "\\exp_stats.csv";
-        String output = "";
-        if(exp == 1) {
-            output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
-            if (!varying.equals("")) output += "," + varying;
+        if(writingRate > 0){
+            String series_stats_filename = this_path + "\\series_stats.csv";
+            String exp_stats_filename = exp_path + "\\exp_stats.csv";
+            String output = "";
+            if(exp == 1) {
+                output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
+                if (!varying.equals("")) output += "," + varying;
+            }
+            double mean_mean_p = 0.0;
+            double sigma_mean_p = 0.0;
+            double mean_mean_u = 0.0;
+            double mean_sigma_deg = 0.0;
+            double[] mean_p_values = new double[runs];
+            double[] mean_u_values = new double[runs];
+            double[] sigma_deg_values = new double[runs];
+            try{
+                fw = new FileWriter(series_stats_filename, true);
+                br = new BufferedReader(new FileReader(exp_stats_filename));
+                br.readLine();
+                for(int i=0;i<runs;i++){
+                    String[] row_contents = br.readLine().split(",");
+                    mean_p_values[i] = Double.parseDouble(row_contents[0]);
+                    mean_u_values[i] = Double.parseDouble(row_contents[3]);
+                    sigma_deg_values[i] = Double.parseDouble(row_contents[5]);
+                }
+                for(int i=0;i<runs;i++){
+                    mean_mean_p += mean_p_values[i];
+                    mean_mean_u += mean_u_values[i];
+                    mean_sigma_deg += sigma_deg_values[i];
+                }
+                mean_mean_p /= runs;
+                mean_mean_u /= runs;
+                mean_sigma_deg /= runs;
+                for(int i=0;i<runs;i++){
+                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
+                }
+                sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
+                output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
+                switch(varying){
+                    case "ER" -> output += "," + ER;
+                    case "NIS" -> output += "," + NIS;
+                    case "ROC" -> output += "," + ROC;
+                    case "length" -> output += "," + length;
+                    case "RP" -> output += "," + RP;
+                    case "gens" -> output += "," + gens;
+                    case "EWLF" -> output += "," + EWLF;
+                    case "EWT" -> output += "," + EWT;
+                    case "RA" -> output += "," + RA;
+                    case "RT" -> output += "," + RT;
+                    case "sel" -> output += "," + sel;
+                    case "evo" -> output += "," + evo;
+                    case "selNoise" -> output += "," + selNoise;
+                    case "mutRate" -> output += "," + mutRate;
+                    case "mutBound" -> output += "," + mutBound;
+                    case "UF" -> output += "," + UF;
+                }
+                fw.append(output);
+                fw.close();
+            }catch(Exception e){
+                e.printStackTrace();
+            }
         }
-        double mean_mean_p = 0.0;
-        double sigma_mean_p = 0.0;
-        double mean_mean_u = 0.0;
-        double mean_sigma_deg = 0.0;
-        double[] mean_p_values = new double[runs];
-        double[] mean_u_values = new double[runs];
-        double[] sigma_deg_values = new double[runs];
-        try{
-            fw = new FileWriter(series_stats_filename, true);
-            br = new BufferedReader(new FileReader(exp_stats_filename));
-            br.readLine();
-            for(int i=0;i<runs;i++){
-                String[] row_contents = br.readLine().split(",");
-                mean_p_values[i] = Double.parseDouble(row_contents[0]);
-                mean_u_values[i] = Double.parseDouble(row_contents[3]);
-                sigma_deg_values[i] = Double.parseDouble(row_contents[5]);
-            }
-            for(int i=0;i<runs;i++){
-                mean_mean_p += mean_p_values[i];
-                mean_mean_u += mean_u_values[i];
-                mean_sigma_deg += sigma_deg_values[i];
-            }
-            mean_mean_p /= runs;
-            mean_mean_u /= runs;
-            mean_sigma_deg /= runs;
-            for(int i=0;i<runs;i++){
-                sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
-            }
-            sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-            output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
-            switch(varying){
-                case "ER" -> output += "," + ER;
-                case "NIS" -> output += "," + NIS;
-                case "ROC" -> output += "," + ROC;
-                case "length" -> output += "," + length;
-                case "RP" -> output += "," + RP;
-                case "gens" -> output += "," + gens;
-                case "EWLF" -> output += "," + EWLF;
-                case "EWT" -> output += "," + EWT;
-                case "RA" -> output += "," + RA;
-                case "RT" -> output += "," + RT;
-                case "sel" -> output += "," + sel;
-                case "evo" -> output += "," + evo;
-                case "selNoise" -> output += "," + selNoise;
-                case "mutRate" -> output += "," + mutRate;
-                case "mutBound" -> output += "," + mutBound;
-                case "UF" -> output += "," + UF;
-            }
-            fw.append(output);
-            fw.close();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-
-
     }
 
 
@@ -2235,91 +1779,28 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Write stats of experiment.
-     * Documents how the runs of the experiment performed. This tells you how the experiment went.<br>
      * 1 file per exp.
      */
-//    public void writeResultsExperiment(){
     public void writeExpStats() {
-
-
-//        String filename = exp_path + "\\exp_stats.csv";
-//        String output = "";
-//        try{
-//            if(run == 1){
-//                fw = new FileWriter(filename, false);
-//                output += "mean p";
-//                output += ",sigma p";
-//                output += ",mean u";
-//                output += ",sigma u";
-////                output += ",mean degree";
-//                output += ",sigma degree";
-//            } else{
-//                fw = new FileWriter(filename, true);
-//            }
-//            output += "\n";
-//            output += DF4.format(mean_p);
-//            output += "," + DF4.format(sigma_p);
-//            output += "," + DF4.format(mean_u);
-//            output += "," + DF4.format(sigma_u);
-////            output += "," + DF4.format(mean_deg);
-//            output += "," + DF4.format(sigma_deg);
-//            fw.append(output);
-//            fw.close();
-//      }catch(IOException e){
-//            e.printStackTrace();
-//            System.exit(0);
-//        }
-
-
-//        String filename = exp_path + "\\exp_stats.csv";
-//        String s = "";
-//        if(run == 1){
-//            s += "mean p";
-//            s += ",sigma p";
-//            s += ",mean u";
-//            s += ",sigma u";
-//            s += ",sigma degree";
-//        }
-//        s += "\n";
-//        s += DF4.format(mean_p);
-//        s += "," + DF4.format(sigma_p);
-//        s += "," + DF4.format(mean_u);
-//        s += "," + DF4.format(sigma_u);
-//        s += "," + DF4.format(sigma_deg);
-//        try{
-//            fw = new FileWriter(filename, true);
-//            fw.append(s);
-//            fw.close();
-//        }catch(IOException e){
-//            e.printStackTrace();
-//            System.exit(0);
-//        }
-
-
-
-        // read data at the end of run_stats.csv for each run of this experiment? NOPE.
-        // you dont need to do that because this function will be called at the end of every run.
-        // so, all it has to do is write the stats at the end of run_stats.csv for this run.
-        // we only want the headings at the start and the last gen of stats of run_stats.csv.
-        String exp_stats_filename = exp_path + "\\exp_stats.csv";
-        String run_stats_filename = run_path + "\\run_stats.csv";
-        String output = "";
-        try {
-            fw = new FileWriter(exp_stats_filename, true);
-            br = new BufferedReader(new FileReader(run_stats_filename));
-            String line = br.readLine();
-            if(run == 1) output += line; // write headings
-            for(int i=0;i<gens;i++){
-                line = br.readLine();
+        if(writingRate > 0){
+            String exp_stats_filename = exp_path + "\\exp_stats.csv";
+            String run_stats_filename = run_path + "\\run_stats.csv";
+            String output = "";
+            try {
+                fw = new FileWriter(exp_stats_filename, true);
+                br = new BufferedReader(new FileReader(run_stats_filename));
+                String line = br.readLine();
+                if(run == 1) output += line; // write headings
+                for(int i=0;i<gens;i++){
+                    line = br.readLine();
+                }
+                output += "\n" + line; // write stats of last gen of run
+                fw.append(output);
+                fw.close();
+            }catch(Exception e){
+                e.printStackTrace();
             }
-            output += "\n" + line; // write stats of last gen of run
-            fw.append(output);
-            fw.close();
-        }catch(Exception e){
-            e.printStackTrace();
         }
-
-
     }
 
 
@@ -2432,7 +1913,7 @@ public class Env extends Thread{ // environment simulator
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats(){
-        if(gen % writingRate == 0) {
+        if(writingRate != 0 && gen % writingRate == 0) {
             if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
             if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
         }
