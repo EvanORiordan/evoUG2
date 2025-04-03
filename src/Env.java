@@ -68,6 +68,7 @@ public class Env extends Thread{ // environment simulator
     static boolean writeURunStats;
     static boolean writeDegRunStats;
     static boolean writePosData;
+    static int first_gen_recorded = 1;
     static int writingRate = 0; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
@@ -1573,7 +1574,7 @@ public class Env extends Thread{ // environment simulator
      * Write and calculate stats of series. Documents how the series went.
      */
     public static void writeSeriesStats(){
-        if(writingRate > 0){
+        if(writingRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
             String series_stats_filename = this_path + "\\series_stats.csv";
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
@@ -1782,7 +1783,7 @@ public class Env extends Thread{ // environment simulator
      * 1 file per exp.
      */
     public void writeExpStats() {
-        if(writingRate > 0){
+        if(writingRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String run_stats_filename = run_path + "\\run_stats.csv";
             String output = "";
@@ -1790,11 +1791,41 @@ public class Env extends Thread{ // environment simulator
                 fw = new FileWriter(exp_stats_filename, true);
                 br = new BufferedReader(new FileReader(run_stats_filename));
                 String line = br.readLine();
-                if(run == 1) output += line; // write headings
-                for(int i=0;i<gens;i++){
+                if(run == 1) {
+
+
+//                    output += line; // write headings
+
+
+                    // remove gen column
+                    String[] row_contents = line.split(",");
+                    String no_gen_str = "";
+                    for(int i=1;i<row_contents.length;i++){
+                        no_gen_str += row_contents[i] + ",";
+                    }
+                    no_gen_str = removeTrailingComma(no_gen_str);
+                    output += no_gen_str;
+
+
+                }
+                for(int i = 0; i < gens / writingRate; i++){
                     line = br.readLine();
                 }
-                output += "\n" + line; // write stats of last gen of run
+
+
+//                output += "\n" + line; // write stats of last gen of run
+
+
+                // remove gen column
+                String[] row_contents = line.split(",");
+                String no_gen_str = "";
+                for(int i=1;i<row_contents.length;i++){
+                    no_gen_str += row_contents[i] + ",";
+                }
+                no_gen_str = removeTrailingComma(no_gen_str);
+                output += "\n" + no_gen_str;
+
+
                 fw.append(output);
                 fw.close();
             }catch(Exception e){
@@ -1950,36 +1981,21 @@ public class Env extends Thread{ // environment simulator
      * 1 file per gen.
      */
     public void writeGenStats(){
-//        String filename = exp_path + "\\run" + run + "\\gen_stats\\gen" + gen + ".csv";
         String filename = run_path + "\\gen_stats\\gen" + gen + ".csv";
         String s = "";
-
-
-//        s += "p,u,deg";
-//        for(Player player: pop){
-//            double p = player.getP();
-//            // calculate and write mean p omega?
-//            double u = player.getU();
-//            double deg = player.getDegree();
-//            s += "\n" + DF4.format(p) + "," + DF4.format(u) + "," +DF4.format(deg);
-//        }
-
-
-//        if(writePGenStats) s += "p,";
+//        s += "gen,";
         if(writePGenStats) s += "p,mean p omega,";
         if(writeUGenStats) s += "u,";
         if(writeDegGenStats) s += "deg,";
         s = removeTrailingComma(s);
         for(Player player: pop){
             s += "\n";
-//            if(writePGenStats) s += DF4.format(player.getP()) + ",";
+//            s += gen + ",";
             if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
             if(writeUGenStats) s += DF4.format(player.getU()) + ",";
             if(writeDegGenStats) s += DF4.format(player.getDegree()) + ",";
             s = removeTrailingComma(s);
         }
-
-
         try{
             fw = new FileWriter(filename);
             fw.append(s);
@@ -1999,14 +2015,14 @@ public class Env extends Thread{ // environment simulator
         String filename = run_path + "\\run_stats.csv";
         String s = "";
         if(gen / writingRate == 1){ // apply headings to file before writing data
-//            if (writePRunStats) s += "mean p,sigma p,";
+            s += "gens,";
             if (writePRunStats) s += "mean p,sigma p,max p,";
             if (writeURunStats) s += "mean u,sigma u,";
             if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
             s = removeTrailingComma(s);
             s += "\n";
         }
-//        if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + ",";
+        s += gen + ",";
         if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
         if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
         if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
@@ -2027,7 +2043,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * If last char of string is a comma, get rid of it.
       */
-    public static String removeTrailingComma(String s){
+    public String removeTrailingComma(String s){
         if(s.length() > 0 && s.charAt(s.length() - 1) == ','){
             s = s.substring(0, s.length() - 1);
         }

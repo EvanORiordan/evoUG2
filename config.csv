@@ -3,3 +3,32 @@ DG,3,grid 10,VN 1,newER 10 500,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,
 DG,3,grid 10,VN 1,newER 10 500,rewire 0.7 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,111111 1,RP 0.6 0.5
 DG,10,grid 40,VN 1,newER 10 300,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,,
 DG,10,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,x,PD,RW exponential 1.0,copy,local 0.01 0.01,normalised,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,x,PD,randomNeigh,copy,local 0.01 0.01,normalised,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,normalised,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,randomNeigh,copy,local 0.01 0.01,cumulative,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,111111 1,
+DG,1,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,
+DG,20,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,
+DG,10,grid 40,VN 1,newER 1 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 2 3 4 5 6 7 8 9 10
+DG,10,grid 40,VN 1,newER 10 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,gens 2000 3000 4000 5000
+DG,10,grid 40,VN 1,newER 10 6000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,gens 7000 8000 9000 10000
+DG,10,grid 40,VN 1,newER 10 11000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,
+DG,10,grid 40,VN 1,newER 10 12000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,
+DG,10,grid 40,VN 1,newER 10 13000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,
+DG,10,grid 40,VN 1,newER 1 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 1 2 3 4 5 6 7 8 9 10
+DG,10,grid 40,VN 1,newER 11 1000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 12 13 14 15 16 17 18 19 20
+DG,10,grid 40,VN 1,newER 1 5000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 1 2 3 4 5
+DG,10,grid 40,VN 1,newER 1 7500,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 2 3 4 5
+DG,10,grid 40,VN 1,newER 1 5000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 2 3 4 5 6 7 8 9 10
+DG,10,grid 40,VN 1,newER 1 5000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,ER 2 3 4 5 6 7 8 9 10
+DG,1,grid 40,VN 1,newER 10 5000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,111111 1,
+DG,1,grid 40,VN 1,newER 10 10000,rewire 0.1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,111111 1,
+DG,10,grid 40,VN 1,newER 1 5000,rewire 1.0 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,RP .9 .8 .7 .6 .5 .4 .3 .2 .1
+DG,10,grid 40,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local 0.01 0.01,cumulative,000111 1,RP .09 .08 .07 .06 .05 .04 .03 .02 .01
+DG,10,grid 5,VN 1,newER 10 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 5000,
+DG,10,grid 40,VN 1,newER 10 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 5000,
+DG,10,grid 40,VN 1,newER 10 6000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 6000,
+DG,10,grid 40,VN 1,newER 10 7000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 7000,
+DG,10,grid 40,VN 1,newER 10 8000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 8000,
