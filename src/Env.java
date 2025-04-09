@@ -1579,8 +1579,17 @@ public class Env extends Thread{ // environment simulator
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
             if(exp == 1) {
-                output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
-                if (!varying.equals("")) output += "," + varying;
+//                output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
+//                if (!varying.equals("")) output += "," + varying;
+
+
+                if(writePRunStats)output+="mean mean p,sigma mean p,";
+                if(writeURunStats)output+="mean mean u,";
+                if(writeDegRunStats)output+="mean sigma deg,";
+                if(!varying.equals(""))output+=varying+",";
+                output = removeTrailingComma(output);
+
+
             }
             double mean_mean_p = 0.0;
             double sigma_mean_p = 0.0;
@@ -1594,24 +1603,49 @@ public class Env extends Thread{ // environment simulator
                 br = new BufferedReader(new FileReader(exp_stats_filename));
                 br.readLine();
                 for(int i=0;i<runs;i++){
-                    String[] row_contents = br.readLine().split(",");
-                    mean_p_values[i] = Double.parseDouble(row_contents[0]);
-                    mean_u_values[i] = Double.parseDouble(row_contents[3]);
-                    sigma_deg_values[i] = Double.parseDouble(row_contents[5]);
+                    String row = br.readLine();
+                    String[] row_contents = row.split(",");
+                    int j = 0;
+                    if(writePRunStats){
+                        mean_p_values[i] = Double.parseDouble(row_contents[j]);
+                        j++; // move past mean p
+                        j++; // move past sigma p
+                        j++; // move past max p
+                    }
+                    if(writeURunStats) {
+                        mean_u_values[i] = Double.parseDouble(row_contents[j]);
+                        j++; // move past mean u
+                        j++; // move past sigma u
+                    }
+                    if(writeDegRunStats && EWT.equals("rewire")) {
+                        sigma_deg_values[i] = Double.parseDouble(row_contents[j]);
+                    }
                 }
                 for(int i=0;i<runs;i++){
-                    mean_mean_p += mean_p_values[i];
-                    mean_mean_u += mean_u_values[i];
-                    mean_sigma_deg += sigma_deg_values[i];
+                    if(writePRunStats)mean_mean_p += mean_p_values[i];
+                    if(writeURunStats)mean_mean_u += mean_u_values[i];
+                    if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
                 }
                 mean_mean_p /= runs;
                 mean_mean_u /= runs;
-                mean_sigma_deg /= runs;
+//                mean_sigma_deg /= runs;
+                if(writeDegRunStats) mean_sigma_deg /= runs;
                 for(int i=0;i<runs;i++){
                     sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
                 }
                 sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-                output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
+
+
+//                output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
+
+
+                output += "\n";
+                if(writePRunStats)output+=DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + ",";
+                if(writeURunStats)output+=DF4.format(mean_mean_u) + ",";
+                if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
+                output = removeTrailingComma(output);
+
+
                 switch(varying){
                     case "ER" -> output += "," + ER;
                     case "NIS" -> output += "," + NIS;
@@ -2043,7 +2077,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * If last char of string is a comma, get rid of it.
       */
-    public String removeTrailingComma(String s){
+    public static String removeTrailingComma(String s){
         if(s.length() > 0 && s.charAt(s.length() - 1) == ','){
             s = s.substring(0, s.length() - 1);
         }

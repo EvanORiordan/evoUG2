@@ -32,3 +32,21 @@ DG,10,grid 40,VN 1,newER 10 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy
 DG,10,grid 40,VN 1,newER 10 6000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 6000,
 DG,10,grid 40,VN 1,newER 10 7000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 7000,
 DG,10,grid 40,VN 1,newER 10 8000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 8000,
+DG,10,grid 40,VN 1,newER 10 9000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 9000,
+DG,10,grid 40,VN 1,newER 10 10000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 10000,
+DG,10,grid 40,VN 1,newER 10 11000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 11000,
+DG,10,grid 40,VN 1,newER 10 12000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 12000,
+DG,10,grid 40,VN 1,newER 10 13000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 13000,
+DG,10,grid 40,VN 1,newER 10 14000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 14000,
+DG,1,grid 40,VN 1,newER 1 10,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 10,length 50 60
+DG,10,grid 40,VN 1,newER 5 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 5000,length 50 60 70 80 90 100
+DG,25,grid 40,VN 1,newER 5 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 5000,length 50 60 70
+DG,25,grid 40,VN 1,newER 5 5000,rewire .1 linear pop,PD,RW exponential 1.0,copy,local .01 .01,cumulative,000111 5000,RA smoothstep smootherstep 0Many
+DG,1,grid 40,VN 1,newER 10 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,111111 1,
+DG,1,grid 40,VN 1,newER 10 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,111111 1,UF normalised
+DG,10,grid 40,VN 1,newER 11 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 1,ER 12 13 14 15 16 17 18 19 20
+DG,10,grid 40,VN 1,newER 21 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 1,ER 22 23 24 25 26 27 28 29 30
+DG,30,grid 40,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10
+DG,30,grid 40,VN 1,newER 1 5000,proposalProb,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10
+DG,2,grid 4,VN 1,newER 1 5000,proposalProb,PD,RW exponential 1,copy,local .01 .01,cumulative,000010 5000,ER 2 3 4 5 6 7 8 9 10
+DG,2,grid 4,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000011 5000,ER 2 3 4 5 6 7 8 9 10
