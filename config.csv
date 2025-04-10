@@ -48,5 +48,5 @@ DG,10,grid 40,VN 1,newER 11 5000,rewire .1 linear pop,PD,RW exponential 1,copy,l
 DG,10,grid 40,VN 1,newER 21 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 1,ER 22 23 24 25 26 27 28 29 30
 DG,30,grid 40,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10
 DG,30,grid 40,VN 1,newER 1 5000,proposalProb,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10
-DG,2,grid 4,VN 1,newER 1 5000,proposalProb,PD,RW exponential 1,copy,local .01 .01,cumulative,000010 5000,ER 2 3 4 5 6 7 8 9 10
-DG,2,grid 4,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000011 5000,ER 2 3 4 5 6 7 8 9 10
+DG,2,grid 4,VN 1,newER 1 5000,proposalProb,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10
+DG,2,grid 4,VN 1,newER 1 5000,rewire .1 linear pop,PD,RW exponential 1,copy,local .01 .01,cumulative,000111 5000,ER 2 3 4 5 6 7 8 9 10

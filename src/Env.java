@@ -1274,9 +1274,12 @@ public class Env extends Thread{ // environment simulator
         sigma_deg = 0;
         for(int i = 0; i < N; i++){
 //            sigma_deg += Math.pow(pop[i].getDegree() - mean_deg, 2);
-            sigma_deg += Math.pow(pop[i].getDegree() - 4, 2);
+            double deg = pop[i].getDegree();
+            double deg_minus_mean_deg = deg - 4;
+            sigma_deg += Math.pow(deg_minus_mean_deg, 2);
         }
-        sigma_deg = Math.pow(sigma_deg / N, 0.5);
+//        sigma_deg = Math.pow(sigma_deg / N, 0.5);
+        sigma_deg = Math.sqrt(sigma_deg / N);
     }
 
 
@@ -1928,29 +1931,18 @@ public class Env extends Thread{ // environment simulator
      * calculateStats() will be called every generation.
      */
     public void calculateStats(){
-
-
-//        calculateMeanP();
-//        calculateSigmaP();
-//        calculateMaxP();
-//        calculateMeanU();
-//        calculateSigmaU();
-//        for(int i = 0; i < N; i++){
-//            pop[i].calculateDegree();
-//        }
-////        calculateMeanDegree(); // no need to calculate mean deg: it's always 4, and it is never used to calculate another stat later downstream in the program.
-//        calculateSigmaDeg();
-
-
         if(writePGenStats){
             for(Player player: pop){
                 player.calculateMeanPOmega();
             }
         }
-        if(writeDegGenStats){
-            for(Player player: pop){
-                player.calculateDegree();
-            }
+//        if(writeDegGenStats){
+//            for(Player player: pop){
+//                player.calculateDegree();
+//            }
+//        }
+        for(Player player: pop){
+            player.calculateDegree();
         }
         if(writePRunStats) {
             calculateMeanP();
@@ -1965,7 +1957,6 @@ public class Env extends Thread{ // environment simulator
             // no need to calculate mean deg as it is always 4. if this changes, be sure to calculate it here!
             calculateSigmaDeg();
         }
-
     }
 
 
