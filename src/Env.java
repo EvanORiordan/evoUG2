@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -95,6 +96,14 @@ public class Env extends Thread{ // environment simulator
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
 
 
+    // testing sql db
+    // db credentials
+    static String url = "jdbc:mysql://mysql1.cs.universityofgalway.ie:3306/mydb7415?useSSL=false";
+    static String user = "mydb7415oe";
+    static String password = "ri0hor";
+
+
+
 
 
     /**
@@ -183,7 +192,15 @@ public class Env extends Thread{ // environment simulator
             pop.start();
         }
         writeSettings();
+
+
+//        System.out.println("TEMP: COMMENTED OUT writeSeriesStats()");
         writeSeriesStats();
+
+
+//        writeSeriesStatsToDB();
+
+
     }
 
 
@@ -254,7 +271,16 @@ public class Env extends Thread{ // environment simulator
                         mut(child);
                     }
                     calculateStats(); // calculate stats at end of gen
+
+
+//                    System.out.println("TEMP: COMMENTED OUT writeGenAndRunStats()");
                     writeGenAndRunStats(); // write gen and run stats at end of gen
+
+
+//                    recordGenStats();
+//                    recordPlayers();
+
+
                     prepare(); // reset certain attributes at end of gen
                 }
             }
@@ -276,6 +302,7 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
+//        System.out.println("TEMP: COMMENTED OUT writeExpStats()");
         writeExpStats();
     }
 
@@ -1575,6 +1602,7 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Write and calculate stats of series. Documents how the series went.
+     * Reads and writes local data.
      */
     public static void writeSeriesStats(){
         if(writingRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
@@ -1588,7 +1616,7 @@ public class Env extends Thread{ // environment simulator
 
                 if(writePRunStats)output+="mean mean p,sigma mean p,";
                 if(writeURunStats)output+="mean mean u,";
-                if(writeDegRunStats)output+="mean sigma deg,";
+                if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
                 if(!varying.equals(""))output+=varying+",";
                 output = removeTrailingComma(output);
 
@@ -2077,25 +2105,84 @@ public class Env extends Thread{ // environment simulator
 
 
 
-
-
-    public void calculateMeanMeanP(){
-
-    }
-
-    public void calculateSigmaMeanP(){
+    public static void writeSeriesStatsToDB(){
         try{
-            String filename = "text.txt";
-            BufferedReader br = new BufferedReader(new FileReader(filename));
-            String line;
-            while((line = br.readLine()) != null){
-                System.out.println(line);
-            }
+            Connection conn = DriverManager.getConnection(url, user, password);
+            System.out.println("Connected to the database!");
 
-        }catch(Exception e){
-            e.printStackTrace();
-            System.exit(0);
+
+            System.out.println("TEMP: DO NOTHING IN writeSeriesStatsToDB()!");
+
+
+//            Statement statement = conn.createStatement();
+//            String query = "select * from series_stats_test1";
+//            ResultSet rs = statement.executeQuery(query);
+//            while (rs.next()) {
+//                int k = rs.getInt("id");
+//                double i = rs.getFloat("mean_avg_p");
+//                double j = rs.getFloat("sigma_avg_p");
+//                System.out.println("ID: " + k + "\tmean_avg_p: " + DF4.format(i) + "\tsigma_avg_p:" + DF4.format(j));
+//            }
+
+
+            // test inserting record
+//            String query2 = "insert into series_stats_test1 (id, mean_avg_p, sigma_avg_p) values (3, 0.7, 0.1)";
+//            statement.execute(query2);
+//            System.out.println("inserted record!");
+
+
+            // test inserting record using prepared statement
+//            String query3 = "insert into series_stats_test1 (id, mean_avg_p, sigma_avg_p) values (?, ?, ?)";
+//            PreparedStatement pstmt = conn.prepareStatement(query3);
+//            pstmt.setInt(1,4);
+//            pstmt.setDouble(2,0.8);
+////            pstmt.setDouble(2,mean_mean_p);
+//            pstmt.setDouble(3,0.01);
+//            pstmt.execute();
+//            System.out.println("inserted record");
+
+
+
+            conn.close();
+        }catch(SQLException e){
+            throw new RuntimeException(e);
         }
-
     }
+
+
+
+    public void recordGenStats(){
+        try{
+            Connection conn = DriverManager.getConnection(url, user, password);
+            String query = "insert into gen_stats_test1 (runID, playerID, p, u, deg) values (?,?,?,?,?)";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            for(Player player: pop){
+                pstmt.setInt(1, run);
+                pstmt.setInt(2, player.getID());
+                pstmt.setDouble(3,player.getP());
+                pstmt.setDouble(4,player.getU());
+                pstmt.setDouble(5,player.getDegree());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+//    public void recordPlayers(){
+//        try{
+//            Connection conn = DriverManager.getConnection(url, user, password);
+//            String query = "insert into player_test1 (popID,gen,p,u,deg) values (?,?,?,?,?)";
+//            PreparedStatement pstmt = conn.prepareStatement(query);
+//            for(Player player: pop){
+//                pstmt.setInt(1, run);
+//                pstmt.setInt(2, player.getID());
+//                pstmt.setDouble(3,player.getP());
+//                pstmt.setDouble(4,player.getU());
+//                pstmt.setDouble(5,player.getDegree());
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//    }
 }
