@@ -229,6 +229,13 @@ public class Env extends Thread{ // environment simulator
         for(int i=0;i<N;i++){
             initialiseEdgeWeights(pop[i]);
         }
+
+
+        // get stats for gen 0
+        calculateStats();
+        writeGenAndRunStats();
+
+
         switch(EM){
             case "oldER" -> {
                 gen = 1;
@@ -1610,21 +1617,19 @@ public class Env extends Thread{ // environment simulator
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
             if(exp == 1) {
-//                output += "mean mean p,sigma mean p,mean mean u,mean sigma deg"; // hard-coded headings
-//                if (!varying.equals("")) output += "," + varying;
-
-
-                if(writePRunStats)output+="mean mean p,sigma mean p,";
-                if(writeURunStats)output+="mean mean u,";
+//                if(writePRunStats)output+="mean mean p,sigma mean p,";
+//                if(writeURunStats)output+="mean mean u,";
+                if(writePRunStats)output+="mean avg p,sigma mean p,";
+                if(writeURunStats)output+="mean avg u,";
                 if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
                 if(!varying.equals(""))output+=varying+",";
                 output = removeTrailingComma(output);
-
-
             }
-            double mean_mean_p = 0.0;
+//            double mean_mean_p = 0.0;
+            double mean_avg_p = 0.0;
             double sigma_mean_p = 0.0;
-            double mean_mean_u = 0.0;
+//            double mean_mean_u = 0.0;
+            double mean_avg_u = 0.0;
             double mean_sigma_deg = 0.0;
             double[] mean_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
@@ -1653,16 +1658,16 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
                 for(int i=0;i<runs;i++){
-                    if(writePRunStats)mean_mean_p += mean_p_values[i];
-                    if(writeURunStats)mean_mean_u += mean_u_values[i];
+                    if(writePRunStats)mean_avg_p += mean_p_values[i];
+                    if(writeURunStats)mean_avg_u += mean_u_values[i];
                     if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
                 }
-                mean_mean_p /= runs;
-                mean_mean_u /= runs;
+                mean_avg_p /= runs;
+                mean_avg_u /= runs;
 //                mean_sigma_deg /= runs;
                 if(writeDegRunStats) mean_sigma_deg /= runs;
                 for(int i=0;i<runs;i++){
-                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_mean_p, 2);
+                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
                 }
                 sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
 
@@ -1671,8 +1676,8 @@ public class Env extends Thread{ // environment simulator
 
 
                 output += "\n";
-                if(writePRunStats)output+=DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + ",";
-                if(writeURunStats)output+=DF4.format(mean_mean_u) + ",";
+                if(writePRunStats)output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_mean_p) + ",";
+                if(writeURunStats)output+=DF4.format(mean_avg_u) + ",";
                 if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
                 output = removeTrailingComma(output);
 
@@ -1997,7 +2002,9 @@ public class Env extends Thread{ // environment simulator
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats(){
-        if(writingRate != 0 && gen % writingRate == 0) {
+//        if(writingRate != 0 && gen % writingRate == 0) {
+//        if(gen == 0 || (writingRate != 0 && gen % writingRate == 0)) {
+        if(writingRate != 0 && (gen == 0 || gen % writingRate == 0)) {
             if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
             if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
         }
@@ -2067,7 +2074,8 @@ public class Env extends Thread{ // environment simulator
     public void writeRunStats() {
         String filename = run_path + "\\run_stats.csv";
         String s = "";
-        if(gen / writingRate == 1){ // apply headings to file before writing data
+//        if(gen / writingRate == 1){ // apply headings to file before writing data
+        if(gen == 0){ // apply headings to file before writing data
             s += "gens,";
             if (writePRunStats) s += "mean p,sigma p,max p,";
             if (writeURunStats) s += "mean u,sigma u,";
