@@ -1878,7 +1878,10 @@ public class Env extends Thread{ // environment simulator
 
 
                 }
-                for(int i = 0; i < gens / writingRate; i++){
+
+                // skip to the last row of run stats
+//                for(int i = 0; i < gens / writingRate; i++){
+                for(int i = 0; i <= gens / writingRate; i++){
                     line = br.readLine();
                 }
 
