@@ -120,7 +120,7 @@ public class Player {
                 }
             }
         }
-        player_desc+=" pi="+DF4.format(pi); // score
+//        player_desc+=" pi="+DF4.format(pi); // score
         player_desc += " u=" + DF4.format(u); // utility
 
         player_desc += " neighbourhood=[";

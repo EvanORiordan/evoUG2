@@ -274,8 +274,11 @@ public class Env extends Thread{ // environment simulator
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
-                        evo(child, parent);
-                        mut(child);
+//                        evo(child, parent);
+////                        mut(child);
+                        if(evo(child,parent))
+                            mut(child);
+
                     }
                     calculateStats(); // calculate stats at end of gen
 
@@ -598,7 +601,9 @@ public class Env extends Thread{ // environment simulator
      * @param child player undergoing roulette wheel selection
      */
     public Player selRW(Player child){
-        Player parent = null;
+//        Player parent = null;
+        // why not set parent to child by default?
+        Player parent = child;
         ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
         pool.add(child);
         int size = pool.size();
@@ -613,7 +618,8 @@ public class Env extends Thread{ // environment simulator
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
         double tally = 0;
-        for(int i = 0; i < size; i++){
+//        for(int i = 0; i < size; i++){
+        for(int i = 0; i < size - 1; i++){ // no need to check for child: if noone is selected, child is parent by default
             tally += pockets[i];
             double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
             if(random_double < percent_taken){ // if true, the ball landed in the candidate's slot
@@ -621,6 +627,12 @@ public class Env extends Thread{ // environment simulator
                 break;
             }
         }
+
+        // by default, if parent is null, set parent to child.
+//        if(parent == null)
+//            System.out.println("BP");
+//            parent = child;
+
         return parent;
     }
 
@@ -1033,6 +1045,7 @@ public class Env extends Thread{ // environment simulator
         sel = sel_params[CI2++];
 
 
+//        if(sel.equals("RW") || sel.equals("RW2")){
         if(sel.equals("RW")){
             RWT = sel_params[CI2++];
             if(RWT.equals("exponential")){
@@ -1054,7 +1067,7 @@ public class Env extends Thread{ // environment simulator
         mut = mut_params[CI2++];
         if(!mut_params[0].equals("")){
             mutRate = Double.parseDouble(mut_params[CI2++]);
-            if(mut.equals("local")){
+            if(mut.equals("local") || mut.equals("localnoself")){
                 mutBound = Double.parseDouble(mut_params[CI2++]);
             }
         }
@@ -1531,6 +1544,11 @@ public class Env extends Thread{ // environment simulator
                 settings += ",space";
                 settings += ",length";
                 settings += ",width";
+
+
+                settings += ",N";
+
+
                 settings += ",neighType";
                 settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
                 settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
@@ -1553,8 +1571,8 @@ public class Env extends Thread{ // environment simulator
                 settings += ",evo";
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
                 settings += !mut.equals("")? ",mut": "";
-                settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
-                settings += mut.equals("local")? ",mutBound": "";
+                settings += mut.equals("local") || mut.equals("global") || mut.equals("localnoself")? ",mutRate": "";
+                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
                 settings += ",UF";
                 settings += injIter == 0? "": ",injIter";
                 settings += injP == 0.0? "": ",injP";
@@ -1564,8 +1582,17 @@ public class Env extends Thread{ // environment simulator
             settings += game;
             settings += "," + runs;
             settings += "," + space;
-            settings += length == 0 && !varying.equals("length")? "": "," + length;
-            settings += width == 0 && !varying.equals("width")? "": "," + width;
+
+
+//            settings += length == 0 && !varying.equals("length")? "": "," + length;
+//            settings += width == 0 && !varying.equals("width")? "": "," + width;
+
+
+            settings += "," + length;
+            settings += "," + width;
+            settings += "," + N;
+
+
             settings += "," + neighType;
             settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
             settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
@@ -1927,14 +1954,18 @@ public class Env extends Thread{ // environment simulator
             case "randomNeigh" -> parent = selRandomNeigh(child);
             case "randomPop" -> parent = selRandomPop();
 //            case "crossover" -> crossover(child);
+//            case "RW2" -> parent = selRW2(child);
         }
         return parent;
     }
 
 
 
-    public void evo(Player child, Player parent){
-        if(parent != null){
+//    public void evo(Player child, Player parent){
+    public boolean evo(Player child, Player parent){
+        boolean occurred = false;
+//        if(parent != null){
+        if(!parent.equals(child)){
             switch (evo) {
                 case "copy" -> evoCopy(child, parent);
                 case "approach" -> evoApproach(child, parent);
@@ -1942,7 +1973,13 @@ public class Env extends Thread{ // environment simulator
                 case "UD" -> evoUD(child, parent);
                 case "UDN" -> evoUDN(child, parent);
             }
+
+            occurred = true;
+
         }
+
+        return occurred;
+
     }
 
 
@@ -1959,6 +1996,29 @@ public class Env extends Thread{ // environment simulator
             }
         }
     }
+
+//    public void mut2(Player child, Player parent){
+//        switch (mut) {
+//            case "global" -> {
+//                if (mutationCheck())
+//                    mutGlobal(child);
+//            }
+//            case "local" -> {
+//                if (mutationCheck())
+//                    mutLocal(child);
+//            }
+//            case "localnoself" -> {
+//                if(parent != null){
+//                    if (!parent.equals(child)) {
+//                        if (mutationCheck()) {
+//                            mutLocal(child);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+
 
 
     /**
@@ -2079,7 +2139,12 @@ public class Env extends Thread{ // environment simulator
         String s = "";
 //        if(gen / writingRate == 1){ // apply headings to file before writing data
         if(gen == 0){ // apply headings to file before writing data
-            s += "gens,";
+
+
+//            s += "gens,";
+            s += "gen,";
+
+
             if (writePRunStats) s += "mean p,sigma p,max p,";
             if (writeURunStats) s += "mean u,sigma u,";
             if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
@@ -2196,4 +2261,6 @@ public class Env extends Thread{ // environment simulator
 //            e.printStackTrace();
 //        }
 //    }
+
+
 }
