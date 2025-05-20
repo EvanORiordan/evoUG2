@@ -15,13 +15,17 @@ import java.util.concurrent.ThreadLocalRandom;
  * University of Galway<br>
  */
 public class Env extends Thread{ // environment simulator
-    static String game; // indicates what game is being played
+//    static String game; // indicates what game is being played
+    static String game = "DG"; // indicates what game is being played
     static double M = 1.0; // default prize amount during a UG/DG
-    static String space; // indicates what kind of space the population will reside within
+//    static String space; // indicates what kind of space the population will reside within
+    static String space = "grid"; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-    static String neighType; // indicates type of neighbourhood players will have.
-    static int neighRadius; // radius of neighbourhood
+//    static String neighType; // indicates type of neighbourhood players will have.
+    static String neighType = "VN"; // indicates type of neighbourhood players will have.
+//    static int neighRadius; // radius of neighbourhood
+    static int neighRadius = 1; // radius of neighbourhood
     static int neighSize; // size of neighbours with random neighbourhood type.
     static int N; // population size
     static int run; // current run
@@ -77,7 +81,8 @@ public class Env extends Thread{ // environment simulator
     static double ROC = 0; // rate of change: fixed learning amount to EW
     static double alpha = 0; // used in alpha-beta rating
     static double beta = 0; // used in alpha-beta rating
-    static String evo; // indicates which evolution function to call
+//    static String evo; // indicates which evolution function to call
+    static String evo = "copy"; // indicates which evolution function to call
     static double evoNoise = 0; // noise affecting evolution
     static String sel; // indicates which selection function to call
     static double selNoise = 0.0; // noise affecting selection
@@ -120,12 +125,21 @@ public class Env extends Thread{ // environment simulator
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
         this_path = general_path+"\\"+start_timestamp_string;
-        try {
-            if(writingRate > 0) Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-        }catch(IOException e){
-            e.printStackTrace();
+//        try {
+//            if(writingRate > 0) {
+//                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+//            }
+//        }catch(IOException e){
+//            e.printStackTrace();
+//        }
+        if (writingRate > 0) {
+            try {
+                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+            printPath();
         }
-        printPath();
         System.out.println("Starting timestamp: "+start_timestamp);
         experimentSeries();
         LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
@@ -135,7 +149,7 @@ public class Env extends Thread{ // environment simulator
         long minutesElapsed = duration.toMinutes();
         long hoursElapsed = duration.toHours();
         System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-        printPath();
+        if (writingRate > 0) printPath();
     }
 
 
@@ -238,9 +252,13 @@ public class Env extends Thread{ // environment simulator
 
         switch(EM){
             case "oldER" -> {
-                gen = 1;
-                gens = 1;
-                for(int iter = 1; iter < iters; iter++){ // this is the oldER EM algorithm; it iterates "iters" times; 1 iteration of this loop = 1 "iter"
+//                gen = 1;
+//                gens = 1;
+                gen = 0;
+                gens = 0;
+                // oldER alg iterates "iters" times; 1 iteration of this loop = 1 "iter"
+//                for(int iter = 1; iter < iters; iter++){
+                for(int iter = 1; iter <= iters; iter++){
                     for(int i=0;i<N;i++) play(pop[i]);
                     for(int i=0;i<N;i++) updateUtility(pop[i]);
                     for(int i=0;i<N;i++) EWL(pop[i]);
@@ -249,14 +267,15 @@ public class Env extends Thread{ // environment simulator
                         for(int i=0;i<N;i++) {
                             Player child = pop[i];
                             Player parent = sel(child);
-                            evo(child, parent);
-                            mut(child);
+                            if(evo(child, parent))
+                                mut(child);
                         }
                         // calculate and write stats at end of gen
                         calculateStats();
-                        writeGenAndRunStats();
                         gen++;
                         gens++;
+                        writeGenAndRunStats();
+
                     }
                     prepare(); // reset certain attributes at end of iter
                 }
@@ -274,37 +293,25 @@ public class Env extends Thread{ // environment simulator
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
-//                        evo(child, parent);
-////                        mut(child);
                         if(evo(child,parent))
                             mut(child);
-
                     }
                     calculateStats(); // calculate stats at end of gen
-
-
-//                    System.out.println("TEMP: COMMENTED OUT writeGenAndRunStats()");
                     writeGenAndRunStats(); // write gen and run stats at end of gen
-
-
-//                    recordGenStats();
-//                    recordPlayers();
-
-
                     prepare(); // reset certain attributes at end of gen
                 }
             }
-            case "MC" -> {
-                for(gen = 1; gen <= gens; gen++){ // monte carlo algorithm
+            case "MC" -> { // Monte Carlo (MC)
+                for(gen = 1; gen <= gens; gen++){ // MC outer loop
                     for(int i = 0; i < N; i++) play(pop[i]);
                     for(int i=0;i<N;i++) updateUtility(pop[i]);
-                    for(int i = 0; i < NIS; i++){ // inner step loop
-                        Player player = selRandomPop();
-                        EWL(player); // EWL inside or outside inner step loop?
-                        if(EWT.equals("rewire")) rewire(player); // rewire if applicable
-                        Player parent = sel(player);
-                        evo(player, parent);
-                        mut(player);
+                    for(int i = 0; i < NIS; i++){ // MC inner loop
+                        Player child = selRandomPop();
+                        EWL(child); // EWL inside or outside inner step loop?
+                        if(EWT.equals("rewire")) rewire(child); // rewire if applicable
+                        Player parent = sel(child);
+                        if(evo(child, parent))
+                            mut(child);
                     }
                     calculateStats();
                     writeGenAndRunStats();
@@ -312,7 +319,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-//        System.out.println("TEMP: COMMENTED OUT writeExpStats()");
         writeExpStats();
     }
 
@@ -881,29 +887,29 @@ public class Env extends Thread{ // environment simulator
         System.out.printf("   By Evan O'Riordan%n");
         printTableBorder();
         System.out.printf("%-10s |" +//config
-                        " %-10s |" +//game
+//                        " %-10s |" +//game
                         " %-10s |" +//runs
                         " %-15s |" +//space
-                        " %-15s |" +//neigh
+//                        " %-15s |" +//neigh
                         " %-20s |" +//EM
                         " %-30s |" +//EW
                         " %-25s |" +//EWL
                         " %-20s |" +//sel
-                        " %-15s |" +//evo
+//                        " %-15s |" +//evo
                         " %-15s |" +//mut
                         " %-10s |" +//UF
                         " %-15s |" +//writing
                         " %s%n"//series
                 ,"config"
-                ,"game"
+//                ,"game"
                 ,"runs"
                 ,"space"
-                ,"neigh"
+//                ,"neigh"
                 ,"EM"
                 ,"EW"
                 ,"EWL"
                 ,"sel"
-                ,"evo"
+//                ,"evo"
                 ,"mut"
                 ,"UF"
                 ,"writing"
@@ -918,15 +924,15 @@ public class Env extends Thread{ // environment simulator
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
             System.out.printf("%-10d ", i); //config
-            System.out.printf("| %-10s ", settings[CI++]); //game
+//            System.out.printf("| %-10s ", settings[CI++]); //game
             System.out.printf("| %-10s ", settings[CI++]); //runs
             System.out.printf("| %-15s ", settings[CI++]); //space
-            System.out.printf("| %-15s ", settings[CI++]); //neigh
+//            System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-20s ", settings[CI++]); //EM
             System.out.printf("| %-30s ", settings[CI++]); //EW
             System.out.printf("| %-25s ", settings[CI++]); //EWL
             System.out.printf("| %-20s ", settings[CI++]); //sel
-            System.out.printf("| %-15s ", settings[CI++]); //evo
+//            System.out.printf("| %-15s ", settings[CI++]); //evo
             try{ // try-catch in case unrequired param is never followed by required param.
                 System.out.printf("| %-15s ", settings[CI++]);//mut
             }catch(ArrayIndexOutOfBoundsException e){
@@ -971,16 +977,16 @@ public class Env extends Thread{ // environment simulator
         int CI3;
 
 
-        String[] game_params = settings[CI++].split(" ");
-        CI2 = 0;
-        game = game_params[CI2++];
+//        String[] game_params = settings[CI++].split(" ");
+//        CI2 = 0;
+//        game = game_params[CI2++];
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
 
 
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
-        space = space_params[CI2++];
+//        space = space_params[CI2++];
         if(space.equals("grid")){
             length = Integer.parseInt(space_params[CI2++]);
             width = length;
@@ -988,14 +994,14 @@ public class Env extends Thread{ // environment simulator
         }
 
 
-        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
-        CI2 = 0;
-        neighType = neigh_params[CI2++]; // required field
-        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
-            neighRadius = Integer.parseInt(neigh_params[CI2++]);
-        } else if(neighType.equals("random")){
-            neighSize = Integer.parseInt(neigh_params[CI2++]);
-        }
+//        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
+//        CI2 = 0;
+//        neighType = neigh_params[CI2++]; // required field
+//        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
+//            neighRadius = Integer.parseInt(neigh_params[CI2++]);
+//        } else if(neighType.equals("random")){
+//            neighSize = Integer.parseInt(neigh_params[CI2++]);
+//        }
 
 
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
@@ -1043,8 +1049,6 @@ public class Env extends Thread{ // environment simulator
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
-
-
 //        if(sel.equals("RW") || sel.equals("RW2")){
         if(sel.equals("RW")){
             RWT = sel_params[CI2++];
@@ -1054,12 +1058,12 @@ public class Env extends Thread{ // environment simulator
         }
 
 
-        String[] evo_params = settings[CI++].split(" "); // evolution parameters
-        CI2 = 0;
-        evo = evo_params[CI2++];
-        if(evo.equals("approach")){
-            evoNoise = Double.parseDouble(evo_params[CI2++]);
-        }
+//        String[] evo_params = settings[CI++].split(" "); // evolution parameters
+//        CI2 = 0;
+//        evo = evo_params[CI2++];
+//        if(evo.equals("approach")){
+//            evoNoise = Double.parseDouble(evo_params[CI2++]);
+//        }
 
 
         String[] mut_params = settings[CI++].split(" "); // mutation parameters
@@ -1067,7 +1071,8 @@ public class Env extends Thread{ // environment simulator
         mut = mut_params[CI2++];
         if(!mut_params[0].equals("")){
             mutRate = Double.parseDouble(mut_params[CI2++]);
-            if(mut.equals("local") || mut.equals("localnoself")){
+//            if(mut.equals("local") || mut.equals("localnoself")){
+            if(mut.equals("local")){
                 mutBound = Double.parseDouble(mut_params[CI2++]);
             }
         }
@@ -1571,8 +1576,10 @@ public class Env extends Thread{ // environment simulator
                 settings += ",evo";
                 settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
                 settings += !mut.equals("")? ",mut": "";
-                settings += mut.equals("local") || mut.equals("global") || mut.equals("localnoself")? ",mutRate": "";
-                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
+//                settings += mut.equals("local") || mut.equals("global") || mut.equals("localnoself")? ",mutRate": "";
+                settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
+//                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
+                settings += mut.equals("local")? ",mutBound": "";
                 settings += ",UF";
                 settings += injIter == 0? "": ",injIter";
                 settings += injP == 0.0? "": ",injP";
@@ -2138,7 +2145,7 @@ public class Env extends Thread{ // environment simulator
         String filename = run_path + "\\run_stats.csv";
         String s = "";
 //        if(gen / writingRate == 1){ // apply headings to file before writing data
-        if(gen == 0){ // apply headings to file before writing data
+        if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
 
 
 //            s += "gens,";
