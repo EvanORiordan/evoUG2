@@ -10,3 +10,8 @@ runs,space,EM,EWT,EWL,sel,mut,UF,writing,series
 3,10,oldER 1 100,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 2 3 4 5
 5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 2 3 4 5
 5,40,oldER 6 10000,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 7 8 9 10
+5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,normalised,000100 1,ER 2 3 4 5
+5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5
+5,40,oldER 1 10000,proposalProb,PROC 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
+5,40,oldER 1 10000,proposalProb,PD 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
+20,40,oldER 1 10000,proposalProb,PED 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10

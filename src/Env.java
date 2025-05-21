@@ -507,21 +507,19 @@ public class Env extends Thread{ // environment simulator
 
 
 
-
     /**
-     * player performs edge weight learning (EWL) with all of its edges.
-     * @param a player performing EWL
+     * Edge Weight Learning (EWL)
      */
     public void EWL(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getNeighbourhood();
         for(int i = 0; i < omega_a.size(); i++){
-            Player b = omega_a.get(i); // neighbour of a
+            Player b = omega_a.get(i);
             double w_ab = weights.get(i); // weight from a to b
             w_ab += calculateLearning(a, b);
             if(w_ab > 1.0) w_ab = 1.0;
             else if(w_ab < 0.0) w_ab = 0.0;
-            weights.set(i, w_ab); // set player's weight to copy.
+            weights.set(i, w_ab); // replace old weight value
         }
     }
 
@@ -530,18 +528,18 @@ public class Env extends Thread{ // environment simulator
     public double calculateLearning(Player a, Player b){
         double learning = 0.0;
         switch(EWLF){
-            case "ROC" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                if(p_a < p_b) // if a unfairer than b, increase weight
+            case "PROC" -> {
+                double pa = a.getP();
+                double pb = b.getP();
+                if(pa < pb) // if a unfairer than b, increase weight
                     learning = ROC;
-                else if(p_a > p_b) // else if a fairer than b, decrease weight; else no change
+                else if(pa > pb) // else if a fairer than b, decrease weight; else no change
                     learning = -ROC;
             }
             case "PD" -> learning = b.getP() - a.getP();
-//            case "PED" -> learning = Math.exp(b.getP() - a.getP());
+            case "PED" -> learning = Math.exp(b.getP() - a.getP());
             case "UD" -> learning = b.getU() - a.getU();
-//            case "UED" -> learning = Math.exp(b.getU() - a.getU());
+            case "UED" -> learning = Math.exp(b.getU() - a.getU());
             case "PDR" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
@@ -591,6 +589,15 @@ public class Env extends Thread{ // environment simulator
                     learning = -1.0;
                 } else{
                     learning = 0.0;
+                }
+            }
+            case "UROC" ->{
+                double ua = a.getU();
+                double ub = b.getU();
+                if(ua>ub){
+                    learning = ROC;
+                }else if(ua<ub){
+                    learning = -ROC;
                 }
             }
         }
@@ -1037,12 +1044,13 @@ public class Env extends Thread{ // environment simulator
         if(!EWL_params[0].equals("")){
             CI2 = 0;
             EWLF = EWL_params[CI2++];
-            if(EWLF.equals("ROC"))
-                ROC = Double.parseDouble(EWL_params[CI2++]);
-            if(EWLF.equals("AB")){
-                alpha = Double.parseDouble(EWL_params[CI2++]);
-                beta = Double.parseDouble(EWL_params[CI2++]);
-            }
+//            if(EWLF.equals("ROC"))
+//                Double.parseDouble(EWL_params[CI2++]);
+            if(EWLF.equals("PROC") || EWLF.equals("UROC")) ROC = Double.parseDouble(EWL_params[CI2++]);
+//            if(EWLF.equals("AB")){
+//                alpha = Double.parseDouble(EWL_params[CI2++]);
+//                beta = Double.parseDouble(EWL_params[CI2++]);
+//            }
         }
 
 
