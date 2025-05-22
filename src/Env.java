@@ -531,10 +531,11 @@ public class Env extends Thread{ // environment simulator
             case "PROC" -> {
                 double pa = a.getP();
                 double pb = b.getP();
-                if(pa < pb) // if a unfairer than b, increase weight
+                if(pa < pb) {// if a unfairer than b, increase weight
                     learning = ROC;
-                else if(pa > pb) // else if a fairer than b, decrease weight; else no change
+                }else if(pa > pb){ // else if a fairer than b, decrease weight
                     learning = -ROC;
+                } // else no change
             }
             case "PD" -> learning = b.getP() - a.getP();
             case "PED" -> learning = Math.exp(b.getP() - a.getP());
@@ -580,15 +581,13 @@ public class Env extends Thread{ // environment simulator
                     learning = 0.0;
                 }
             }
-            case "stepwise" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                if(p_a < p_b){
+            case "PStepwise" -> {
+                double pa = a.getP();
+                double pb = b.getP();
+                if(pa<pb){
                     learning = 1.0;
-                } else if(p_a > p_b){
+                } else if(pa>pb){
                     learning = -1.0;
-                } else{
-                    learning = 0.0;
                 }
             }
             case "UROC" ->{
@@ -598,6 +597,43 @@ public class Env extends Thread{ // environment simulator
                     learning = ROC;
                 }else if(ua<ub){
                     learning = -ROC;
+                }
+            }
+            case "PEAD" -> learning = Math.exp(Math.abs(b.getP() - a.getP()));
+            case "PPEAD" -> {
+                double pa=a.getP();
+                double pb=b.getP();
+                if(pa<pb){
+                    learning = Math.exp(Math.abs(b.getP() - a.getP()));
+                } else if(pa>pb){
+                    learning = -Math.exp(Math.abs(b.getP() - a.getP()));
+                }
+            }
+            case "PPED"->{
+                double pa=a.getP();
+                double pb=b.getP();
+                if(pa<pb){
+                    learning = Math.exp(b.getP() - a.getP());
+                } else if(pa>pb){
+                    learning = -Math.exp(b.getP() - a.getP());
+                }
+            }
+            case "UUEAD" ->{
+                double ua=a.getU();
+                double ub=b.getU();
+                if(ua>ub){
+                    learning = Math.exp(Math.abs(b.getU() - a.getU()));
+                }else if(ua<ub){
+                    learning = -Math.exp(Math.abs(b.getU() - a.getU()));
+                }
+            }
+            case "UStepwise" ->{
+                double ua=a.getU();
+                double ub=b.getU();
+                if(ua>ub){
+                    learning = 1.0;
+                }else if(ua<ub){
+                    learning = -1.0;
                 }
             }
         }
