@@ -272,10 +272,9 @@ public class Env extends Thread{ // environment simulator
                         }
                         // calculate and write stats at end of gen
                         calculateStats();
-                        gen++;
-                        gens++;
+                        gen++; // moving onto to the next gen
+                        gens++; // for recording the total number of gens that occurred
                         writeGenAndRunStats();
-
                     }
                     prepare(); // reset certain attributes at end of iter
                 }
@@ -1619,19 +1618,19 @@ public class Env extends Thread{ // environment simulator
             String settings_filename = this_path + "\\" + "settings.csv";
             String settings = "";
             if(exp == 1){
-                settings += "game";
-                settings += ",runs";
+
+//                settings += "game";
+//                settings += ",runs";
+
+                settings += "runs";
+
                 settings += ",space";
                 settings += ",length";
                 settings += ",width";
-
-
                 settings += ",N";
-
-
-                settings += ",neighType";
-                settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
-                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
+//                settings += ",neighType";
+//                settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
+//                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
                 settings += ",EM";
                 settings += ER != 0? ",ER": "";
                 settings += NIS != 0? ",NIS": "";
@@ -1643,41 +1642,37 @@ public class Env extends Thread{ // environment simulator
                 settings += RT.equals("")? "": ",RT";
                 settings += EWLF.equals("")? "": ",EWLF";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
-                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
-                settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
+//                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
+//                settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
                 settings += ",sel";
                 settings += sel.equals("RW")? ",RWT": "";
                 settings += RWT.equals("exponential")? ",selNoise": "";
-                settings += ",evo";
-                settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
+//                settings += ",evo";
+//                settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
                 settings += !mut.equals("")? ",mut": "";
 //                settings += mut.equals("local") || mut.equals("global") || mut.equals("localnoself")? ",mutRate": "";
                 settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
 //                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
                 settings += mut.equals("local")? ",mutBound": "";
                 settings += ",UF";
-                settings += injIter == 0? "": ",injIter";
-                settings += injP == 0.0? "": ",injP";
-                settings += injSize == 0? "": ",injSize";
+//                settings += injIter == 0? "": ",injIter";
+//                settings += injP == 0.0? "": ",injP";
+//                settings += injSize == 0? "": ",injSize";
             }
             settings += "\n";
-            settings += game;
-            settings += "," + runs;
+
+//            settings += game;
+//            settings += "," + runs;
+
+            settings += runs;
+
             settings += "," + space;
-
-
-//            settings += length == 0 && !varying.equals("length")? "": "," + length;
-//            settings += width == 0 && !varying.equals("width")? "": "," + width;
-
-
             settings += "," + length;
             settings += "," + width;
             settings += "," + N;
-
-
-            settings += "," + neighType;
-            settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
-            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
+//            settings += "," + neighType;
+//            settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
+//            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
             settings += "," + EM;
             settings += ER != 0? "," + ER: "";
             settings += NIS != 0? "," + NIS: "";
@@ -1689,20 +1684,20 @@ public class Env extends Thread{ // environment simulator
             settings += RT.equals("")? "": "," + RT;
             settings += EWLF.equals("")? "": "," + EWLF;
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
-            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
-            settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
+//            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
+//            settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
             settings += "," + sel;
             settings += sel.equals("RW")? "," + RWT: "";
             settings += RWT.equals("exponential")? "," + selNoise: "";
-            settings += "," + evo;
-            settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
+//            settings += "," + evo;
+//            settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
             settings += !mut.equals("")? "," + mut: "";
             settings += mut.equals("local") || mut.equals("global")? "," + mutRate: "";
             settings += mut.equals("local")? "," + mutBound: "";
             settings += "," + UF;
-            settings += injIter == 0? "": "," + injIter;
-            settings += injP == 0.0? "": "," + injP;
-            settings += injSize == 0? "": "," + injSize;
+//            settings += injIter == 0? "": "," + injIter;
+//            settings += injP == 0.0? "": "," + injP;
+//            settings += injSize == 0? "": "," + injSize;
             try{
                 fw = new FileWriter(settings_filename, true);
                 fw.append(settings);
