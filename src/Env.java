@@ -324,51 +324,82 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * a initiates games with neighbours.
-     * @param a player
-     */
-    public void play(Player a) {
+//    /**
+//     * a initiates games with neighbours.
+//     * @param a player
+//     */
+//    public void play(Player a) {
+//        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
+//        for(int i = 0; i < omega_a.size(); i++){
+//            Player b = omega_a.get(i); // neighbour of a
+//            ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
+//            for (int j = 0; j < omega_b.size(); j++) {
+//                Player c = omega_b.get(j); // neighbour of b
+//                if (a.equals(c)) {
+//                    ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
+//                    double w_ba = weights_b.get(j); // weight of edge from b to a
+//                    switch(EWT){
+//                        case "proposalProb" -> {
+//                            double d = ThreadLocalRandom.current().nextDouble();
+//                            if(w_ba > d){
+//                                switch(game){
+//                                    case "UG", "DG" -> UG(a, b);
+//                                    case "PD" -> PD(a, b);
+//                                }
+//                            } else{
+//                                updateStats(a,0);
+//                                updateStats(b,0);
+//                            }
+//                        }
+//                        case "payoffPercent" -> {
+//                            switch(game){
+//                                case "UG", "DG" -> UG(a, b, w_ba);
+//                                case "PD" -> PD(a, b, w_ba);
+//                            }
+//                        }
+//                        default -> {
+//                            switch(game){
+//                                case "UG", "DG" -> UG(a, b);
+//                                case "PD" -> PD(a, b);
+//                            }
+//                        }
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//    }
+
+    public void play(Player a){
         ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
         for(int i = 0; i < omega_a.size(); i++){
             Player b = omega_a.get(i); // neighbour of a
-            ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
-            for (int j = 0; j < omega_b.size(); j++) {
-                Player c = omega_b.get(j); // neighbour of b
-                if (a.equals(c)) {
-                    ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
-                    double w_ba = weights_b.get(j); // weight of edge from b to a
-                    switch(EWT){
-                        case "proposalProb" -> {
+            switch(EWT) {
+                default -> UG(a, b);
+                case "proposalProb"-> {
+                    ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
+                    for (int j = 0; j < omega_b.size(); j++) {
+                        Player c = omega_b.get(j); // neighbour of b
+                        if (a.equals(c)) {
+                            double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
                             double d = ThreadLocalRandom.current().nextDouble();
                             if(w_ba > d){
-                                switch(game){
-                                    case "UG", "DG" -> UG(a, b);
-                                    case "PD" -> PD(a, b);
-                                }
+                                UG(a, b);
                             } else{
                                 updateStats(a,0);
                                 updateStats(b,0);
                             }
-                        }
-                        case "payoffPercent" -> {
-                            switch(game){
-                                case "UG", "DG" -> UG(a, b, w_ba);
-                                case "PD" -> PD(a, b, w_ba);
-                            }
-                        }
-                        default -> {
-                            switch(game){
-                                case "UG", "DG" -> UG(a, b);
-                                case "PD" -> PD(a, b);
-                            }
+                            break;
                         }
                     }
-                    break;
                 }
             }
         }
     }
+
+
+
+
 
 
 
