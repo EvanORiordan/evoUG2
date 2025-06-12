@@ -43,7 +43,7 @@ public class Env extends Thread{ // environment simulator
     int gen; // current generation
     static int gens; // number of generations to occur per experiment run
     static int iters; // temp var: number of iterations of play and EWL
-    static String UF; // utility formula: indicates how utility is calculated
+    static String UF; // utility function: indicates how utility is calculated
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
     static double P; // PD: punishment for mutual defection
@@ -77,7 +77,7 @@ public class Env extends Thread{ // environment simulator
     static int writingRate = 0; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
-    static String EWLF; // EWL formula
+    static String EWLF = ""; // EWL formula
     static double ROC = 0; // rate of change: fixed learning amount to EW
     static double alpha = 0; // used in alpha-beta rating
     static double beta = 0; // used in alpha-beta rating
@@ -285,7 +285,8 @@ public class Env extends Thread{ // environment simulator
                     for(int j = 0; j < ER; j++){ // 1 iteration of this loop = 1 "iter"
                         for(int i=0;i<N;i++) play(pop[i]);
                         for(int i=0;i<N;i++) updateUtility(pop[i]);
-                        for(int i=0;i<N;i++) EWL(pop[i]);
+//                        for(int i=0;i<N;i++) EWL(pop[i]);
+                        if(!EWLF.equals("")) for(int i=0;i<N;i++) EWL(pop[i]);
                         iters++;
                     }
                     if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable
@@ -1152,7 +1153,7 @@ public class Env extends Thread{ // environment simulator
         }
 
 
-        UF = settings[CI++]; // utility formula parameter
+        UF = settings[CI++]; // utility function parameter
 
 
         // experiment run data writing params

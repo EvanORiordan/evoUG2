@@ -1,34 +1,4 @@
 runs,space,EM,EWT,EWL,sel,mut,UF,writing,series
-1,5,newER 1 100,proposalProb,PD,RW normal,,normalised,111111 1,
-1,5,oldER 1 1000,proposalProb,PD,RW normal,,normalised,000111 1,
-1,5,oldER 1 7,proposalProb,PD,RW normal,,normalised,000111 1,
-1,5,newER 1 7,proposalProb,PD,RW normal,,normalised,000111 1,
-1,40,oldER 1 1000,proposalProb,PD,RW normal,,normalised,000111 1,
-10,40,oldER 1 1000,proposalProb,PD,RW normal,,normalised,000111 1,
-3,5,oldER 1 7,proposalProb,PD,RW normal,,normalised,000111 1,
-1,5,newER 1 10,proposalProb,PD,RW normal,,normalised,111111 1,
-3,10,oldER 1 100,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 2 3 4 5
-5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 2 3 4 5
-5,40,oldER 6 10000,proposalProb,PD,RW exponential 1,,MNI,000100 1,ER 7 8 9 10
-5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,normalised,000100 1,ER 2 3 4 5
-5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5
-5,40,oldER 1 10000,proposalProb,PROC 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-5,40,oldER 1 10000,proposalProb,PD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PED,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-5,40,oldER 1 10000,proposalProb,PED,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,UROC 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PEAD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PPEAD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PStepwise,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PPED,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,UUEAD,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,UStepwise,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PROC 0.2,RW exponential 1,,cumulative,000100 1,ER 2 3 4 5 6 7 8 9 10
-1,5,oldER 1 100,proposalProb,PROC 0.2,RW exponential 1,,MNI,000100 1,
-1,5,oldER 1 100,rewire 1.0 linear pop,PROC 0.2,RW exponential 1,,MNI,000100 1,
-20,40,oldER 1 10000,proposalProb,PROC 0.2,RW exponential 1,,MNI,000100 1,ER 2 3 4 5 6 7 8 9 10
-20,40,oldER 1 10000,proposalProb,PROC 0.2,RW exponential 1,,normalised,000100 1,ER 2 3 4 5 6 7 8 9 10
-2,4,oldER 1 123,proposalProb,PROC 0.2,RW normal,,cumulative,000100 1,ER 2 3
-40,40,oldER 1 10000,proposalProb,PROC 0.2,RW normal,,cumulative,000100 1,ER 2 3 4 5 6
-40,40,oldER 1 10000,proposalProb,PROC 0.2,RW normal,,normalised,000100 1,ER 2 3 4 5 6
-40,40,oldER 1 10000,proposalProb,PROC 0.2,RW normal,,MNI,000100 1,ER 2 3 4 5 6
+1,5,newER 1 1,proposalProb,,RW normal,,cumulative,100000 1,
+1,5,newER 1 1,proposalProb,PD,RW normal,,cumulative,100000 1,
+1,10,newER 1 0,proposalProb,,RW normal,,cumulative,100000 1,
