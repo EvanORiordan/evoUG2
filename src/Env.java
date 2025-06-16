@@ -967,7 +967,7 @@ public class Env extends Thread{ // environment simulator
 //                        " %-15s |" +//neigh
                         " %-20s |" +//EM
                         " %-30s |" +//EW
-                        " %-25s |" +//EWL
+                        " %-25s |" +//EWLF
                         " %-20s |" +//sel
 //                        " %-15s |" +//evo
                         " %-15s |" +//mut
@@ -981,7 +981,7 @@ public class Env extends Thread{ // environment simulator
 //                ,"neigh"
                 ,"EM"
                 ,"EW"
-                ,"EWL"
+                ,"EWLF"
                 ,"sel"
 //                ,"evo"
                 ,"mut"
@@ -1004,7 +1004,7 @@ public class Env extends Thread{ // environment simulator
 //            System.out.printf("| %-15s ", settings[CI++]); //neigh
             System.out.printf("| %-20s ", settings[CI++]); //EM
             System.out.printf("| %-30s ", settings[CI++]); //EW
-            System.out.printf("| %-25s ", settings[CI++]); //EWL
+            System.out.printf("| %-25s ", settings[CI++]); //EWLF
             System.out.printf("| %-20s ", settings[CI++]); //sel
 //            System.out.printf("| %-15s ", settings[CI++]); //evo
             try{ // try-catch in case unrequired param is never followed by required param.
@@ -1107,16 +1107,16 @@ public class Env extends Thread{ // environment simulator
         }
 
 
-        String[] EWL_params = settings[CI++].split(" "); // edge weight learning parameters
-        if(!EWL_params[0].equals("")){
+        String[] EWLF_params = settings[CI++].split(" "); // edge weight learning formula parameters
+        if(!EWLF_params[0].equals("")){
             CI2 = 0;
-            EWLF = EWL_params[CI2++];
+            EWLF = EWLF_params[CI2++];
 //            if(EWLF.equals("ROC"))
-//                Double.parseDouble(EWL_params[CI2++]);
-            if(EWLF.equals("PROC") || EWLF.equals("UROC")) ROC = Double.parseDouble(EWL_params[CI2++]);
+//                Double.parseDouble(EWLF_params[CI2++]);
+            if(EWLF.equals("PROC") || EWLF.equals("UROC")) ROC = Double.parseDouble(EWLF_params[CI2++]);
 //            if(EWLF.equals("AB")){
-//                alpha = Double.parseDouble(EWL_params[CI2++]);
-//                beta = Double.parseDouble(EWL_params[CI2++]);
+//                alpha = Double.parseDouble(EWLF_params[CI2++]);
+//                beta = Double.parseDouble(EWLF_params[CI2++]);
 //            }
         }
 
