@@ -50,7 +50,7 @@ public class Env extends Thread{ // environment simulator
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
     static String varying = ""; // indicates which parameter will be varied in experiment series
-    static ArrayList<String> str_variations = new ArrayList<>();
+    static ArrayList<String> variations = new ArrayList<>();
     static int exp; // indicates how far along we are through the experiment series
     static int exps = 1; // number of experiments in series
     static FileWriter fw;
@@ -89,7 +89,8 @@ public class Env extends Thread{ // environment simulator
     static String mut; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
-    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
+//    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
+    static String EM = "newER"; // evolution mechanism: the mechanism by which evolution occurs.
     static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
     static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT = ""; // roulette wheel type
@@ -164,28 +165,28 @@ public class Env extends Thread{ // environment simulator
             exp_path = this_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-            if(exp <= str_variations.size()){ // do not try to vary after the last experiment has ended
+            if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
-                    case "EWLF" -> EWLF = str_variations.get(exp - 1);
-                    case "RA" -> RA = str_variations.get(exp - 1);
-                    case "RT" -> RT = str_variations.get(exp - 1);
-                    case "sel" -> sel = str_variations.get(exp - 1);
-                    case "evo" -> evo = str_variations.get(exp - 1);
-                    case "EWT" -> EWT = str_variations.get(exp - 1);
-                    case "gens" -> gens = Integer.parseInt(str_variations.get(exp - 1));
+                    case "EWLF" -> EWLF = variations.get(exp - 1);
+                    case "RA" -> RA = variations.get(exp - 1);
+                    case "RT" -> RT = variations.get(exp - 1);
+                    case "sel" -> sel = variations.get(exp - 1);
+                    case "evo" -> evo = variations.get(exp - 1);
+                    case "EWT" -> EWT = variations.get(exp - 1);
+                    case "gens" -> gens = Integer.parseInt(variations.get(exp - 1));
                     case "length" -> {
-                        length = Integer.parseInt(str_variations.get(exp - 1));
+                        length = Integer.parseInt(variations.get(exp - 1));
                         N = length * width;
                     }
-                    case "ER" -> ER = Integer.parseInt(str_variations.get(exp - 1));
-                    case "NIS" -> NIS = Integer.parseInt(str_variations.get(exp - 1));
-                    case "ROC" -> ROC = Double.parseDouble(str_variations.get(exp - 1));
-                    case "RP" -> RP = Double.parseDouble(str_variations.get(exp - 1));
-                    case "M" -> M = Double.parseDouble(str_variations.get(exp - 1));
-                    case "selNoise" -> selNoise = Double.parseDouble(str_variations.get(exp - 1));
-                    case "mutRate" -> mutRate = Double.parseDouble(str_variations.get(exp - 1));
-                    case "mutBound" -> mutBound = Double.parseDouble(str_variations.get(exp - 1));
-                    case "UF" -> UF = str_variations.get(exp - 1);
+                    case "ER" -> ER = Integer.parseInt(variations.get(exp - 1));
+                    case "NIS" -> NIS = Integer.parseInt(variations.get(exp - 1));
+                    case "ROC" -> ROC = Double.parseDouble(variations.get(exp - 1));
+                    case "RP" -> RP = Double.parseDouble(variations.get(exp - 1));
+                    case "M" -> M = Double.parseDouble(variations.get(exp - 1));
+                    case "selNoise" -> selNoise = Double.parseDouble(variations.get(exp - 1));
+                    case "mutRate" -> mutRate = Double.parseDouble(variations.get(exp - 1));
+                    case "mutBound" -> mutBound = Double.parseDouble(variations.get(exp - 1));
+                    case "UF" -> UF = variations.get(exp - 1);
                 }
             }
         }
@@ -256,7 +257,7 @@ public class Env extends Thread{ // environment simulator
 //                gens = 1;
                 gen = 0;
                 gens = 0;
-                // oldER alg iterates "iters" times; 1 iteration of this loop = 1 "iter"
+                // oldER alg iterates "iters" times; 1 iteration of this loop ==> 1 "iter"
 //                for(int iter = 1; iter < iters; iter++){
                 for(int iter = 1; iter <= iters; iter++){
                     for(int i=0;i<N;i++) play(pop[i]);
@@ -1039,7 +1040,7 @@ public class Env extends Thread{ // environment simulator
             if(0 <= config_num && config_num < configurations.size()){
                 config_selected = true;
             } else{
-                System.out.println("ERROR: invalid config number, try again");
+                System.out.println("[ERROR] Invalid config number, try again");
             }
         }while(!config_selected);
 
@@ -1051,36 +1052,28 @@ public class Env extends Thread{ // environment simulator
         int CI3;
 
 
-//        String[] game_params = settings[CI++].split(" ");
-//        CI2 = 0;
-//        game = game_params[CI2++];
         Player.setGame(game);
+
+
         runs = Integer.parseInt(settings[CI++]);
 
 
         String[] space_params = settings[CI++].split(" "); // space parameters
         CI2 = 0;
-//        space = space_params[CI2++];
         if(space.equals("grid")){
             length = Integer.parseInt(space_params[CI2++]);
+            if(length < 3){
+                System.out.println("[ERROR] Invalid length passed");
+                Runtime.getRuntime().exit(0);
+            }
             width = length;
             N = length * width;
         }
 
 
-//        String[] neigh_params = settings[CI++].split(" "); // neighbourhood parameters
-//        CI2 = 0;
-//        neighType = neigh_params[CI2++]; // required field
-//        if(neighType.equals("VN") || neighType.equals("Moore") || neighType.equals("dia")){
-//            neighRadius = Integer.parseInt(neigh_params[CI2++]);
-//        } else if(neighType.equals("random")){
-//            neighSize = Integer.parseInt(neigh_params[CI2++]);
-//        }
-
-
         String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
         CI2 = 0;
-        EM = EM_params[CI2++];
+//        EM = EM_params[CI2++];
         switch(EM){
             case "oldER" -> {
                 ER = Integer.parseInt(EM_params[CI2++]);
@@ -1094,6 +1087,10 @@ public class Env extends Thread{ // environment simulator
                 NIS = Integer.parseInt(EM_params[CI2++]);
                 gens = Integer.parseInt(EM_params[CI2++]);
             }
+            default -> {
+                System.out.println("[ERROR] Invalid EM passed");
+                Runtime.getRuntime().exit(0);
+            }
         }
 
 
@@ -1102,8 +1099,20 @@ public class Env extends Thread{ // environment simulator
         EWT = EWT_params[CI2++];
         if(EWT.equals("rewire")){
             RP = Double.parseDouble(EWT_params[CI2++]);
+            if(RP < 0.0 || RP > 1.0){
+                System.out.println("[ERROR] Invalid RP passed");
+                Runtime.getRuntime().exit(0);
+            }
             RA = EWT_params[CI2++];
+            if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
+                System.out.println("[ERROR] Invalid RA passed");
+                Runtime.getRuntime().exit(0);
+            }
             RT = EWT_params[CI2++];
+            if(!(RT.equals("local") || RT.equals("pop"))){
+                System.out.println("[ERROR] Invalid RT passed");
+                Runtime.getRuntime().exit(0);
+            }
         }
 
 
@@ -1111,9 +1120,13 @@ public class Env extends Thread{ // environment simulator
         if(!EWLF_params[0].equals("")){
             CI2 = 0;
             EWLF = EWLF_params[CI2++];
-//            if(EWLF.equals("ROC"))
-//                Double.parseDouble(EWLF_params[CI2++]);
-            if(EWLF.equals("PROC") || EWLF.equals("UROC")) ROC = Double.parseDouble(EWLF_params[CI2++]);
+            if(EWLF.equals("PROC") || EWLF.equals("UROC")) {
+                ROC = Double.parseDouble(EWLF_params[CI2++]);
+                if(ROC < 0.0 || ROC > 1.0){
+                    System.out.println("[ERROR] Invalid ROC passed");
+                    Runtime.getRuntime().exit(0);
+                }
+            }
 //            if(EWLF.equals("AB")){
 //                alpha = Double.parseDouble(EWLF_params[CI2++]);
 //                beta = Double.parseDouble(EWLF_params[CI2++]);
@@ -1124,36 +1137,54 @@ public class Env extends Thread{ // environment simulator
         String[] sel_params = settings[CI++].split(" "); // selection parameters
         CI2 = 0;
         sel = sel_params[CI2++];
-//        if(sel.equals("RW") || sel.equals("RW2")){
         if(sel.equals("RW")){
             RWT = sel_params[CI2++];
-            if(RWT.equals("exponential")){
-                selNoise = Double.parseDouble(sel_params[CI2++]);
+            switch(RWT){
+                case "exponential" -> {
+                    selNoise = Double.parseDouble(sel_params[CI2++]);
+                }
+                case "normal" ->{}
+                default -> {
+                    System.out.println("[ERROR] Invalid RWT passed");
+                    Runtime.getRuntime().exit(0);
+                }
             }
         }
-
-
-//        String[] evo_params = settings[CI++].split(" "); // evolution parameters
-//        CI2 = 0;
-//        evo = evo_params[CI2++];
-//        if(evo.equals("approach")){
-//            evoNoise = Double.parseDouble(evo_params[CI2++]);
-//        }
 
 
         String[] mut_params = settings[CI++].split(" "); // mutation parameters
         CI2 = 0;
         mut = mut_params[CI2++];
-        if(!mut_params[0].equals("")){
-            mutRate = Double.parseDouble(mut_params[CI2++]);
-//            if(mut.equals("local") || mut.equals("localnoself")){
-            if(mut.equals("local")){
+//        if(!mut_params[0].equals("")){
+//            mutRate = Double.parseDouble(mut_params[CI2++]);
+////            if(mut.equals("local") || mut.equals("localnoself")){
+//            if(mut.equals("local")){
+//                mutBound = Double.parseDouble(mut_params[CI2++]);
+//            }
+//        }
+        switch(mut){
+            case "local" -> {
+                mutRate = Double.parseDouble(mut_params[CI2++]);
+                if(mutRate < 0.0 || mutRate > 1.0){
+                    System.out.println("[ERROR] Invalid mutRate passed");
+                    Runtime.getRuntime().exit(0);
+                }
                 mutBound = Double.parseDouble(mut_params[CI2++]);
+                if(mutBound < 0.0 || mutBound > 1.0){
+                    System.out.println("[ERROR] Invalid mutBound passed");
+                    Runtime.getRuntime().exit(0);
+                }
             }
+            case "global" -> mutRate = Double.parseDouble(mut_params[CI2++]);
+            default -> System.out.println("[INFO] No mutation assigned");
         }
 
 
         UF = settings[CI++]; // utility function parameter
+        if(!(UF.equals("cumulative") || UF.equals("normalised"))){
+            System.out.println("[ERROR] Invalid UF passed");
+            Runtime.getRuntime().exit(0);
+        }
 
 
         // experiment run data writing params
@@ -1169,8 +1200,13 @@ public class Env extends Thread{ // environment simulator
                 writeURunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 writeDegRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
                 CI2++;
-                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats)
+                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats){
                     writingRate = Integer.parseInt(write_params[CI2++]);
+                    if(writingRate < 1 || (EM.equals("newER") && writingRate > gens) || (EM.equals("oldER") && writingRate > iters)){
+                        System.out.println("[ERROR] Invalid writingRate passed");
+                        Runtime.getRuntime().exit(0);
+                    }
+                }
             }
         }catch(ArrayIndexOutOfBoundsException e){}
 
@@ -1179,9 +1215,26 @@ public class Env extends Thread{ // environment simulator
             String[] series_params = settings[CI++].split(" ");
             CI2 = 0;
             varying = series_params[CI2++];
+            if(!(varying.equals("ER")
+                    || varying.equals("ROC")
+                    || varying.equals("length")
+                    || varying.equals("RP")
+                    || varying.equals("gens")
+                    || varying.equals("EWLF")
+                    || varying.equals("EWT")
+                    || varying.equals("RA")
+                    || varying.equals("RT")
+                    || varying.equals("sel")
+                    || varying.equals("selNoise")
+                    || varying.equals("mutRate")
+                    || varying.equals("mutBound")
+                    || varying.equals("UF"))){
+                System.out.println("[ERROR] Invalid varying passed");
+                Runtime.getRuntime().exit(0);
+            }
             for(int i = 1; i < series_params.length; i++)
-                str_variations.add(series_params[i]);
-            exps = str_variations.size() + 1;
+                variations.add(series_params[i]);
+            exps = variations.size() + 1;
         }catch(ArrayIndexOutOfBoundsException e){}
 
 
