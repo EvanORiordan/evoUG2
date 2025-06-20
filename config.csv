@@ -3,3 +3,4 @@ runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,
 5,10,1,10000,proposalProb,,,,PD,,RW,normal,,,,,normalised,,,,1,,,1,ER,2;3;4;5
 5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulative,,,,1,,,1,ER,2;3;4;5
 5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulatie,,,,1,,,1,ER,2;3;4;5
+2,5,1,5,proposalProb,,,,PD,,RW,normal,,,,,cumulative,1,1,1,1,1,1,1,ER,2

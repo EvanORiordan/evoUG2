@@ -189,7 +189,7 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experiment(){
         for(run = 1; run <= runs; run++){
-            System.out.println("start run " + run);
+//            System.out.println("start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -1781,7 +1781,8 @@ public class Env extends Thread{ // environment simulator
 //                if(writeURunStats)output+="mean mean u,";
                 if(writePRunStats)output+="mean avg p,sigma mean p,";
                 if(writeURunStats)output+="mean avg u,";
-                if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
+//                if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
+                if(writeDegRunStats)output+="mean sigma deg,";
                 if(!varying.equals(""))output+=varying+",";
                 output = removeTrailingComma(output);
             }
@@ -1813,14 +1814,16 @@ public class Env extends Thread{ // environment simulator
                         j++; // move past mean u
                         j++; // move past sigma u
                     }
-                    if(writeDegRunStats && EWT.equals("rewire")) {
+//                    if(writeDegRunStats && EWT.equals("rewire")) {
+                    if(writeDegRunStats) {
                         sigma_deg_values[i] = Double.parseDouble(row_contents[j]);
                     }
                 }
                 for(int i=0;i<runs;i++){
                     if(writePRunStats)mean_avg_p += mean_p_values[i];
                     if(writeURunStats)mean_avg_u += mean_u_values[i];
-                    if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
+//                    if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
+                    if(writeDegRunStats) mean_sigma_deg += sigma_deg_values[i];
                 }
                 mean_avg_p /= runs;
                 mean_avg_u /= runs;
@@ -1838,7 +1841,8 @@ public class Env extends Thread{ // environment simulator
                 output += "\n";
                 if(writePRunStats)output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_mean_p) + ",";
                 if(writeURunStats)output+=DF4.format(mean_avg_u) + ",";
-                if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
+//                if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
+                if(writeDegRunStats)output+=DF4.format(mean_sigma_deg) + ",";
                 output = removeTrailingComma(output);
 
 
@@ -1865,6 +1869,14 @@ public class Env extends Thread{ // environment simulator
             }catch(Exception e){
                 e.printStackTrace();
             }
+
+
+            // display info in console
+            if(writePRunStats){
+                System.out.println("exp: "+exp+"; mean avg p: "+DF4.format(mean_avg_p));
+            }
+
+
         }
     }
 
@@ -2064,6 +2076,14 @@ public class Env extends Thread{ // environment simulator
             }catch(Exception e){
                 e.printStackTrace();
             }
+
+
+            // display info in console
+            if(writePRunStats){
+                System.out.println("run: "+run+"; mean p: "+DF4.format(mean_p));
+            }
+
+
         }
     }
 
@@ -2280,14 +2300,16 @@ public class Env extends Thread{ // environment simulator
 
             if (writePRunStats) s += "mean p,sigma p,max p,";
             if (writeURunStats) s += "mean u,sigma u,";
-            if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
+//            if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
+            if (writeDegRunStats) s += "sigma deg,";
             s = removeTrailingComma(s);
             s += "\n";
         }
         s += gen + ",";
         if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
         if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
-        if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
+//        if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
+        if(writeDegRunStats) s += DF4.format(sigma_deg) + ",";
         s = removeTrailingComma(s);
         s+="\n";
         try{
