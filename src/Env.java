@@ -74,7 +74,7 @@ public class Env extends Thread{ // environment simulator
     static boolean writeDegRunStats;
     static boolean writePosData;
     static int first_gen_recorded = 1;
-    static int writingRate = 0; // write data every x gens
+    static int writeRate = 0; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
     static String EWLF = ""; // EWL formula
@@ -102,11 +102,6 @@ public class Env extends Thread{ // environment simulator
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
 
 
-    // testing sql db
-    // db credentials
-    static String url = "jdbc:mysql://mysql1.cs.universityofgalway.ie:3306/mydb7415?useSSL=false";
-    static String user = "mydb7415oe";
-    static String password = "ri0hor";
 
 
 
@@ -126,14 +121,7 @@ public class Env extends Thread{ // environment simulator
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
         this_path = general_path+"\\"+start_timestamp_string;
-//        try {
-//            if(writingRate > 0) {
-//                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-//            }
-//        }catch(IOException e){
-//            e.printStackTrace();
-//        }
-        if (writingRate > 0) {
+        if (writeRate > 0) {
             try {
                 Files.createDirectories(Paths.get(this_path)); // create stats storage folder
             }catch(IOException e){
@@ -150,7 +138,7 @@ public class Env extends Thread{ // environment simulator
         long minutesElapsed = duration.toMinutes();
         long hoursElapsed = duration.toHours();
         System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-        if (writingRate > 0) printPath();
+        if (writeRate > 0) printPath();
     }
 
 
@@ -207,15 +195,7 @@ public class Env extends Thread{ // environment simulator
             pop.start();
         }
         writeSettings();
-
-
-//        System.out.println("TEMP: COMMENTED OUT writeSeriesStats()");
         writeSeriesStats();
-
-
-//        writeSeriesStatsToDB();
-
-
     }
 
 
@@ -960,37 +940,41 @@ public class Env extends Thread{ // environment simulator
         System.out.printf("=========================================%n");
         System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
-        printTableBorder();
-        System.out.printf("%-10s |" +//config
-//                        " %-10s |" +//game
-                        " %-10s |" +//runs
-                        " %-15s |" +//space
-//                        " %-15s |" +//neigh
-                        " %-20s |" +//EM
-                        " %-30s |" +//EW
-                        " %-25s |" +//EWLF
-                        " %-20s |" +//sel
-//                        " %-15s |" +//evo
-                        " %-15s |" +//mut
-                        " %-10s |" +//UF
-                        " %-15s |" +//writing
-                        " %s%n"//series
-                ,"config"
-//                ,"game"
-                ,"runs"
-                ,"space"
-//                ,"neigh"
-                ,"EM"
-                ,"EW"
-                ,"EWLF"
-                ,"sel"
-//                ,"evo"
-                ,"mut"
-                ,"UF"
-                ,"writing"
-                ,"series"
+        printTableLine();
+//        System.out.println(
+//                "runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writeRate,varying,variations"
+//        );
+        System.out.printf("%-10s |"+//config
+                " %-5s |"+//runs
+                " %-10s |"+//length
+                " %-5s |"+//ER
+                " %-10s |"+//gens
+                " %-15s |"+//EWT
+                " %-5s |"+//RP
+                " %-15s |"+//RA
+                " %-5s |"+//RT
+                " %-5s |"+//EWLF
+                " %-5s |"+//ROC
+                " %-15s |"+//sel
+                " %-15s |"+//RWT
+                " %-10s |"+//selNoise
+                " %-10s |"+//mut
+                " %-10s |"+//mutRate
+                " %-10s |"+//mutBound
+                " %-10s |"+//UF
+                " %-5s |"+//WPGS
+                " %-5s |"+//WUGS
+                " %-5s |"+//WDGS
+                " %-5s |"+//WPRS
+                " %-5s |"+//WURS
+                " %-5s |"+//WDRS
+                " %-10s |"+//writeRate
+                " %-10s |"+//varying
+                " %s%n"//variations
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWLF","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+
         );
-        printTableBorder();
+        printTableLine();
 
         // display config table rows
         int CI; // configuration index
@@ -999,37 +983,35 @@ public class Env extends Thread{ // environment simulator
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
             System.out.printf("%-10d ", i); //config
-//            System.out.printf("| %-10s ", settings[CI++]); //game
-            System.out.printf("| %-10s ", settings[CI++]); //runs
-            System.out.printf("| %-15s ", settings[CI++]); //space
-//            System.out.printf("| %-15s ", settings[CI++]); //neigh
-            System.out.printf("| %-20s ", settings[CI++]); //EM
-            System.out.printf("| %-30s ", settings[CI++]); //EW
-            System.out.printf("| %-25s ", settings[CI++]); //EWLF
-            System.out.printf("| %-20s ", settings[CI++]); //sel
-//            System.out.printf("| %-15s ", settings[CI++]); //evo
-            try{ // try-catch in case unrequired param is never followed by required param.
-                System.out.printf("| %-15s ", settings[CI++]);//mut
-            }catch(ArrayIndexOutOfBoundsException e){
-                System.out.printf("| %-15s ", " ");
-                CI++;
-            }
+            System.out.printf("| %-5s ", settings[CI++]); //runs
+            System.out.printf("| %-10s ", settings[CI++]); //length
+            System.out.printf("| %-5s ", settings[CI++]); //ER
+            System.out.printf("| %-10s ", settings[CI++]); //gens
+            System.out.printf("| %-15s ", settings[CI++]); //EWT
+            System.out.printf("| %-5s ", settings[CI++]); //RP
+            System.out.printf("| %-15s ", settings[CI++]); //RA
+            System.out.printf("| %-5s ", settings[CI++]); //RT
+            System.out.printf("| %-5s ", settings[CI++]); //EWLF
+            System.out.printf("| %-5s ", settings[CI++]); //ROC
+            System.out.printf("| %-15s ", settings[CI++]); //sel
+            System.out.printf("| %-15s ", settings[CI++]); //RWT
+            System.out.printf("| %-10s ", settings[CI++]); //selNoise
+            System.out.printf("| %-10s ", settings[CI++]); //mut
+            System.out.printf("| %-10s ", settings[CI++]); //mutRate
+            System.out.printf("| %-10s ", settings[CI++]); //mutBound
             System.out.printf("| %-10s ", settings[CI++]); //UF
-//            System.out.printf("| %-10s ", settings[CI++]); //writing
-            try{
-                System.out.printf("| %-15s ", settings[CI++]); //writing
-            }catch(ArrayIndexOutOfBoundsException e){
-                System.out.printf("| %-15s ", " ");
-            }
-            try{
-                System.out.printf("| %s ", settings[CI++]);//series
-            }catch(ArrayIndexOutOfBoundsException e){
-                System.out.printf("| %s ", " ");
-                CI++;
-            }
+            System.out.printf("| %-5s ", settings[CI++]); //WPGS
+            System.out.printf("| %-5s ", settings[CI++]); //WUGS
+            System.out.printf("| %-5s ", settings[CI++]); //WDGS
+            System.out.printf("| %-5s ", settings[CI++]); //WPRS
+            System.out.printf("| %-5s ", settings[CI++]); //WURS
+            System.out.printf("| %-5s ", settings[CI++]); //WDRS
+            System.out.printf("| %-10s ", settings[CI++]); //writeRate
+            System.out.printf("| %-10s ", settings[CI++]); //varying
+            System.out.printf("| %s ", settings[CI++]); //variations
             System.out.println();
         }
-        printTableBorder();
+        printTableLine();
 
         // ask user which config they wish to use
         System.out.println("Which config would you like to use? (int)");
@@ -1053,201 +1035,221 @@ public class Env extends Thread{ // environment simulator
 
 
         Player.setGame(game);
-
-
         runs = Integer.parseInt(settings[CI++]);
-
-
-        String[] space_params = settings[CI++].split(" "); // space parameters
-        CI2 = 0;
-        if(space.equals("grid")){
-            length = Integer.parseInt(space_params[CI2++]);
-            if(length < 3){
-                System.out.println("[ERROR] Invalid length passed");
-                Runtime.getRuntime().exit(0);
-            }
-            width = length;
-            N = length * width;
+        if(runs < 1){
+            System.out.println("[ERROR] Invalid runs passed");
+            exit();
         }
-
-
-        String[] EM_params = settings[CI++].split(" "); // evolution mechanism parameters
-        CI2 = 0;
-//        EM = EM_params[CI2++];
-        switch(EM){
-            case "oldER" -> {
-                ER = Integer.parseInt(EM_params[CI2++]);
-                iters = Integer.parseInt(EM_params[CI2++]);
+        length = Integer.parseInt(settings[CI++]);
+        if(length < 3){
+            System.out.println("[ERROR] Invalid length passed");
+            exit();
+        }
+        width = length;
+        N = length * width;
+        ER = Integer.parseInt(settings[CI++]);
+        if(ER < 1){
+            System.out.println("[ERROR] Invalid ER passed");
+            exit();
+        }
+        gens = Integer.parseInt(settings[CI++]);
+        if(gens < 1){
+            System.out.println("[ERROR] Invalid gens passed");
+            exit();
+        }
+        EWT = settings[CI++];
+        switch(EWT){
+            case "rewire" -> {
+                try {
+                    RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
+                    if(RP < 0.0 || RP > 1.0){
+                        System.out.println("[ERROR] Invalid RP passed");
+                        exit();
+                    }
+                }catch(NumberFormatException e){}
+                RA = settings[CI++]; // strings dont get an exception when input = ""
+                if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
+                    System.out.println("[ERROR] Invalid RA passed");
+                    exit();
+                }
+                RT = settings[CI++];
+                if(!(RT.equals("local") || RT.equals("pop"))){
+                    System.out.println("[ERROR] Invalid RT passed");
+                    exit();
+                }
             }
-            case "newER" -> {
-                ER = Integer.parseInt(EM_params[CI2++]);
-                gens = Integer.parseInt(EM_params[CI2++]);
-            }
-            case "MC" -> {
-                NIS = Integer.parseInt(EM_params[CI2++]);
-                gens = Integer.parseInt(EM_params[CI2++]);
-            }
+            case "proposalProb" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
             default -> {
-                System.out.println("[ERROR] Invalid EM passed");
-                Runtime.getRuntime().exit(0);
+                System.out.println("[ERROR] Invalid EWT passed");
+                exit();
             }
         }
-
-
-        String[] EWT_params = settings[CI++].split(" "); // edge weight parameters
-        CI2 = 0;
-        EWT = EWT_params[CI2++];
-        if(EWT.equals("rewire")){
-            RP = Double.parseDouble(EWT_params[CI2++]);
-            if(RP < 0.0 || RP > 1.0){
-                System.out.println("[ERROR] Invalid RP passed");
-                Runtime.getRuntime().exit(0);
-            }
-            RA = EWT_params[CI2++];
-            if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
-                System.out.println("[ERROR] Invalid RA passed");
-                Runtime.getRuntime().exit(0);
-            }
-            RT = EWT_params[CI2++];
-            if(!(RT.equals("local") || RT.equals("pop"))){
-                System.out.println("[ERROR] Invalid RT passed");
-                Runtime.getRuntime().exit(0);
-            }
-        }
-
-
-        String[] EWLF_params = settings[CI++].split(" "); // edge weight learning formula parameters
-        if(!EWLF_params[0].equals("")){
-            CI2 = 0;
-            EWLF = EWLF_params[CI2++];
-            if(EWLF.equals("PROC") || EWLF.equals("UROC")) {
-                ROC = Double.parseDouble(EWLF_params[CI2++]);
+        EWLF = settings[CI++];
+        switch(EWLF){
+            case "PROC", "UROC" -> {
+                try {
+                    ROC = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
                 if(ROC < 0.0 || ROC > 1.0){
                     System.out.println("[ERROR] Invalid ROC passed");
-                    Runtime.getRuntime().exit(0);
+                    exit();
                 }
             }
-//            if(EWLF.equals("AB")){
-//                alpha = Double.parseDouble(EWLF_params[CI2++]);
-//                beta = Double.parseDouble(EWLF_params[CI2++]);
-//            }
-        }
-
-
-        String[] sel_params = settings[CI++].split(" "); // selection parameters
-        CI2 = 0;
-        sel = sel_params[CI2++];
-        if(sel.equals("RW")){
-            RWT = sel_params[CI2++];
-            switch(RWT){
-                case "exponential" -> {
-                    selNoise = Double.parseDouble(sel_params[CI2++]);
-                }
-                case "normal" ->{}
-                default -> {
-                    System.out.println("[ERROR] Invalid RWT passed");
-                    Runtime.getRuntime().exit(0);
-                }
+            case "PD", "UD" -> CI++;
+            default -> {
+                System.out.println("[ERROR] Invalid EWLF passed");
+                exit();
             }
         }
-
-
-        String[] mut_params = settings[CI++].split(" "); // mutation parameters
-        CI2 = 0;
-        mut = mut_params[CI2++];
-//        if(!mut_params[0].equals("")){
-//            mutRate = Double.parseDouble(mut_params[CI2++]);
-////            if(mut.equals("local") || mut.equals("localnoself")){
-//            if(mut.equals("local")){
-//                mutBound = Double.parseDouble(mut_params[CI2++]);
-//            }
-//        }
-        switch(mut){
-            case "local" -> {
-                mutRate = Double.parseDouble(mut_params[CI2++]);
-                if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed");
-                    Runtime.getRuntime().exit(0);
-                }
-                mutBound = Double.parseDouble(mut_params[CI2++]);
-                if(mutBound < 0.0 || mutBound > 1.0){
-                    System.out.println("[ERROR] Invalid mutBound passed");
-                    Runtime.getRuntime().exit(0);
-                }
-            }
-            case "global" -> mutRate = Double.parseDouble(mut_params[CI2++]);
-            default -> System.out.println("[INFO] No mutation assigned");
-        }
-
-
-        UF = settings[CI++]; // utility function parameter
-        if(!(UF.equals("cumulative") || UF.equals("normalised"))){
-            System.out.println("[ERROR] Invalid UF passed");
-            Runtime.getRuntime().exit(0);
-        }
-
-
-        // experiment run data writing params
-        try{
-            String[] write_params = settings[CI++].split(" ");
-            CI2 = 0;
-            if(!write_params[0].equals("")){ // theres currently 8 params covered by write_params[0].
-                CI3 = 0;
-                writePGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeUGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeDegGenStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writePRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeURunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                writeDegRunStats = write_params[CI2].charAt(CI3++) == '1'? true: false;
-                CI2++;
-                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats){
-                    writingRate = Integer.parseInt(write_params[CI2++]);
-                    if(writingRate < 1 || (EM.equals("newER") && writingRate > gens) || (EM.equals("oldER") && writingRate > iters)){
-                        System.out.println("[ERROR] Invalid writingRate passed");
-                        Runtime.getRuntime().exit(0);
+        sel = settings[CI++];
+        switch(sel){
+            case "RW" -> {
+                RWT = settings[CI++];
+                switch(RWT){
+                    case "exponential" -> {
+                        try {
+                            selNoise = Double.parseDouble(settings[CI++]);
+                        }catch(NumberFormatException e){}
+                    }
+                    case "normal" -> CI++;
+                    default -> {
+                        System.out.println("[ERROR] Invalid RWT passed");
+                        exit();
                     }
                 }
             }
-        }catch(ArrayIndexOutOfBoundsException e){}
-
-
-        try{
-            String[] series_params = settings[CI++].split(" ");
-            CI2 = 0;
-            varying = series_params[CI2++];
-            if(!(varying.equals("ER")
-                    || varying.equals("ROC")
-                    || varying.equals("length")
-                    || varying.equals("RP")
-                    || varying.equals("gens")
-                    || varying.equals("EWLF")
-                    || varying.equals("EWT")
-                    || varying.equals("RA")
-                    || varying.equals("RT")
-                    || varying.equals("sel")
-                    || varying.equals("selNoise")
-                    || varying.equals("mutRate")
-                    || varying.equals("mutBound")
-                    || varying.equals("UF"))){
-                System.out.println("[ERROR] Invalid varying passed");
-                Runtime.getRuntime().exit(0);
+            case "fittest", "randomNeigh", "randomPop" -> CI += 2;
+            default -> {
+                System.out.println("[ERROR] Invalid sel passed");
+                exit();
             }
-            for(int i = 1; i < series_params.length; i++)
-                variations.add(series_params[i]);
-            exps = variations.size() + 1;
-        }catch(ArrayIndexOutOfBoundsException e){}
-
-
-        // tentatively removed injection functionality.
-//        String[] inj_params = settings[CI++].split(" "); // injection parameters
-//        if(!inj_params[0].equals("")){
-//            CI2 = 0;
-//            injIter = Integer.parseInt(inj_params[CI2++]);
-//            injP = Double.parseDouble(inj_params[CI2++]);
-//            injSize = Integer.parseInt(inj_params[CI2++]);
-//        }
-
-
+        }
+        mut = settings[CI++];
+        switch(mut){
+            case "global" -> {
+                try {
+                    mutRate = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
+                if(mutRate < 0.0 || mutRate > 1.0){
+                    System.out.println("[ERROR] Invalid mutRate passed");
+                    exit();
+                }
+                CI++;
+            }
+            case "local" -> {
+                try {
+                    mutRate = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
+                if(mutRate < 0.0 || mutRate > 1.0){
+                    System.out.println("[ERROR] Invalid mutRate passed");
+                    exit();
+                }
+                try {
+                    mutBound = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
+                if(mutBound < 0.0 || mutBound > 1.0){
+                    System.out.println("[ERROR] Invalid mutBound passed");
+                    exit();
+                }
+            }
+            default -> {
+                System.out.println("[INFO] No mutation");
+                CI += 2;
+            }
+        }
+        UF = settings[CI++];
+        switch(UF){
+            case "cumulative", "normalised" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid UF passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writePGenStats = false;
+            case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WPGS passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writeUGenStats = false;
+            case "1" -> writeUGenStats = true;
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WUGS passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writeDegGenStats = false;
+            case "1" -> writeDegGenStats = true;
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WDGS passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writePRunStats = false;
+            case "1" -> writePRunStats = true;
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WPRS passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writeURunStats = false;
+            case "1" -> writeURunStats = true;
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WDegRS passed");
+                exit();
+            }
+        }
+        switch(settings[CI++]){
+            case "0" -> writeDegRunStats = false;
+            case "1" -> writeDegRunStats = true;
+            case "" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid WDRS passed");
+                exit();
+            }
+        }
+        if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats){
+            writeRate = Integer.parseInt(settings[CI++]);
+            if(writeRate < 1 || writeRate > gens){
+                System.out.println("[ERROR] Invalid writeRate passed");
+                exit();
+            }
+        }else{
+            CI++;
+        }
+        varying = settings[CI++];
+        switch(varying){
+            case "ER",
+                    "ROC",
+                    "length",
+                    "RP",
+                    "gens",
+                    "EWLF",
+                    "RA",
+                    "RT",
+                    "sel",
+                    "selNoise",
+                    "mutRate",
+                    "mutBound",
+                    "UF" -> {
+                for(String variation: settings[CI].split(";")){
+                    variations.add(variation);
+                }
+                exps = variations.size() + 1;
+            }
+            default -> {}
+        }
     }
 
 
@@ -1288,9 +1290,9 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Prints the border of the table of configurations.
+     * Prints a line in the table of configurations.
      */
-    public static void printTableBorder(){
+    public static void printTableLine(){
         System.out.printf(
                 "=======================================================" +
                         "=======================================================" +
@@ -1305,7 +1307,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void createDataFolders(){
         try{
-            if(writingRate > 0) Files.createDirectories(Paths.get(exp_path));
+            if(writeRate > 0) Files.createDirectories(Paths.get(exp_path));
             for(int i=1;i<=runs;i++){
                 if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats) // add run stat writing params to this check
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i));
@@ -1668,7 +1670,7 @@ public class Env extends Thread{ // environment simulator
      * varied, it does not need to be added.<br>
      */
     public static void writeSettings(){
-        if(writingRate > 0){
+        if(writeRate > 0){
             String settings_filename = this_path + "\\" + "settings.csv";
             String settings = "";
             if(exp == 1){
@@ -1770,7 +1772,7 @@ public class Env extends Thread{ // environment simulator
      * Reads and writes local data.
      */
     public static void writeSeriesStats(){
-        if(writingRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
+        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
             String series_stats_filename = this_path + "\\series_stats.csv";
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
@@ -2011,7 +2013,7 @@ public class Env extends Thread{ // environment simulator
      * 1 file per exp.
      */
     public void writeExpStats() {
-        if(writingRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
+        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String run_stats_filename = run_path + "\\run_stats.csv";
             String output = "";
@@ -2038,8 +2040,8 @@ public class Env extends Thread{ // environment simulator
                 }
 
                 // skip to the last row of run stats
-//                for(int i = 0; i < gens / writingRate; i++){
-                for(int i = 0; i <= gens / writingRate; i++){
+//                for(int i = 0; i < gens / writeRate; i++){
+                for(int i = 0; i <= gens / writeRate; i++){
                     line = br.readLine();
                 }
 
@@ -2189,16 +2191,16 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Calls the gen and run stat writing functions every writingRate gens.<br><br>
+     * Calls the gen and run stat writing functions every writeRate gens.<br><br>
      * This function is typically called at the end of a gen.<br><br>
      * Writes gen stats e.g. write p_x for all players x in the pop at gen t.<br><br>
      * Writes run stats e.g. write mean(p) of the pop at gen t.<br><br>
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats(){
-//        if(writingRate != 0 && gen % writingRate == 0) {
-//        if(gen == 0 || (writingRate != 0 && gen % writingRate == 0)) {
-        if(writingRate != 0 && (gen == 0 || gen % writingRate == 0)) {
+//        if(writeRate != 0 && gen % writeRate == 0) {
+//        if(gen == 0 || (writeRate != 0 && gen % writeRate == 0)) {
+        if(writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
             if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
             if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
         }
@@ -2268,7 +2270,7 @@ public class Env extends Thread{ // environment simulator
     public void writeRunStats() {
         String filename = run_path + "\\run_stats.csv";
         String s = "";
-//        if(gen / writingRate == 1){ // apply headings to file before writing data
+//        if(gen / writeRate == 1){ // apply headings to file before writing data
         if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
 
 
@@ -2312,86 +2314,8 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public static void writeSeriesStatsToDB(){
-        try{
-            Connection conn = DriverManager.getConnection(url, user, password);
-            System.out.println("Connected to the database!");
-
-
-            System.out.println("TEMP: DO NOTHING IN writeSeriesStatsToDB()!");
-
-
-//            Statement statement = conn.createStatement();
-//            String query = "select * from series_stats_test1";
-//            ResultSet rs = statement.executeQuery(query);
-//            while (rs.next()) {
-//                int k = rs.getInt("id");
-//                double i = rs.getFloat("mean_avg_p");
-//                double j = rs.getFloat("sigma_avg_p");
-//                System.out.println("ID: " + k + "\tmean_avg_p: " + DF4.format(i) + "\tsigma_avg_p:" + DF4.format(j));
-//            }
-
-
-            // test inserting record
-//            String query2 = "insert into series_stats_test1 (id, mean_avg_p, sigma_avg_p) values (3, 0.7, 0.1)";
-//            statement.execute(query2);
-//            System.out.println("inserted record!");
-
-
-            // test inserting record using prepared statement
-//            String query3 = "insert into series_stats_test1 (id, mean_avg_p, sigma_avg_p) values (?, ?, ?)";
-//            PreparedStatement pstmt = conn.prepareStatement(query3);
-//            pstmt.setInt(1,4);
-//            pstmt.setDouble(2,0.8);
-////            pstmt.setDouble(2,mean_mean_p);
-//            pstmt.setDouble(3,0.01);
-//            pstmt.execute();
-//            System.out.println("inserted record");
-
-
-
-            conn.close();
-        }catch(SQLException e){
-            throw new RuntimeException(e);
-        }
+    public static void exit(){
+        System.out.println("[INFO] Exiting...");
+        Runtime.getRuntime().exit(0);
     }
-
-
-
-    public void recordGenStats(){
-        try{
-            Connection conn = DriverManager.getConnection(url, user, password);
-            String query = "insert into gen_stats_test1 (runID, playerID, p, u, deg) values (?,?,?,?,?)";
-            PreparedStatement pstmt = conn.prepareStatement(query);
-            for(Player player: pop){
-                pstmt.setInt(1, run);
-                pstmt.setInt(2, player.getID());
-                pstmt.setDouble(3,player.getP());
-                pstmt.setDouble(4,player.getU());
-                pstmt.setDouble(5,player.getDegree());
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-//    public void recordPlayers(){
-//        try{
-//            Connection conn = DriverManager.getConnection(url, user, password);
-//            String query = "insert into player_test1 (popID,gen,p,u,deg) values (?,?,?,?,?)";
-//            PreparedStatement pstmt = conn.prepareStatement(query);
-//            for(Player player: pop){
-//                pstmt.setInt(1, run);
-//                pstmt.setInt(2, player.getID());
-//                pstmt.setDouble(3,player.getP());
-//                pstmt.setDouble(4,player.getU());
-//                pstmt.setDouble(5,player.getDegree());
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-
 }

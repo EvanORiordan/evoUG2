@@ -1,5 +1,5 @@
-runs,space,EM,EWT,EWLF,sel,mut,UF,writing,series
-1,5,newER 1 1,proposalProb,,RW normal,,cumulative,100000 1,
-1,5,newER 1 1,proposalProb,PD,RW normal,,cumulative,100000 1,
-1,10,newER 1 0,proposalProb,,RW normal,,cumulative,100000 1,
-3,5,1 100,rewire 0.1 linear pop,PD,RW normal,,cumulative,000000
+runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writingRate,varying,varying
+5,10,1,10000,proposalProb,,,,PD,,RW,normal,,,,,cumulative,,,,1,,,1,ER,2;3;4;5
+5,10,1,10000,proposalProb,,,,PD,,RW,normal,,,,,normalised,,,,1,,,1,ER,2;3;4;5
+5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulative,,,,1,,,1,ER,2;3;4;5
+5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulatie,,,,1,,,1,ER,2;3;4;5
