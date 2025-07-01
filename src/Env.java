@@ -1,7 +1,7 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.*;
+import java.sql.Array;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -11,48 +11,60 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Evan O'Riordan (e.oriordan3@universityofgalway.ie)<br>
+ * 02/10/2023<br>
  * School of Computer Science<br>
  * University of Galway<br>
  */
-public class Env extends Thread{ // environment simulator
-//    static String game; // indicates what game is being played
-    static String game = "DG"; // indicates what game is being played
-    static double M = 1.0; // default prize amount during a UG/DG
-//    static String space; // indicates what kind of space the population will reside within
-    static String space = "grid"; // indicates what kind of space the population will reside within
+public class Env extends Thread{ // simulated game environment
+
+    // fields related to the game environment
+    static String game; // what game is being played
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-//    static String neighType; // indicates type of neighbourhood players will have.
-    static String neighType = "VN"; // indicates type of neighbourhood players will have.
-//    static int neighRadius; // radius of neighbourhood
-    static int neighRadius = 1; // radius of neighbourhood
-    static int neighSize; // size of neighbours with random neighbourhood type.
     static int N; // population size
-    static int run; // current run
-    static int runs; // number of experiment runs to occur
-    Player[] pop; // array of players; assumes 2D space
-    double mean_p; // mean proposal value; informally referred to as the performance of an experiment
-    double mean_q; // mean acceptance threshold
-    double mean_u; // mean utility
-    double mean_deg; // mean degree of population
-    double sigma_p; // standard deviation of p
-    double sigma_q; // standard deviation of q
-    double sigma_u; // standard deviation of utility
-    double sigma_deg; // standard deviation of degree
-    double max_p; // highest p in population at a time
-    int gen; // current generation
-    static int gens; // number of generations to occur per experiment run
-    static int iters; // temp var: number of iterations of play and EWL
-    static String UF; // utility function: indicates how utility is calculated
+    static int iters; // how many iterations occur per experiment run
+    static int runs; // how many times this experiment will be run.
+    static String neigh; // indicates the type of neighbourhood being enforced
+    //    ArrayList<ArrayList<Player>> grid = new ArrayList<>(); // 2D square lattice contains the population
+//    Player[][] pop; // array of players; assumes 2D space
+    Player[]pop; // array of players; assumes 2D space
+    double avg_p; // the average value of p across the population.
+    double p_SD; // the standard deviation of p across the pop
+    int gen = 0; // indicates current generation. marks the progression of evo.
+    int iter = 1; // indicates current iteration. each gen is made up of ER iters.
+    //    static double DCF = 0; // distance cost factor
+    static String initial_settings = ""; // stores initial experimentation settings
+    static int injiter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
+    static double injp = 0.0; // injection p: indicates p value to be injected
+    static int injsize = 0; // injection cluster size: indicates size of cluster to be injected
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
     static double P; // PD: punishment for mutual defection
     static double S; // PD: sucker's payoff for cooperating with a defector
     static double l; // loner's payoff
-    static String varying = ""; // indicates which parameter will be varied in experiment series
-    static ArrayList<String> variations = new ArrayList<>();
-    static int exp; // indicates how far along we are through the experiment series
-    static int exps = 1; // number of experiments in series
+    //    static double gross_prize_UG = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
+    static double prize = 1.0; // default prize per UG interaction. as long as value != 0, value doesnt matter if fitness metric is avg score rather than score.
+    static String ASD; // average score denominator: determines how average score is calculated
+    double avg_q; // average acceptance threshold across population
+    double q_SD; // the standard deviation of q across the pop
+    static String space; // the space the population exists within
+
+
+    // fields related to experiment statistics
+    static boolean experiment_series; //indicates whether to run experiment or experiment series where a parameter is varied
+    static String varying; //indicates which parameter will be varied in an experiment series
+    static double variation; //indicates by how much parameter will vary between subsequent experiments. the double data is used because it works for varying integer parameters as well as doubles.
+    static int numexp; //indicates the number of experiments to occur in the series
+    static int experiment_num = 1; //tracks which experiment is taking place at any given time during a series
+    static int run_num; // tracks which of the runs is currently executing
+    static ArrayList<Double> various_amounts;
+    static double experiment_mean_avg_p;
+    static double experiment_mean_avg_q;
+    static double experiment_SD_avg_p;
+    static double experiment_SD_avg_q;
+
+
+    // fields related to I/O operations
     static FileWriter fw;
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
@@ -60,47 +72,52 @@ public class Env extends Thread{ // environment simulator
     static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
     static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
-    static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
+    static String desc; //description of experiment
+    static String start_timestamp_string;
     static String project_path = Paths.get("").toAbsolutePath().toString();
-    static String general_path = project_path + "\\csv_data"; // address where all data is recorded
-    static String this_path; // address where stats for current experimentation is recorded
-    static String exp_path; // address where stats for current experiment are stored
-    static String run_path; // address where stats for current run are stored
-    static boolean writePGenStats;
-    static boolean writeUGenStats;
-    static boolean writeDegGenStats;
-    static boolean writePRunStats;
-    static boolean writeURunStats;
-    static boolean writeDegRunStats;
-    static boolean writePosData;
-    static int first_gen_recorded = 1;
-    static int writeRate = 0; // write data every x gens
+    static String data_folder_path = project_path + "\\csv_data";
+    static String experiment_results_folder_path;
+    static String series_data_filename;
+    static String p_data_filename;
+    static String EW_data_filename;
+    static String NSI_data_filename;
+    static int datarate; // factors into which gens have their data recorded. if 0, no gens are recorded.
+    static String[] settings;
+    static int CI; // config index: facilitates construction of table of configs
+    static String q_data_filename;
+    String[] neigh_params;
     static String pos_data_filename;
-    static String EWT; // EW type
-    static String EWLF = ""; // EWL formula
-    static double ROC = 0; // rate of change: fixed learning amount to EW
-    static double alpha = 0; // used in alpha-beta rating
-    static double beta = 0; // used in alpha-beta rating
-//    static String evo; // indicates which evolution function to call
-    static String evo = "copy"; // indicates which evolution function to call
-    static double evoNoise = 0; // noise affecting evolution
-    static String sel; // indicates which selection function to call
-    static double selNoise = 0.0; // noise affecting selection
-    static String mut; // indicates which mutation function to call
-    static double mutRate = 0.0; // probability of mutation
-    static double mutBound = 0.0; // denotes max mutation possible
-//    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
-    static String EM = "newER"; // evolution mechanism: the mechanism by which evolution occurs.
-    static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
-    static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
-    static String RWT = ""; // roulette wheel type
-    static String RA = ""; // rewire away
-    static String RT = ""; // rewire to
-    static double RP = 0.0; // rewire probability
-    static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
-    static double injP = 0.0; // injection p: indicates p value to be injected
-    static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
 
+
+    // fields related to edge weight learning (EWL)
+    static String EWT; // edge weight type
+    static String EWLC; // edge weight learning condition
+    static String EWLF; // edge weight learning formula
+    static int ER = 1; // evolution rate: indicates how many iterations occur each generation. e.g. ER=5 means every gen has 5 iters
+    static double ROC = 0; // rate of edge weight change per edge weight learning call
+
+
+    static double alpha = 0;
+    static double beta = 0;
+
+
+    static double leeway1 = 0; // defines global leeway affecting all players.
+    static double leeway2 = 0; // defines bounds of interval that local leeway is generated from.
+    static double leeway3 = 0; // defines factor used in calculation of leeway given wrt weight of edge to neighbour.
+    static double leeway4 = 0; // defines factor used in calculation of leeway given wrt comparison of p vs neighbour p.
+    static double leeway5 = 0; // defines factor used in calculation of leeway given wrt neighbour p.
+    static double leeway6 = 0; // defines bounds of interval that random leeway is generated from.
+    static double leeway7 = 0; // defines avg score comparison leeway factor.
+
+
+    // fields related to evolution, selection, mutation
+    static String evo; // indicates which evolution function to call
+    static double evonoise = 0; // noise affecting evolution
+    static String sel; // indicates which selection function to call
+    static double selnoise = 0; // noise affecting selection
+    static String mut; // indicates which mutation function to call
+    static double mutrate = 0; // probability of mutation
+    static double mutbound = 0; // denotes max mutation possible
 
 
 
@@ -109,270 +126,443 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Main method of Java program.
-      */
+     */
     public static void main(String[] args) {
-        configureEnvironment();
-        LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
-        old_timestamp = start_timestamp;
-        String start_timestamp_string = start_timestamp.getYear()
+        setupEnvironment();
+        setInitialSettings();
+        LocalDateTime start_timestamp = LocalDateTime.now(); // marks the beginning of the main algorithm's runtime
+        start_timestamp_string = start_timestamp.getYear()
                 +"-"+start_timestamp.getMonthValue()
                 +"-"+start_timestamp.getDayOfMonth()
                 +"_"+start_timestamp.getHour()
                 +"-"+start_timestamp.getMinute()
                 +"-"+start_timestamp.getSecond();
-        this_path = general_path+"\\"+start_timestamp_string;
-        if (writeRate > 0) {
-            try {
-                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-            }catch(IOException e){
-                e.printStackTrace();
-            }
-            printPath();
+        experiment_results_folder_path = data_folder_path+"\\"+start_timestamp_string+" "+desc;
+        try {
+            Files.createDirectories(Paths.get(experiment_results_folder_path)); // create results storage folder
+        }catch(IOException e){
+            e.printStackTrace();
         }
+        printExperimentResultsFolderPath();
+
+
+        // create result data folders
+        if(datarate != 0) {
+            createFolders();
+        }
+
+
         System.out.println("Starting timestamp: "+start_timestamp);
-        experimentSeries();
+        if(experiment_series){
+            experimentSeries(); // run an experiment series
+        } else {
+            experiment(); // run a single experiment
+        }
         LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
         System.out.println("Finishing timestamp: "+finish_timestamp);
         Duration duration = Duration.between(start_timestamp, finish_timestamp);
         long secondsElapsed = duration.toSeconds();
         long minutesElapsed = duration.toMinutes();
-        long hoursElapsed = duration.toHours();
-        System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-        if (writeRate > 0) printPath();
+        System.out.println("Time elapsed: "+minutesElapsed+" minutes, "+secondsElapsed%60+" seconds");
+        printExperimentResultsFolderPath();
     }
 
 
 
     /**
-     * Runs an experiment series. If varying parameter defined, vary it after each
-     * subsequent experiment in the series.
+     * Allows for the running of multiple experiments, i.e. the running of a series of
+     * experiments, i.e. the running of an experiment series.
      */
     public static void experimentSeries(){
-        for(exp = 1; exp <= exps; exp++){
-            System.out.println("start experiment " + exp);
-            exp_path = this_path + "\\exp" + exp;
-            createDataFolders();
+        System.out.println();
+        printInitialSettings();
+
+
+        various_amounts = new ArrayList<>(); // stores initial value of varying parameter
+        switch(varying){
+            case"runs"->various_amounts.add((double)runs);
+            case"iters"->various_amounts.add((double)iters);
+            case"length"->various_amounts.add((double)length);
+            case"width"->various_amounts.add((double)width);
+            case"ER"->various_amounts.add((double)ER);
+            case"ROC"->various_amounts.add(ROC);
+            case"leeway1"->various_amounts.add(leeway1);
+            case"leeway2"->various_amounts.add(leeway2);
+            case"leeway3"->various_amounts.add(leeway3);
+            case"leeway4"->various_amounts.add(leeway4);
+            case"leeway5"->various_amounts.add(leeway5);
+            case"leeway6"->various_amounts.add(leeway6);
+            case"leeway7"->various_amounts.add(leeway7);
+            case"selnoise"->various_amounts.add(selnoise);
+            case"evonoise"->various_amounts.add(evonoise);
+            case"mutrate"->various_amounts.add(mutrate);
+            case"mutbound"->various_amounts.add(mutbound);
+            case"injiter"->various_amounts.add((double)injiter);
+            case"injp"->various_amounts.add(injp);
+            case"injsize"->various_amounts.add((double)injsize);
+        }
+
+        // run experiment series
+        for(int i=0;i<numexp;i++){
+
+            // helps user keep track of the current value of the varying parameter
+            System.out.println("\n===================\n" +
+                    "NOTE: Start of experiment "+experiment_num+": "+varying+"="+DF4.format(various_amounts.get(i))+".");
+
             experiment(); // run an experiment of the series
-            if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
-                switch(varying){
-                    case "EWLF" -> EWLF = variations.get(exp - 1);
-                    case "RA" -> RA = variations.get(exp - 1);
-                    case "RT" -> RT = variations.get(exp - 1);
-                    case "sel" -> sel = variations.get(exp - 1);
-                    case "evo" -> evo = variations.get(exp - 1);
-                    case "EWT" -> EWT = variations.get(exp - 1);
-                    case "gens" -> gens = Integer.parseInt(variations.get(exp - 1));
-                    case "length" -> {
-                        length = Integer.parseInt(variations.get(exp - 1));
-                        N = length * width;
-                    }
-                    case "ER" -> ER = Integer.parseInt(variations.get(exp - 1));
-                    case "NIS" -> NIS = Integer.parseInt(variations.get(exp - 1));
-                    case "ROC" -> ROC = Double.parseDouble(variations.get(exp - 1));
-                    case "RP" -> RP = Double.parseDouble(variations.get(exp - 1));
-                    case "M" -> M = Double.parseDouble(variations.get(exp - 1));
-                    case "selNoise" -> selNoise = Double.parseDouble(variations.get(exp - 1));
-                    case "mutRate" -> mutRate = Double.parseDouble(variations.get(exp - 1));
-                    case "mutBound" -> mutBound = Double.parseDouble(variations.get(exp - 1));
-                    case "UF" -> UF = variations.get(exp - 1);
+
+            switch(varying){ // after experiment, change the value of the varying parameter
+                case "runs"->{
+                    runs+=(int)variation;
+                    various_amounts.add((double)runs);
+                }
+                case "iters"->{
+                    iters+=(int)variation;
+                    various_amounts.add((double)iters);
+                }
+                case "length"->{
+                    length+=(int)variation;
+                    N = length * width;
+                    various_amounts.add((double)length);
+                }
+                case"width"->{
+                    width+=(int)variation;
+                    N = length * width;
+                    various_amounts.add((double)width);
+                }
+                case "ER"->{
+                    ER+=(int)variation;
+                    various_amounts.add((double)ER);
+                }
+                case "ROC"->{
+                    ROC+=variation;
+                    various_amounts.add(ROC);
+                }
+                case "leeway1"->{
+                    leeway1+=variation;
+                    various_amounts.add(leeway1);
+                }
+                case "leeway2"->{
+                    leeway2+=variation;
+                    various_amounts.add(leeway2);
+                }
+                case "leeway3"->{
+                    leeway3+=variation;
+                    various_amounts.add(leeway3);
+                }
+                case "leeway4"->{
+                    leeway4+=variation;
+                    various_amounts.add(leeway4);
+                }
+                case "leeway5"->{
+                    leeway5+=variation;
+                    various_amounts.add(leeway5);
+                }
+                case "leeway6"->{
+                    leeway6+=variation;
+                    various_amounts.add(leeway6);
+                }
+                case "leeway7"->{
+                    leeway7+=variation;
+                    various_amounts.add(leeway7);
+                }
+                case "selnoise"->{
+                    selnoise+=variation;
+                    various_amounts.add(selnoise);
+                }
+                case "evonoise"->{
+                    evonoise+=variation;
+                    various_amounts.add(evonoise);
+                }
+                case "mutrate"->{
+                    mutrate+=variation;
+                    various_amounts.add(mutrate);
+                }
+                case "mutbound"->{
+                    mutbound+=variation;
+                    various_amounts.add(mutbound);
+                }
+                case "injiter"->{
+                    injiter += (int) variation;
+                    various_amounts.add((double) injiter);
+                }
+                case "injp"->{
+                    injp += variation;
+                    various_amounts.add(injp);
+                }
+                case "injsize"->{
+                    injsize += (int) variation;
+                    various_amounts.add((double) injsize);
                 }
             }
+
+            // inform user what the varying parameter's value was
+            System.out.println("NOTE: End of "+varying+"="+DF4.format(various_amounts.get(i))+"."
+                    +"\n===================");
         }
     }
 
 
 
     /**
-     * Run an experiment.
-     * An experiment consists of runs.
-     * Data is collected after each experiment.
+     * Allows for the running of an experiment. Collects data after each experiment into .csv file.
      */
     public static void experiment(){
-        for(run = 1; run <= runs; run++){
-//            System.out.println("start run " + run);
-            run_path = exp_path + "\\run" + run;
-            Env pop = new Env();
-            pop.start();
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
         }
-        writeSettings();
-        writeSeriesStats();
+
+        // stats to be tracked
+        experiment_mean_avg_p = 0;
+        double[] experiment_avg_p_values = new double[runs + 1];
+        experiment_SD_avg_p = 0;
+        experiment_mean_avg_q = 0;
+        double[] experiment_avg_q_values = new double[runs + 1];
+        experiment_SD_avg_q = 0;
+
+        // run experiment x times
+        for(run_num = 1; run_num <= runs; run_num++){
+            Env run = new Env(); // represents one run of experiment
+            run.start();
+
+            // collect data
+            experiment_mean_avg_p += run.avg_p;
+            experiment_avg_p_values[run_num] = run.avg_p;
+            experiment_mean_avg_q += run.avg_q;
+            experiment_avg_q_values[run_num] = run.avg_q;
+
+            // display run results (varies depending on game)
+            String output = "experiment "+experiment_num+", run "+run_num+": ";
+            if(game.equals("UG") || game.equals("DG")){
+                output += "avg p=" + DF4.format(run.avg_p);
+                if(game.equals("UG")){
+                    output += " avg q="+DF4.format(run.avg_q);
+                }
+            }
+            // MAYBE INSERT THIS: else if game is PD, then print number of C, D and A players...
+            System.out.println(output);
+
+        }
+
+        if(!experiment_series){
+            System.out.println();
+            printInitialSettings();
+        }
+
+        // calculate stats of experiment
+        experiment_mean_avg_p /= runs;
+        experiment_mean_avg_q /= runs;
+        for(int i=0;i<runs;i++){
+            experiment_SD_avg_p += Math.pow(experiment_avg_p_values[i] - experiment_mean_avg_p, 2);
+            experiment_SD_avg_q += Math.pow(experiment_avg_q_values[i] - experiment_mean_avg_q, 2);
+
+        }
+        experiment_SD_avg_p = Math.pow(experiment_SD_avg_p / runs, 0.5);
+        experiment_SD_avg_q = Math.pow(experiment_SD_avg_q / runs, 0.5);
+
+        // display experiment results (varies depending on game)
+        String output = "";
+        if(game.equals("UG") || game.equals("UG")){
+            output += "mean avg p=" + DF4.format(experiment_mean_avg_p)
+                    + " avg p SD=" + DF4.format(experiment_SD_avg_p);
+            if(game.equals("UG")){
+                output += " mean avg q=" + DF4.format(experiment_mean_avg_q)
+                        + " avg q SD=" + DF4.format(experiment_SD_avg_q);
+            }
+        }
+        System.out.println(output);
+
+        writeSeriesData();
+
+        experiment_num++; // move on to the next experiment in the series
     }
 
 
 
     /**
-     * Core algorithm of the program:
-     * (1) Initialise population.
-     * (2) Initialise neighbourhoods and weights.
-     * (3) Generations of population pass.
+     * Method for running the core algorithm at the heart of the program.
      */
     @Override
     public void start(){
         initRandomPop();
+
         for(int i=0;i<N;i++){
-            switch(neighType){
-                case"VN","Moore","dia"->assignAdjacentNeighbours(pop[i]);
-                case"random"->assignRandomNeighbours(pop[i], neighSize);
-                case"all"->assignAllNeighbours(pop[i]);
+            Player player = pop[i];
+            neigh_params = neigh.split(" ");
+            switch(neigh_params[0]){
+                case"VN","Moore","dia"->{
+                    String type = neigh_params[0];
+                    int distance = Integer.parseInt(neigh_params[1]);
+//                    assignAdjacentNeighbours(player, i, j, type, distance);
+                    assignAdjacentNeighbours(player, type, distance);
+                }
+                case"random"->{
+                    String type = neigh_params[1];
+                    int size = Integer.parseInt(neigh_params[2]);
+                    assignRandomNeighbours(player, type, size);
+                }
+                case"all"->assignAllNeighbours(player);
+//                case"Margolus"->assignMargolusNeighbourhood(player, i, j);
                 default -> {
                     System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
                     Runtime.getRuntime().exit(0);
                 }
             }
         }
-        if(writePosData && run == 1) writePosData();
+
+        if(space.equals("grid")){
+            writePosData();
+        }
+
+        // initialise neighbourhoods
         for(int i=0;i<N;i++){
-            initialiseEdgeWeights(pop[i]);
+            Player player = pop[i];
+            initialiseEdgeWeights(player);
+            assignNeighbourIDs(player);
+            resetNSIPerNeighbour(player);
         }
 
+        // population stops once this condition is reached
+        while(iter <= iters) {
 
-        // get stats for gen 0
-        calculateStats();
-        writeGenAndRunStats();
-
-
-        switch(EM){
-            case "oldER" -> {
-//                gen = 1;
-//                gens = 1;
-                gen = 0;
-                gens = 0;
-                // oldER alg iterates "iters" times; 1 iteration of this loop ==> 1 "iter"
-//                for(int iter = 1; iter < iters; iter++){
-                for(int iter = 1; iter <= iters; iter++){
-                    for(int i=0;i<N;i++) play(pop[i]);
-                    for(int i=0;i<N;i++) updateUtility(pop[i]);
-                    for(int i=0;i<N;i++) EWL(pop[i]);
-                    if(iter % ER == 0){ // if true, a generation is going to pass
-                        for(int i=0;i<N;i++) if(EWT.equals("rewire")) rewire(pop[i]); // rewire if applicable
-                        for(int i=0;i<N;i++) {
-                            Player child = pop[i];
-                            Player parent = sel(child);
-                            if(evo(child, parent))
-                                mut(child);
-                        }
-                        // calculate and write stats at end of gen
-                        calculateStats();
-                        gen++; // moving onto to the next gen
-                        gens++; // for recording the total number of gens that occurred
-                        writeGenAndRunStats();
-                    }
-                    prepare(); // reset certain attributes at end of iter
-                }
-            }
-            case "newER" -> {
-                iters = 0;
-                for(gen = 1; gen <= gens; gen++){
-                    for(int j = 0; j < ER; j++){ // 1 iteration of this loop = 1 "iter"
-                        for(int i=0;i<N;i++) play(pop[i]);
-                        for(int i=0;i<N;i++) updateUtility(pop[i]);
-//                        for(int i=0;i<N;i++) EWL(pop[i]);
-                        if(!EWLF.equals("")) for(int i=0;i<N;i++) EWL(pop[i]);
-                        iters++;
-                    }
-                    if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable
-                    for(int i=0;i<N;i++) {
-                        Player child = pop[i];
-                        Player parent = sel(child);
-                        if(evo(child,parent))
-                            mut(child);
-                    }
-                    calculateStats(); // calculate stats at end of gen
-                    writeGenAndRunStats(); // write gen and run stats at end of gen
-                    prepare(); // reset certain attributes at end of gen
-                }
-            }
-            case "MC" -> { // Monte Carlo (MC)
-                for(gen = 1; gen <= gens; gen++){ // MC outer loop
-                    for(int i = 0; i < N; i++) play(pop[i]);
-                    for(int i=0;i<N;i++) updateUtility(pop[i]);
-                    for(int i = 0; i < NIS; i++){ // MC inner loop
-                        Player child = selRandomPop();
-                        EWL(child); // EWL inside or outside inner step loop?
-                        if(EWT.equals("rewire")) rewire(child); // rewire if applicable
-                        Player parent = sel(child);
-                        if(evo(child, parent))
-                            mut(child);
-                    }
-                    calculateStats();
-                    writeGenAndRunStats();
-                    prepare(); // reset certain attributes at end of gen
-                }
-            }
-        }
-        writeExpStats();
-    }
-
-
-
-//    /**
-//     * a initiates games with neighbours.
-//     * @param a player
-//     */
-//    public void play(Player a) {
-//        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
-//        for(int i = 0; i < omega_a.size(); i++){
-//            Player b = omega_a.get(i); // neighbour of a
-//            ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
-//            for (int j = 0; j < omega_b.size(); j++) {
-//                Player c = omega_b.get(j); // neighbour of b
-//                if (a.equals(c)) {
-//                    ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
-//                    double w_ba = weights_b.get(j); // weight of edge from b to a
-//                    switch(EWT){
-//                        case "proposalProb" -> {
-//                            double d = ThreadLocalRandom.current().nextDouble();
-//                            if(w_ba > d){
-//                                switch(game){
-//                                    case "UG", "DG" -> UG(a, b);
-//                                    case "PD" -> PD(a, b);
-//                                }
-//                            } else{
-//                                updateStats(a,0);
-//                                updateStats(b,0);
-//                            }
-//                        }
-//                        case "payoffPercent" -> {
-//                            switch(game){
-//                                case "UG", "DG" -> UG(a, b, w_ba);
-//                                case "PD" -> PD(a, b, w_ba);
-//                            }
-//                        }
-//                        default -> {
-//                            switch(game){
-//                                case "UG", "DG" -> UG(a, b);
-//                                case "PD" -> PD(a, b);
-//                            }
-//                        }
+            // apply margolus neighbourhood if applicable.
+//            if(neigh.split(" ")[0].equals("Margolus")){
+//                for(int i=0;i<rows;i++) {
+//                    for (int j = 0; j < columns; j++) {
+//                        Player player = grid.get(i).get(j);
+//                        assignMargolusNeighbourhood(player, i, j);
+//                        initialiseEdgeWeights(player);
+//                        assignNeighbourIDs(player);
+//                        resetNSIPerNeighbour(player);
 //                    }
-//                    break;
 //                }
 //            }
-//        }
-//    }
 
-    public void play(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
-        for(int i = 0; i < omega_a.size(); i++){
-            Player b = omega_a.get(i); // neighbour of a
-            switch(EWT) {
-                default -> UG(a, b);
-                case "proposalProb"-> {
-                    ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
-                    for (int j = 0; j < omega_b.size(); j++) {
-                        Player c = omega_b.get(j); // neighbour of b
-                        if (a.equals(c)) {
-                            double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
-                            double d = ThreadLocalRandom.current().nextDouble();
-                            if(w_ba > d){
-                                UG(a, b);
-                            } else{
-                                updateStats(a,0);
-                                updateStats(b,0);
-                            }
-                            break;
+            // injection
+//            if(iter == injiter){
+//                injectStrategyCluster(injp, injsize);
+//            }
+
+            // playing
+            for(int i=0;i<N;i++){
+                Player player = pop[i];
+                play(player);
+            }
+
+            // edge weight learning
+            for(int i=0;i<N;i++){
+                Player player = pop[i];
+                EWL(player);
+            }
+
+            // evolution occurs every ER iterations
+            if(iter % ER == 0){
+                for(int i=0;i<N;i++){
+                    Player child = pop[i];
+
+                    // selection
+                    Player parent = null;
+                    switch(sel){
+                        case "RW" -> parent = RWSelection(child);
+                        case "elitist" -> parent = bestSelection(child);
+                        case "rand" -> parent = randSelection(child);
+                        case "crossover" -> crossover(child); // "sel" and "evo" occur in one func
+                        default -> {
+                            System.out.println("[ERROR] Invalid selection function configured. Exiting...");
+                            Runtime.getRuntime().exit(0);
                         }
                     }
+
+                    // evolution
+                    switch (evo) {
+                        case "copy" -> copyEvolution(child, parent);
+                        case "approach" -> approachEvolution(child, parent);
+                        case "crossover" -> {} // do nothing; already completed above.
+                        default -> {
+                            System.out.println("[ERROR] Invalid evolution function configured. Exiting...");
+                            Runtime.getRuntime().exit(0);
+                        }
+                    }
+
+                    // mutation
+                    switch (mut){
+                        case "global" -> {
+                            if(mutationCheck())globalMutation(child);
+                        }
+                        case "local" -> {
+                            if(mutationCheck())localMutation(child);
+                        }
+                    }
+                }
+                gen++; // move on to the next generation
+            }
+
+            calculateOverallStats();
+            calculateAverageEdgeWeights();
+
+            // periodically record individual data
+            if(datarate != 0){
+                if(run_num == 1 // if first run
+                        && experiment_num == 1 // if first experiment
+                        && iter % (ER * datarate) == 0){ // record gen's data every x gens, where x=datarate
+                    String output = "";
+                    if(game.equals("UG") || game.equals("DG")){
+                        output += "iter "+iter+", gen "+gen+": avg p="+DF4.format(avg_p)+", p SD="+DF4.format(p_SD);
+                        writepData();
+                        writeAvgpData();
+                        if(game.equals("UG")){
+                            output += " avg q="+DF4.format(avg_q)+", q SD="+DF4.format(q_SD);
+                            writeqData();
+                            writeAvgqData();
+                        }
+                    }
+                    System.out.println(output);
+
+                    writeEWData();
+                    writeNSIData();
+                }
+            }
+
+            prepare();
+            iter++; // move on to the next iteration
+        }
+    }
+
+
+
+    public void play(Player player) {
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int ID = player.getID();
+
+        // find partner
+        for(int i = 0; i < neighbourhood.size(); i++){
+            Player neighbour = neighbourhood.get(i);
+
+            // partner finds player (use neighbourIDs to do this?)
+            ArrayList <Player> neighbour_neighbourhood = neighbour.getNeighbourhood();
+            for (int j = 0; j < neighbour_neighbourhood.size(); j++) {
+                Player neighbours_neighbour = neighbour_neighbourhood.get(j);
+                int neighbours_neighbour_ID = neighbours_neighbour.getID();
+                if (neighbours_neighbour_ID == ID) {
+                    double[] neighbour_edge_weights = neighbour.getEdgeWeights();
+                    double neighbour_edge_weight = neighbour_edge_weights[j];
+
+                    // play
+                    boolean interact = true; // by default, interaction occurs.
+                    if(EWT.equals("1")){
+                        double random_double = ThreadLocalRandom.current().nextDouble();
+                        if(neighbour_edge_weight <= random_double){
+                            interact = false;
+                        }
+                    }
+                    if(interact){
+                        switch(game){
+                            case"UG","DG"->UG(player, neighbour, neighbour_edge_weight);
+                            case"PD"->PD(player, neighbour, neighbour_edge_weight);
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -380,319 +570,356 @@ public class Env extends Thread{ // environment simulator
 
 
 
+    //    public void UG(double net_prize, Player proposer, Player responder){
+    public void UG(Player proposer, Player responder, double responder_edge_weight){
+        double proposer_p = proposer.getP();
+        double responder_q = responder.getQ();
+        int proposer_ID = proposer.getID();
+        int responder_ID = responder.getID();
 
+        if(proposer_p >= responder_q){ // accept
+            double proposer_payoff = prize - (prize * proposer_p);
+            double responder_payoff = prize * proposer_p;
 
+            // apply EWT 2 if applicable
+            if(EWT.equals("2")){
+                proposer_payoff *= responder_edge_weight;
+                responder_payoff *= responder_edge_weight;
+            }
 
-
-    /**
-     * Proposer initiates ultimatum game interaction with responder.<br>
-     * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
-     * @param a proposer
-     * @param b responder
-     */
-    public void UG(Player a, Player b){
-        double p_a = a.getP();
-        double q_b = b.getQ();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        if(p_a >= q_b){
-            pi_b = M * p_a;
-            pi_a = M - pi_b;
+            updateStatsUG(proposer, proposer_payoff, responder_ID, true);
+            updateStatsUG(responder, responder_payoff, proposer.getID(), false);
+        } else { // reject
+            updateStatsUG(proposer, 0, responder_ID, true);
+            updateStatsUG(responder, 0, proposer_ID, false);
         }
-        updateStatsUG(a, pi_a);
-        updateStatsUG(b, pi_b);
-    }
-
-    /**
-     * Proposer initiates ultimatum game interaction with responder.<br>
-     * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
-     * Uses w_ba to calculate payoffs of players.
-     * Prize is effectively cut by w_ba percent.<br>
-     * @param a proposer
-     * @param b responder
-     * @param w_ba weight of edge from b to a
-     */
-    public void UG(Player a, Player b, double w_ba){
-        double p_a = a.getP();
-        double q_b = b.getQ();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        double modified_M = M * w_ba; // denote formally by M'
-        if(p_a >= q_b) {
-            pi_b = modified_M * p_a;
-            pi_a = modified_M - pi_b;
-        }
-        updateStatsUG(a, pi_a);
-        updateStatsUG(b, pi_b);
     }
 
 
 
+    public void updateStatsUG(Player player, double payoff, int partner_ID, boolean proposer){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        double score = player.getScore();
+        int NI = player.getNI();
+        int NSI = player.getNSI();
+        int NSP = player.getNSP();
+        int NSR = player.getNSR();
 
-    public void updateStatsUG(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
+        player.setScore(score + payoff);
+        player.setNI(NI + 1);
+        if(payoff > 0){
+            player.setNSI(NSI + 1);
+            for(int i = 0; i < neighbourhood.size(); i++){
+                if(neighbourhood.get(i).getID() == partner_ID){
+                    player.getNSIPerNeighbour()[i]++;
+                    break;
+                }
+            }
+            if(proposer)
+                player.setNSP(NSP + 1);
+            else
+                player.setNSR(NSR + 1);
+        }
+        score = player.getScore();
+        NI = player.getNI();
+        NSI = player.getNSI();
+        switch (ASD){
+            case "NI" -> player.setAvgScore(score / NI);
+            case "NSI" -> player.setAvgScore(score / NSI);
+
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
+        }
     }
 
 
 
+    //    public void PD(Player player, Player partner){
+    public void PD(Player player, Player partner, double partner_edge_weight){
+        String strategy_PD = player.getStrategyPD();
+        String partner_strategy_PD = partner.getStrategyPD();
 
+//        double score = player.getScore();
+//        double partner_score = partner.getScore();
 
-    /**
-     * Prisoner's dilemma function.<br>
-     * @param a player
-     * @param b player
-     */
-    public void PD(Player a, Player b){
-        String s_a = a.getStrategyPD();
-        String s_b = b.getStrategyPD();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        if(s_a.equals("C") && s_b.equals("C")){
-            pi_a = R;
-            pi_b = R;
-        } else if(s_a.equals("C") && s_b.equals("D")){
-            pi_a = S;
-            pi_b = T;
-        }else if(s_a.equals("D") && s_b.equals("C")){
-            pi_a = T;
-            pi_b = S;
-        }else if(s_a.equals("D") && s_b.equals("D")){
-            pi_a = P;
-            pi_b = P;
-        }else if(s_a.equals("A") || s_b.equals("A")){
-            pi_a = l;
-            pi_b = l;
+        double player_payoff = 0;
+        double partner_payoff = 0;
+
+        if(strategy_PD.equals("C") && partner_strategy_PD.equals("C")){
+//            score += R;
+//            partner_score += R;
+//            updateStatsPD(player, R);
+//            updateStatsPD(partner, R);
+            player_payoff = R;
+            partner_payoff = R;
+        } else if(strategy_PD.equals("C") && partner_strategy_PD.equals("D")){
+//            score += S;
+//            partner_score += T;
+//            updateStatsPD(player, S);
+//            updateStatsPD(partner, T);
+            player_payoff = S;
+            partner_payoff = T;
+        }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("C")){
+//            score += T;
+//            partner_score += S;
+//            updateStatsPD(player, T);
+//            updateStatsPD(partner, S);
+            player_payoff = T;
+            partner_payoff = S;
+        }else if(strategy_PD.equals("D") && partner_strategy_PD.equals("D")){
+//            score += P;
+//            partner_score += P;
+//            updateStatsPD(player, P);
+//            updateStatsPD(partner, P);
+            player_payoff = P;
+            partner_payoff = P;
+        }else if(strategy_PD.equals("A") || partner_strategy_PD.equals("A")){
+//            score += l;
+//            partner_score += l;
+//            updateStatsPD(player, l);
+//            updateStatsPD(partner, l);
+            player_payoff = l;
+            partner_payoff = l;
         }
-        updateStatsPD(a, pi_a);
-        updateStatsPD(b, pi_b);
-    }
-    /**
-     * Prisoner's dilemma function.<br>
-     * Uses w_ba to calculate payoffs of players.<br>
-     * @param a player
-     * @param b player
-     */
-    public void PD(Player a, Player b, double w_ba){
-        String s_a = a.getStrategyPD();
-        String s_b = b.getStrategyPD();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        if(s_a.equals("C") && s_b.equals("C")){
-            pi_a = R * w_ba;
-            pi_b = R * w_ba;
-        } else if(s_a.equals("C") && s_b.equals("D")){
-            pi_a = S * w_ba;
-            pi_b = T * w_ba;
-        }else if(s_a.equals("D") && s_b.equals("C")){
-            pi_a = T * w_ba;
-            pi_b = S * w_ba;
-        }else if(s_a.equals("D") && s_b.equals("D")){
-            pi_a = P * w_ba;
-            pi_b = P * w_ba;
-        }else if(s_a.equals("A") || s_b.equals("A")){
-            pi_a = l * w_ba;
-            pi_b = l * w_ba;
+
+//        NI++;
+//        partner.NI++;
+//        avg_score = score / NI;
+//        partner.avg_score = partner_score / partner.NI;
+
+        // apply EWT 2 if applicable
+        if(EWT.equals("2")){
+            player_payoff *= partner_edge_weight;
+            partner_payoff *= partner_edge_weight;
         }
-        updateStatsPD(a, pi_a);
-        updateStatsPD(b, pi_b);
+
+        updateStatsPD(player, player_payoff);
+        updateStatsPD(partner, partner_payoff);
     }
 
 
 
     public void updateStatsPD(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        double score = player.getScore();
+        int NI = player.getNI();
+        int NSI = player.getNSI();
+
+        player.setScore(score + payoff);
+        player.setNI(NI + 1);
+
+        // insert segment here for NSI per neighbour counting if you get EWT 2 working with PD.
+        // 25/9/24: ??? idk what above comment means.
+
+        score = player.getScore();
+        NI = player.getNI();
+//        NSI = player.getNSI();
+        switch(ASD){
+            case "NI" -> player.setScore(score / NI);
+            case "NSI" -> player.setScore(score / NSI);
+
+            default -> {
+                System.out.println("[ERROR] Invalid average score denominator configured. Exiting...");
+                Runtime.getRuntime().exit(0);
+            }
+        }
     }
 
 
 
     public void initialiseEdgeWeights(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        ArrayList <Double> edge_weights = new ArrayList<>();
-        int size = neighbourhood.size();
-        for(int i=0;i<size;i++){
-            edge_weights.add(1.0);
+        player.setEdgeWeights(new double[neighbourhood.size()]);
+        double[] edge_weights = player.getEdgeWeights();
+        for(int i = 0; i < neighbourhood.size(); i++){
+            edge_weights[i] = 1.0;
         }
-        player.setEdgeWeights(edge_weights);
+    }
+
+
+
+    public void EWL(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        for(int i = 0; i < neighbourhood.size(); i++){
+            Player neighbour = neighbourhood.get(i);
+            double total_leeway = calculateTotalLeeway(player, neighbour, i);
+            int option = checkEWLC(player, neighbour, total_leeway);
+            double[] edge_weights = player.getEdgeWeights();
+            if(option == 0){ // increase EW
+                edge_weights[i] += calculateLearning(player, neighbour);
+                if(edge_weights[i] > 1.0){ // ensure edge weight resides within [0,1.0]
+                    edge_weights[i] = 1.0;
+                }
+            } else if (option == 1){ // decrease EW
+                edge_weights[i] -= calculateLearning(player, neighbour);
+                if(edge_weights[i] < 0){ // ensure edge weight resides within [0,1.0]
+                    edge_weights[i] = 0;
+                }
+            }
+            // if option equals 2, no learning occurs
+        }
+    }
+
+
+
+    public double calculateTotalLeeway(Player player, Player neighbour, int i) {
+        double[] edge_weights = player.getEdgeWeights();
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = player.getAvgScore();
+        double local_leeway = player.getLocalLeeway();
+
+
+        double global_leeway = leeway1;
+        double edge_weight_leeway = edge_weights[i] * leeway3;
+        double p_comparison_leeway = (neighbour_p - p) * leeway4;
+        double p_leeway = neighbour_p * leeway5;
+        double random_leeway;
+        if(leeway6 == 0){
+            random_leeway = 0;
+        } else{
+            random_leeway = ThreadLocalRandom.current().nextDouble(-leeway6, leeway6);
+        }
+        double avg_score_comparison_leeway = (avg_score - neighbour_avg_score) * leeway7;
+
+        double total_leeway = global_leeway
+                + local_leeway
+                + edge_weight_leeway
+                + p_comparison_leeway
+                + p_leeway
+                + random_leeway
+                + avg_score_comparison_leeway;
+
+        return total_leeway;
     }
 
 
 
     /**
-     * Edge Weight Learning (EWL)
+     * Checks the edge weight learning condition to determine what kind of edge weight
+     * learning should occur, if any.
+     *
+     * @param neighbour is the neighbour being pointed at by the edge
+     * @param total_leeway is the leeway being given to the neighbour by the edge's owner
+     * @return 0 for positive edge weight learning, 1 for negative, 2 for none
      */
-    public void EWL(Player a){
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        for(int i = 0; i < omega_a.size(); i++){
-            Player b = omega_a.get(i);
-            double w_ab = weights.get(i); // weight from a to b
-            w_ab += calculateLearning(a, b);
-            if(w_ab > 1.0) w_ab = 1.0;
-            else if(w_ab < 0.0) w_ab = 0.0;
-            weights.set(i, w_ab); // replace old weight value
+    public int checkEWLC(Player player, Player neighbour, double total_leeway) {
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = neighbour.getAvgScore();
+        double q = player.getQ();
+        double neighbour_q = neighbour.getQ();
+
+        int option = 2;
+        switch(EWLC){
+
+            case"p"->{
+                if (neighbour_p + total_leeway > p){
+                    option = 0;
+                } else if (neighbour_p + total_leeway < p){
+                    option = 1;
+                }
+            }
+
+            case"avgscore"->{
+                if (neighbour_avg_score < avg_score + total_leeway){
+                    option = 0;
+                } else if (neighbour_avg_score > avg_score + total_leeway){
+                    option = 1;
+                }
+            }
+
+            case"AB"->{
+                double AB_rating1 = ((alpha * p) + (beta * avg_score)) / (alpha + beta);
+                double AB_rating2 = ((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta);
+                if(AB_rating1 < AB_rating2)
+                    option = 0;
+                else if(AB_rating1 > AB_rating2)
+                    option = 1;
+            }
+
+            case"q"->{
+                if(neighbour_q > q)
+                    option = 0;
+                else if(neighbour_q < q)
+                    option = 1;
+            }
         }
+
+        return option;
     }
 
 
 
-    public double calculateLearning(Player a, Player b){
-        double learning = 0.0;
+    /**
+     * Calculate amount of edge weight learning to be applied to the weight of the edge.
+     */
+    public double calculateLearning(Player player, Player neighbour){
+        double p = player.getP();
+        double neighbour_p = neighbour.getP();
+        double avg_score = player.getAvgScore();
+        double neighbour_avg_score = neighbour.getAvgScore();
+        double q = player.getQ();
+        double neighbour_q = neighbour.getQ();
+
+        double learning = 0;
         switch(EWLF){
-            case "PROC" -> {
-                double pa = a.getP();
-                double pb = b.getP();
-                if(pa < pb) {// if a unfairer than b, increase weight
-                    learning = ROC;
-                }else if(pa > pb){ // else if a fairer than b, decrease weight
-                    learning = -ROC;
-                } // else no change
-            }
-            case "PD" -> learning = b.getP() - a.getP();
-            case "PED" -> learning = Math.exp(b.getP() - a.getP());
-            case "UD" -> learning = b.getU() - a.getU();
-            case "UED" -> learning = Math.exp(b.getU() - a.getU());
-            case "PDR" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                double diff = p_b - p_a;
-                if(p_a < p_b){
-                    learning = ThreadLocalRandom.current().nextDouble(diff);
-                } else if(p_a > p_b){
-                    learning = -ThreadLocalRandom.current().nextDouble(-(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
-                }
-            }
-            case "PDRv2" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                if(p_a < p_b){
-                    learning = ThreadLocalRandom.current().nextDouble(p_b - p_a);
-                } else if(p_a > p_b){
-                    learning = -ThreadLocalRandom.current().nextDouble(p_a - p_b);
-                }
-            }
-            case "PEDv2" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                if(p_a < p_b){ // if a unfairer than b, raise weight
-                    learning = Math.pow((p_b - p_a), Math.exp(1));
-                } else { // if a fairer than b, reduce weight
-                    learning = - Math.pow((p_a - p_b), Math.exp(1));
-                }
-            }
-            case "PEDv4" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
-                double exp = Math.exp(Math.abs(p_b - p_a));
-                if(p_a < p_b){
-                    learning = exp;
-                } else if(p_a > p_b){
-                    learning = -exp;
-                } else{
-                    learning = 0.0;
-                }
-            }
-            case "PStepwise" -> {
-                double pa = a.getP();
-                double pb = b.getP();
-                if(pa<pb){
-                    learning = 1.0;
-                } else if(pa>pb){
-                    learning = -1.0;
-                }
-            }
-            case "UROC" ->{
-                double ua = a.getU();
-                double ub = b.getU();
-                if(ua>ub){
-                    learning = ROC;
-                }else if(ua<ub){
-                    learning = -ROC;
-                }
-            }
-            case "PEAD" -> learning = Math.exp(Math.abs(b.getP() - a.getP()));
-            case "PPEAD" -> {
-                double pa=a.getP();
-                double pb=b.getP();
-                if(pa<pb){
-                    learning = Math.exp(Math.abs(b.getP() - a.getP()));
-                } else if(pa>pb){
-                    learning = -Math.exp(Math.abs(b.getP() - a.getP()));
-                }
-            }
-            case "PPED"->{
-                double pa=a.getP();
-                double pb=b.getP();
-                if(pa<pb){
-                    learning = Math.exp(b.getP() - a.getP());
-                } else if(pa>pb){
-                    learning = -Math.exp(b.getP() - a.getP());
-                }
-            }
-            case "UUEAD" ->{
-                double ua=a.getU();
-                double ub=b.getU();
-                if(ua>ub){
-                    learning = Math.exp(Math.abs(b.getU() - a.getU()));
-                }else if(ua<ub){
-                    learning = -Math.exp(Math.abs(b.getU() - a.getU()));
-                }
-            }
-            case "UStepwise" ->{
-                double ua=a.getU();
-                double ub=b.getU();
-                if(ua>ub){
-                    learning = 1.0;
-                }else if(ua<ub){
-                    learning = -1.0;
-                }
-            }
+            case"ROC"->         learning = ROC;
+            case"pAD"->         learning = Math.abs(neighbour_p - p);
+            case"pEAD"->        learning = Math.exp(Math.abs(neighbour_p - p));
+            case"avgscoreAD"->  learning = Math.abs(neighbour_avg_score - avg_score);
+            case"avgscoreEAD"-> learning = Math.exp(Math.abs(neighbour_avg_score - avg_score));
+            case"pAD2"->        learning = Math.pow(Math.abs(neighbour_p - p), 2);
+            case"pAD3"->        learning = Math.pow(Math.abs(neighbour_p - p), 3);
+            case"AB"->          learning = Math.abs((((alpha * p) + (beta * avg_score)) / (alpha + beta)) - (((alpha * neighbour_p) + (beta * neighbour_avg_score)) / (alpha + beta)));
+            case"qAD"->         learning = Math.abs(neighbour_q - q);
+            case"qEAD"->        learning = Math.exp(Math.abs(neighbour_q - q));
+            case"qAD2"->        learning = Math.pow(Math.abs(neighbour_q - q), 2);
+            case"qAD3"->        learning = Math.pow(Math.abs(neighbour_q - q), 3);
         }
+
         return learning;
     }
 
 
 
-
-
     /**
-     * Roulette wheel (RW) selection function where the fitter a candidate, the more likely
-     * it is to be selected as parent. Candidates including child and neighbours.
-     * @param child player undergoing roulette wheel selection
+     * Roulette Wheel (RW) Selection method compares fitness of child to neighbours. The
+     * fitter the neighbour, the greater the likelihood of them being selected as child's
+     * parent. If a parent is not selected, the child is selected as parent
+     * by default.<br>
      */
-    public Player selRW(Player child){
-//        Player parent = null;
-        // why not set parent to child by default?
-        Player parent = child;
-        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
-        pool.add(child);
-        int size = pool.size();
-        double[] pockets = new double[size];
-        double roulette_total = 0;
-        for(int i = 0; i < size; i++){
-            switch(RWT){
-                case "normal" -> pockets[i] = pool.get(i).getU();
-                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU() * selNoise);
-            }
+    public Player RWSelection(Player child){
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        int size = neighbourhood.size();
+        double fitness = child.getAvgScore(); // fitness equals avg score
+        Player parent = child; // default parent is child
+        double[] pockets = new double[size]; // pockets of roulette wheel
+        double roulette_total = 0; // total fitness exp diff
+
+        // allocate pockets
+        for(int i = 0 ; i < size; i++){
+            double neighbour_fitness = neighbourhood.get(i).getAvgScore();
+            pockets[i] = Math.exp(neighbour_fitness - fitness);
             roulette_total += pockets[i];
         }
-        double random_double = ThreadLocalRandom.current().nextDouble();
+        roulette_total += 1.0; // allocate pocket to child
+
+        // fitter player ==> more likely to be selected
         double tally = 0;
-//        for(int i = 0; i < size; i++){
-        for(int i = 0; i < size - 1; i++){ // no need to check for child: if noone is selected, child is parent by default
-            tally += pockets[i];
-            double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
-            if(random_double < percent_taken){ // if true, the ball landed in the candidate's slot
-                parent = pool.get(i); // select candidate as parent
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        for(int j = 0; j < size; j++){
+            tally += pockets[j];
+            double percentile = tally / roulette_total;
+            if (random_double < percentile) {
+                parent = neighbourhood.get(j);
                 break;
             }
         }
-
-        // by default, if parent is null, set parent to child.
-//        if(parent == null)
-//            System.out.println("BP");
-//            parent = child;
 
         return parent;
     }
@@ -700,31 +927,77 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * child selects fittest player in neighbourhood as parent unless there does not
-     * exist fitter neighbour than child.
-     * @param a child
-     * @return parent
-      */
-    public Player selFittest(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // denotes neighbourhood of child
-        Player b = a; // denotes parent
-        for(int i = 0; i < omega_a.size(); i++){
-            Player c = omega_a.get(i); // denotes neighbour of child; candidate for parent
-            if(c.getU() > b.getU()){ // if candidate fitter than parent, parent is set to candidate
-                b = c;
+     * Child selects highest scoring neighbour.
+     */
+    public Player bestSelection(Player child){
+        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        double avg_score = child.getAvgScore();
+        int size = neighbourhood.size();
+        double parent_avg_score;
+
+        // find highest scoring neighbour
+        Player parent = neighbourhood.get(0);
+        for(int i = 1; i < size; i++){
+            Player neighbour = neighbourhood.get(i);
+            double neighbour_avg_score = neighbour.getAvgScore();
+            parent_avg_score = parent.getAvgScore();
+            if(neighbour_avg_score > parent_avg_score){
+                parent = neighbour;
             }
         }
-        return b;
+
+        // if parent score less than child score, parent is child
+        parent_avg_score = parent.getAvgScore();
+        if(parent_avg_score <= avg_score){
+            parent = child;
+        }
+
+        return parent;
     }
 
 
 
     /**
-     * sel and evo effectively occur at once in one function.
-     * crossover where one child adopts midway point between two parent strategies.
-     *
+     * Inspired by Rand et al. (2013) (rand2013evolution).<br>
+     * The greater w (intensity of selection) is,
+     * the more likely a fitter player is selected as child's parent.
      * @param child
+     * @return parent player
      */
+    public Player randSelection(Player child){
+        double w = selnoise;
+        double[] effective_payoffs = new double[N];
+        Player parent = null;
+        double total = 0.0;
+        double tally = 0.0;
+
+        // calculate effective payoffs
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            double player_avg_score = player.getAvgScore();
+            double player_effective_payoff = Math.exp(w * player_avg_score);
+            effective_payoffs[i] = player_effective_payoff;
+            total += player_effective_payoff;
+        }
+
+        // fitter player ==> more likely to be selected
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        for(int i = 0; i < N; i++){
+            tally += effective_payoffs[i];
+            double percentile = tally / total;
+            if(random_double < percentile){
+                parent = pop[i];
+                break;
+            }
+        }
+
+        return parent;
+    }
+
+
+
+    // crossover where one child adopts midway point between two parent strategies.
+//    public void crossover(Player child, Player parent1, Player parent2){
     public void crossover(Player child){
 
         // how to select parents?
@@ -735,13 +1008,13 @@ public class Env extends Thread{ // environment simulator
         Player parent2 = child; // second-fittest neighbour
         for(int i=0;i<neighbourhood.size();i++){
             Player neighbour = neighbourhood.get(i);
-            double neighbour_u = neighbour.getU();
-            double parent2_u = parent2.getU();
-            if(neighbour_u > parent2_u){
+            double neighbour_avg_score = neighbour.getAvgScore();
+            double parent2_avg_score = parent2.getAvgScore();
+            if(neighbour_avg_score > parent2_avg_score){
                 parent2 = neighbourhood.get(i);
-                parent2_u = parent2.getU();
-                double parent1_mean_score = parent1.getU();
-                if(parent2_u > parent1_mean_score){
+                parent2_avg_score = parent2.getAvgScore();
+                double parent1_avg_score = parent1.getAvgScore();
+                if(parent2_avg_score > parent1_avg_score){
                     Player temp = parent1;
                     parent1 = parent2;
                     parent2 = temp;
@@ -757,22 +1030,31 @@ public class Env extends Thread{ // environment simulator
 
 
 
-
-    /**
-     * Child wholly copies parent's strategy.
-     */
-    public void evoCopy(Player child, Player parent){
-        child.setP(parent.getOldP());
+    public void setStrategy(Player player, double p, double q){
+        player.setP(p);
+        player.setQ(q);
     }
 
 
 
     /**
-     * Use evoNoise to move child strategy in direction of parent strategy.
+     * Evolution method where child wholly copies parent's strategy.
+     * @param parent is the parent the player is copying.
+     */
+    public void copyEvolution(Player child, Player parent){
+        double parent_old_p = parent.getOldP();
+        double parent_old_q = parent.getOldQ();
+        setStrategy(child, parent_old_p, parent_old_q);
+    }
+
+
+
+    /**
+     * Use evo noise to move child strategy in direction of parent strategy.
      * @param child
      * @param parent
      */
-    public void evoApproach(Player child, Player parent){
+    public void approachEvolution(Player child, Player parent){
         int ID = child.getID();
         int parent_ID = parent.getID();
         double p = child.getP();
@@ -784,7 +1066,7 @@ public class Env extends Thread{ // environment simulator
         if(parent_ID != ID){
 
             // for attribute, if parent is lower, reduce child; else, increase.
-            double approach = ThreadLocalRandom.current().nextDouble(evoNoise);
+            double approach = ThreadLocalRandom.current().nextDouble(evonoise);
             if(parent_old_p < p){
                 approach *= -1;
             }
@@ -794,9 +1076,7 @@ public class Env extends Thread{ // environment simulator
             }
             double new_q = q + approach;
 
-//            setStrategy(child, new_p, new_q);
-            child.setP(new_p);
-            child.setQ(new_q);
+            setStrategy(child, new_p, new_q);
         }
     }
 
@@ -808,7 +1088,7 @@ public class Env extends Thread{ // environment simulator
      */
     public boolean mutationCheck(){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        boolean mutation = random_double < mutRate;
+        boolean mutation = random_double < mutrate;
 
         return mutation;
     }
@@ -818,11 +1098,11 @@ public class Env extends Thread{ // environment simulator
     /**
      * Child's attributes are randomly and independently generated.
      */
-    public void mutGlobal(Player child){
+    public void globalMutation(Player child){
         double new_p = ThreadLocalRandom.current().nextDouble();
         double new_q = ThreadLocalRandom.current().nextDouble();
-        child.setP(new_p);
-        child.setQ(new_q);
+
+        setStrategy(child, new_p, new_q);
     }
 
 
@@ -830,27 +1110,26 @@ public class Env extends Thread{ // environment simulator
     /**
      * Slight mutations are independently applied to child's attributes.
      */
-    public void mutLocal(Player child){
-        switch(game){
-            case "UG" -> {
-                double p = child.getP();
-                double q = child.getQ();
-                double new_p = ThreadLocalRandom.current().nextDouble(p - mutBound, p + mutBound);
-                double new_q = ThreadLocalRandom.current().nextDouble(q - mutBound, q + mutBound);
-                child.setP(new_p);
-                child.setQ(new_q);
-            }
-            case "DG" -> {
-                double p = child.getP();
-                double new_p = ThreadLocalRandom.current().nextDouble(p - mutBound, p + mutBound);
-                child.setP(new_p);
-            }
-        }
+    public void localMutation(Player child){
+        double p = child.getP();
+        double q = child.getQ();
+
+        double new_p = ThreadLocalRandom.current().nextDouble(p - mutbound, p + mutbound);
+        double new_q = ThreadLocalRandom.current().nextDouble(q - mutbound, q + mutbound);
+
+        setStrategy(child, new_p,new_q);
     }
 
 
 
-    public void calculateMeanEdgeWeights(){
+    public void calculateAverageEdgeWeights(){
+//        for(ArrayList<Player> row:grid){
+//            for(Player player: row){
+//                calculateMeanSelfEdgeWeight(player);
+//                calculateMeanNeighbourEdgeWeight(player);
+//            }
+//        }
+
         for(int i=0;i<N;i++){
             Player player = pop[i];
             calculateMeanSelfEdgeWeight(player);
@@ -861,15 +1140,15 @@ public class Env extends Thread{ // environment simulator
 
 
     public void calculateMeanSelfEdgeWeight(Player player){
-        ArrayList <Double> weights = player.getEdgeWeights();
-        int size = weights.size();
+        double[] edge_weights = player.getEdgeWeights();
+        int length = edge_weights.length;
         double mean_self_edge_weight = 0;
 
         // calculate mean of edge weights from player to its neighbours
-        for(int i = 0; i < size; i++){
-            mean_self_edge_weight += weights.get(i);
+        for(int i = 0; i < length; i++){
+            mean_self_edge_weight += edge_weights[i];
         }
-        mean_self_edge_weight /= size;
+        mean_self_edge_weight /= length;
 
         player.setMeanSelfEdgeWeight(mean_self_edge_weight);
     }
@@ -884,9 +1163,9 @@ public class Env extends Thread{ // environment simulator
         // calculate mean of edge weights directed at player
         for(int i = 0; i < size; i++) {
             Player neighbour = neighbourhood.get(i);
-            ArrayList <Double> weights = neighbour.getEdgeWeights();
+            double[] edge_weights = neighbour.getEdgeWeights();
             int index = findPlayerIndex(player, neighbour);
-            mean_neighbour_edge_weight += weights.get(index);
+            mean_neighbour_edge_weight += edge_weights[index];
         }
         mean_neighbour_edge_weight /= size;
 
@@ -906,9 +1185,9 @@ public class Env extends Thread{ // environment simulator
         int size = neighbourhood.size();
 
         for (int i = 0; i < size; i++) {
-            Player neighbour2 = neighbourhood.get(i);
-            int ID2 = neighbour2.getID();
-            if (ID == ID2) {
+            Player neighbours_neighbour = neighbourhood.get(i);
+            int neighbours_neighbour_ID = neighbours_neighbour.getID();
+            if (ID == neighbours_neighbour_ID) {
                 index = i;
                 break;
             }
@@ -922,7 +1201,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Loads in a configuration of settings from the config file, allowing the user to choose the values of the environmental parameters.
      */
-    public static void configureEnvironment(){
+    public static void setupEnvironment(){
         // load configurations
         ArrayList<String> configurations = new ArrayList<>(); // stores configs
         try{
@@ -938,318 +1217,247 @@ public class Env extends Thread{ // environment simulator
 
         // display intro and config table headings
         System.out.printf("=========================================%n");
-        System.out.printf("   Artificial Life Simulator%n");
+        System.out.printf("   Evolutionary Game Theory Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
-        printTableLine();
-//        System.out.println(
-//                "runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writeRate,varying,variations"
-//        );
-        System.out.printf("%-10s |"+//config
-                " %-5s |"+//runs
-                " %-10s |"+//length
-                " %-5s |"+//ER
-                " %-10s |"+//gens
-                " %-15s |"+//EWT
-                " %-5s |"+//RP
-                " %-15s |"+//RA
-                " %-5s |"+//RT
-                " %-5s |"+//EWLF
-                " %-5s |"+//ROC
-                " %-15s |"+//sel
-                " %-15s |"+//RWT
-                " %-10s |"+//selNoise
-                " %-10s |"+//mut
-                " %-10s |"+//mutRate
-                " %-10s |"+//mutBound
-                " %-10s |"+//UF
-                " %-5s |"+//WPGS
-                " %-5s |"+//WUGS
-                " %-5s |"+//WDGS
-                " %-5s |"+//WPRS
-                " %-5s |"+//WURS
-                " %-5s |"+//WDRS
-                " %-10s |"+//writeRate
-                " %-10s |"+//varying
-                " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWLF","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+        printTableBorder();
+        System.out.printf("%-6s |" +//config
+                        " %-4s |" +//game
+                        " %-6s |" +//runs
+                        " %-9s |" +//iters
+                        " %-6s |" +//length
+                        " %-6s |" +//width
+                        " %-10s |" +//space
+                        " %-3s |" +//EWT
+                        " %-9s |" +//EWLC
+                        " %-11s |" +//EWLF
+                        " %-3s |" +//ER
+                        " %-6s |" +//ROC
 
+                        " %-8s |" +//neigh
+                        " %-8s |" +//sel
+                        " %-8s |" +//selnoise
+                        " %-3s |" +//ASD
+                        " %-8s |" +//evo
+                        " %-8s |" +//evonoise
+                        " %-6s |" +//mut
+                        " %-7s |" +//mutrate
+                        " %-9s |" +//mutbound
+
+                        " %-9s |" +//varying
+                        " %-9s |" +//variation
+                        " %-6s |" +//numexp
+
+                        " %-8s |" +//datarate
+
+                        " %-6s |" +//alpha
+                        " %-6s |" +//beta
+                        " %-7s |" +//leeway1
+                        " %-7s |" +//leeway2
+                        " %-7s |" +//leeway3
+                        " %-7s |" +//leeway4
+                        " %-7s |" +//leeway5
+                        " %-7s |" +//leeway6
+                        " %-7s |" +//leeway7
+
+                        " %-9s |" +//injiter
+                        " %-6s |" +//injp
+                        " %-7s |" +//injsize
+                        " desc%n" // ensure desc is the last column
+                ,"config"
+                ,"game"
+                ,"runs"
+                ,"iters"
+                ,"length"
+                ,"width"
+                ,"space"
+                ,"EWT"
+                ,"EWLC"
+                ,"EWLF"
+                ,"ER"
+                ,"ROC"
+
+                ,"neigh"
+                ,"sel"
+                ,"selnoise"
+                ,"ASD"
+                ,"evo"
+                ,"evonoise"
+                ,"mut"
+                ,"mutrate"
+                ,"mutbound"
+                ,"varying"
+                ,"variation"
+                ,"numexp"
+                ,"datarate"
+
+                ,"alpha"
+                ,"beta"
+                ,"leeway1"
+                ,"leeway2"
+                ,"leeway3"
+                ,"leeway4"
+                ,"leeway5"
+                ,"leeway6"
+                ,"leeway7"
+
+                ,"injiter"
+                ,"injp"
+                ,"injsize"
         );
-        printTableLine();
+        printTableBorder();
 
         // display config table rows
-        int CI; // configuration index
-        String[] settings;
         for(int i=0;i<configurations.size();i++){
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
-            System.out.printf("%-10d ", i); //config
-            System.out.printf("| %-5s ", settings[CI++]); //runs
-            System.out.printf("| %-10s ", settings[CI++]); //length
-            System.out.printf("| %-5s ", settings[CI++]); //ER
-            System.out.printf("| %-10s ", settings[CI++]); //gens
-            System.out.printf("| %-15s ", settings[CI++]); //EWT
-            System.out.printf("| %-5s ", settings[CI++]); //RP
-            System.out.printf("| %-15s ", settings[CI++]); //RA
-            System.out.printf("| %-5s ", settings[CI++]); //RT
-            System.out.printf("| %-5s ", settings[CI++]); //EWLF
-            System.out.printf("| %-5s ", settings[CI++]); //ROC
-            System.out.printf("| %-15s ", settings[CI++]); //sel
-            System.out.printf("| %-15s ", settings[CI++]); //RWT
-            System.out.printf("| %-10s ", settings[CI++]); //selNoise
-            System.out.printf("| %-10s ", settings[CI++]); //mut
-            System.out.printf("| %-10s ", settings[CI++]); //mutRate
-            System.out.printf("| %-10s ", settings[CI++]); //mutBound
-            System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-5s ", settings[CI++]); //WPGS
-            System.out.printf("| %-5s ", settings[CI++]); //WUGS
-            System.out.printf("| %-5s ", settings[CI++]); //WDGS
-            System.out.printf("| %-5s ", settings[CI++]); //WPRS
-            System.out.printf("| %-5s ", settings[CI++]); //WURS
-            System.out.printf("| %-5s ", settings[CI++]); //WDRS
-            System.out.printf("| %-10s ", settings[CI++]); //writeRate
-            System.out.printf("| %-10s ", settings[CI++]); //varying
-            System.out.printf("| %s ", settings[CI++]); //variations
+            System.out.printf("%-6d ", i); //config
+            System.out.printf("| %-4s ", settings[CI++]); //game
+            System.out.printf("| %-6s ", settings[CI++]); //runs
+            System.out.printf("| %-9s ", settings[CI++]); //iters
+            System.out.printf("| %-6s ", settings[CI++]); //length
+            System.out.printf("| %-6s ", settings[CI++]); //width
+            System.out.printf("| %-10s ", settings[CI++]); //space
+            System.out.printf("| %-3s ", settings[CI++]); //EWT
+            System.out.printf("| %-9s ", settings[CI++]); //EWLC
+            System.out.printf("| %-11s ", settings[CI++]); //EWLF
+            System.out.printf("| %-3s ", settings[CI++]); //ER
+            System.out.printf("| %-6s ", settings[CI++]); //ROC
+
+            System.out.printf("| %-8s ", settings[CI++]); //neigh
+            System.out.printf("| %-8s ", settings[CI++]); //sel
+            System.out.printf("| %-8s ", settings[CI++]); //selnoise
+            System.out.printf("| %-3s ", settings[CI++]); //ASD
+            System.out.printf("| %-8s ", settings[CI++]); //evo
+            System.out.printf("| %-8s ", settings[CI++]); //evonoise
+            System.out.printf("| %-6s ", settings[CI++]); //mut
+            System.out.printf("| %-7s ", settings[CI++]); //mutrate
+            System.out.printf("| %-9s ", settings[CI++]); //mutbound
+            System.out.printf("| %-8s ", settings[CI++]); //datarate
+            System.out.printf("| %-9s ", settings[CI++]); //varying
+            System.out.printf("| %-9s ", settings[CI++]); //variation
+            System.out.printf("| %-6s ", settings[CI++]); //numexp
+
+            System.out.printf("| %-6s ", settings[CI++]); //alpha
+            System.out.printf("| %-6s ", settings[CI++]); //beta
+            System.out.printf("| %-7s ", settings[CI++]); //leeway1
+            System.out.printf("| %-7s ", settings[CI++]); //leeway2
+            System.out.printf("| %-7s ", settings[CI++]); //leeway3
+            System.out.printf("| %-7s ", settings[CI++]); //leeway4
+            System.out.printf("| %-7s ", settings[CI++]); //leeway5
+            System.out.printf("| %-7s ", settings[CI++]); //leeway6
+            System.out.printf("| %-7s ", settings[CI++]); //leeway7
+
+            System.out.printf("| %-9s ", settings[CI++]); //injiter
+            System.out.printf("| %-6s ", settings[CI++]); //injp
+            System.out.printf("| %-7s ", settings[CI++]); //injsize
+            System.out.printf("| %s ", settings[CI]); //desc
             System.out.println();
         }
-        printTableLine();
+        printTableBorder();
 
-        // ask user which config they wish to use
+        // ask user which config they want to use
         System.out.println("Which config would you like to use? (int)");
-        boolean config_selected = false;
+        boolean config_found = false;
         int config_num;
         do{ // ensure user selects valid config
             config_num = scanner.nextInt();
             if(0 <= config_num && config_num < configurations.size()){
-                config_selected = true;
+                config_found = true;
             } else{
-                System.out.println("[ERROR] Invalid config number, try again");
+                System.out.println("ERROR: invalid config number, try again");
             }
-        }while(!config_selected);
+        }while(!config_found);
 
 
-        // apply config
+        // start applying the config
         settings = configurations.get(config_num).split(",");
         CI = 0;
-        int CI2;
-        int CI3;
-
-
+        game = settings[CI++];
         Player.setGame(game);
-        runs = Integer.parseInt(settings[CI++]);
+//        runs = Integer.parseInt(settings[CI++]);
+        runs=applySettingInt();
         if(runs < 1){
-            System.out.println("[ERROR] Invalid runs passed");
-            exit();
+            System.out.println("[ERROR] Invalid number of runs configured. Exiting...");
+            Runtime.getRuntime().exit(0);
         }
-        length = Integer.parseInt(settings[CI++]);
-        if(length < 3){
-            System.out.println("[ERROR] Invalid length passed");
-            exit();
+//        iters = Integer.parseInt(settings[CI++]);
+        iters=applySettingInt();
+        if(iters < 1){
+            System.out.println("[ERROR] Invalid number of generations configured. Exiting...");
+            Runtime.getRuntime().exit(0);
         }
-        width = length;
+//        length = Integer.parseInt(settings[CI++]);
+        length=applySettingInt();
+        if(length < 1){
+            System.out.println("[ERROR] Invalid length. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
+//        width=Integer.parseInt(settings[CI++]);
+        width=applySettingInt();
+        if(width < 1){
+            System.out.println("[ERROR] Invalid width. Exiting...");
+            Runtime.getRuntime().exit(0);
+        }
+//        columns = rows; // square lattice
+//        N = rows * columns;
         N = length * width;
-        ER = Integer.parseInt(settings[CI++]);
-        if(ER < 1){
-            System.out.println("[ERROR] Invalid ER passed");
-            exit();
-        }
-        gens = Integer.parseInt(settings[CI++]);
-        if(gens < 1){
-            System.out.println("[ERROR] Invalid gens passed");
-            exit();
-        }
+        space=settings[CI++];
         EWT = settings[CI++];
-        switch(EWT){
-            case "rewire" -> {
-                try {
-                    RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
-                    if(RP < 0.0 || RP > 1.0){
-                        System.out.println("[ERROR] Invalid RP passed");
-                        exit();
-                    }
-                }catch(NumberFormatException e){}
-                RA = settings[CI++]; // strings dont get an exception when input = ""
-                if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
-                    System.out.println("[ERROR] Invalid RA passed");
-                    exit();
-                }
-                RT = settings[CI++];
-                if(!(RT.equals("local") || RT.equals("pop"))){
-                    System.out.println("[ERROR] Invalid RT passed");
-                    exit();
-                }
-            }
-            case "proposalProb" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
-            default -> {
-                System.out.println("[ERROR] Invalid EWT passed");
-                exit();
-            }
-        }
+        EWLC = settings[CI++];
+        if(!EWLC.equals("p") && !EWLC.equals("avgscore"))
+            System.out.println("[NOTE] No edge weight learning condition configured.");
         EWLF = settings[CI++];
-        switch(EWLF){
-            case "PROC", "UROC" -> {
-                try {
-                    ROC = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(ROC < 0.0 || ROC > 1.0){
-                    System.out.println("[ERROR] Invalid ROC passed");
-                    exit();
-                }
-            }
-            case "PD", "UD" -> CI++;
-            default -> {
-                System.out.println("[ERROR] Invalid EWLF passed");
-                exit();
-            }
+        if(!EWLF.equals("ROC")
+                && !EWLF.equals("pAD")
+                && !EWLF.equals("pEAD")
+                && !EWLF.equals("avgscoreAD")
+                && !EWLF.equals("avgscoreEAD")
+                && !EWLF.equals("pAD2")
+                && !EWLF.equals("pAD3")
+                && !EWLF.equals("AB"))
+            System.out.println("[NOTE] No edge weight learning formula configured.");
+//        ER=Integer.parseInt(settings[CI++]);
+        ER=applySettingInt();
+        if(ER < 1){
+            System.out.println("[ERROR] Invalid evolution rate configured. Exiting...");
+            Runtime.getRuntime().exit(0);
         }
-        sel = settings[CI++];
-        switch(sel){
-            case "RW" -> {
-                RWT = settings[CI++];
-                switch(RWT){
-                    case "exponential" -> {
-                        try {
-                            selNoise = Double.parseDouble(settings[CI++]);
-                        }catch(NumberFormatException e){}
-                    }
-                    case "normal" -> CI++;
-                    default -> {
-                        System.out.println("[ERROR] Invalid RWT passed");
-                        exit();
-                    }
-                }
-            }
-            case "fittest", "randomNeigh", "randomPop" -> CI += 2;
-            default -> {
-                System.out.println("[ERROR] Invalid sel passed");
-                exit();
-            }
-        }
-        mut = settings[CI++];
-        switch(mut){
-            case "global" -> {
-                try {
-                    mutRate = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed");
-                    exit();
-                }
-                CI++;
-            }
-            case "local" -> {
-                try {
-                    mutRate = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed");
-                    exit();
-                }
-                try {
-                    mutBound = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutBound < 0.0 || mutBound > 1.0){
-                    System.out.println("[ERROR] Invalid mutBound passed");
-                    exit();
-                }
-            }
-            default -> {
-                System.out.println("[INFO] No mutation");
-                CI += 2;
-            }
-        }
-        UF = settings[CI++];
-        switch(UF){
-            case "cumulative", "normalised" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid UF passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writePGenStats = false;
-            case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WPGS passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writeUGenStats = false;
-            case "1" -> writeUGenStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WUGS passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writeDegGenStats = false;
-            case "1" -> writeDegGenStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WDGS passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writePRunStats = false;
-            case "1" -> writePRunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WPRS passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writeURunStats = false;
-            case "1" -> writeURunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WDegRS passed");
-                exit();
-            }
-        }
-        switch(settings[CI++]){
-            case "0" -> writeDegRunStats = false;
-            case "1" -> writeDegRunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WDRS passed");
-                exit();
-            }
-        }
-        if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats){
-            writeRate = Integer.parseInt(settings[CI++]);
-            if(writeRate < 1 || writeRate > gens){
-                System.out.println("[ERROR] Invalid writeRate passed");
-                exit();
-            }
-        }else{
-            CI++;
-        }
-        varying = settings[CI++];
-        switch(varying){
-            case "ER",
-                    "ROC",
-                    "length",
-                    "RP",
-                    "gens",
-                    "EWLF",
-                    "RA",
-                    "RT",
-                    "sel",
-                    "selNoise",
-                    "mutRate",
-                    "mutBound",
-                    "UF" -> {
-                for(String variation: settings[CI].split(";")){
-                    variations.add(variation);
-                }
-                exps = variations.size() + 1;
-            }
-            default -> {}
-        }
+        ROC=applySettingDouble();
+
+        neigh=settings[CI++];
+        sel=settings[CI++];
+        selnoise=applySettingDouble();
+        ASD=settings[CI++];
+        evo=settings[CI++];
+        evonoise=applySettingDouble();
+        mut=settings[CI++];
+        mutrate=applySettingDouble();
+        mutbound=applySettingDouble();
+
+        varying=settings[CI++];
+        experiment_series=(varying.equals(""))?false:true;
+        variation=applySettingDouble();
+        numexp=applySettingInt();
+
+        datarate=applySettingInt();
+
+        alpha=applySettingDouble();
+        beta=applySettingDouble();
+
+        leeway1=applySettingDouble();
+        leeway2=applySettingDouble();
+        leeway3=applySettingDouble();
+        leeway4=applySettingDouble();
+        leeway5=applySettingDouble();
+        leeway6=applySettingDouble();
+        leeway7=applySettingDouble();
+
+        injiter=applySettingInt();
+        if(injiter>iters)
+            System.out.println("NOTE: injiter > iters, therefore no injection will occur.");
+        injp=applySettingDouble();
+        injsize=applySettingInt();
+        desc=(settings[CI].equals(""))?"":settings[CI]; // final config param
     }
 
 
@@ -1259,42 +1467,40 @@ public class Env extends Thread{ // environment simulator
      */
     public void initRandomPop(){
         pop = new Player[N];
-        Player.setCount(0);
         int index = 0;
-        switch(space){
-            case "grid" -> {
-                for(int y=0;y<length;y++){
-                    for(int x=0;x<width;x++){
-                        Player new_player = null;
-                        switch(game){
-                            case "UG" -> {
-                                double p = ThreadLocalRandom.current().nextDouble();
-                                double q = ThreadLocalRandom.current().nextDouble();
-                                new_player = new Player(x, y, p, q);
+        if(space.equals("grid")){
+            for(int y=0;y<length;y++){
+                for(int x=0;x<width;x++){
+                    Player new_player = null;
+                    switch(game){
+                        case"UG","DG"->{
+                            double p = ThreadLocalRandom.current().nextDouble();
+                            double q = 0;
+                            switch(game){
+                                case"UG"->q=ThreadLocalRandom.current().nextDouble();
+                                case"DG"->q=0;
                             }
-                            case "DG" -> {
-                                double p = ThreadLocalRandom.current().nextDouble();
-                                new_player = new Player(x, y, p, 0.0);
-                            }
-                            case "PD" -> {}
+                            new_player=new Player(x,y,p,q,leeway2);
                         }
-                        pop[index] = new_player;
-                        index++;
                     }
+                    pop[index] = new_player;
+                    index++;
                 }
             }
-            case "hex" -> {}
+        }else if(space.equals("hex")){
+            // implement this...
         }
     }
 
 
 
     /**
-     * Prints a line in the table of configurations.
+     * Prints the border of the table of configurations.
      */
-    public static void printTableLine(){
+    public static void printTableBorder(){
         System.out.printf(
                 "=======================================================" +
+                        "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
@@ -1305,27 +1511,102 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public static void createDataFolders(){
-        try{
-            if(writeRate > 0) Files.createDirectories(Paths.get(exp_path));
-            for(int i=1;i<=runs;i++){
-                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats) // add run stat writing params to this check
-                    Files.createDirectories(Paths.get(exp_path + "\\run" + i));
-                if(writePGenStats || writeUGenStats || writeDegGenStats)
-                    Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
+    // Create folders to store data.
+    public static void createFolders(){
+        if(game.equals("UG") || game.equals("DG")){
+            p_data_filename = experiment_results_folder_path + "\\p_data";
+            if(game.equals("UG")){
+                q_data_filename = experiment_results_folder_path + "\\q_data";
             }
+        }
+        EW_data_filename = experiment_results_folder_path + "\\EW_data";
+        NSI_data_filename = experiment_results_folder_path + "\\NSI_data";
+        try{
+            if(game.equals("UG") || game.equals("DG")){
+                Files.createDirectories(Paths.get(p_data_filename));
+                if(game.equals("UG")){
+                    Files.createDirectories(Paths.get(q_data_filename));
+                }
+            }
+            Files.createDirectories(Paths.get(EW_data_filename));
+            Files.createDirectories(Paths.get(NSI_data_filename));
         }catch(IOException e){
             e.printStackTrace();
+        }
+
+    }
+
+
+
+    // Collects initial settings into a string.
+    public static void setInitialSettings(){
+        if(experiment_series && experiment_num == 1){ // if at start of series
+            initial_settings += "Experiment series ("+desc+")" +
+                    " varying "+varying+
+                    " by "+variation+
+                    " between " + numexp+" experiments: ";
+        } else if(!experiment_series){
+            initial_settings += "Experiment: ";
+        }
+        initial_settings+=game;
+        initial_settings+=", "+runs+" runs";
+        initial_settings+=", "+iters+" iters";
+        initial_settings+=", "+length+" length";
+        initial_settings+=", "+width+" width";
+        initial_settings+=", EWT="+EWT;
+        initial_settings+=", EWLC="+EWLC;
+        initial_settings+=", EWLF="+EWLF;
+        initial_settings+=", ER="+ER;
+        if(ROC != 0) initial_settings+=", ROC="+ROC;
+        if(alpha != 0) initial_settings+=", alpha="+alpha;
+        if(beta != 0) initial_settings+=", beta="+beta;
+        if(leeway1 != 0) initial_settings+=", leeway1="+leeway1;
+        if(leeway2 != 0) initial_settings+=", leeway2="+leeway2;
+        if(leeway3 != 0) initial_settings+=", leeway3="+leeway3;
+        if(leeway4 != 0) initial_settings+=", leeway4="+leeway4;
+        if(leeway5 != 0) initial_settings+=", leeway5="+leeway5;
+        if(leeway6 != 0) initial_settings+=", leeway6="+leeway6;
+        if(leeway7 != 0) initial_settings+=", leeway7="+leeway7;
+        initial_settings+=", "+neigh+" neigh";
+        initial_settings+=", "+sel+" sel";
+        if(sel.equals("Rand")) initial_settings+=", selnoise="+selnoise; // if sel func uses another param
+        initial_settings+=", ASD="+ASD;
+        initial_settings+=", "+evo+" evo";
+        switch(evo){
+            case"approach"->initial_settings+=", evonoise="+evonoise;
+        }
+        switch(mut){
+            case"local","global"->{
+                initial_settings+=", "+mut+" mut";
+                initial_settings+=", mutrate="+DF4.format(mutrate);
+                switch(mut){
+                    case"local"->initial_settings+=", mutbound="+DF4.format(mutbound);
+                }
+            }
+        }
+        if(injiter > 0){
+            initial_settings+=", injiter="+injiter;
+            initial_settings+=", injp="+injp;
+            initial_settings+=", injsize="+injsize;
         }
     }
 
 
 
     /**
-     * Prints path of experiment stats folder.
+     * Prints initial experimentation settings.
      */
-    public static void printPath(){
-        System.out.println("Address of experimentation data: \n" + this_path);
+    public static void printInitialSettings(){
+        System.out.println(initial_settings);
+    }
+
+
+
+    /**
+     * Prints path of experiment results folder.
+     */
+    public static void printExperimentResultsFolderPath(){
+        System.out.println("Experiment results folder path: \n" + experiment_results_folder_path);
     }
 
 
@@ -1334,40 +1615,123 @@ public class Env extends Thread{ // environment simulator
      * Assigns adjacent neighbour to player's neighbourhood.<br>
      * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
      * for Moore neighbourhood.
-    */
-    public void assignAdjacentNeighbours(Player player){
+     */
+//    public void assignAdjacentNeighbours(Player player, int y, int x, String type, int d){
+    public void assignAdjacentNeighbours(Player player, String type, int d){
+//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
         ArrayList<Player> neighbourhood = new ArrayList<>();
+        double[] edge_weights = new double[]{};
+
         double y = player.getY();
         double x = player.getX();
-        for(int i=1;i<=neighRadius;i++){
+        for(int i=1;i<=d;i++){
+//            double y_plus = (((y + i) % length) + length) % length;
+//            double y_minus = (((y - i) % length) + length) % length;
+//            double x_plus = (((x + i) % width) + width) % width;
+//            double x_minus = (((x - i) % width) + width) % width;
+
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
+
+//            assignNeighbour(neighbourhood,edge_weights,i,y,x_plus);
+
             neighbourhood.add(findPlayerByPos(y,x_plus));
             neighbourhood.add(findPlayerByPos(y,x_minus));
             neighbourhood.add(findPlayerByPos(y_plus,x));
             neighbourhood.add(findPlayerByPos(y_minus,x));
-            if(neighType.equals("dia")) {
+
+            if(type.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
+
                     neighbourhood.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
                     neighbourhood.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
                     neighbourhood.add(findPlayerByPos(y_plus_minus,(x_minus_plus)));
+
                 }
             }
-            if(neighType.equals("Moore")){
+
+            if(type.equals("Moore")){
                 neighbourhood.add(findPlayerByPos(y_plus,x_plus));
                 neighbourhood.add(findPlayerByPos(y_minus,x_plus));
                 neighbourhood.add(findPlayerByPos(y_minus,x_minus));
                 neighbourhood.add(findPlayerByPos(y_plus,x_minus));
             }
         }
+
+        // DO NOT REMOVE UNTIL FULL FUNCTIONALITY REPLICATED ABOVE!
+//        for(int i = 1; i <= d; i++){
+////            int x_plus = (((x + i) % rows) + rows) % rows;
+////            int x_minus = (((x - i) % rows) + rows) % rows;
+////            int y_plus = (((y + i) % columns) + columns) % columns;
+////            int y_minus = (((y - i) % columns) + columns) % columns;
+//            int x_plus = adjustPosition(x, i, rows);
+//            int x_minus = adjustPosition(x, -i, rows);
+//            int y_plus = adjustPosition(y, i, columns);
+//            int y_minus = adjustPosition(y, -i, columns);
+//
+//
+//            // add VN neighbours
+//            neighbourhood.add(grid.get(y).get(x_plus));         // (x + i,  y)
+//            neighbourhood.add(grid.get(y).get((x_minus)));      // (x - i,  y)
+//            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + i)
+//            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - i)
+//
+//            if(type.equals("dia")){
+//                if(i > 1){
+////                    int x_plus_minus = (((x_plus - 1) % rows) + rows) % rows;
+////                    int x_minus_plus = (((x_minus + 1) % rows) + rows) % rows;
+////                    int y_plus_minus = (((y_plus - 1) % rows) + rows) % rows;
+////                    int y_minus_plus = (((y_minus + 1) % rows) + rows) % rows;
+//                    int x_plus_minus = adjustPosition(x_plus, -1, rows);
+//                    int x_minus_plus = adjustPosition(x_minus, 1, rows);
+//                    int y_plus_minus = adjustPosition(y_plus, -1, rows);
+//                    int y_minus_plus = adjustPosition(y_minus, 1, rows);
+//
+//
+//                    neighbourhood.add(grid.get(y_plus_minus).get(x_plus_minus));
+//                    neighbourhood.add(grid.get(y_minus_plus).get(x_plus_minus));
+//                    neighbourhood.add(grid.get(y_minus_plus).get(x_minus_plus));
+//                    neighbourhood.add(grid.get(y_plus_minus).get(x_minus_plus));
+//                }
+//            }
+//
+//            // add M neighbours
+//            if(type.equals("M")){
+//                neighbourhood.add(grid.get(y_plus).get(x_plus));    // (x + d,  y + i)
+//                neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x + d,  y - i)
+//                neighbourhood.add(grid.get(y_minus).get(x_minus));  // (x - d,  y - i)
+//                neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - d,  y + i)
+//            }
+//        }
+
         player.setNeighbourhood(neighbourhood);
+    }
+
+
+
+//    public void assignNeighbour(ArrayList <Player> neighbourhood, double[] edge_weights, int i, double y, double x){
+//        neighbourhood.add(findPlayerByPos(y,x));
+//        edge_weights[i]=1.0;
+//    }
+
+
+
+    // give player the IDs of its neighbours.
+    public void assignNeighbourIDs(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int size = neighbourhood.size();
+        int[] arr = new int[size];
+        for(int i=0;i<size;i++){
+            arr[i] = neighbourhood.get(i).getID();
+        }
+        player.setNeighbourIDs(arr);
     }
 
 
@@ -1376,15 +1740,30 @@ public class Env extends Thread{ // environment simulator
      * Randomly assigns either uni-directional or bi-directional edges to player.<br>
      * Assumes 2D square lattice grid population structure.
      * @param player
+     * @param type
      * @param size
      */
-    public void assignRandomNeighbours(Player player, int size){
+    public void assignRandomNeighbours(Player player, String type, int size){
         ArrayList<Player> neighbourhood = player.getNeighbourhood();
+
+        // randomly generate IDs
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size){
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
+
+        // assign edges to neighbours
+//        for(int ID: IDs){
+//            int column = ID / columns;
+//            int row = ID % rows;
+//            neighbourhood.add(grid.get(column).get(row));
+//            if(type.equals("bi")){
+//                grid.get(column).get(row).getNeighbourhood().add(player);
+//            }
+//        }
+
+
         for(int ID: IDs){
             neighbourhood.add(findPlayerByID(ID));
         }
@@ -1396,6 +1775,17 @@ public class Env extends Thread{ // environment simulator
     public void assignAllNeighbours(Player player){
         ArrayList <Player> neighbourhood = player.getNeighbourhood();
         int ID = player.getID();
+
+//        for(int i = 0; i < grid.size(); i++){
+//            for(int j = 0; j < grid.get(0).size(); j++){
+//                Player neighbour = grid.get(i).get(j);
+//                int neighbour_id = neighbour.getID();
+//                if(id != neighbour_id){
+//                    neighbourhood.add(neighbour);
+//                }
+//            }
+//        }
+
         for(int i=0;i<N;i++){
             Player player2 = pop[i];
             int ID2 = player2.getID();
@@ -1406,73 +1796,282 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-
-    public void calculateMeanP(){
-        mean_p = 0;
-        for(int i = 0; i < N; i++){
-            mean_p += pop[i].getP();
+    // initialise NSI per neighbour counters.
+    public void resetNSIPerNeighbour(Player player){
+        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        int size = neighbourhood.size();
+        player.setNSIPerNeighbour(new int[size]);
+        for(int i = 0; i < size; i++){
+            player.getNSIPerNeighbour()[i] = 0;
         }
-        mean_p /= N;
     }
 
-    public void calculateSigmaP(){
-        sigma_p = 0;
-        for(int i = 0; i < N; i++){
-            sigma_p += Math.pow(pop[i].getP() - mean_p, 2);
-        }
-        sigma_p = Math.pow(sigma_p / N, 0.5);
-    }
 
-    public void calculateMeanU(){
-        mean_u = 0;
-        for(int i = 0; i < N; i++){
-            mean_u += pop[i].getU();
-        }
-        mean_u /= N;
-    }
-
-    public void calculateSigmaU(){
-        sigma_u = 0;
-        for(int i = 0; i < N; i++){
-            sigma_u += Math.pow(pop[i].getU() - mean_u, 2);
-        }
-        sigma_u = Math.pow(sigma_u / N, 0.5);
-    }
-
-    public void calculateMeanDegree(){
-        mean_deg = 0;
-        for(int i = 0; i < N; i++){
-            mean_deg += pop[i].getDegree();
-        }
-        mean_deg /= N;
-    }
 
     /**
-     * IMPORTANT NOTE: mean deg has been substituted by 4.
-     * You can get away with this because mean deg is always 4!
-     * If program changes such that mean deg is not always 4, use mean_deg instead of 4!
+     * Calculate the average value of p and the standard deviation of p across the population
+     * at the current generation.
      */
-    public void calculateSigmaDeg(){
-        sigma_deg = 0;
-        for(int i = 0; i < N; i++){
-//            sigma_deg += Math.pow(pop[i].getDegree() - mean_deg, 2);
-            double deg = pop[i].getDegree();
-            double deg_minus_mean_deg = deg - 4;
-            sigma_deg += Math.pow(deg_minus_mean_deg, 2);
+    public void calculateOverallStats(){
+        // calculate average p
+        avg_p = 0;
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                avg_p+=player.getP();
+//            }
+//        }
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            double p = player.getP();
+            avg_p += p;
         }
-//        sigma_deg = Math.pow(sigma_deg / N, 0.5);
-        sigma_deg = Math.sqrt(sigma_deg / N);
+        avg_p /= N;
+
+        // calculate p SD
+        p_SD = 0;
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                p_SD += Math.pow(player.getP() - avg_p, 2);
+//            }
+//        }
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            double p = player.getP();
+            p_SD += Math.pow(p - avg_p, 2);
+        }
+        p_SD = Math.pow(p_SD / N, 0.5);
+
+        // calculate average q
+        avg_q = 0;
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                avg_q+=player.getQ();
+//            }
+//        }
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            double q = player.getQ();
+            avg_q += q;
+        }
+        avg_q /= N;
+
+        // calculate p SD
+        q_SD = 0;
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+//                q_SD += Math.pow(player.getQ() - avg_q, 2);
+//            }
+//        }
+        for(int i=0;i<N;i++){
+            Player player = pop[i];
+            double q = player.getQ();
+            q_SD += Math.pow(q - avg_q, 2);
+        }
+        q_SD = Math.pow(q_SD / N, 0.5);
     }
 
 
 
+    /**
+     * Prepare program for the next generation.<br>
+     * For each player in the population, some attributes are reset in preparation
+     * for the upcoming generation.
+     */
     public void prepare(){
+//        for(ArrayList<Player> row: grid){
+//            for(Player player: row){
+
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            player.setPi(0);
-            player.setMNI(0);
-            player.setOldP(player.getP());
-            max_p = 0.0;
+
+            player.setScore(0);
+            player.setNI(0);
+            player.setNSI(0);
+            player.setNSP(0);
+            player.setNSR(0);
+            switch(game){
+                case"UG","DG"->{
+                    player.setOldP(player.getP());
+                    switch(game){
+                        case"UG"->player.setOldQ(player.getQ());
+                        case"DG"->player.setQ(0);
+                    }
+                }
+            }
+
+//                player.setNSIPerNeighbour(new int[]{0,0,0,0});
+
+//                for(int i = 0; i < N - 1; i++){
+//                    player.getNSIPerNeighbour()[i] = 0;
+//                }
+
+            resetNSIPerNeighbour(player);
+        }
+    }
+
+
+
+
+
+    public static void writeSeriesData(){
+        // write experiment data, including results and settings, to a .csv data file.
+        try{
+//            series_data_filename = experiment_results_folder_path + "\\" + timestamp_string + "_series_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+            series_data_filename = experiment_results_folder_path + "\\" + "series_data.csv";
+            String s="";
+
+            // write column headings
+            if(experiment_num == 1){
+                fw = new FileWriter(series_data_filename, false);
+                s+="exp num";
+                s+=",game";
+                if(game.equals("UG") || game.equals("DG")){
+                    s+=",mean avg p";
+                    s+=",avg p SD";
+                    if(game.equals("UG")){
+                        s+=",mean avg q";
+                        s+=",avg q SD";
+                    }
+                }
+                s+=",runs";
+                s+=",iters";
+                s+=",neigh";
+                s+=",length";
+                s+=",width";
+                s+=",N";
+                s+=",EWT";
+                s+=(EWLC.isEmpty())?"":",EWLC";
+                s+=(EWLF.isEmpty())?"":",EWLF";
+                s+=",ER";
+                s+=(ROC==0)?"":",ROC";
+                s+=(leeway1==0)?"":",leeway1";
+                s+=(leeway2==0)?"":",leeway2";
+                s+=(leeway3==0)?"":",leeway3";
+                s+=(leeway4==0)?"":",leeway4";
+                s+=(leeway5==0)?"":",leeway5";
+                s+=(leeway6==0)?"":",leeway6";
+                s+=(leeway7==0)?"":",leeway7";
+                s+=",sel";
+                s+=(selnoise==0)?"":",selnoise";
+                s+=",evo";
+                s+=(evonoise==0)?"":",evonoise";
+                s+=(mut.isEmpty())?"":",mut";
+                s+=(mutrate==0)?"":",mutrate";
+                s+=(mutbound==0)?"":",mutbound";
+                s+=(injiter==0)?"":",injiter";
+                s+=(injp==0)?"":",injp";
+                s+=(injsize==0)?"":",injsize";
+
+
+            } else {
+                fw = new FileWriter(series_data_filename, true);
+            }
+
+            // write row data
+            s+="\n" + experiment_num;
+            s+="," + game;
+            if(game.equals("UG") || game.equals("DG")){
+                s+="," + DF4.format(experiment_mean_avg_p);
+                s+="," + DF4.format(experiment_SD_avg_p);
+                if(game.equals("UG")){
+                    s+="," + DF4.format(experiment_mean_avg_q);
+                    s+="," + DF4.format(experiment_SD_avg_q);
+                }
+            }
+            s+="," + runs;
+            s+="," + iters;
+            s+="," + neigh;
+            s+="," + length;
+            s+="," + width;
+            s+="," + N;
+            s+=","+EWT;
+            s+=(EWLC.isEmpty())?"":","+EWLC;
+            s+=(EWLF.isEmpty())?"":","+EWLF;
+            s+=","+ER;
+            s+=(ROC==0)?"":","+ROC;
+            s+=(leeway1==0)?"":","+leeway1;
+            s+=(leeway2==0)?"":","+leeway2;
+            s+=(leeway3==0)?"":","+leeway3;
+            s+=(leeway4==0)?"":","+leeway4;
+            s+=(leeway5==0)?"":","+leeway5;
+            s+=(leeway6==0)?"":","+leeway6;
+            s+=(leeway7==0)?"":","+leeway7;
+            s+=","+sel;
+            s+=(selnoise==0)?"":","+selnoise;
+            s+=","+evo;
+            s+=(evonoise==0)?"":","+evonoise;
+            s+=(mut.isEmpty())?"":","+mut;
+            s+=(mutrate==0)?"":","+mutrate;
+            s+=(mutbound==0)?"":","+mutbound;
+            s+=(injiter==0)?"":","+injiter;
+            s+=(injp==0)?"":","+injp;
+            s+=(injsize==0)?"":","+injsize;
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    /**
+     * Allows for the visualisation of the avg p of a run with respect to iteration.<br>
+     * iteration on x-axis.<br>
+     * avg p on y-axis.<br>
+     * collects standard deviation (SD) data.<br>
+     * <br>Steps:<br>
+     * - Export the data of a single run to a .csv file<br>
+     * - Import the .csv data into an Excel sheet<br>
+     * - Separate the data into columns: gen number, avg p and SD for that gen<br>
+     * - Create a line chart with the data.<br>
+     */
+    public void writeAvgpData(){
+        try{
+//            String filename = experiment_results_folder_path + "\\" + timestamp_string + "_experiment_data.csv"; // use this instead if you want to be able to open multiple series data files at once.
+            String filename = experiment_results_folder_path + "\\avg_p_data.csv";
+            String s="";
+            if(gen == 0){ // apply headings to file before writing data
+                fw = new FileWriter(filename, false); // append set to false means writing mode.
+                s+="gen";
+                s+=",avg p";
+                s+=",p SD";
+                s+="\n";
+            }
+            fw = new FileWriter(filename, true);
+            s+=gen;
+            s+=","+DF4.format(avg_p);
+            s+=","+DF4.format(p_SD);
+            s+="\n";
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public void writeAvgqData(){
+        try{
+            String filename = experiment_results_folder_path + "\\avg_q_data.csv";
+            String output = "";
+            if(gen == 0){
+                fw = new FileWriter(filename, false);
+                output += "gen";
+                output += ",avg q";
+                output += ",q SD";
+                output += "\n";
+            }
+            fw = new FileWriter(filename, true);
+            output += gen;
+            output += ","+DF4.format(avg_q);
+            output += ","+DF4.format(q_SD);
+            output += "\n";
+            fw.append(output);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
         }
     }
 
@@ -1481,16 +2080,14 @@ public class Env extends Thread{ // environment simulator
     // writes IDs and positions of players
     public void writePosData(){
         try{
-            String filename = exp_path + "\\pos_data.csv";
+            String filename = experiment_results_folder_path + "\\pos_data.csv";
             fw = new FileWriter(filename, false);
             String s = "";
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
                     Player player = findPlayerByPos(y,x);
                     int ID = player.getID();
-                    s += ID;
-                    if (x + 1 < width)
-                        s += ",";
+                    s += ID + " ("+x+" "+y+"),";
                 }
                 s += "\n";
             }
@@ -1504,6 +2101,248 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
+     * Writes proposal values of pop to .csv file.
+     */
+    public void writepData(){
+        try{
+            String filename = p_data_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename, false);
+            String s = "";
+//            for(int y = rows - 1; y >= 0; y--){
+//                for(int x = 0; x < columns; x++){
+//                    s += DF4.format(grid.get(y).get(x).getP());
+//                    if(x + 1 < columns){
+//                        s += ",";
+//                    }
+//                }
+//                s += "\n";
+//            }
+//            for(int y=0;y<length;y++){
+//            for(int y=0;y<length;y++){
+            for(int y=length-1;y>=0;y--){
+//                for(int x=0;x<width;x++){
+                for(int x=0;x<width;x++){
+                    Player player = findPlayerByPos(y,x);
+                    double p = player.getP();
+                    s += DF4.format(p) + ",";
+                }
+                s += "\n";
+            }
+            fw.append(s);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public void writeqData(){
+        try{
+            String filename = q_data_filename +"\\gen" + gen + ".csv";
+            fw = new FileWriter(filename, false);
+            String output = "";
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player player = findPlayerByPos(y,x);
+                    double q = player.getQ();
+                    output += DF4.format(q) + ",";
+                }
+                output += "\n";
+            }
+            fw.append(output);
+            fw.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+    /**
+     * Uses EW data to write a grid of 4x4 sub-grids into a .csv file.<br>
+     * Assumes von Neumann neighbourhood type and rows=columns.
+     */
+    public void writeEWData(){
+        try{
+            String filename = EW_data_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename);
+            String string = "";
+//            String[] substrings = new String[(rows * 4)];
+//            String[] substrings = new String[(width * 4)];
+            String[] substrings = new String[(length * 4)];
+            for(int i=0;i<substrings.length;i++){
+                substrings[i] = "";
+            }
+            int a=0;
+//            for(int y = rows - 1; y >= 0; y--) {
+//                for (int x = 0; x < columns; x++) {
+//                    Player current = grid.get(y).get(x);
+
+            // DEBUG THIS
+//            for(int x=width-1;x>=0;x--){
+//                for(int y=0;y<length;x++){
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player current = findPlayerByPos(y,x);
+
+
+                    double[] edge_weights = current.getEdgeWeights();
+                    ArrayList<Player> neighbourhood = current.getNeighbourhood();
+
+
+                    // EW health of player is equal to sum of edge weights divided by num edge weights.
+                    // this is equivalent to mean self edge weight plus mean neighbour edge weight divided by 2.
+                    double EW_health = (current.getMeanSelfEdgeWeight() + current.getMeanNeighbourEdgeWeight()) / 2;
+
+
+                    substrings[a] += "0,"
+                            +edge_weights[2]+","
+                            +neighbourhood.get(2).getEdgeWeights()[3]+","
+                            +"0";
+                    substrings[a+1] += neighbourhood.get(1).getEdgeWeights()[0]+","
+
+
+//                            +DF2.format(current.getP())+","
+//                            +DF2.format(current.getAverageScore())+","
+
+
+                            +DF2.format(EW_health)+","
+                            +DF2.format(EW_health)+","
+
+
+                            +edge_weights[0];
+                    substrings[a+2] += current.getEdgeWeights()[1]+","
+
+
+//                            +DF2.format(current.getMeanSelfEdgeWeight())+","
+//                            +DF2.format(current.getMeanNeighbourEdgeWeight())+","
+
+
+                            +DF2.format(EW_health)+","
+                            +DF2.format(EW_health)+","
+
+
+                            +neighbourhood.get(0).getEdgeWeights()[1];
+                    substrings[a+3] += "0,"
+                            +neighbourhood.get(3).getEdgeWeights()[2]+","
+                            +edge_weights[3]+","
+                            +"0";
+//                    if(x + 1 < columns){
+//                    if(x + 1 < length){
+                    if(x + 1 < width){
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += ",";
+                        }
+                    } else {
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += "\n";
+                        }
+                    }
+                }
+                a += 4;
+            }
+            for(int i=0;i<substrings.length;i++){
+                string += substrings[i];
+            }
+            fw.append(string);
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    /**
+     * Uses NSI data to write a grid of 4x4 sub-grids into a .csv file.<br>
+     * Assumes von Neumann neighbourhood type and rows=columns.
+     */
+    public void writeNSIData(){
+        try{
+            String filename = NSI_data_filename + "\\gen" + gen + ".csv";
+            fw = new FileWriter(filename);
+            String string = "";
+//            String[] substrings = new String[(rows * 4)];
+//            String[] substrings = new String[(width * 4)];
+            String[] substrings = new String[(length * 4)];
+            for(int i=0;i<substrings.length;i++){
+                substrings[i] = "";
+            }
+            int a=0;
+//            for(int y = rows - 1; y >= 0; y--) {
+//                for (int x = 0; x < columns; x++) {
+//                    Player current = grid.get(y).get(x);
+
+
+            for(int y=length-1;y>=0;y--){
+                for(int x=0;x<width;x++){
+                    Player current = findPlayerByPos(y,x);
+
+
+                    int[] NSI_per_neighbour = current.getNSIPerNeighbour();
+
+
+//                    TESTING TO SEE IF ITS EVER 0
+//                    for(int i: NSI_per_neighbour){
+//                        if(i == 0.0){
+//                            System.out.println("hello"); // can place breakpoint here
+//                        }
+//                    }
+
+
+
+
+                    substrings[a] += "0,"
+                            +NSI_per_neighbour[2]+","
+                            +NSI_per_neighbour[2]+","
+                            +"0";
+                    substrings[a+1] += NSI_per_neighbour[1]+","
+                            +"0,"
+                            +"0,"
+                            +NSI_per_neighbour[0];
+                    substrings[a+2] += NSI_per_neighbour[1]+","
+                            +"0,"
+                            +"0,"
+                            +NSI_per_neighbour[0];
+                    substrings[a+3] += "0,"
+                            +NSI_per_neighbour[3]+","
+                            +NSI_per_neighbour[3]+","
+                            +"0";
+//                    if(x + 1 < columns){
+//                    if(x + 1 < length){
+                    if(x + 1 < width){
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += ",";
+                        }
+                    } else {
+                        for(int b=a;b<a+4;b++){
+                            substrings[b] += "\n";
+                        }
+                    }
+                }
+                a += 4;
+            }
+            for(int i=0;i<substrings.length;i++){
+                string += substrings[i];
+            }
+            fw.append(string);
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+
+    /**
      * Finds a player given the integer ID parameter.<br>
      * Currently not used.
      * @param ID of the player to find
@@ -1511,9 +2350,19 @@ public class Env extends Thread{ // environment simulator
      */
     public Player findPlayerByID(int ID){
         Player player = null;
+
+//        for(int i=0;i<rows;i++){
+//            for(int j=0;j<columns;j++){
+//                if(ID == grid.get(i).get(j).getID()){
+//                    player = grid.get(i).get(j);
+//                    break;
+//                }
+//            }
+//        }
+
         for(int i=0;i<N;i++){
             Player player2 = pop[i];
-            int ID2 = player2.getID();
+            int ID2 = player.getID();
             if(ID == ID2){
                 player = player2;
                 break;
@@ -1525,18 +2374,16 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * find player by position in the grid.<br>
-     * e.g. if you call findPlayerByPos(5, 2), it returns the player at position (2, 5).
-     * @param y y co-ordinate of the player
-     * @param x x co-ordinate of the player
-     * @return Player object at position (x, y) in the grid.
-     */
+    // find player by position
     public Player findPlayerByPos(double y, double x){
         Player player = null;
         boolean found = false;
         int i=0;
+
         do{
+            if(i==15){
+                System.out.println("insert BP here");
+            }
             Player player2=pop[i];
             double y2=player2.getY();
             double x2=player2.getX();
@@ -1547,797 +2394,126 @@ public class Env extends Thread{ // environment simulator
             i++;
         }
         while(!found);
+
         return player;
     }
 
 
 
     /**
-     * Assign same strategy to cluster of players within the grid.
+     * Injects a cluster of players in the population with a given strategy.
+     * Doesnt work with new pop structure...
      */
-    public void injectStrategyCluster(){
-        for(int i = 0; i < injSize; i++){
-            for(int j = 0; j < injSize; j++){
-                Player player = findPlayerByPos(j, i);
-                player.setP(injP);
-            }
-        }
-    }
-
-
-
-    // adjust position with respect to periodic boundaries
-    public double adjustPosition(double position, double adjustment, int max){
-        double new_position = (((position + adjustment) % max) + max) % max;
-        return new_position;
-    }
-
-
-
-    /**
-     * Find new neighbour by randomly choosing a neighbour of a neighbour.<br>
-     * New neighbour cannot be rewirer or already a neighbour.<br>
-     */
-    public void RTLocal(Player a, int num_rewires){
-        ArrayList<Player> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // omega_a denotes neighbourhood of rewirer.
-        for(Player b: omega_a){ // b denotes neighbour of rewirer
-            ArrayList<Player> omega_b = b.getNeighbourhood(); // omega_b denotes neighbourhood of neighbour of rewirer.
-            for(Player c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
-                if(!c.equals(a)){ // do not add c to pool if c = a
-                    boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
-                    for (Player d : pool) { // d denotes candidate in pool
-                        if(c.equals(d)){ // if c = d, c must already be in the pool, therefore do not add c to the pool.
-                            add_to_pool = false;
-                            break;
-                        }
-                    }
-                    if(!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
-                    for (Player e : omega_a) { // e denotes neighbour of rewirer.
-                        if(c.equals(e)){ // if c = e, c must already be in omega_a, so you do not want to add c to pool.
-                            add_to_pool = false;
-                            break;
-                        }
-                    }
-                    if(add_to_pool) pool.add(c); // if deemed valid, add c to pool.
-                }
-            }
-        }
-        if(pool.size() == 0) RTPop(a, num_rewires); // if pool empty, default to rewiring to a random player in the pop.
-        else{ // connect to local player.
-            for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
-                Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
-                omega_a.add(f); // connect a to f.
-                a.getEdgeWeights().add(1.0);
-                f.getNeighbourhood().add(a); // connect f to a.
-                f.getEdgeWeights().add(1.0);
-            }
-        }
-    }
-
-
-
-    /**
-     * Find new neighbour by randomly choosing a player from the population.<br>
-     * New neighbour cannot be rewirer or already a neighbour.<br>
-     * @param a rewirer
-     * @param b number of rewires to do
-     */
-    public void RTPop(Player a, int b){
-        for(int c=0;c<b;c++){ // c denotes number of rewires done so far.
-            ArrayList<Player> omega_a = a.getNeighbourhood(); // denotes neighbourhood of a.
-            Player d = null; // d denotes new neighbour.
-            boolean found_new_neighbour = false;
-            while(!found_new_neighbour){ // keep searching until you find a valid new neighbour
-                d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose player from pop.
-                if(!d.equals(a)){ // do not connect a to d if d = a.
-//                    boolean f = true; // f indicates whether there does not exist g in omega_a such that g = d.
-                    boolean already_neighbours = false; // indicates whether a and d are already neighbours
-                    for(Player g: omega_a){ // g denotes neighbour of a.
-                        if(d.equals(g)){
-//                            f = false;
-                            already_neighbours = true;
-                            break;
-                        }
-                    }
-//                    found_new_neighbour = f;
-                    found_new_neighbour = !already_neighbours;
-                }
-            }
-            omega_a.add(d); // connect a to d.
-            a.getEdgeWeights().add(1.0);
-            d.getNeighbourhood().add(a); // connect d to a.
-            d.getEdgeWeights().add(1.0);
-        }
-    }
-
-
-
-    /**
-     * Generic function to update stats
-     */
-    public void updateStats(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
-    }
-
-
-
-
-    /**
-     * use the varying field to help determine whether a field should be
-     * included in the settings String. if a field equals 0.0 and is not being
-     * varied, it does not need to be added.<br>
-     */
-    public static void writeSettings(){
-        if(writeRate > 0){
-            String settings_filename = this_path + "\\" + "settings.csv";
-            String settings = "";
-            if(exp == 1){
-
-//                settings += "game";
-//                settings += ",runs";
-
-                settings += "runs";
-
-                settings += ",space";
-                settings += ",length";
-                settings += ",width";
-                settings += ",N";
-//                settings += ",neighType";
-//                settings += neighRadius == 0 && !varying.equals("neighRadius")? "": ",neighRadius";
-//                settings += neighSize == 0 && !varying.equals("neighSize")? "": ",neighSize";
-                settings += ",EM";
-                settings += ER != 0? ",ER": "";
-                settings += NIS != 0? ",NIS": "";
-                settings += ",gens";
-                settings += iters != 0? ",iters": "";
-                settings += ",EWT";
-                settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
-                settings += RA.equals("")? "": ",RA";
-                settings += RT.equals("")? "": ",RT";
-                settings += EWLF.equals("")? "": ",EWLF";
-                settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
-//                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
-//                settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
-                settings += ",sel";
-                settings += sel.equals("RW")? ",RWT": "";
-                settings += RWT.equals("exponential")? ",selNoise": "";
-//                settings += ",evo";
-//                settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": ",evoNoise";
-                settings += !mut.equals("")? ",mut": "";
-//                settings += mut.equals("local") || mut.equals("global") || mut.equals("localnoself")? ",mutRate": "";
-                settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
-//                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
-                settings += mut.equals("local")? ",mutBound": "";
-                settings += ",UF";
-//                settings += injIter == 0? "": ",injIter";
-//                settings += injP == 0.0? "": ",injP";
-//                settings += injSize == 0? "": ",injSize";
-            }
-            settings += "\n";
-
-//            settings += game;
-//            settings += "," + runs;
-
-            settings += runs;
-
-            settings += "," + space;
-            settings += "," + length;
-            settings += "," + width;
-            settings += "," + N;
-//            settings += "," + neighType;
-//            settings += neighRadius == 0 && !varying.equals("neighRadius")? "": "," + neighRadius;
-//            settings += neighSize == 0 && !varying.equals("neighSize")? "": "," + neighSize;
-            settings += "," + EM;
-            settings += ER != 0? "," + ER: "";
-            settings += NIS != 0? "," + NIS: "";
-            settings += "," + gens;
-            settings += iters != 0? "," + iters: "";
-            settings += "," + EWT;
-            settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
-            settings += RA.equals("")? "": "," + RA;
-            settings += RT.equals("")? "": "," + RT;
-            settings += EWLF.equals("")? "": "," + EWLF;
-            settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
-//            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
-//            settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
-            settings += "," + sel;
-            settings += sel.equals("RW")? "," + RWT: "";
-            settings += RWT.equals("exponential")? "," + selNoise: "";
-//            settings += "," + evo;
-//            settings += evoNoise == 0.0 && !varying.equals("evoNoise")? "": "," + evoNoise;
-            settings += !mut.equals("")? "," + mut: "";
-            settings += mut.equals("local") || mut.equals("global")? "," + mutRate: "";
-            settings += mut.equals("local")? "," + mutBound: "";
-            settings += "," + UF;
-//            settings += injIter == 0? "": "," + injIter;
-//            settings += injP == 0.0? "": "," + injP;
-//            settings += injSize == 0? "": "," + injSize;
-            try{
-                fw = new FileWriter(settings_filename, true);
-                fw.append(settings);
-                fw.close();
-            } catch(IOException e){
-                e.printStackTrace();
-                System.exit(0);
-            }
-        }
-    }
-
-
-
-    /**
-     * Write and calculate stats of series. Documents how the series went.
-     * Reads and writes local data.
-     */
-    public static void writeSeriesStats(){
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
-            String series_stats_filename = this_path + "\\series_stats.csv";
-            String exp_stats_filename = exp_path + "\\exp_stats.csv";
-            String output = "";
-            if(exp == 1) {
-//                if(writePRunStats)output+="mean mean p,sigma mean p,";
-//                if(writeURunStats)output+="mean mean u,";
-                if(writePRunStats)output+="mean avg p,sigma mean p,";
-                if(writeURunStats)output+="mean avg u,";
-//                if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
-                if(writeDegRunStats)output+="mean sigma deg,";
-                if(!varying.equals(""))output+=varying+",";
-                output = removeTrailingComma(output);
-            }
-//            double mean_mean_p = 0.0;
-            double mean_avg_p = 0.0;
-            double sigma_mean_p = 0.0;
-//            double mean_mean_u = 0.0;
-            double mean_avg_u = 0.0;
-            double mean_sigma_deg = 0.0;
-            double[] mean_p_values = new double[runs];
-            double[] mean_u_values = new double[runs];
-            double[] sigma_deg_values = new double[runs];
-            try{
-                fw = new FileWriter(series_stats_filename, true);
-                br = new BufferedReader(new FileReader(exp_stats_filename));
-                br.readLine();
-                for(int i=0;i<runs;i++){
-                    String row = br.readLine();
-                    String[] row_contents = row.split(",");
-                    int j = 0;
-                    if(writePRunStats){
-                        mean_p_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // move past mean p
-                        j++; // move past sigma p
-                        j++; // move past max p
-                    }
-                    if(writeURunStats) {
-                        mean_u_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // move past mean u
-                        j++; // move past sigma u
-                    }
-//                    if(writeDegRunStats && EWT.equals("rewire")) {
-                    if(writeDegRunStats) {
-                        sigma_deg_values[i] = Double.parseDouble(row_contents[j]);
-                    }
-                }
-                for(int i=0;i<runs;i++){
-                    if(writePRunStats)mean_avg_p += mean_p_values[i];
-                    if(writeURunStats)mean_avg_u += mean_u_values[i];
-//                    if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
-                    if(writeDegRunStats) mean_sigma_deg += sigma_deg_values[i];
-                }
-                mean_avg_p /= runs;
-                mean_avg_u /= runs;
-//                mean_sigma_deg /= runs;
-                if(writeDegRunStats) mean_sigma_deg /= runs;
-                for(int i=0;i<runs;i++){
-                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
-                }
-                sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
-
-
-//                output += "\n" + DF4.format(mean_mean_p) + "," + DF4.format(sigma_mean_p) + "," + DF4.format(mean_mean_u) +"," + DF4.format(mean_sigma_deg);
-
-
-                output += "\n";
-                if(writePRunStats)output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_mean_p) + ",";
-                if(writeURunStats)output+=DF4.format(mean_avg_u) + ",";
-//                if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
-                if(writeDegRunStats)output+=DF4.format(mean_sigma_deg) + ",";
-                output = removeTrailingComma(output);
-
-
-                switch(varying){
-                    case "ER" -> output += "," + ER;
-                    case "NIS" -> output += "," + NIS;
-                    case "ROC" -> output += "," + ROC;
-                    case "length" -> output += "," + length;
-                    case "RP" -> output += "," + RP;
-                    case "gens" -> output += "," + gens;
-                    case "EWLF" -> output += "," + EWLF;
-                    case "EWT" -> output += "," + EWT;
-                    case "RA" -> output += "," + RA;
-                    case "RT" -> output += "," + RT;
-                    case "sel" -> output += "," + sel;
-                    case "evo" -> output += "," + evo;
-                    case "selNoise" -> output += "," + selNoise;
-                    case "mutRate" -> output += "," + mutRate;
-                    case "mutBound" -> output += "," + mutBound;
-                    case "UF" -> output += "," + UF;
-                }
-                fw.append(output);
-                fw.close();
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-
-
-            // display info in console
-            if(writePRunStats){
-                System.out.println("exp: "+exp+"; mean avg p: "+DF4.format(mean_avg_p));
-            }
-
-
-        }
-    }
-
-
-
-
-
-    /**
-     * Calculate utility of player.<br>
-     * With MNI UF, divide by minimum number of interactions player could have had (this gen/iter); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
-     * With normalised UF, divide by degree. Indicates what the player earned from interacting with its average neighbour.
-     */
-    public void updateUtility(Player player){
-        switch(UF){
-            case "MNI" -> { // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
-                if(player.getNeighbourhood().size() == 0)
-                    player.setU(0.0);
-                else
-                    player.setU(player.getPi() / player.getMNI());
-            }
-            case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
-            case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
-                if(player.getNeighbourhood().size() == 0){
-                    player.setU(0.0);
-                }else{
-                    player.setU(player.getPi() / player.getNeighbourhood().size());
-                }
-            }
-        }
-    }
-
-
-
-
-
-
-    public Player selRandomNeigh(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        Player parent = null;
-        try{
-            parent = omega_a.get(ThreadLocalRandom.current().nextInt(omega_a.size()));
-        }catch(IllegalArgumentException e){ // if a has no neighbours, it is set as its own parent.
-            parent = a;
-        }
-        return parent;
-    }
-
-
-
-    public Player selRandomPop(){
-        return findPlayerByID(ThreadLocalRandom.current().nextInt(N));
-    }
-
-
-
-
-
-    /**
-     * Player may rewire their edges.<br>
-     * Rewiring is guaranteed to occur once the edge is referenced in the
-     * indices_of_edges_to_be_rewired ArrayList.<br>
-     * @param a player who may rewire
-      */
-    public void rewire(Player a){
-        double random_number = ThreadLocalRandom.current().nextDouble();
-        if(RP > random_number){
-            int num_rewires = 0;
-            ArrayList<Player> omega_a = a.getNeighbourhood();
-            ArrayList<Double> weights = a.getEdgeWeights();
-            ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-            for(int i = 0; i < omega_a.size(); i++){
-                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-                double prob_rewire = 0;
-                switch(RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
-                    case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
-                    case "smootherstep" -> prob_rewire = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
-                    case "0Many" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
-                    case "linear" -> prob_rewire = 1 - w_ab;
-                    case "exponential" -> {
-                        double k = 0.1; // manually set noise
-                        prob_rewire = Math.exp(-k * w_ab);
-                    }
-                    case "FD" -> {
-                        Player b = omega_a.get(i);
-                        double k = 0.1; // manually set noise
-                        prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
-                    }
-                    case "linearR" -> prob_rewire = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
-                }
-                double c = ThreadLocalRandom.current().nextDouble();
-                if(prob_rewire > c){
-                    indices_of_edges_to_be_rewired.add(i);
-                }
-            }
-            for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
-                int d = indices_of_edges_to_be_rewired.get(i);
-                Player e = omega_a.get(d);
-                ArrayList<Player> omega_e = e.getNeighbourhood();
-                for(int j = 0; j < omega_e.size(); j++){
-                    Player f = omega_e.get(j);
-                    if(f.equals(a)){
-                        omega_a.remove(d);
-                        weights.remove(d);
-                        omega_e.remove(j);
-                        e.getEdgeWeights().remove(j);
-                        num_rewires++;
-                        break;
-                    }
-                }
-            }
-
-
-            if(num_rewires > 0){
-                switch (RT){
-                    case"local"->RTLocal(a, num_rewires);
-                    case"pop"->RTPop(a, num_rewires);
-                }
-            }
-        }
-    }
-
-
-
-    /**
-     * evoUDN: evolution based on normalised utility difference.<br>
-     * Probability to evolve equals utility difference divided by degree.<br>
-     * Child fitter than parent mean no chance.<br>
-     * Fitter parent means greater probability.<br>
-     * Greater child degree means lesser probability.<br>
-     * Inspired by cardinot2016optional.<br>
-     * @param child
-     * @param parent
-     */
-//    public void evoUD(Player child, Player parent){
-    public void evoUDN(Player child, Player parent){
-        double random_number = ThreadLocalRandom.current().nextDouble();
-        double prob_evolve = (parent.getU() - child.getU()) / child.getDegree();
-        if(random_number < prob_evolve)
-            evoCopy(child, parent);
-    }
-
-
-
-    /**
-     * Write stats of experiment.
-     * 1 file per exp.
-     */
-    public void writeExpStats() {
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
-            String exp_stats_filename = exp_path + "\\exp_stats.csv";
-            String run_stats_filename = run_path + "\\run_stats.csv";
-            String output = "";
-            try {
-                fw = new FileWriter(exp_stats_filename, true);
-                br = new BufferedReader(new FileReader(run_stats_filename));
-                String line = br.readLine();
-                if(run == 1) {
-
-
-//                    output += line; // write headings
-
-
-                    // remove gen column
-                    String[] row_contents = line.split(",");
-                    String no_gen_str = "";
-                    for(int i=1;i<row_contents.length;i++){
-                        no_gen_str += row_contents[i] + ",";
-                    }
-                    no_gen_str = removeTrailingComma(no_gen_str);
-                    output += no_gen_str;
-
-
-                }
-
-                // skip to the last row of run stats
-//                for(int i = 0; i < gens / writeRate; i++){
-                for(int i = 0; i <= gens / writeRate; i++){
-                    line = br.readLine();
-                }
-
-
-//                output += "\n" + line; // write stats of last gen of run
-
-
-                // remove gen column
-                String[] row_contents = line.split(",");
-                String no_gen_str = "";
-                for(int i=1;i<row_contents.length;i++){
-                    no_gen_str += row_contents[i] + ",";
-                }
-                no_gen_str = removeTrailingComma(no_gen_str);
-                output += "\n" + no_gen_str;
-
-
-                fw.append(output);
-                fw.close();
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-
-
-            // display info in console
-            if(writePRunStats){
-                System.out.println("run: "+run+"; mean p: "+DF4.format(mean_p));
-            }
-
-
-        }
-    }
-
-
-
-    public void calculateMaxP(){
-        for(int i=0;i<N;i++){
-            double p = pop[i].getP();
-            if(p > max_p)
-                max_p = p;
-        }
-    }
-
-
-
-    public Player sel(Player child){
-        Player parent = null;
-        switch(sel){
-            case "RW" -> parent = selRW(child);
-            case "fittest" -> parent = selFittest(child);
-            case "randomNeigh" -> parent = selRandomNeigh(child);
-            case "randomPop" -> parent = selRandomPop();
-//            case "crossover" -> crossover(child);
-//            case "RW2" -> parent = selRW2(child);
-        }
-        return parent;
-    }
-
-
-
-//    public void evo(Player child, Player parent){
-    public boolean evo(Player child, Player parent){
-        boolean occurred = false;
-//        if(parent != null){
-        if(!parent.equals(child)){
-            switch (evo) {
-                case "copy" -> evoCopy(child, parent);
-                case "approach" -> evoApproach(child, parent);
-                case "copyFitter" -> evoCopyFitter(child, parent);
-                case "UD" -> evoUD(child, parent);
-                case "UDN" -> evoUDN(child, parent);
-            }
-
-            occurred = true;
-
-        }
-
-        return occurred;
-
-    }
-
-
-
-    public void mut(Player child){
-        switch (mut){
-            case "global" -> {
-                if(mutationCheck())
-                    mutGlobal(child);
-            }
-            case "local" -> {
-                if(mutationCheck())
-                    mutLocal(child);
-            }
-        }
-    }
-
-//    public void mut2(Player child, Player parent){
-//        switch (mut) {
-//            case "global" -> {
-//                if (mutationCheck())
-//                    mutGlobal(child);
-//            }
-//            case "local" -> {
-//                if (mutationCheck())
-//                    mutLocal(child);
-//            }
-//            case "localnoself" -> {
-//                if(parent != null){
-//                    if (!parent.equals(child)) {
-//                        if (mutationCheck()) {
-//                            mutLocal(child);
-//                        }
-//                    }
-//                }
-//            }
-//        }
+//    public void injectStrategyCluster(double new_strategy, int cluster_size){
+////        for(int i=0;i<cluster_size;i++){
+////            for(int j=0;j<cluster_size;j++){
+////                grid.get(i).get(j).setP(new_strategy);
+////            }
+////        }
+////        for(int i=0;i<cluster_size;i++){
+////
+////        }
 //    }
 
 
 
     /**
-     * Calculate stats at the end of a generation.
-     * E.g. Calculate mean p of the pop at gen t.
-     * calculateStats() will be called every generation.
+     * applySettingDouble() and applySettingInt() apply the value obtained from the config file to the
+     * parameter in question.
      */
-    public void calculateStats(){
-        if(writePGenStats){
-            for(Player player: pop){
-                player.calculateMeanPOmega();
-            }
+    public static double applySettingDouble(){
+        double x;
+        if(settings[CI].equals("")){
+            x=0;
+            CI++;
+        }else{
+            x=Double.parseDouble(settings[CI++]);
         }
-//        if(writeDegGenStats){
-//            for(Player player: pop){
-//                player.calculateDegree();
-//            }
-//        }
-        for(Player player: pop){
-            player.calculateDegree();
+        return x;
+    }
+
+
+
+    public static int applySettingInt(){
+        int x;
+        if(settings[CI].equals("")){
+            x=0;
+            CI++;
+        }else{
+            x=Integer.parseInt(settings[CI++]);
         }
-        if(writePRunStats) {
-            calculateMeanP();
-            calculateSigmaP();
-            calculateMaxP();
-        }
-        if(writeURunStats) {
-            calculateMeanU();
-            calculateSigmaU();
-        }
-        if(writeDegRunStats) {
-            // no need to calculate mean deg as it is always 4. if this changes, be sure to calculate it here!
-            calculateSigmaDeg();
-        }
+        return x;
     }
 
 
 
     /**
-     * Calls the gen and run stat writing functions every writeRate gens.<br><br>
-     * This function is typically called at the end of a gen.<br><br>
-     * Writes gen stats e.g. write p_x for all players x in the pop at gen t.<br><br>
-     * Writes run stats e.g. write mean(p) of the pop at gen t.<br><br>
-     * Whether a stat is recorded depends on the writing params.<br>
+     * Assigns Margolus neighbourhood to players.<br>
+     * Neighbourhood 1: (x-1,y), (x,y+1), (x-1,y+1).<br>
+     * Neighbourhood 2: (x+1,y), (x,y-1), (x-1,y-1).
      */
-    public void writeGenAndRunStats(){
-//        if(writeRate != 0 && gen % writeRate == 0) {
-//        if(gen == 0 || (writeRate != 0 && gen % writeRate == 0)) {
-        if(writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
-            if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
-            if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
-        }
-    }
+//    public void assignMargolusNeighbourhood(Player player, int y, int x){
+//        // setup #1
+////        ArrayList <Player> neighbourhood = new ArrayList<>();
+////
+////        int x_plus = adjustPosition(x, 1, rows);
+////        int x_minus = adjustPosition(x, -1, rows);
+////        int y_plus = adjustPosition(y, 1, columns);
+////        int y_minus = adjustPosition(y, -1, columns);
+////
+////        if(gen % 2 == 0){
+////            neighbourhood.add(grid.get(y).get(x_minus));        // (x - 1,  y)
+////            neighbourhood.add(grid.get(y_plus).get(x));         // (x,      y + 1)
+////            neighbourhood.add(grid.get(y_plus).get(x_minus));   // (x - 1,  y + 1)
+////        }else{
+////            neighbourhood.add(grid.get(y).get(x_plus));         // (x + 1,  y)
+////            neighbourhood.add(grid.get(y_minus).get(x));        // (x,      y - 1)
+////            neighbourhood.add(grid.get(y_minus).get(x_plus));   // (x - 1,  y - 1)
+////        }
+////
+////        player.setNeighbourhood(neighbourhood);
+//
+//
+//        // setup #2 (note that rest of program does not know when to use margolus neighbourhoods instead of regular neighbourhood)
+//        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+//        ArrayList<Player> mar_neigh1 = player.getMargolus_neighbourhood1();
+//        ArrayList<Player> mar_neigh2 = player.getMargolus_neighbourhood2();
+//
+//        int x_plus = adjustPosition(x, 1, rows);
+//        int x_minus = adjustPosition(x, -1, rows);
+//        int y_plus = adjustPosition(y, 1, columns);
+//        int y_minus = adjustPosition(y, -1, columns);
+//
+//        Player a;
+//        a=grid.get(y).get(x_minus);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y_plus).get(x);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y_plus).get(x_minus);
+//        neighbourhood.add(a);
+//        mar_neigh1.add(a);
+//        a=grid.get(y).get(x_plus);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//        a=grid.get(y_minus).get(x);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//        a=grid.get(y_minus).get(x_plus);
+//        neighbourhood.add(a);
+//        mar_neigh2.add(a);
+//    }
 
 
 
-    /**
-     * Child copies parent if parent fitter.
-     * @param child
-     * @param parent
-     */
-    public void evoCopyFitter(Player child, Player parent){
-        if(parent.getU() > child.getU()) evoCopy(child, parent);
-    }
-
-
-
-    /**
-     * evoUDN: evolution based on utility difference.<br>
-     */
-    public void evoUD(Player child, Player parent){
-        double random_number = ThreadLocalRandom.current().nextDouble();
-        double prob_evolve = (parent.getU() - child.getU());
-        if(random_number < prob_evolve)
-            evoCopy(child, parent);
-    }
-
-
-
-
-    /**
-     * Writes the attributes (p, u, deg) of all players in the pop at gen t.
-     * 1 file per gen.
-     */
-    public void writeGenStats(){
-        String filename = run_path + "\\gen_stats\\gen" + gen + ".csv";
-        String s = "";
-//        s += "gen,";
-        if(writePGenStats) s += "p,mean p omega,";
-        if(writeUGenStats) s += "u,";
-        if(writeDegGenStats) s += "deg,";
-        s = removeTrailingComma(s);
-        for(Player player: pop){
-            s += "\n";
-//            s += gen + ",";
-            if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
-            if(writeUGenStats) s += DF4.format(player.getU()) + ",";
-            if(writeDegGenStats) s += DF4.format(player.getDegree()) + ",";
-            s = removeTrailingComma(s);
-        }
-        try{
-            fw = new FileWriter(filename);
-            fw.append(s);
-            fw.close();
-        }catch(IOException e){
-            e.printStackTrace();
-            System.exit(0);
-        }
-    }
-
-
-    /**
-     * Write aggregate stats of a run at gen t.
-     * 1 file per run.
-     */
-    public void writeRunStats() {
-        String filename = run_path + "\\run_stats.csv";
-        String s = "";
-//        if(gen / writeRate == 1){ // apply headings to file before writing data
-        if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
-
-
-//            s += "gens,";
-            s += "gen,";
-
-
-            if (writePRunStats) s += "mean p,sigma p,max p,";
-            if (writeURunStats) s += "mean u,sigma u,";
-//            if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
-            if (writeDegRunStats) s += "sigma deg,";
-            s = removeTrailingComma(s);
-            s += "\n";
-        }
-        s += gen + ",";
-        if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
-        if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
-//        if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
-        if(writeDegRunStats) s += DF4.format(sigma_deg) + ",";
-        s = removeTrailingComma(s);
-        s+="\n";
-        try{
-            fw = new FileWriter(filename, true);
-            fw.append(s);
-            fw.close();
-        } catch(IOException e){
-            e.printStackTrace();
-            System.exit(0);
-        }
-    }
-
-
-
-    /**
-     * If last char of string is a comma, get rid of it.
-      */
-    public static String removeTrailingComma(String s){
-        if(s.length() > 0 && s.charAt(s.length() - 1) == ','){
-            s = s.substring(0, s.length() - 1);
-        }
-        return s;
-    }
-
-
-
-    public static void exit(){
-        System.out.println("[INFO] Exiting...");
-        Runtime.getRuntime().exit(0);
+//    public int adjustPosition(int position, int adjustment, int max){
+//        int new_position = (((position + adjustment) % max) + max) % max;
+//        return new_position;
+//    }
+    // adjust position with respect to periodic boundaries
+    public double adjustPosition(double position, double adjustment, int max){
+        double new_position = (((position + adjustment) % max) + max) % max;
+        return new_position;
     }
 }

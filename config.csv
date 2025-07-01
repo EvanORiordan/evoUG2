@@ -1,7 +1,3 @@
-runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writingRate,varying,varying
-5,10,1,10000,proposalProb,,,,PD,,RW,normal,,,,,cumulative,,,,1,,,1,ER,2;3;4;5
-5,10,1,10000,proposalProb,,,,PD,,RW,normal,,,,,normalised,,,,1,,,1,ER,2;3;4;5
-5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulative,,,,1,,,1,ER,2;3;4;5
-5,10,1,10000,proposalProb,,,,UD,,RW,normal,,,,,cumulatie,,,,1,,,1,ER,2;3;4;5
-2,5,1,5,proposalProb,,,,PD,,RW,normal,,,,,cumulative,1,1,1,1,1,1,1,ER,2
-3,12,4,2000,proposalProb,,,,PD,,RW,normal,,,,,cumulative,,,,1,,,1,length,13;14;15
+game,runs,iters,length,width,space,EWT,EWLC,EWLF,ER,ROC,neigh,sel,selnoise,ASD,evo,evonoise,mut,mutrate,mutbound,varying,variation,numexp,datarate,alpha,beta,leeway1,leeway2,leeway3,leeway4,leeway5,leeway6,leeway7,injiter,injp,injsize,desc
+UG,1,10000,3,5,grid,1,p,ROC,5,0.2,VN 1,RW,,NI,copy,,,,,,,,10,,,,,,,,,,,,,test
+DG,10,10000,40,40,grid,1,p,ROC,5,0.2,VN 1,RW,,MNI,copy,,,,,,,,0,,,,,,,,,,,,,testing
