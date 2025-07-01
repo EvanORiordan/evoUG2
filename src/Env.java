@@ -938,7 +938,7 @@ public class Env extends Thread{ // environment simulator
 
         // display intro and config table headings
         System.out.printf("=========================================%n");
-        System.out.printf("   Evolutionary Game Theory Simulator%n");
+        System.out.printf("   Artificial Life Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
         printTableLine();
 //        System.out.println(
