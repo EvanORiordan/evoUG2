@@ -1,7 +1,6 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.*;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -89,6 +88,7 @@ public class Env extends Thread{ // environment simulator
     static String mut; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
+    static boolean selfMut; // indicates whether self mutation can occur. when enabled, mut always occurs. when disabled, mut does not occur if child is parent.
 //    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
     static String EM = "newER"; // evolution mechanism: the mechanism by which evolution occurs.
     static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
@@ -232,34 +232,34 @@ public class Env extends Thread{ // environment simulator
 
 
         switch(EM){
-            case "oldER" -> {
-//                gen = 1;
-//                gens = 1;
-                gen = 0;
-                gens = 0;
-                // oldER alg iterates "iters" times; 1 iteration of this loop ==> 1 "iter"
-//                for(int iter = 1; iter < iters; iter++){
-                for(int iter = 1; iter <= iters; iter++){
-                    for(int i=0;i<N;i++) play(pop[i]);
-                    for(int i=0;i<N;i++) updateUtility(pop[i]);
-                    for(int i=0;i<N;i++) EWL(pop[i]);
-                    if(iter % ER == 0){ // if true, a generation is going to pass
-                        for(int i=0;i<N;i++) if(EWT.equals("rewire")) rewire(pop[i]); // rewire if applicable
-                        for(int i=0;i<N;i++) {
-                            Player child = pop[i];
-                            Player parent = sel(child);
-                            if(evo(child, parent))
-                                mut(child);
-                        }
-                        // calculate and write stats at end of gen
-                        calculateStats();
-                        gen++; // moving onto to the next gen
-                        gens++; // for recording the total number of gens that occurred
-                        writeGenAndRunStats();
-                    }
-                    prepare(); // reset certain attributes at end of iter
-                }
-            }
+//            case "oldER" -> {
+////                gen = 1;
+////                gens = 1;
+//                gen = 0;
+//                gens = 0;
+//                // oldER alg iterates "iters" times; 1 iteration of this loop ==> 1 "iter"
+////                for(int iter = 1; iter < iters; iter++){
+//                for(int iter = 1; iter <= iters; iter++){
+//                    for(int i=0;i<N;i++) play(pop[i]);
+//                    for(int i=0;i<N;i++) updateUtility(pop[i]);
+//                    for(int i=0;i<N;i++) EWL(pop[i]);
+//                    if(iter % ER == 0){ // if true, a generation is going to pass
+//                        for(int i=0;i<N;i++) if(EWT.equals("rewire")) rewire(pop[i]); // rewire if applicable
+//                        for(int i=0;i<N;i++) {
+//                            Player child = pop[i];
+//                            Player parent = sel(child);
+//                            if(evo(child, parent))
+//                                mut(child);
+//                        }
+//                        // calculate and write stats at end of gen
+//                        calculateStats();
+//                        gen++; // moving onto to the next gen
+//                        gens++; // for recording the total number of gens that occurred
+//                        writeGenAndRunStats();
+//                    }
+//                    prepare(); // reset certain attributes at end of iter
+//                }
+//            }
             case "newER" -> {
                 iters = 0;
                 for(gen = 1; gen <= gens; gen++){
@@ -267,38 +267,52 @@ public class Env extends Thread{ // environment simulator
                         for(int i=0;i<N;i++) play(pop[i]);
                         for(int i=0;i<N;i++) updateUtility(pop[i]);
 //                        for(int i=0;i<N;i++) EWL(pop[i]);
-                        if(!EWLF.equals("")) for(int i=0;i<N;i++) EWL(pop[i]);
+                        if(!EWLF.equals("")) for(int i=0;i<N;i++) EWL(pop[i]); // saves runtime when EWL disabled.
                         iters++;
                     }
-                    if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable
+                    if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable. saves runtime when rewiring disabled.
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
-                        if(evo(child,parent))
+
+//                        if(evo(child,parent))
+//                            mut(child);
+
+//                        evo(child,parent);
+//                        mut(child);
+
+//                        evo(child,parent);
+//                        if(!child.equals(parent) || selfMut)
+//                            mut(child);
+
+                        if(!child.equals(parent)) // saves runtime when child is parent.
+                            evo(child, parent);
+                        if(selfMut || !child.equals(parent)) // if selfMut enabled, child always mutates. else, child only mutates if child is not parent.
                             mut(child);
+
                     }
                     calculateStats(); // calculate stats at end of gen
                     writeGenAndRunStats(); // write gen and run stats at end of gen
                     prepare(); // reset certain attributes at end of gen
                 }
             }
-            case "MC" -> { // Monte Carlo (MC)
-                for(gen = 1; gen <= gens; gen++){ // MC outer loop
-                    for(int i = 0; i < N; i++) play(pop[i]);
-                    for(int i=0;i<N;i++) updateUtility(pop[i]);
-                    for(int i = 0; i < NIS; i++){ // MC inner loop
-                        Player child = selRandomPop();
-                        EWL(child); // EWL inside or outside inner step loop?
-                        if(EWT.equals("rewire")) rewire(child); // rewire if applicable
-                        Player parent = sel(child);
-                        if(evo(child, parent))
-                            mut(child);
-                    }
-                    calculateStats();
-                    writeGenAndRunStats();
-                    prepare(); // reset certain attributes at end of gen
-                }
-            }
+//            case "MC" -> { // Monte Carlo (MC)
+//                for(gen = 1; gen <= gens; gen++){ // MC outer loop
+//                    for(int i = 0; i < N; i++) play(pop[i]);
+//                    for(int i=0;i<N;i++) updateUtility(pop[i]);
+//                    for(int i = 0; i < NIS; i++){ // MC inner loop
+//                        Player child = selRandomPop();
+//                        EWL(child); // EWL inside or outside inner step loop?
+//                        if(EWT.equals("rewire")) rewire(child); // rewire if applicable
+//                        Player parent = sel(child);
+//                        if(evo(child, parent))
+//                            mut(child);
+//                    }
+//                    calculateStats();
+//                    writeGenAndRunStats();
+//                    prepare(); // reset certain attributes at end of gen
+//                }
+//            }
         }
         writeExpStats();
     }
@@ -961,6 +975,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//mut
                 " %-10s |"+//mutRate
                 " %-10s |"+//mutBound
+                " %-10s |"+//selfMut
                 " %-10s |"+//UF
                 " %-5s |"+//WPGS
                 " %-5s |"+//WUGS
@@ -971,7 +986,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//writeRate
                 " %-10s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWLF","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWLF","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -999,6 +1014,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", settings[CI++]); //mut
             System.out.printf("| %-10s ", settings[CI++]); //mutRate
             System.out.printf("| %-10s ", settings[CI++]); //mutBound
+            System.out.printf("| %-10s ", settings[CI++]); //selfMut
             System.out.printf("| %-10s ", settings[CI++]); //UF
             System.out.printf("| %-5s ", settings[CI++]); //WPGS
             System.out.printf("| %-5s ", settings[CI++]); //WUGS
@@ -1150,6 +1166,15 @@ public class Env extends Thread{ // environment simulator
                 if(mutBound < 0.0 || mutBound > 1.0){
                     System.out.println("[ERROR] Invalid mutBound passed");
                     exit();
+                }
+                switch(settings[CI++]){
+                    case "0" -> selfMut = false;
+                    case "1" -> selfMut = true;
+                    case "" -> {}
+                    default -> {
+                        System.out.println("[ERROR] Invalid selfMut passed");
+                        exit();
+                    }
                 }
             }
             default -> {
@@ -1710,6 +1735,7 @@ public class Env extends Thread{ // environment simulator
                 settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
 //                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
                 settings += mut.equals("local")? ",mutBound": "";
+                settings += !mut.equals("")? ",selfMut": "";
                 settings += ",UF";
 //                settings += injIter == 0? "": ",injIter";
 //                settings += injP == 0.0? "": ",injP";
@@ -1750,6 +1776,7 @@ public class Env extends Thread{ // environment simulator
             settings += !mut.equals("")? "," + mut: "";
             settings += mut.equals("local") || mut.equals("global")? "," + mutRate: "";
             settings += mut.equals("local")? "," + mutBound: "";
+            settings += !mut.equals("")? "," + selfMut: "";
             settings += "," + UF;
 //            settings += injIter == 0? "": "," + injIter;
 //            settings += injP == 0.0? "": "," + injP;
@@ -2114,25 +2141,36 @@ public class Env extends Thread{ // environment simulator
 
 
 
-//    public void evo(Player child, Player parent){
-    public boolean evo(Player child, Player parent){
-        boolean occurred = false;
-//        if(parent != null){
-        if(!parent.equals(child)){
-            switch (evo) {
-                case "copy" -> evoCopy(child, parent);
-                case "approach" -> evoApproach(child, parent);
-                case "copyFitter" -> evoCopyFitter(child, parent);
-                case "UD" -> evoUD(child, parent);
-                case "UDN" -> evoUDN(child, parent);
-            }
+////    public void evo(Player child, Player parent){
+//    public boolean evo(Player child, Player parent){
+//        boolean occurred = false;
+////        if(parent != null){
+//        if(!parent.equals(child)){
+//            switch (evo) {
+//                case "copy" -> evoCopy(child, parent);
+//                case "approach" -> evoApproach(child, parent);
+//                case "copyFitter" -> evoCopyFitter(child, parent);
+//                case "UD" -> evoUD(child, parent);
+//                case "UDN" -> evoUDN(child, parent);
+//            }
+//
+//            occurred = true;
+//
+//        }
+//
+//        return occurred;
+//
+//    }
 
-            occurred = true;
 
+    public void evo(Player child, Player parent){
+        switch (evo) {
+            case "copy" -> evoCopy(child, parent);
+            case "approach" -> evoApproach(child, parent);
+            case "copyFitter" -> evoCopyFitter(child, parent);
+            case "UD" -> evoUD(child, parent);
+            case "UDN" -> evoUDN(child, parent);
         }
-
-        return occurred;
-
     }
 
 
