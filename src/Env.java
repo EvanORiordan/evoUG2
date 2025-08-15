@@ -1023,8 +1023,16 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //WURS
             System.out.printf("| %-5s ", settings[CI++]); //WDRS
             System.out.printf("| %-10s ", settings[CI++]); //writeRate
-            System.out.printf("| %-10s ", settings[CI++]); //varying
-            System.out.printf("| %s ", settings[CI++]); //variations
+//            System.out.printf("| %-10s ", settings[CI++]); //varying
+//            System.out.printf("| %s ", settings[CI++]); //variations
+//            String x;
+//            x = settings[CI++];
+//            System.out.printf("| %-10s ", x.equals("")? x: ""); //varying
+////            !x.equals("")? System.out.printf("| %-10s ", x):
+//            x = settings[CI++];
+//            System.out.printf("| %s ", x.equals("")? x: ""); //variations
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //varying
+            System.out.printf("| %s ", CI!=settings.length? settings[CI++]: ""); //variations
             System.out.println();
         }
         printTableLine();
@@ -1094,7 +1102,7 @@ public class Env extends Thread{ // environment simulator
                     exit();
                 }
             }
-            case "proposalProb" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
+            case "proposalProb", "none" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
             default -> {
                 System.out.println("[ERROR] Invalid EWT passed");
                 exit();
@@ -1111,7 +1119,7 @@ public class Env extends Thread{ // environment simulator
                     exit();
                 }
             }
-            case "PD", "UD" -> CI++;
+            case "PD", "UD", "none" -> CI++; // max extra EWLF params: 1 ==> skip CI that many indices.
             default -> {
                 System.out.println("[ERROR] Invalid EWLF passed");
                 exit();
@@ -1253,28 +1261,31 @@ public class Env extends Thread{ // environment simulator
         }else{
             CI++;
         }
-        varying = settings[CI++];
-        switch(varying){
-            case "ER",
-                    "ROC",
-                    "length",
-                    "RP",
-                    "gens",
-                    "EWLF",
-                    "RA",
-                    "RT",
-                    "sel",
-                    "selNoise",
-                    "mutRate",
-                    "mutBound",
-                    "UF" -> {
-                for(String variation: settings[CI].split(";")){
-                    variations.add(variation);
+        if(CI!=settings.length){
+            varying = settings[CI++];
+            switch(varying){
+                case "ER",
+                        "ROC",
+                        "length",
+                        "RP",
+                        "gens",
+                        "EWLF",
+                        "RA",
+                        "RT",
+                        "sel",
+                        "selNoise",
+                        "mutRate",
+                        "mutBound",
+                        "UF" -> {
+                    for(String variation: settings[CI].split(";")){
+                        variations.add(variation);
+                    }
+                    exps = variations.size() + 1;
                 }
-                exps = variations.size() + 1;
+                default -> {}
             }
-            default -> {}
         }
+
     }
 
 
