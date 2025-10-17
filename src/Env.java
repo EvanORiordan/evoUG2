@@ -296,6 +296,7 @@ public class Env extends Thread{ // environment simulator
                     prepare(); // reset certain attributes at end of gen
                 }
             }
+            // my old version of MC simulation
 //            case "MC" -> { // Monte Carlo (MC)
 //                for(gen = 1; gen <= gens; gen++){ // MC outer loop
 //                    for(int i = 0; i < N; i++) play(pop[i]);
@@ -313,6 +314,20 @@ public class Env extends Thread{ // environment simulator
 //                    prepare(); // reset certain attributes at end of gen
 //                }
 //            }
+            // my new version of MC simulation
+            case "MCv2" -> {
+                for(gen=1;gen<=gens;gens++){
+                    for(int i=0;i<NIS;i++){
+                        int random_int = ThreadLocalRandom.current().nextInt(N);
+                        Player player = findPlayerByID(random_int);
+                        play(player);
+                        updateUtility(player);
+                        // problem: neighbours have no utility yet therefore evo will not work as intended. to fix this, i could call updateUtility() in updateStats().
+                        Player parent = selRandomNeigh(player);
+                        evo(player, parent);
+                    }
+                }
+            }
         }
         writeExpStats();
     }
@@ -1187,7 +1202,8 @@ public class Env extends Thread{ // environment simulator
             }
             default -> {
                 System.out.println("[INFO] No mutation");
-                CI += 2;
+//                CI += 2;
+                CI += 3; // increased from 2 to 3 due to the introduction of the selfmut param.
             }
         }
         UF = settings[CI++];

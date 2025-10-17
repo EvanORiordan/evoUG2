@@ -81,6 +81,7 @@ public class Player {
         this.p=p;
         if(this.p>1){
             this.p=1;
+//        } else if(this.p<0){
         } else if(this.p<0){
             this.p=0;
         }
