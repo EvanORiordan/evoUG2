@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Arrays;
 
 
 /**
@@ -41,7 +42,7 @@ public class Env extends Thread{ // environment simulator
     double max_p; // highest p in population at a time
     int gen; // current generation
     static int gens; // number of generations to occur per experiment run
-    static int iters; // temp var: number of iterations of play and EWL
+    static int rounds; // number of rounds of play and EWL
     static String UF; // utility function: indicates how utility is calculated
     static double T; // PD: temptation to defect
     static double R; // PD: reward for mutual coopeation
@@ -76,7 +77,7 @@ public class Env extends Thread{ // environment simulator
     static int writeRate = 0; // write data every x gens
     static String pos_data_filename;
     static String EWT; // EW type
-    static String EWLF = ""; // EWL formula
+    static String EWL = ""; // EWL function
     static double ROC = 0; // rate of change: fixed learning amount to EW
     static double alpha = 0; // used in alpha-beta rating
     static double beta = 0; // used in alpha-beta rating
@@ -155,7 +156,7 @@ public class Env extends Thread{ // environment simulator
             experiment(); // run an experiment of the series
             if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
                 switch(varying){
-                    case "EWLF" -> EWLF = variations.get(exp - 1);
+                    case "EWL" -> EWL = variations.get(exp - 1);
                     case "RA" -> RA = variations.get(exp - 1);
                     case "RT" -> RT = variations.get(exp - 1);
                     case "sel" -> sel = variations.get(exp - 1);
@@ -237,13 +238,13 @@ public class Env extends Thread{ // environment simulator
 ////                gens = 1;
 //                gen = 0;
 //                gens = 0;
-//                // oldER alg iterates "iters" times; 1 iteration of this loop ==> 1 "iter"
-////                for(int iter = 1; iter < iters; iter++){
-//                for(int iter = 1; iter <= iters; iter++){
+//                // oldER alg iterates "rounds" times; 1 iteration of this loop ==> 1 "round"
+////                for(int round = 1; round < rounds; round++){
+//                for(int round = 1; round <= rounds; round++){
 //                    for(int i=0;i<N;i++) play(pop[i]);
 //                    for(int i=0;i<N;i++) updateUtility(pop[i]);
 //                    for(int i=0;i<N;i++) EWL(pop[i]);
-//                    if(iter % ER == 0){ // if true, a generation is going to pass
+//                    if(round % ER == 0){ // if true, a generation is going to pass
 //                        for(int i=0;i<N;i++) if(EWT.equals("rewire")) rewire(pop[i]); // rewire if applicable
 //                        for(int i=0;i<N;i++) {
 //                            Player child = pop[i];
@@ -257,18 +258,18 @@ public class Env extends Thread{ // environment simulator
 //                        gens++; // for recording the total number of gens that occurred
 //                        writeGenAndRunStats();
 //                    }
-//                    prepare(); // reset certain attributes at end of iter
+//                    prepare(); // reset certain attributes at end of round
 //                }
 //            }
             case "newER" -> {
-                iters = 0;
-                for(gen = 1; gen <= gens; gen++){
-                    for(int j = 0; j < ER; j++){ // 1 iteration of this loop = 1 "iter"
+                rounds = 0;
+                for(gen = 1; gen <= gens; gen++){ // gens
+                    for(int j = 0; j < ER; j++){ // rounds
                         for(int i=0;i<N;i++) play(pop[i]);
                         for(int i=0;i<N;i++) updateUtility(pop[i]);
 //                        for(int i=0;i<N;i++) EWL(pop[i]);
-                        if(!EWLF.equals("")) for(int i=0;i<N;i++) EWL(pop[i]); // saves runtime when EWL disabled.
-                        iters++;
+                        if(!EWL.equals("")) for(int i=0;i<N;i++) EWL(pop[i]); // saves runtime when EWL disabled.
+                        rounds++;
                     }
                     if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable. saves runtime when rewiring disabled.
                     for(int i=0;i<N;i++) {
@@ -568,7 +569,7 @@ public class Env extends Thread{ // environment simulator
 
     public double calculateLearning(Player a, Player b){
         double learning = 0.0;
-        switch(EWLF){
+        switch(EWL){
             case "PROC" -> {
                 double pa = a.getP();
                 double pb = b.getP();
@@ -970,9 +971,6 @@ public class Env extends Thread{ // environment simulator
         System.out.printf("   Artificial Life Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
         printTableLine();
-//        System.out.println(
-//                "runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writeRate,varying,variations"
-//        );
         System.out.printf("%-10s |"+//config
                 " %-5s |"+//runs
                 " %-10s |"+//length
@@ -982,7 +980,7 @@ public class Env extends Thread{ // environment simulator
                 " %-5s |"+//RP
                 " %-15s |"+//RA
                 " %-5s |"+//RT
-                " %-5s |"+//EWLF
+                " %-5s |"+//EWL
                 " %-5s |"+//ROC
                 " %-15s |"+//sel
                 " %-15s |"+//RWT
@@ -1001,7 +999,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//writeRate
                 " %-10s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWLF","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -1021,7 +1019,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //RP
             System.out.printf("| %-15s ", settings[CI++]); //RA
             System.out.printf("| %-5s ", settings[CI++]); //RT
-            System.out.printf("| %-5s ", settings[CI++]); //EWLF
+            System.out.printf("| %-5s ", settings[CI++]); //EWL
             System.out.printf("| %-5s ", settings[CI++]); //ROC
             System.out.printf("| %-15s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", settings[CI++]); //RWT
@@ -1123,8 +1121,8 @@ public class Env extends Thread{ // environment simulator
                 exit();
             }
         }
-        EWLF = settings[CI++];
-        switch(EWLF){
+        EWL = settings[CI++];
+        switch(EWL){
             case "PROC", "UROC" -> {
                 try {
                     ROC = Double.parseDouble(settings[CI++]);
@@ -1134,9 +1132,9 @@ public class Env extends Thread{ // environment simulator
                     exit();
                 }
             }
-            case "PD", "UD", "none" -> CI++; // max extra EWLF params: 1 ==> skip CI that many indices.
+            case "PD", "UD", "none" -> CI++; // max extra EWL params: 1 ==> skip CI that many indices.
             default -> {
-                System.out.println("[ERROR] Invalid EWLF passed");
+                System.out.println("[ERROR] Invalid EWL passed");
                 exit();
             }
         }
@@ -1157,7 +1155,7 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
             }
-            case "fittest", "randomNeigh", "randomPop" -> CI += 2;
+            case "fittest", "randomNeigh", "randomPop", "rankBasedNeigh" -> CI += 2;
             default -> {
                 System.out.println("[ERROR] Invalid sel passed");
                 exit();
@@ -1285,7 +1283,7 @@ public class Env extends Thread{ // environment simulator
                         "length",
                         "RP",
                         "gens",
-                        "EWLF",
+                        "EWL",
                         "RA",
                         "RT",
                         "sel",
@@ -1743,12 +1741,12 @@ public class Env extends Thread{ // environment simulator
                 settings += ER != 0? ",ER": "";
                 settings += NIS != 0? ",NIS": "";
                 settings += ",gens";
-                settings += iters != 0? ",iters": "";
+                settings += rounds != 0? ",rounds": "";
                 settings += ",EWT";
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
                 settings += RT.equals("")? "": ",RT";
-                settings += EWLF.equals("")? "": ",EWLF";
+                settings += EWL.equals("")? "": ",EWL";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
 //                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
 //                settings += beta == 0.0 && !varying.equals("beta")? "": ",beta";
@@ -1786,12 +1784,12 @@ public class Env extends Thread{ // environment simulator
             settings += ER != 0? "," + ER: "";
             settings += NIS != 0? "," + NIS: "";
             settings += "," + gens;
-            settings += iters != 0? "," + iters: "";
+            settings += rounds != 0? "," + rounds: "";
             settings += "," + EWT;
             settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
             settings += RA.equals("")? "": "," + RA;
             settings += RT.equals("")? "": "," + RT;
-            settings += EWLF.equals("")? "": "," + EWLF;
+            settings += EWL.equals("")? "": "," + EWL;
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
 //            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
 //            settings += beta == 0.0 && !varying.equals("beta")? "": "," + beta;
@@ -1907,7 +1905,7 @@ public class Env extends Thread{ // environment simulator
                     case "length" -> output += "," + length;
                     case "RP" -> output += "," + RP;
                     case "gens" -> output += "," + gens;
-                    case "EWLF" -> output += "," + EWLF;
+                    case "EWL" -> output += "," + EWL;
                     case "EWT" -> output += "," + EWT;
                     case "RA" -> output += "," + RA;
                     case "RT" -> output += "," + RT;
@@ -1940,7 +1938,7 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Calculate utility of player.<br>
-     * With MNI UF, divide by minimum number of interactions player could have had (this gen/iter); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
+     * With MNI UF, divide by minimum number of interactions player could have had (this gen/round); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
      * With normalised UF, divide by degree. Indicates what the player earned from interacting with its average neighbour.
      */
     public void updateUtility(Player player){
@@ -2162,6 +2160,7 @@ public class Env extends Thread{ // environment simulator
             case "randomPop" -> parent = selRandomPop();
 //            case "crossover" -> crossover(child);
 //            case "RW2" -> parent = selRW2(child);
+            case "rankBasedNeigh" -> parent = selRankBasedNeigh(child);
         }
         return parent;
     }
@@ -2404,5 +2403,60 @@ public class Env extends Thread{ // environment simulator
     public static void exit(){
         System.out.println("[INFO] Exiting...");
         Runtime.getRuntime().exit(0);
+    }
+
+
+    /**
+     * probability of selection does not depend directly on the fitness
+     * of an individual (like with RW sel)
+     * but rather their fitness rank within the population/neighbourhood.
+     * compare fitness of candidates.
+     * higher rank ==> higher probability of being selected.
+     * candidates for selection are child and its neighbours.
+      */
+    public Player selRankBasedNeigh(Player child){
+        // get candidates
+        Player parent = child; // if no neighbour is selected, child is parent by default
+        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
+        pool.add(child);
+
+        // get utilities of candidates
+        int size = pool.size();
+        double[] utilities = new double[size];
+        for(int i=0;i<size;i++){
+            utilities[i] = pool.get(i).getU();
+        }
+
+        // determine ranks
+        int ranks[] = new int[size];
+        for(int i=0;i<size;i++){
+            ranks[i] = 1;
+        }
+        for(int i=0;i<size;i++){
+            for(int j=0;j<size;j++){
+                if(i != j){
+                    if(utilities[i] > utilities[j]){
+                        ranks[i]++;
+                    }
+                }
+            }
+        }
+
+        // probability of selection for candidate = rank / T_n (where T_n denotes nth triangular number and n denotes candidate pool size)
+        // lowest rank: 1
+        double total = 0;
+        for(int i = 0; i < size; i++){
+            total += ranks[i];
+        }
+        double random_double = ThreadLocalRandom.current().nextDouble(total);
+        double tally = 0;
+        for(int i = 0; i < size - 1; i++){
+            tally += ranks[i];
+            if(random_double < tally){
+                parent = pool.get(i); // select candidate as parent
+                break;
+            }
+        }
+        return parent;
     }
 }
