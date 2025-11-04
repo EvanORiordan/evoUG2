@@ -47,6 +47,7 @@ public class Player {
     private double y; // y position in space
     private double u; // utility
     private int degree;
+    private int sel_rank;
 
 
 
@@ -261,4 +262,6 @@ public class Player {
     public void setDegree(int i){degree=i;}
     public double getMeanPOmega(){return mean_p_omega;}
     public void setMeanPOmega(double d){mean_p_omega=d;}
+    public int getSelRank(){return sel_rank;}
+    public void setSelRank(int i){sel_rank=i;}
 }

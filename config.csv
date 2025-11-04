@@ -1,6 +1,12 @@
-runs,length,ER,gens,EWT,RP,RA,RT,EWLF,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,selfMut,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writingRate,varying,varying
+runs,length,ER,gens,EWT,RP,RA,RT,EWL,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,selfMut,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writingRate,varying,varying
 1,50,1,1000,none,,,,none,,randomNeigh,,,local,0.01,0.01,1,cumulative,,,,1,,,1,,
 1,50,1,1000,none,,,,none,,randomNeigh,,,,,,,cumulative,,,,1,,,1,,
 1,50,1,10000,none,,,,none,,randomNeigh,,,,,,,cumulative,,,,1,,,1,,
 1,50,1,100000,none,,,,none,,randomNeigh,,,local,0.01,0.01,1,cumulative,,,,1,,,1,,
 1,50,1,1000000,none,,,,none,,randomNeigh,,,local,0.01,0.01,1,cumulative,,,,1,,,1,,
+1,5,1,10,none,,,,none,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,1,,
+10,30,1,10000,none,,,,none,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,10000,,
+10,30,1,10000,none,,,,none,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
+10,30,1,10000,none,,,,none,,RW,normal,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
+10,30,1,10000,proposalProb,,,,PD,,RW,normal,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
+10,30,1,10000,proposalProb,,,,PD,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
