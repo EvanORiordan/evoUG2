@@ -28,7 +28,7 @@ public class Player {
 //    private double[] edgeWeights; // edge weights in [0,1] connecting player to neighbours
     private ArrayList <Double> edgeWeights; // using Double arraylist rather than double array allows us to use ArrayList.add() to add things to the collection without an index.
 //    private int NIP = 0; // num of interactions possible (NIP) that the player could have had.
-    private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
+//    private int MNI = 0; // maximum number of interactions (MNI) that the player could have had.
 //    private int NSI = 0; // num of successful interactions (NSI) player had i.e. num interactions earned payoff.
 //    private int[] NSI_per_neighbour;
     private int NSP = 0; // num successful proposals (NSP)
@@ -46,7 +46,7 @@ public class Player {
     private double x; // x position in space
     private double y; // y position in space
     private double u; // utility
-    private int degree;
+    private int k;
     private int sel_rank;
 
 
@@ -163,10 +163,10 @@ public class Player {
     }
 
 
-    // degree is equal to number of edges i.e. number of neighbours i.e. size of neighbourhood
-    public void calculateDegree(){
-        degree = neighbourhood.size();
-    }
+//    // degree is equal to number of edges i.e. number of neighbours i.e. size of neighbourhood
+//    public void calculateDegree(){
+//        k = neighbourhood.size();
+//    }
 
 
     // calculate mean p of omega
@@ -219,10 +219,10 @@ public class Player {
 //    public void setEdgeWeights(double[] d){edgeWeights=d;}
     public ArrayList <Double> getEdgeWeights(){return edgeWeights;}
     public void setEdgeWeights(ArrayList <Double> x){edgeWeights=x;}
-    public int getMNI(){return MNI;}
-    public void setMNI(int i){
-        MNI=i;
-    }
+//    public int getMNI(){return MNI;}
+//    public void setMNI(int i){
+//        MNI=i;
+//    }
 //    public int getNSI(){return NSI;}
 //    public void setNSI(int i){
 //        NSI=i;
@@ -258,8 +258,8 @@ public class Player {
     public static void setCount(int i){count=i;}
     public double getU(){return u;}
     public void setU(double d){u=d;}
-    public int getDegree(){return degree;}
-    public void setDegree(int i){degree=i;}
+    public int getK(){return k;}
+    public void setK(int i){k=i;}
     public double getMeanPOmega(){return mean_p_omega;}
     public void setMeanPOmega(double d){mean_p_omega=d;}
     public int getSelRank(){return sel_rank;}

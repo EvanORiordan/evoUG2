@@ -41,7 +41,7 @@ public class Env extends Thread{ // environment simulator
     double sigma_deg; // standard deviation of degree
     double max_p; // highest p in population at a time
     int gen; // current generation
-    static int gens; // number of generations to occur per experiment run
+    static int gens; // number of generations of evolution to occur per experiment run
     static int rounds; // number of rounds of play and EWL
     static String UF; // utility function: indicates how utility is calculated
     static double T; // PD: temptation to defect
@@ -101,7 +101,12 @@ public class Env extends Thread{ // environment simulator
     static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
-
+    static double
+            //punisherCost;
+            punishmentCost; // cost incurred by punisher
+    static double
+//            punisheeCost;
+            punishmentFine; // fine received by punishee
 
 
 
@@ -266,7 +271,15 @@ public class Env extends Thread{ // environment simulator
                 for(gen = 1; gen <= gens; gen++){ // gens
                     for(int j = 0; j < ER; j++){ // rounds
                         for(int i=0;i<N;i++) play(pop[i]);
-                        for(int i=0;i<N;i++) updateUtility(pop[i]);
+//                        for(int i=0;i<N;i++) updateUtility(pop[i]);
+
+                        // punishment
+                        if(EWT.equals("punishment")){
+                            for(int i=0;i<N;i++){
+                                punish(pop[i]);
+                            }
+                        }
+
 //                        for(int i=0;i<N;i++) EWL(pop[i]);
                         if(!EWL.equals("")) for(int i=0;i<N;i++) EWL(pop[i]); // saves runtime when EWL disabled.
                         rounds++;
@@ -322,7 +335,7 @@ public class Env extends Thread{ // environment simulator
                         int random_int = ThreadLocalRandom.current().nextInt(N);
                         Player player = findPlayerByID(random_int);
                         play(player);
-                        updateUtility(player);
+//                        updateUtility(player);
                         // problem: neighbours have no utility yet therefore evo will not work as intended. to fix this, i could call updateUtility() in updateStats().
                         Player parent = selRandomNeigh(player);
                         evo(player, parent);
@@ -396,10 +409,11 @@ public class Env extends Thread{ // environment simulator
                             double d = ThreadLocalRandom.current().nextDouble();
                             if(w_ba > d){
                                 UG(a, b);
-                            } else{
-                                updateStats(a,0);
-                                updateStats(b,0);
                             }
+//                            else{
+//                                updateStats(a,0);
+//                                updateStats(b,0);
+//                            }
                             break;
                         }
                     }
@@ -429,111 +443,116 @@ public class Env extends Thread{ // environment simulator
             pi_b = M * p_a;
             pi_a = M - pi_b;
         }
-        updateStatsUG(a, pi_a);
-        updateStatsUG(b, pi_b);
+//        updateStatsUG(a, pi_a);
+//        updateStatsUG(b, pi_b);
+//        a.setU(a.getU() + pi_a);
+//        b.setU(b.getU() + pi_b);
+        updateUtility(a, pi_a);
     }
 
-    /**
-     * Proposer initiates ultimatum game interaction with responder.<br>
-     * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
-     * Uses w_ba to calculate payoffs of players.
-     * Prize is effectively cut by w_ba percent.<br>
-     * @param a proposer
-     * @param b responder
-     * @param w_ba weight of edge from b to a
-     */
-    public void UG(Player a, Player b, double w_ba){
-        double p_a = a.getP();
-        double q_b = b.getQ();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        double modified_M = M * w_ba; // denote formally by M'
-        if(p_a >= q_b) {
-            pi_b = modified_M * p_a;
-            pi_a = modified_M - pi_b;
-        }
-        updateStatsUG(a, pi_a);
-        updateStatsUG(b, pi_b);
-    }
+//    /**
+//     * Proposer initiates ultimatum game interaction with responder.<br>
+//     * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
+//     * Uses w_ba to calculate payoffs of players.
+//     * Prize is effectively cut by w_ba percent.<br>
+//     * @param a proposer
+//     * @param b responder
+//     * @param w_ba weight of edge from b to a
+//     */
+//    public void UG(Player a, Player b, double w_ba){
+//        double p_a = a.getP();
+//        double q_b = b.getQ();
+//        double pi_a = 0.0;
+//        double pi_b = 0.0;
+//        double modified_M = M * w_ba; // denote formally by M'
+//        if(p_a >= q_b) {
+//            pi_b = modified_M * p_a;
+//            pi_a = modified_M - pi_b;
+//        }
+//        updateStatsUG(a, pi_a);
+//        updateStatsUG(b, pi_b);
+//    }
 
 
 
 
-    public void updateStatsUG(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
-    }
+//    public void updateStatsUG(Player player, double payoff){
+//        player.setPi(player.getPi() + payoff);
+//        player.setMNI(player.getMNI() + 1);
+//    }
 
 
 
 
 
-    /**
-     * Prisoner's dilemma function.<br>
-     * @param a player
-     * @param b player
-     */
-    public void PD(Player a, Player b){
-        String s_a = a.getStrategyPD();
-        String s_b = b.getStrategyPD();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        if(s_a.equals("C") && s_b.equals("C")){
-            pi_a = R;
-            pi_b = R;
-        } else if(s_a.equals("C") && s_b.equals("D")){
-            pi_a = S;
-            pi_b = T;
-        }else if(s_a.equals("D") && s_b.equals("C")){
-            pi_a = T;
-            pi_b = S;
-        }else if(s_a.equals("D") && s_b.equals("D")){
-            pi_a = P;
-            pi_b = P;
-        }else if(s_a.equals("A") || s_b.equals("A")){
-            pi_a = l;
-            pi_b = l;
-        }
-        updateStatsPD(a, pi_a);
-        updateStatsPD(b, pi_b);
-    }
-    /**
-     * Prisoner's dilemma function.<br>
-     * Uses w_ba to calculate payoffs of players.<br>
-     * @param a player
-     * @param b player
-     */
-    public void PD(Player a, Player b, double w_ba){
-        String s_a = a.getStrategyPD();
-        String s_b = b.getStrategyPD();
-        double pi_a = 0.0;
-        double pi_b = 0.0;
-        if(s_a.equals("C") && s_b.equals("C")){
-            pi_a = R * w_ba;
-            pi_b = R * w_ba;
-        } else if(s_a.equals("C") && s_b.equals("D")){
-            pi_a = S * w_ba;
-            pi_b = T * w_ba;
-        }else if(s_a.equals("D") && s_b.equals("C")){
-            pi_a = T * w_ba;
-            pi_b = S * w_ba;
-        }else if(s_a.equals("D") && s_b.equals("D")){
-            pi_a = P * w_ba;
-            pi_b = P * w_ba;
-        }else if(s_a.equals("A") || s_b.equals("A")){
-            pi_a = l * w_ba;
-            pi_b = l * w_ba;
-        }
-        updateStatsPD(a, pi_a);
-        updateStatsPD(b, pi_b);
-    }
+//    /**
+//     * Prisoner's dilemma function.<br>
+//     * @param a player
+//     * @param b player
+//     */
+//    public void PD(Player a, Player b){
+//        String s_a = a.getStrategyPD();
+//        String s_b = b.getStrategyPD();
+//        double pi_a = 0.0;
+//        double pi_b = 0.0;
+//        if(s_a.equals("C") && s_b.equals("C")){
+//            pi_a = R;
+//            pi_b = R;
+//        } else if(s_a.equals("C") && s_b.equals("D")){
+//            pi_a = S;
+//            pi_b = T;
+//        }else if(s_a.equals("D") && s_b.equals("C")){
+//            pi_a = T;
+//            pi_b = S;
+//        }else if(s_a.equals("D") && s_b.equals("D")){
+//            pi_a = P;
+//            pi_b = P;
+//        }else if(s_a.equals("A") || s_b.equals("A")){
+//            pi_a = l;
+//            pi_b = l;
+//        }
+//        updateStatsPD(a, pi_a);
+//        updateStatsPD(b, pi_b);
+//    }
+
+
+//    /**
+//     * Prisoner's dilemma function.<br>
+//     * Uses w_ba to calculate payoffs of players.<br>
+//     * @param a player
+//     * @param b player
+//     */
+//    public void PD(Player a, Player b, double w_ba){
+//        String s_a = a.getStrategyPD();
+//        String s_b = b.getStrategyPD();
+//        double pi_a = 0.0;
+//        double pi_b = 0.0;
+//        if(s_a.equals("C") && s_b.equals("C")){
+//            pi_a = R * w_ba;
+//            pi_b = R * w_ba;
+//        } else if(s_a.equals("C") && s_b.equals("D")){
+//            pi_a = S * w_ba;
+//            pi_b = T * w_ba;
+//        }else if(s_a.equals("D") && s_b.equals("C")){
+//            pi_a = T * w_ba;
+//            pi_b = S * w_ba;
+//        }else if(s_a.equals("D") && s_b.equals("D")){
+//            pi_a = P * w_ba;
+//            pi_b = P * w_ba;
+//        }else if(s_a.equals("A") || s_b.equals("A")){
+//            pi_a = l * w_ba;
+//            pi_b = l * w_ba;
+//        }
+//        updateStatsPD(a, pi_a);
+//        updateStatsPD(b, pi_b);
+//    }
 
 
 
-    public void updateStatsPD(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
-    }
+//    public void updateStatsPD(Player player, double payoff){
+//        player.setPi(player.getPi() + payoff);
+//        player.setMNI(player.getMNI() + 1);
+//    }
 
 
 
@@ -980,6 +999,8 @@ public class Env extends Thread{ // environment simulator
                 " %-5s |"+//RP
                 " %-15s |"+//RA
                 " %-5s |"+//RT
+                " %-10s |"+//punishCost
+                " %-10s |"+//punishFine
                 " %-5s |"+//EWL
                 " %-5s |"+//ROC
                 " %-15s |"+//sel
@@ -999,7 +1020,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//writeRate
                 " %-10s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -1019,6 +1040,8 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //RP
             System.out.printf("| %-15s ", settings[CI++]); //RA
             System.out.printf("| %-5s ", settings[CI++]); //RT
+            System.out.printf("| %-10s ", settings[CI++]); //punishCost
+            System.out.printf("| %-10s ", settings[CI++]); //punishFine
             System.out.printf("| %-5s ", settings[CI++]); //EWL
             System.out.printf("| %-5s ", settings[CI++]); //ROC
             System.out.printf("| %-15s ", settings[CI++]); //sel
@@ -1079,7 +1102,7 @@ public class Env extends Thread{ // environment simulator
         }
         length = Integer.parseInt(settings[CI++]);
         if(length < 3){
-            System.out.println("[ERROR] Invalid length passed");
+            System.out.println("[ERROR] Invalid length passed, must be greater than 3");
             exit();
         }
         width = length;
@@ -1114,8 +1137,19 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("[ERROR] Invalid RT passed");
                     exit();
                 }
+                CI += 2;
             }
-            case "proposalProb", "none" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
+            case "punishment" -> {
+                CI += 3;
+                try {
+                    punishmentCost = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
+                try {
+                    punishmentFine = Double.parseDouble(settings[CI++]);
+                }catch(NumberFormatException e){}
+            }
+//            case "proposalProb", "none" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
+            case "proposalProb", "none" -> CI += 5; // num extra params based on EWT = 3
             default -> {
                 System.out.println("[ERROR] Invalid EWT passed");
                 exit();
@@ -1350,6 +1384,7 @@ public class Env extends Thread{ // environment simulator
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
+                        "=======================================================" +
                         "%n");
     }
 
@@ -1492,7 +1527,7 @@ public class Env extends Thread{ // environment simulator
     public void calculateMeanDegree(){
         mean_deg = 0;
         for(int i = 0; i < N; i++){
-            mean_deg += pop[i].getDegree();
+            mean_deg += pop[i].getK();
         }
         mean_deg /= N;
     }
@@ -1506,7 +1541,7 @@ public class Env extends Thread{ // environment simulator
         sigma_deg = 0;
         for(int i = 0; i < N; i++){
 //            sigma_deg += Math.pow(pop[i].getDegree() - mean_deg, 2);
-            double deg = pop[i].getDegree();
+            double deg = pop[i].getK();
             double deg_minus_mean_deg = deg - 4;
             sigma_deg += Math.pow(deg_minus_mean_deg, 2);
         }
@@ -1520,7 +1555,7 @@ public class Env extends Thread{ // environment simulator
         for(int i=0;i<N;i++){
             Player player = pop[i];
             player.setPi(0);
-            player.setMNI(0);
+//            player.setMNI(0);
             player.setOldP(player.getP());
             max_p = 0.0;
         }
@@ -1706,10 +1741,10 @@ public class Env extends Thread{ // environment simulator
     /**
      * Generic function to update stats
      */
-    public void updateStats(Player player, double payoff){
-        player.setPi(player.getPi() + payoff);
-        player.setMNI(player.getMNI() + 1);
-    }
+//    public void updateStats(Player player, double payoff){
+//        player.setPi(player.getPi() + payoff);
+//        player.setMNI(player.getMNI() + 1);
+//    }
 
 
 
@@ -1936,32 +1971,45 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Calculate utility of player.<br>
-     * With MNI UF, divide by minimum number of interactions player could have had (this gen/round); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
-     * With normalised UF, divide by degree. Indicates what the player earned from interacting with its average neighbour.
-     */
-    public void updateUtility(Player player){
+//    /**
+//     * Calculate utility of player.<br>
+//     * With MNI UF, divide by minimum number of interactions player could have had (this gen/round); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
+//     * With normalised UF, divide by degree. Indicates what the player earned from interacting with its average neighbour.
+//     */
+//    public void updateUtility(Player player){
+//        switch(UF){
+//            case "MNI" -> { // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
+//                if(player.getNeighbourhood().size() == 0)
+//                    player.setU(0.0);
+//                else
+//                    player.setU(player.getPi() / player.getMNI());
+//            }
+//            case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
+//            case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
+//                if(player.getNeighbourhood().size() == 0){
+//                    player.setU(0.0);
+//                }else{
+//                    player.setU(player.getPi() / player.getNeighbourhood().size());
+//                }
+//            }
+//        }
+//    }
+
+
+    public void updateUtility(Player player, double payoff){
         switch(UF){
-            case "MNI" -> { // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
-                if(player.getNeighbourhood().size() == 0)
-                    player.setU(0.0);
-                else
-                    player.setU(player.getPi() / player.getMNI());
+            case "cumulative" -> {
+                player.setU(player.getU() + payoff);
             }
-            case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
-            case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
-                if(player.getNeighbourhood().size() == 0){
-                    player.setU(0.0);
-                }else{
-                    player.setU(player.getPi() / player.getNeighbourhood().size());
-                }
+            case "normalised" -> {
+              // how do you do this in a way such that the
+              // final value of u at the end of a gen is
+              //equivalent to how it worked with the old
+              // updateUtility() function?
+                player.setU(player.getU() + (payoff / player.getK()));
             }
         }
     }
-
-
-
 
 
 
@@ -2065,7 +2113,7 @@ public class Env extends Thread{ // environment simulator
 //    public void evoUD(Player child, Player parent){
     public void evoUDN(Player child, Player parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
-        double prob_evolve = (parent.getU() - child.getU()) / child.getDegree();
+        double prob_evolve = (parent.getU() - child.getU()) / child.getK();
         if(random_number < prob_evolve)
             evoCopy(child, parent);
     }
@@ -2254,9 +2302,12 @@ public class Env extends Thread{ // environment simulator
 //                player.calculateDegree();
 //            }
 //        }
-        for(Player player: pop){
-            player.calculateDegree();
-        }
+
+        // the only reason to use this loop is if degree is not being updated whenever a player's degree changes.
+//        for(Player player: pop){
+//            player.calculateDegree();
+//        }
+
         if(writePRunStats) {
             calculateMeanP();
             calculateSigmaP();
@@ -2333,7 +2384,7 @@ public class Env extends Thread{ // environment simulator
 //            s += gen + ",";
             if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
             if(writeUGenStats) s += DF4.format(player.getU()) + ",";
-            if(writeDegGenStats) s += DF4.format(player.getDegree()) + ",";
+            if(writeDegGenStats) s += DF4.format(player.getK()) + ",";
             s = removeTrailingComma(s);
         }
         try{
@@ -2459,4 +2510,19 @@ public class Env extends Thread{ // environment simulator
         }
         return parent;
     }
+
+
+    public void punish(Player player){
+        ArrayList<Double> weights = player.getEdgeWeights();
+        ArrayList<Player> omega = player.getNeighbourhood();
+        for(int i=0;i<omega.size();i++){
+            Player neighbour = omega.get(i);
+            double random_double = ThreadLocalRandom.current().nextDouble();
+            if(weights.get(i) < random_double){ // probability of punishing = 1 - w_ab (where a is punisher, b is neighbour/punishee)
+                player.setU(player.getU() - punishmentCost);
+                neighbour.setU(neighbour.getU() - punishmentFine);
+            }
+        }
+    }
+
 }
