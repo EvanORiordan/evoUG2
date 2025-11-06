@@ -266,17 +266,17 @@ public class Env extends Thread{ // environment simulator
                         for(int i=0;i<N;i++) {
                             play(pop[i]); // play DG
                         }
-                        if(EWT.equals("punishment")){
-                            for(int i=0;i<N;i++){
-                                punish(pop[i]); // punishment
-                            }
-                        }
                         if(!EWL.equals("")){
                             for(int i=0;i<N;i++){
                                 EWL(pop[i]); // edge weight learning
                             }
                         }
                         rounds++;
+                    }
+                    if(EWT.equals("punishment")){
+                        for(int i=0;i<N;i++){
+                            punish(pop[i]); // punishment
+                        }
                     }
                     if(EWT.equals("rewire")){
                         for(int i=0;i<N;i++){
