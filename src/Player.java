@@ -23,7 +23,8 @@ public class Player {
     private double q; // acceptance threshold value residing within [0,1]
     private double oldQ; // q value held at beginning of gen to be inherited by children
 //    private ArrayList<Player> neighbourhood = new ArrayList<>(); // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
-    private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
+//    private ArrayList<Player> neighbourhood; // neighbours of player; for each neighbour, there exists an edge between player and neighbour.
+    private ArrayList<Player> omega; // neighbourhood
 //    private int[] neighbour_IDs; // array of the IDs of the player's neighbour; mainly useful for quickly identifying players while debugging
 //    private double[] edgeWeights; // edge weights in [0,1] connecting player to neighbours
     private ArrayList <Double> edgeWeights; // using Double arraylist rather than double array allows us to use ArrayList.add() to add things to the collection without an index.
@@ -34,19 +35,19 @@ public class Player {
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
 //    private double score; // score of player ($\Pi$)
-    private double pi; // score of player ($\Pi$)
+//    private double pi; // score of player ($\Pi$)
     private double mean_self_edge_weight; // mean of edge weights from player to its neighbours
     private double mean_neighbour_edge_weight; // mean of edge weights directed at player
-    private String[] strategies_PD = {"C","D","A","TFT"};
+    private String[] strategies_PD = {"AllC","AllD","AllA","TFT"};
     private String strategy_PD = "";
-    private ArrayList<Player> margolus_neighbourhood1 = new ArrayList<>();
-    private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
-    private double[] margolus_edgeWeights1;
-    private double[] margolus_edgeWeights2;
-    private double x; // x position in space
-    private double y; // y position in space
+//    private ArrayList<Player> margolus_neighbourhood1 = new ArrayList<>();
+//    private ArrayList<Player> margolus_neighbourhood2 = new ArrayList<>();
+//    private double[] margolus_edgeWeights1;
+//    private double[] margolus_edgeWeights2;
+    private double x; // x position in the topology
+    private double y; // y position in the topology
     private double u; // utility
-    private int k;
+    private int k; // degree
     private int sel_rank;
 
 
@@ -125,10 +126,10 @@ public class Player {
 //        player_desc+=" pi="+DF4.format(pi); // score
         player_desc += " u=" + DF4.format(u); // utility
 
-        player_desc += " neighbourhood=[";
-        for(int i=0;i<neighbourhood.size();i++){
-            player_desc += neighbourhood.get(i).ID;
-            if((i + 1) < neighbourhood.size()){
+        player_desc += " omega=[";
+        for(int i=0;i<omega.size();i++){
+            player_desc += omega.get(i).ID;
+            if((i + 1) < omega.size()){
                 player_desc += ", ";
             }
         }
@@ -172,9 +173,9 @@ public class Player {
     // calculate mean p of omega
     public void calculateMeanPOmega(){
         mean_p_omega = 0.0;
-        int size = neighbourhood.size();
+        int size = omega.size();
         for(int i = 0; i < size; i++){
-            mean_p_omega += neighbourhood.get(i).getP();
+            mean_p_omega += omega.get(i).getP();
         }
         mean_p_omega /= size;
     }
@@ -205,10 +206,10 @@ public class Player {
     public void setOldQ(double oldQ){
         this.oldQ=oldQ;
     }
-    public ArrayList<Player> getNeighbourhood() {
-        return neighbourhood;
+    public ArrayList<Player> getOmega() {
+        return omega;
     }
-    public void setNeighbourhood(ArrayList <Player> x){neighbourhood=x;}
+    public void setOmega(ArrayList <Player> x){omega=x;}
 //    public int[] getNeighbourIDs(){return neighbour_IDs;}
 //    public void setNeighbourIDs(int[] arr){
 //        neighbour_IDs=arr;
@@ -237,19 +238,19 @@ public class Player {
     public void setNSR(int i){
         NSR=i;
     }
-    public double getPi(){return pi;}
-    public void setPi(double pi){
-        this.pi=pi;
-    }
+//    public double getPi(){return pi;}
+//    public void setPi(double pi){
+//        this.pi=pi;
+//    }
     public double getMeanSelfEdgeWeight(){return mean_self_edge_weight;}
     public void setMeanSelfEdgeWeight(double d){mean_self_edge_weight=d;}
     public double getMeanNeighbourEdgeWeight(){return mean_neighbour_edge_weight;}
     public void setMeanNeighbourEdgeWeight(double d){mean_neighbour_edge_weight=d;}
     public String getStrategyPD(){return strategy_PD;}
-    public ArrayList<Player>getMargolus_neighbourhood1(){return margolus_neighbourhood1;}
-    public ArrayList<Player>getMargolus_neighbourhood2(){return margolus_neighbourhood2;}
-    public void setMargolus_neighbourhood1(ArrayList<Player> x){margolus_neighbourhood1=x;}
-    public void setMargolus_neighbourhood2(ArrayList<Player> x){margolus_neighbourhood2=x;}
+//    public ArrayList<Player>getMargolus_neighbourhood1(){return margolus_neighbourhood1;}
+//    public ArrayList<Player>getMargolus_neighbourhood2(){return margolus_neighbourhood2;}
+//    public void setMargolus_neighbourhood1(ArrayList<Player> x){margolus_neighbourhood1=x;}
+//    public void setMargolus_neighbourhood2(ArrayList<Player> x){margolus_neighbourhood2=x;}
     public double getY(){return y;}
     public void setY(double d){y=d;}
     public double getX(){return x;}

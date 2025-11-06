@@ -1,6 +1,8 @@
-runs,length,ER,gens,EWT,RP,RA,RT,punishCost,punishFine,EWL,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,selfMut,UF,WPGS,WUGS,WDGS,WPRS,WURS,WDRS,writingRate,varying,varying
+runs,length,ER,gens,EWT,RP,RA,RT,punishCost,punishFine,EWL,ROC,sel,RWT,selNoise,mut,mutRate,mutBound,selfMut,UF,WPGS,WUGS,WKGS,WPRS,WURS,WKRS,writingRate,varying,varying
 1,5,1,10,none,,,,,,none,,RW,normal,,,,,,cumulative,,,,1,,,1,,
 1,5,1,10,none,,,,,,none,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,1,,
 10,30,1,10000,proposalProb,,,,,,PD,,RW,normal,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
 10,30,1,10000,proposalProb,,,,,,PD,,rankBasedNeigh,,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
 10,30,1,10000,punishment,,,,0.2,1.0,PD,,RW,normal,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
+1,5,1,10,punishment,,,,hello,1.0,PD,,RW,normal,,,,,,cumulative,,,,1,,,10000,ER,2;3;4;5
+1,5,1,10,rewire,1.0,linear,pop,,,PD,,RW,normal,,,,,,cumulative,,,,1,,,1

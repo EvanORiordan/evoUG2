@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.Arrays;
 
 
 /**
@@ -26,29 +25,29 @@ public class Env extends Thread{ // environment simulator
     static String neighType = "VN"; // indicates type of neighbourhood players will have.
 //    static int neighRadius; // radius of neighbourhood
     static int neighRadius = 1; // radius of neighbourhood
-    static int neighSize; // size of neighbours with random neighbourhood type.
+    static int neighSize; // size of neighbourhood (assuming randomNeigh neighType) i.e. num random neighbours
     static int N; // population size
     static int run; // current run
     static int runs; // number of experiment runs to occur
     Player[] pop; // array of players; assumes 2D space
     double mean_p; // mean proposal value; informally referred to as the performance of an experiment
-    double mean_q; // mean acceptance threshold
+//    double mean_q; // mean acceptance threshold
     double mean_u; // mean utility
-    double mean_deg; // mean degree of population
+    double mean_k; // mean k of population
     double sigma_p; // standard deviation of p
-    double sigma_q; // standard deviation of q
+//    double sigma_q; // standard deviation of q
     double sigma_u; // standard deviation of utility
-    double sigma_deg; // standard deviation of degree
+    double sigma_k; // standard deviation of k
     double max_p; // highest p in population at a time
     int gen; // current generation
     static int gens; // number of generations of evolution to occur per experiment run
     static int rounds; // number of rounds of play and EWL
     static String UF; // utility function: indicates how utility is calculated
-    static double T; // PD: temptation to defect
-    static double R; // PD: reward for mutual coopeation
-    static double P; // PD: punishment for mutual defection
-    static double S; // PD: sucker's payoff for cooperating with a defector
-    static double l; // loner's payoff
+//    static double T; // PD: temptation to defect
+//    static double R; // PD: reward for mutual coopeation
+//    static double P; // PD: punishment for mutual defection
+//    static double S; // PD: sucker's payoff for cooperating with a defector
+//    static double l; // loner's payoff
     static String varying = ""; // indicates which parameter will be varied in experiment series
     static ArrayList<String> variations = new ArrayList<>();
     static int exp; // indicates how far along we are through the experiment series
@@ -57,8 +56,8 @@ public class Env extends Thread{ // environment simulator
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
     static String config_filename = "config.csv";
-    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
-    static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
+//    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
+//    static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
     static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
@@ -68,19 +67,17 @@ public class Env extends Thread{ // environment simulator
     static String run_path; // address where stats for current run are stored
     static boolean writePGenStats;
     static boolean writeUGenStats;
-    static boolean writeDegGenStats;
+    static boolean writeKGenStats;
     static boolean writePRunStats;
     static boolean writeURunStats;
-    static boolean writeDegRunStats;
+    static boolean writeKRunStats;
     static boolean writePosData;
-    static int first_gen_recorded = 1;
     static int writeRate = 0; // write data every x gens
-    static String pos_data_filename;
     static String EWT; // EW type
     static String EWL = ""; // EWL function
     static double ROC = 0; // rate of change: fixed learning amount to EW
-    static double alpha = 0; // used in alpha-beta rating
-    static double beta = 0; // used in alpha-beta rating
+//    static double alpha = 0; // used in alpha-beta rating
+//    static double beta = 0; // used in alpha-beta rating
 //    static String evo; // indicates which evolution function to call
     static String evo = "copy"; // indicates which evolution function to call
     static double evoNoise = 0; // noise affecting evolution
@@ -98,7 +95,7 @@ public class Env extends Thread{ // environment simulator
     static String RA = ""; // rewire away
     static String RT = ""; // rewire to
     static double RP = 0.0; // rewire probability
-    static int injIter; // injection iteration: indicates when strategy injection will occur. 0 ==> no injection.
+//    static int injRound; // injection round: indicates at which round strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
     static double
@@ -220,10 +217,6 @@ public class Env extends Thread{ // environment simulator
                 case"VN","Moore","dia"->assignAdjacentNeighbours(pop[i]);
                 case"random"->assignRandomNeighbours(pop[i], neighSize);
                 case"all"->assignAllNeighbours(pop[i]);
-                default -> {
-                    System.out.println("[ERROR] Invalid neighbourhood type configured. Exiting...");
-                    Runtime.getRuntime().exit(0);
-                }
             }
         }
         if(writePosData && run == 1) writePosData();
@@ -270,40 +263,35 @@ public class Env extends Thread{ // environment simulator
                 rounds = 0;
                 for(gen = 1; gen <= gens; gen++){ // gens
                     for(int j = 0; j < ER; j++){ // rounds
-                        for(int i=0;i<N;i++) play(pop[i]);
-//                        for(int i=0;i<N;i++) updateUtility(pop[i]);
-
-                        // punishment
+                        for(int i=0;i<N;i++) {
+                            play(pop[i]); // play DG
+                        }
                         if(EWT.equals("punishment")){
                             for(int i=0;i<N;i++){
-                                punish(pop[i]);
+                                punish(pop[i]); // punishment
                             }
                         }
-
-//                        for(int i=0;i<N;i++) EWL(pop[i]);
-                        if(!EWL.equals("")) for(int i=0;i<N;i++) EWL(pop[i]); // saves runtime when EWL disabled.
+                        if(!EWL.equals("")){
+                            for(int i=0;i<N;i++){
+                                EWL(pop[i]); // edge weight learning
+                            }
+                        }
                         rounds++;
                     }
-                    if(EWT.equals("rewire")) for(int i=0;i<N;i++) rewire(pop[i]); // rewire if applicable. saves runtime when rewiring disabled.
+                    if(EWT.equals("rewire")){
+                        for(int i=0;i<N;i++){
+                            rewire(pop[i]); // edge rewiring
+                        }
+                    }
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
-
-//                        if(evo(child,parent))
-//                            mut(child);
-
-//                        evo(child,parent);
-//                        mut(child);
-
-//                        evo(child,parent);
-//                        if(!child.equals(parent) || selfMut)
-//                            mut(child);
-
-                        if(!child.equals(parent)) // saves runtime when child is parent.
+                        if(!child.equals(parent)) {
                             evo(child, parent);
-                        if(selfMut || !child.equals(parent)) // if selfMut enabled, child always mutates. else, child only mutates if child is not parent.
+                        }
+                        if(selfMut || !child.equals(parent)) { // if selfMut enabled, child always mutates. else, child only mutates if child is not parent.
                             mut(child);
-
+                        }
                     }
                     calculateStats(); // calculate stats at end of gen
                     writeGenAndRunStats(); // write gen and run stats at end of gen
@@ -335,8 +323,6 @@ public class Env extends Thread{ // environment simulator
                         int random_int = ThreadLocalRandom.current().nextInt(N);
                         Player player = findPlayerByID(random_int);
                         play(player);
-//                        updateUtility(player);
-                        // problem: neighbours have no utility yet therefore evo will not work as intended. to fix this, i could call updateUtility() in updateStats().
                         Player parent = selRandomNeigh(player);
                         evo(player, parent);
                     }
@@ -394,26 +380,26 @@ public class Env extends Thread{ // environment simulator
 //        }
 //    }
 
+    /**
+     * play Dictator Games
+     * @param a focal player
+     */
     public void play(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
-        for(int i = 0; i < omega_a.size(); i++){
+        ArrayList<Player> omega_a = a.getOmega(); // neighbourhood of a
+        for(int i = 0; i < a.getK(); i++){
             Player b = omega_a.get(i); // neighbour of a
             switch(EWT) {
                 default -> UG(a, b);
                 case "proposalProb"-> {
-                    ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
-                    for (int j = 0; j < omega_b.size(); j++) {
+                    ArrayList <Player> omega_b = b.getOmega(); // neighbourhood of b
+                    for (int j = 0; j < b.getK(); j++) {
                         Player c = omega_b.get(j); // neighbour of b
                         if (a.equals(c)) {
                             double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
-                            double d = ThreadLocalRandom.current().nextDouble();
-                            if(w_ba > d){
+                            double random_double = ThreadLocalRandom.current().nextDouble();
+                            if(w_ba > random_double){
                                 UG(a, b);
                             }
-//                            else{
-//                                updateStats(a,0);
-//                                updateStats(b,0);
-//                            }
                             break;
                         }
                     }
@@ -448,6 +434,7 @@ public class Env extends Thread{ // environment simulator
 //        a.setU(a.getU() + pi_a);
 //        b.setU(b.getU() + pi_b);
         updateUtility(a, pi_a);
+        updateUtility(b, pi_b);
     }
 
 //    /**
@@ -557,10 +544,8 @@ public class Env extends Thread{ // environment simulator
 
 
     public void initialiseEdgeWeights(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
         ArrayList <Double> edge_weights = new ArrayList<>();
-        int size = neighbourhood.size();
-        for(int i=0;i<size;i++){
+        for(int i=0;i<player.getK();i++){
             edge_weights.add(1.0);
         }
         player.setEdgeWeights(edge_weights);
@@ -573,13 +558,16 @@ public class Env extends Thread{ // environment simulator
      */
     public void EWL(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        for(int i = 0; i < omega_a.size(); i++){
+        ArrayList<Player> omega_a = a.getOmega();
+        for(int i = 0; i < a.getK(); i++){
             Player b = omega_a.get(i);
             double w_ab = weights.get(i); // weight from a to b
             w_ab += calculateLearning(a, b);
-            if(w_ab > 1.0) w_ab = 1.0;
-            else if(w_ab < 0.0) w_ab = 0.0;
+            if(w_ab > 1.0) {
+                w_ab = 1.0;
+            } else if(w_ab < 0.0) {
+                w_ab = 0.0;
+            }
             weights.set(i, w_ab); // replace old weight value
         }
     }
@@ -706,15 +694,17 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Roulette wheel (RW) selection function where the fitter a candidate, the more likely
-     * it is to be selected as parent. Candidates including child and neighbours.
+     * Roulette wheel (RW) selection function.
+     * canditates are child and its neighbours.
+     * probability of selection depends directly on fitness in
+     * comparison to other candidates in the pool.
+     * fitter ==> greater probability.
      * @param child player undergoing roulette wheel selection
+     * @return parent
      */
     public Player selRW(Player child){
-//        Player parent = null;
-        // why not set parent to child by default?
-        Player parent = child;
-        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
+        Player parent = child; // if no neighbour is selected, child is parent by default.
+        ArrayList <Player> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
         pool.add(child);
         int size = pool.size();
         double[] pockets = new double[size];
@@ -728,42 +718,35 @@ public class Env extends Thread{ // environment simulator
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
         double tally = 0;
-//        for(int i = 0; i < size; i++){
-        for(int i = 0; i < size - 1; i++){ // no need to check for child: if noone is selected, child is parent by default
+        for(int i = 0; i < size - 1; i++){ // if no neighbour candidate is selected, child is selected.
             tally += pockets[i];
             double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
-            if(random_double < percent_taken){ // if true, the ball landed in the candidate's slot
-                parent = pool.get(i); // select candidate as parent
+            if(random_double < percent_taken){ // if true, the ball landed in the neighbour candidate's slot
+                parent = pool.get(i); // select neighbour candidate as parent
                 break;
             }
         }
-
-        // by default, if parent is null, set parent to child.
-//        if(parent == null)
-//            System.out.println("BP");
-//            parent = child;
-
         return parent;
     }
 
 
 
     /**
-     * child selects fittest player in neighbourhood as parent unless there does not
-     * exist fitter neighbour than child.
-     * @param a child
+     * child selects fittest neighbour that is fitter than them.
+     * if no such neighbours exist, child is parent by default.
+     * @param child
      * @return parent
       */
-    public Player selFittest(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // denotes neighbourhood of child
-        Player b = a; // denotes parent
-        for(int i = 0; i < omega_a.size(); i++){
-            Player c = omega_a.get(i); // denotes neighbour of child; candidate for parent
-            if(c.getU() > b.getU()){ // if candidate fitter than parent, parent is set to candidate
-                b = c;
+    public Player selElitist(Player child){
+        ArrayList<Player> omega = child.getOmega();
+        Player parent = child;
+        for(int i = 0; i < child.getK(); i++){
+            Player neighbour = omega.get(i);
+            if(neighbour.getU() > parent.getU()){ // if candidate fitter than parent, parent is set to candidate
+                parent = neighbour;
             }
         }
-        return b;
+        return parent;
     }
 
 
@@ -772,22 +755,22 @@ public class Env extends Thread{ // environment simulator
      * sel and evo effectively occur at once in one function.
      * crossover where one child adopts midway point between two parent strategies.
      *
-     * @param child
+     * @param child child produced as a result of crossover
      */
     public void crossover(Player child){
 
         // how to select parents?
 
         // select two fittest neighbours?
-        ArrayList <Player> neighbourhood = child.getNeighbourhood();
+        ArrayList <Player> omega = child.getOmega();
         Player parent1 = child; // fittest neighbour
         Player parent2 = child; // second-fittest neighbour
-        for(int i=0;i<neighbourhood.size();i++){
-            Player neighbour = neighbourhood.get(i);
+        for(int i=0;i<omega.size();i++){
+            Player neighbour = omega.get(i);
             double neighbour_u = neighbour.getU();
             double parent2_u = parent2.getU();
             if(neighbour_u > parent2_u){
-                parent2 = neighbourhood.get(i);
+                parent2 = omega.get(i);
                 parent2_u = parent2.getU();
                 double parent1_mean_score = parent1.getU();
                 if(parent2_u > parent1_mean_score){
@@ -857,9 +840,7 @@ public class Env extends Thread{ // environment simulator
      */
     public boolean mutationCheck(){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        boolean mutation = random_double < mutRate;
-
-        return mutation;
+        return random_double < mutRate;
     }
 
 
@@ -899,72 +880,69 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public void calculateMeanEdgeWeights(){
-        for(int i=0;i<N;i++){
-            Player player = pop[i];
-            calculateMeanSelfEdgeWeight(player);
-            calculateMeanNeighbourEdgeWeight(player);
-        }
-    }
+//    public void calculateMeanEdgeWeights(){
+//        for(int i=0;i<N;i++){
+//            Player player = pop[i];
+//            calculateMeanSelfEdgeWeight(player);
+//            calculateMeanNeighbourEdgeWeight(player);
+//        }
+//    }
 
 
 
-    public void calculateMeanSelfEdgeWeight(Player player){
-        ArrayList <Double> weights = player.getEdgeWeights();
-        int size = weights.size();
-        double mean_self_edge_weight = 0;
-
-        // calculate mean of edge weights from player to its neighbours
-        for(int i = 0; i < size; i++){
-            mean_self_edge_weight += weights.get(i);
-        }
-        mean_self_edge_weight /= size;
-
-        player.setMeanSelfEdgeWeight(mean_self_edge_weight);
-    }
-
-
-
-    public void calculateMeanNeighbourEdgeWeight(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
-        int size = neighbourhood.size();
-        double mean_neighbour_edge_weight = 0;
-
-        // calculate mean of edge weights directed at player
-        for(int i = 0; i < size; i++) {
-            Player neighbour = neighbourhood.get(i);
-            ArrayList <Double> weights = neighbour.getEdgeWeights();
-            int index = findPlayerIndex(player, neighbour);
-            mean_neighbour_edge_weight += weights.get(index);
-        }
-        mean_neighbour_edge_weight /= size;
-
-        player.setMeanNeighbourEdgeWeight(mean_neighbour_edge_weight);
-    }
+//    public void calculateMeanSelfEdgeWeight(Player player){
+//        ArrayList <Double> weights = player.getEdgeWeights();
+//        int size = weights.size();
+//        double mean_self_edge_weight = 0;
+//
+//        // calculate mean of edge weights from player to its neighbours
+//        for(int i = 0; i < size; i++){
+//            mean_self_edge_weight += weights.get(i);
+//        }
+//        mean_self_edge_weight /= size;
+//
+//        player.setMeanSelfEdgeWeight(mean_self_edge_weight);
+//    }
 
 
 
-    /**
-     * Assume num player neighbours = num neighbour neighbours.<br>
-     * Return index corresponding to player within neighbours neighbourhood.
-     */
-    public int findPlayerIndex(Player player, Player neighbour){
-        int index = 0;
-        int ID = player.getID();
-        ArrayList <Player> neighbourhood = neighbour.getNeighbourhood();
-        int size = neighbourhood.size();
+//    public void calculateMeanNeighbourEdgeWeight(Player player){
+//        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+//        int size = neighbourhood.size();
+//        double mean_neighbour_edge_weight = 0;
+//
+//        // calculate mean of edge weights directed at player
+//        for(int i = 0; i < size; i++) {
+//            Player neighbour = neighbourhood.get(i);
+//            ArrayList <Double> weights = neighbour.getEdgeWeights();
+//            int index = findPlayerIndex(player, neighbour);
+//            mean_neighbour_edge_weight += weights.get(index);
+//        }
+//        mean_neighbour_edge_weight /= size;
+//
+//        player.setMeanNeighbourEdgeWeight(mean_neighbour_edge_weight);
+//    }
 
-        for (int i = 0; i < size; i++) {
-            Player neighbour2 = neighbourhood.get(i);
-            int ID2 = neighbour2.getID();
-            if (ID == ID2) {
-                index = i;
-                break;
-            }
-        }
 
-        return index;
-    }
+
+//    /**
+//     * Assume num player neighbours = num neighbour neighbours.<br>
+//     * Return index corresponding to player within neighbours neighbourhood.
+//     */
+//    public int findPlayerIndex(Player player, Player neighbour){
+//        int index = 0;
+//        int ID = player.getID();
+//        ArrayList <Player> omega = neighbour.getOmega();
+//        for (int i = 0; i < neighbour.getK(); i++) {
+//            Player neighbour2 = omega.get(i);
+//            int ID2 = neighbour2.getID();
+//            if (ID == ID2) {
+//                index = i;
+//                break;
+//            }
+//        }
+//        return index;
+//    }
 
 
 
@@ -1013,14 +991,14 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//UF
                 " %-5s |"+//WPGS
                 " %-5s |"+//WUGS
-                " %-5s |"+//WDGS
+                " %-5s |"+//WKGS
                 " %-5s |"+//WPRS
                 " %-5s |"+//WURS
-                " %-5s |"+//WDRS
+                " %-5s |"+//WKRS
                 " %-10s |"+//writeRate
                 " %-10s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WDGS","WPRS","WURS","WDRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -1054,10 +1032,10 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", settings[CI++]); //UF
             System.out.printf("| %-5s ", settings[CI++]); //WPGS
             System.out.printf("| %-5s ", settings[CI++]); //WUGS
-            System.out.printf("| %-5s ", settings[CI++]); //WDGS
+            System.out.printf("| %-5s ", settings[CI++]); //WKGS
             System.out.printf("| %-5s ", settings[CI++]); //WPRS
             System.out.printf("| %-5s ", settings[CI++]); //WURS
-            System.out.printf("| %-5s ", settings[CI++]); //WDRS
+            System.out.printf("| %-5s ", settings[CI++]); //WKRS
             System.out.printf("| %-10s ", settings[CI++]); //writeRate
 //            System.out.printf("| %-10s ", settings[CI++]); //varying
 //            System.out.printf("| %s ", settings[CI++]); //variations
@@ -1090,31 +1068,31 @@ public class Env extends Thread{ // environment simulator
         // apply config
         settings = configurations.get(config_num).split(",");
         CI = 0;
-        int CI2;
-        int CI3;
+//        int CI2;
+//        int CI3;
 
 
         Player.setGame(game);
         runs = Integer.parseInt(settings[CI++]);
         if(runs < 1){
-            System.out.println("[ERROR] Invalid runs passed");
+            System.out.println("[ERROR] Invalid runs passed. Must be greater than 1.");
             exit();
         }
         length = Integer.parseInt(settings[CI++]);
         if(length < 3){
-            System.out.println("[ERROR] Invalid length passed, must be greater than 3");
+            System.out.println("[ERROR] Invalid length passed. Must be greater than 3");
             exit();
         }
         width = length;
         N = length * width;
         ER = Integer.parseInt(settings[CI++]);
         if(ER < 1){
-            System.out.println("[ERROR] Invalid ER passed");
+            System.out.println("[ERROR] Invalid ER passed. Must be greater than 1.");
             exit();
         }
         gens = Integer.parseInt(settings[CI++]);
         if(gens < 1){
-            System.out.println("[ERROR] Invalid gens passed");
+            System.out.println("[ERROR] Invalid gens passed. Must be greater than 1.");
             exit();
         }
         EWT = settings[CI++];
@@ -1123,18 +1101,21 @@ public class Env extends Thread{ // environment simulator
                 try {
                     RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
                     if(RP < 0.0 || RP > 1.0){
-                        System.out.println("[ERROR] Invalid RP passed");
+                        System.out.println("[ERROR] Invalid RP passed. Must be between 0.0 and 1.0.");
                         exit();
                     }
-                }catch(NumberFormatException e){}
+                }catch(NumberFormatException e){
+                    System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
+                    exit();
+                }
                 RA = settings[CI++]; // strings dont get an exception when input = ""
                 if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
-                    System.out.println("[ERROR] Invalid RA passed");
+                    System.out.println("[ERROR] Invalid RA passed. Valid options: \"smoothstep\", \"smootherstep\", \"linear\", \"0Many\".");
                     exit();
                 }
                 RT = settings[CI++];
                 if(!(RT.equals("local") || RT.equals("pop"))){
-                    System.out.println("[ERROR] Invalid RT passed");
+                    System.out.println("[ERROR] Invalid RT passed. Valid options: \"local\", \"pop\".");
                     exit();
                 }
                 CI += 2;
@@ -1143,15 +1124,21 @@ public class Env extends Thread{ // environment simulator
                 CI += 3;
                 try {
                     punishmentCost = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
+                } catch(NumberFormatException e){
+                    System.out.println("[ERROR] Invalid punishmentCost passed. Must pass a double.");
+                    exit();
+                }
                 try {
                     punishmentFine = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
+                } catch(NumberFormatException e){
+                    System.out.println("[ERROR] Invalid punishmentFine passed. Must pass a double.");
+                    exit();
+                }
             }
 //            case "proposalProb", "none" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
             case "proposalProb", "none" -> CI += 5; // num extra params based on EWT = 3
             default -> {
-                System.out.println("[ERROR] Invalid EWT passed");
+                System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punishment\", \"none\".");
                 exit();
             }
         }
@@ -1160,15 +1147,18 @@ public class Env extends Thread{ // environment simulator
             case "PROC", "UROC" -> {
                 try {
                     ROC = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
+                }catch(NumberFormatException e){
+                    System.out.println("[ERROR] Invalid ROC passed. Must pass a double.");
+                    exit();
+                }
                 if(ROC < 0.0 || ROC > 1.0){
-                    System.out.println("[ERROR] Invalid ROC passed");
+                    System.out.println("[ERROR] Invalid ROC passed. Must be between 0.0 and 1.0.");
                     exit();
                 }
             }
             case "PD", "UD", "none" -> CI++; // max extra EWL params: 1 ==> skip CI that many indices.
             default -> {
-                System.out.println("[ERROR] Invalid EWL passed");
+                System.out.println("[ERROR] Invalid EWL passed. Valid options: \"PROC\", \"UROC\", \"PD\", \"UD\", \"none\".");
                 exit();
             }
         }
@@ -1180,18 +1170,21 @@ public class Env extends Thread{ // environment simulator
                     case "exponential" -> {
                         try {
                             selNoise = Double.parseDouble(settings[CI++]);
-                        }catch(NumberFormatException e){}
+                        }catch(NumberFormatException e){
+                            System.out.println("[ERROR] Invalid selNoise passed. Must be a double.");
+                    exit();
+                        }
                     }
                     case "normal" -> CI++;
                     default -> {
-                        System.out.println("[ERROR] Invalid RWT passed");
+                        System.out.println("[ERROR] Invalid RWT passed. Valid options: \"exponential\", \"normal\".");
                         exit();
                     }
                 }
             }
-            case "fittest", "randomNeigh", "randomPop", "rankBasedNeigh" -> CI += 2;
+            case "elitist", "randomNeigh", "randomPop", "rankBasedNeigh" -> CI += 2;
             default -> {
-                System.out.println("[ERROR] Invalid sel passed");
+                System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist");
                 exit();
             }
         }
@@ -1202,7 +1195,7 @@ public class Env extends Thread{ // environment simulator
                     mutRate = Double.parseDouble(settings[CI++]);
                 }catch(NumberFormatException e){}
                 if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed");
+                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
                     exit();
                 }
                 CI++;
@@ -1212,14 +1205,14 @@ public class Env extends Thread{ // environment simulator
                     mutRate = Double.parseDouble(settings[CI++]);
                 }catch(NumberFormatException e){}
                 if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed");
+                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
                     exit();
                 }
                 try {
                     mutBound = Double.parseDouble(settings[CI++]);
                 }catch(NumberFormatException e){}
                 if(mutBound < 0.0 || mutBound > 1.0){
-                    System.out.println("[ERROR] Invalid mutBound passed");
+                    System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
                     exit();
                 }
                 switch(settings[CI++]){
@@ -1227,13 +1220,13 @@ public class Env extends Thread{ // environment simulator
                     case "1" -> selfMut = true;
                     case "" -> {}
                     default -> {
-                        System.out.println("[ERROR] Invalid selfMut passed");
+                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\", \"\"");
                         exit();
                     }
                 }
             }
             default -> {
-                System.out.println("[INFO] No mutation");
+                System.out.println("[INFO] No mutation.");
 //                CI += 2;
                 CI += 3; // increased from 2 to 3 due to the introduction of the selfmut param.
             }
@@ -1242,7 +1235,7 @@ public class Env extends Thread{ // environment simulator
         switch(UF){
             case "cumulative", "normalised" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid UF passed");
+                System.out.println("[ERROR] Invalid UF passed. Valid options: \"cumulative\", \"normalised\".");
                 exit();
             }
         }
@@ -1251,7 +1244,7 @@ public class Env extends Thread{ // environment simulator
             case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WPGS passed");
+                System.out.println("[ERROR] Invalid WPGS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
@@ -1260,16 +1253,16 @@ public class Env extends Thread{ // environment simulator
             case "1" -> writeUGenStats = true;
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WUGS passed");
+                System.out.println("[ERROR] Invalid WUGS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
         switch(settings[CI++]){
-            case "0" -> writeDegGenStats = false;
-            case "1" -> writeDegGenStats = true;
+            case "0" -> writeKGenStats = false;
+            case "1" -> writeKGenStats = true;
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WDGS passed");
+                System.out.println("[ERROR] Invalid WDGS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
@@ -1278,7 +1271,7 @@ public class Env extends Thread{ // environment simulator
             case "1" -> writePRunStats = true;
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WPRS passed");
+                System.out.println("[ERROR] Invalid WPRS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
@@ -1287,23 +1280,24 @@ public class Env extends Thread{ // environment simulator
             case "1" -> writeURunStats = true;
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WDegRS passed");
+                System.out.println("[ERROR] Invalid WKRS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
         switch(settings[CI++]){
-            case "0" -> writeDegRunStats = false;
-            case "1" -> writeDegRunStats = true;
+            case "0" -> writeKRunStats = false;
+            case "1" -> writeKRunStats = true;
             case "" -> {}
             default -> {
-                System.out.println("[ERROR] Invalid WDRS passed");
+                System.out.println("[ERROR] Invalid WDRS passed. Valid options: \"0\", \"1\", \"\"");
                 exit();
             }
         }
-        if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats){
+        if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
             writeRate = Integer.parseInt(settings[CI++]);
+            // check in case user passes a double since what we want is an int?
             if(writeRate < 1 || writeRate > gens){
-                System.out.println("[ERROR] Invalid writeRate passed");
+                System.out.println("[ERROR] Invalid writeRate passed. Must be between 1 and gens.");
                 exit();
             }
         }else{
@@ -1331,6 +1325,16 @@ public class Env extends Thread{ // environment simulator
                     exps = variations.size() + 1;
                 }
                 default -> {}
+                // check in case user passes an invalid varying parameter or
+                // variation value? checking for invalid variations sounds
+                // like a lot of work... i think i'd have to make modular functions
+                // for setting each and every parameter in
+                // configureEnvironment() which each check if a given value is
+                // valid for a given param. then i could call those funcs
+                // here instead of somehow incorporating every single
+                // param check here (for each and every variation too!).
+                // you'd check if varying is valid. then you'd check if
+                // each variation value is valid using the validation funcs.
             }
         }
 
@@ -1394,9 +1398,9 @@ public class Env extends Thread{ // environment simulator
         try{
             if(writeRate > 0) Files.createDirectories(Paths.get(exp_path));
             for(int i=1;i<=runs;i++){
-                if(writePGenStats || writeUGenStats || writeDegGenStats || writePRunStats || writeURunStats || writeDegRunStats) // add run stat writing params to this check
+                if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats) // add run stat writing params to this check
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i));
-                if(writePGenStats || writeUGenStats || writeDegGenStats)
+                if(writePGenStats || writeUGenStats || writeKGenStats)
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
             }
         }catch(IOException e){
@@ -1421,7 +1425,7 @@ public class Env extends Thread{ // environment simulator
      * for Moore neighbourhood.
     */
     public void assignAdjacentNeighbours(Player player){
-        ArrayList<Player> neighbourhood = new ArrayList<>();
+        ArrayList<Player> omega = new ArrayList<>();
         double y = player.getY();
         double x = player.getX();
         for(int i=1;i<=neighRadius;i++){
@@ -1429,30 +1433,31 @@ public class Env extends Thread{ // environment simulator
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
-            neighbourhood.add(findPlayerByPos(y,x_plus));
-            neighbourhood.add(findPlayerByPos(y,x_minus));
-            neighbourhood.add(findPlayerByPos(y_plus,x));
-            neighbourhood.add(findPlayerByPos(y_minus,x));
+            omega.add(findPlayerByPos(y,x_plus));
+            omega.add(findPlayerByPos(y,x_minus));
+            omega.add(findPlayerByPos(y_plus,x));
+            omega.add(findPlayerByPos(y_minus,x));
             if(neighType.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-                    neighbourhood.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
-                    neighbourhood.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
-                    neighbourhood.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
-                    neighbourhood.add(findPlayerByPos(y_plus_minus,(x_minus_plus)));
+                    omega.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
+                    omega.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
+                    omega.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
+                    omega.add(findPlayerByPos(y_plus_minus,(x_minus_plus)));
                 }
             }
             if(neighType.equals("Moore")){
-                neighbourhood.add(findPlayerByPos(y_plus,x_plus));
-                neighbourhood.add(findPlayerByPos(y_minus,x_plus));
-                neighbourhood.add(findPlayerByPos(y_minus,x_minus));
-                neighbourhood.add(findPlayerByPos(y_plus,x_minus));
+                omega.add(findPlayerByPos(y_plus,x_plus));
+                omega.add(findPlayerByPos(y_minus,x_plus));
+                omega.add(findPlayerByPos(y_minus,x_minus));
+                omega.add(findPlayerByPos(y_plus,x_minus));
             }
         }
-        player.setNeighbourhood(neighbourhood);
+        player.setOmega(omega);
+        player.setK(player.getOmega().size());
     }
 
 
@@ -1464,30 +1469,32 @@ public class Env extends Thread{ // environment simulator
      * @param size
      */
     public void assignRandomNeighbours(Player player, int size){
-        ArrayList<Player> neighbourhood = player.getNeighbourhood();
+        ArrayList<Player> omega = player.getOmega();
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size){
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
         for(int ID: IDs){
-            neighbourhood.add(findPlayerByID(ID));
+            omega.add(findPlayerByID(ID));
         }
+        player.setK(player.getOmega().size());
     }
 
 
 
     // assign all other players to neighbourhood
     public void assignAllNeighbours(Player player){
-        ArrayList <Player> neighbourhood = player.getNeighbourhood();
+        ArrayList <Player> omega = player.getOmega();
         int ID = player.getID();
         for(int i=0;i<N;i++){
             Player player2 = pop[i];
             int ID2 = player2.getID();
             if(ID != ID2){
-                neighbourhood.add(player2);
+                omega.add(player2);
             }
         }
+        player.setK(player.getOmega().size());
     }
 
 
@@ -1524,29 +1531,20 @@ public class Env extends Thread{ // environment simulator
         sigma_u = Math.pow(sigma_u / N, 0.5);
     }
 
-    public void calculateMeanDegree(){
-        mean_deg = 0;
+    public void calculateMeanK(){
+        mean_k = 0;
         for(int i = 0; i < N; i++){
-            mean_deg += pop[i].getK();
+            mean_k += pop[i].getK();
         }
-        mean_deg /= N;
+        mean_k /= N;
     }
 
-    /**
-     * IMPORTANT NOTE: mean deg has been substituted by 4.
-     * You can get away with this because mean deg is always 4!
-     * If program changes such that mean deg is not always 4, use mean_deg instead of 4!
-     */
-    public void calculateSigmaDeg(){
-        sigma_deg = 0;
+    public void calculateSigmaK(){
+        sigma_k = 0;
         for(int i = 0; i < N; i++){
-//            sigma_deg += Math.pow(pop[i].getDegree() - mean_deg, 2);
-            double deg = pop[i].getK();
-            double deg_minus_mean_deg = deg - 4;
-            sigma_deg += Math.pow(deg_minus_mean_deg, 2);
+            sigma_k += Math.pow(pop[i].getK() - mean_k, 2);
         }
-//        sigma_deg = Math.pow(sigma_deg / N, 0.5);
-        sigma_deg = Math.sqrt(sigma_deg / N);
+        sigma_k = Math.sqrt(sigma_k / N);
     }
 
 
@@ -1554,8 +1552,8 @@ public class Env extends Thread{ // environment simulator
     public void prepare(){
         for(int i=0;i<N;i++){
             Player player = pop[i];
-            player.setPi(0);
-//            player.setMNI(0);
+//            player.setPi(0);
+            player.setU(0);
             player.setOldP(player.getP());
             max_p = 0.0;
         }
@@ -1665,9 +1663,9 @@ public class Env extends Thread{ // environment simulator
      */
     public void RTLocal(Player a, int num_rewires){
         ArrayList<Player> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
-        ArrayList<Player> omega_a = a.getNeighbourhood(); // omega_a denotes neighbourhood of rewirer.
+        ArrayList<Player> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
         for(Player b: omega_a){ // b denotes neighbour of rewirer
-            ArrayList<Player> omega_b = b.getNeighbourhood(); // omega_b denotes neighbourhood of neighbour of rewirer.
+            ArrayList<Player> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
             for(Player c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
                 if(!c.equals(a)){ // do not add c to pool if c = a
                     boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
@@ -1688,13 +1686,14 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-        if(pool.size() == 0) RTPop(a, num_rewires); // if pool empty, default to rewiring to a random player in the pop.
-        else{ // connect to local player.
+        if(pool.isEmpty()) {
+            RTPop(a, num_rewires); // if pool empty, default to rewiring to a random player in the pop.
+        } else{ // connect to local player.
             for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
                 Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
                 omega_a.add(f); // connect a to f.
                 a.getEdgeWeights().add(1.0);
-                f.getNeighbourhood().add(a); // connect f to a.
+                f.getOmega().add(a); // connect f to a.
                 f.getEdgeWeights().add(1.0);
             }
         }
@@ -1710,7 +1709,7 @@ public class Env extends Thread{ // environment simulator
      */
     public void RTPop(Player a, int b){
         for(int c=0;c<b;c++){ // c denotes number of rewires done so far.
-            ArrayList<Player> omega_a = a.getNeighbourhood(); // denotes neighbourhood of a.
+            ArrayList<Player> omega_a = a.getOmega(); // denotes neighbourhood of a.
             Player d = null; // d denotes new neighbour.
             boolean found_new_neighbour = false;
             while(!found_new_neighbour){ // keep searching until you find a valid new neighbour
@@ -1731,7 +1730,7 @@ public class Env extends Thread{ // environment simulator
             }
             omega_a.add(d); // connect a to d.
             a.getEdgeWeights().add(1.0);
-            d.getNeighbourhood().add(a); // connect d to a.
+            d.getOmega().add(a); // connect d to a.
             d.getEdgeWeights().add(1.0);
         }
     }
@@ -1797,7 +1796,7 @@ public class Env extends Thread{ // environment simulator
                 settings += mut.equals("local")? ",mutBound": "";
                 settings += !mut.equals("")? ",selfMut": "";
                 settings += ",UF";
-//                settings += injIter == 0? "": ",injIter";
+//                settings += injRound == 0? "": ",injRound";
 //                settings += injP == 0.0? "": ",injP";
 //                settings += injSize == 0? "": ",injSize";
             }
@@ -1838,7 +1837,7 @@ public class Env extends Thread{ // environment simulator
             settings += mut.equals("local")? "," + mutBound: "";
             settings += !mut.equals("")? "," + selfMut: "";
             settings += "," + UF;
-//            settings += injIter == 0? "": "," + injIter;
+//            settings += injRound == 0? "": "," + injRound;
 //            settings += injP == 0.0? "": "," + injP;
 //            settings += injSize == 0? "": "," + injSize;
             try{
@@ -1859,7 +1858,7 @@ public class Env extends Thread{ // environment simulator
      * Reads and writes local data.
      */
     public static void writeSeriesStats(){
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
+        if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
             String series_stats_filename = this_path + "\\series_stats.csv";
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
@@ -1869,7 +1868,7 @@ public class Env extends Thread{ // environment simulator
                 if(writePRunStats)output+="mean avg p,sigma mean p,";
                 if(writeURunStats)output+="mean avg u,";
 //                if(writeDegRunStats && EWT.equals("rewire"))output+="mean sigma deg,";
-                if(writeDegRunStats)output+="mean sigma deg,";
+                if(writeKRunStats)output+="mean sigma k,";
                 if(!varying.equals(""))output+=varying+",";
                 output = removeTrailingComma(output);
             }
@@ -1878,10 +1877,10 @@ public class Env extends Thread{ // environment simulator
             double sigma_mean_p = 0.0;
 //            double mean_mean_u = 0.0;
             double mean_avg_u = 0.0;
-            double mean_sigma_deg = 0.0;
+            double mean_sigma_k = 0.0;
             double[] mean_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
-            double[] sigma_deg_values = new double[runs];
+            double[] sigma_k_values = new double[runs];
             try{
                 fw = new FileWriter(series_stats_filename, true);
                 br = new BufferedReader(new FileReader(exp_stats_filename));
@@ -1902,20 +1901,20 @@ public class Env extends Thread{ // environment simulator
                         j++; // move past sigma u
                     }
 //                    if(writeDegRunStats && EWT.equals("rewire")) {
-                    if(writeDegRunStats) {
-                        sigma_deg_values[i] = Double.parseDouble(row_contents[j]);
+                    if(writeKRunStats) {
+                        sigma_k_values[i] = Double.parseDouble(row_contents[j]);
                     }
                 }
                 for(int i=0;i<runs;i++){
                     if(writePRunStats)mean_avg_p += mean_p_values[i];
                     if(writeURunStats)mean_avg_u += mean_u_values[i];
 //                    if(writeDegRunStats && EWT.equals("rewire")) mean_sigma_deg += sigma_deg_values[i];
-                    if(writeDegRunStats) mean_sigma_deg += sigma_deg_values[i];
+                    if(writeKRunStats) mean_sigma_k += sigma_k_values[i];
                 }
                 mean_avg_p /= runs;
                 mean_avg_u /= runs;
 //                mean_sigma_deg /= runs;
-                if(writeDegRunStats) mean_sigma_deg /= runs;
+                if(writeKRunStats) mean_sigma_k /= runs;
                 for(int i=0;i<runs;i++){
                     sigma_mean_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
                 }
@@ -1929,7 +1928,7 @@ public class Env extends Thread{ // environment simulator
                 if(writePRunStats)output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_mean_p) + ",";
                 if(writeURunStats)output+=DF4.format(mean_avg_u) + ",";
 //                if(writeDegRunStats && EWT.equals("rewire"))output+=DF4.format(mean_sigma_deg) + ",";
-                if(writeDegRunStats)output+=DF4.format(mean_sigma_deg) + ",";
+                if(writeKRunStats)output+=DF4.format(mean_sigma_k) + ",";
                 output = removeTrailingComma(output);
 
 
@@ -1968,58 +1967,19 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-
-
-
-//    /**
-//     * Calculate utility of player.<br>
-//     * With MNI UF, divide by minimum number of interactions player could have had (this gen/round); functionally equivalent to the old average score metric. Indicates what the player earned from its average interaction.<br>
-//     * With normalised UF, divide by degree. Indicates what the player earned from interacting with its average neighbour.
-//     */
-//    public void updateUtility(Player player){
-//        switch(UF){
-//            case "MNI" -> { // minimum number of interactions; with neighType="VN", neighRadius=1, no rewiring, MNI of all players is always 8.
-//                if(player.getNeighbourhood().size() == 0)
-//                    player.setU(0.0);
-//                else
-//                    player.setU(player.getPi() / player.getMNI());
-//            }
-//            case "cumulative" -> player.setU(player.getPi()); // cumulative payoff
-//            case "normalised" -> { // normalised payoff; with neighType="VN", neighRadius=1, no rewiring, denominator is always 4.
-//                if(player.getNeighbourhood().size() == 0){
-//                    player.setU(0.0);
-//                }else{
-//                    player.setU(player.getPi() / player.getNeighbourhood().size());
-//                }
-//            }
-//        }
-//    }
-
-
     public void updateUtility(Player player, double payoff){
         switch(UF){
-            case "cumulative" -> {
-                player.setU(player.getU() + payoff);
-            }
-            case "normalised" -> {
-              // how do you do this in a way such that the
-              // final value of u at the end of a gen is
-              //equivalent to how it worked with the old
-              // updateUtility() function?
-                player.setU(player.getU() + (payoff / player.getK()));
-            }
+            case "cumulative" -> player.setU(player.getU() + payoff);
+            case "normalised" -> player.setU(player.getU() + (payoff / player.getK()));
         }
     }
 
 
 
-    public Player selRandomNeigh(Player a){
-        ArrayList<Player> omega_a = a.getNeighbourhood();
-        Player parent = null;
-        try{
-            parent = omega_a.get(ThreadLocalRandom.current().nextInt(omega_a.size()));
-        }catch(IllegalArgumentException e){ // if a has no neighbours, it is set as its own parent.
-            parent = a;
+    public Player selRandomNeigh(Player child){
+        Player parent = child;
+        if(child.getK() > 0){
+            parent = child.getOmega().get(ThreadLocalRandom.current().nextInt(child.getK()));
         }
         return parent;
     }
@@ -2041,14 +2001,23 @@ public class Env extends Thread{ // environment simulator
      * @param a player who may rewire
       */
     public void rewire(Player a){
-        double random_number = ThreadLocalRandom.current().nextDouble();
-        if(RP > random_number){
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        if(RP > random_double){
             int num_rewires = 0;
-            ArrayList<Player> omega_a = a.getNeighbourhood();
+            ArrayList<Player> omega_a = a.getOmega();
             ArrayList<Double> weights = a.getEdgeWeights();
             ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-            for(int i = 0; i < omega_a.size(); i++){
-                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+            for(int i = 0; i < a.getK(); i++){
+//                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+
+                // TODO: testing why the above commented out line doesnt sometimes work...
+                double w_ab=0;
+                try {
+                    w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+                }catch(IndexOutOfBoundsException e){
+                    System.out.println("BP");
+                }
+
                 double prob_rewire = 0;
                 switch(RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
                     case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
@@ -2074,8 +2043,8 @@ public class Env extends Thread{ // environment simulator
             for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
                 int d = indices_of_edges_to_be_rewired.get(i);
                 Player e = omega_a.get(d);
-                ArrayList<Player> omega_e = e.getNeighbourhood();
-                for(int j = 0; j < omega_e.size(); j++){
+                ArrayList<Player> omega_e = e.getOmega();
+                for(int j = 0; j < e.getK(); j++){
                     Player f = omega_e.get(j);
                     if(f.equals(a)){
                         omega_a.remove(d);
@@ -2096,16 +2065,17 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
+        a.setK(a.getOmega().size());
     }
 
 
 
     /**
      * evoUDN: evolution based on normalised utility difference.<br>
-     * Probability to evolve equals utility difference divided by degree.<br>
+     * Probability to evolve equals utility difference divided by k.<br>
      * Child fitter than parent mean no chance.<br>
      * Fitter parent means greater probability.<br>
-     * Greater child degree means lesser probability.<br>
+     * Greater child k means lesser probability.<br>
      * Inspired by cardinot2016optional.<br>
      * @param child
      * @param parent
@@ -2125,7 +2095,7 @@ public class Env extends Thread{ // environment simulator
      * 1 file per exp.
      */
     public void writeExpStats() {
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeDegRunStats)){
+        if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
             String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String run_stats_filename = run_path + "\\run_stats.csv";
             String output = "";
@@ -2203,7 +2173,7 @@ public class Env extends Thread{ // environment simulator
         Player parent = null;
         switch(sel){
             case "RW" -> parent = selRW(child);
-            case "fittest" -> parent = selFittest(child);
+            case "elitist" -> parent = selElitist(child);
             case "randomNeigh" -> parent = selRandomNeigh(child);
             case "randomPop" -> parent = selRandomPop();
 //            case "crossover" -> crossover(child);
@@ -2317,9 +2287,9 @@ public class Env extends Thread{ // environment simulator
             calculateMeanU();
             calculateSigmaU();
         }
-        if(writeDegRunStats) {
-            // no need to calculate mean deg as it is always 4. if this changes, be sure to calculate it here!
-            calculateSigmaDeg();
+        if(writeKRunStats) {
+            calculateMeanK();
+            calculateSigmaK();
         }
     }
 
@@ -2336,8 +2306,8 @@ public class Env extends Thread{ // environment simulator
 //        if(writeRate != 0 && gen % writeRate == 0) {
 //        if(gen == 0 || (writeRate != 0 && gen % writeRate == 0)) {
         if(writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
-            if(writePGenStats || writeUGenStats || writeDegGenStats) writeGenStats();
-            if(writePRunStats || writeURunStats || writeDegRunStats) writeRunStats();
+            if(writePGenStats || writeUGenStats || writeKGenStats) writeGenStats();
+            if(writePRunStats || writeURunStats || writeKRunStats) writeRunStats();
         }
     }
 
@@ -2368,7 +2338,7 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Writes the attributes (p, u, deg) of all players in the pop at gen t.
+     * Writes the attributes (p, u, k) of all players in the pop at gen t.
      * 1 file per gen.
      */
     public void writeGenStats(){
@@ -2377,14 +2347,14 @@ public class Env extends Thread{ // environment simulator
 //        s += "gen,";
         if(writePGenStats) s += "p,mean p omega,";
         if(writeUGenStats) s += "u,";
-        if(writeDegGenStats) s += "deg,";
+        if(writeKGenStats) s += "k,";
         s = removeTrailingComma(s);
         for(Player player: pop){
             s += "\n";
 //            s += gen + ",";
             if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
             if(writeUGenStats) s += DF4.format(player.getU()) + ",";
-            if(writeDegGenStats) s += DF4.format(player.getK()) + ",";
+            if(writeKGenStats) s += DF4.format(player.getK()) + ",";
             s = removeTrailingComma(s);
         }
         try{
@@ -2416,7 +2386,7 @@ public class Env extends Thread{ // environment simulator
             if (writePRunStats) s += "mean p,sigma p,max p,";
             if (writeURunStats) s += "mean u,sigma u,";
 //            if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
-            if (writeDegRunStats) s += "sigma deg,";
+            if (writeKRunStats) s += "sigma k,";
             s = removeTrailingComma(s);
             s += "\n";
         }
@@ -2424,7 +2394,7 @@ public class Env extends Thread{ // environment simulator
         if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
         if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
 //        if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
-        if(writeDegRunStats) s += DF4.format(sigma_deg) + ",";
+        if(writeKRunStats) s += DF4.format(sigma_k) + ",";
         s = removeTrailingComma(s);
         s+="\n";
         try{
@@ -2468,7 +2438,7 @@ public class Env extends Thread{ // environment simulator
     public Player selRankBasedNeigh(Player child){
         // get candidates
         Player parent = child; // if no neighbour is selected, child is parent by default
-        ArrayList <Player> pool = new ArrayList<>(child.getNeighbourhood()); // pool of candidates for parent
+        ArrayList <Player> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
         pool.add(child);
 
         // get utilities of candidates
@@ -2493,8 +2463,10 @@ public class Env extends Thread{ // environment simulator
             }
         }
 
-        // probability of selection for candidate = rank / T_n (where T_n denotes nth triangular number and n denotes candidate pool size)
-        // lowest rank: 1
+        // select parent.
+        // probability of selection = rank / T_n
+        // (where T_n denotes nth triangular number and n denotes candidate pool size).
+        // lowest rank: 1.
         double total = 0;
         for(int i = 0; i < size; i++){
             total += ranks[i];
@@ -2514,14 +2486,32 @@ public class Env extends Thread{ // environment simulator
 
     public void punish(Player player){
         ArrayList<Double> weights = player.getEdgeWeights();
-        ArrayList<Player> omega = player.getNeighbourhood();
-        for(int i=0;i<omega.size();i++){
+        ArrayList<Player> omega = player.getOmega();
+        for(int i=0;i<player.getK();i++){
             Player neighbour = omega.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
             if(weights.get(i) < random_double){ // probability of punishing = 1 - w_ab (where a is punisher, b is neighbour/punishee)
                 player.setU(player.getU() - punishmentCost);
                 neighbour.setU(neighbour.getU() - punishmentFine);
             }
+        }
+    }
+
+    /**
+     * Fermi-Dirac evolution function.
+     * requires a parameter K for selection intensity.
+     * how to get value of K? from the preexisting selNoise param?
+     * fitter parent ==> higher chance of evolution.
+     * the closer K is to infinity, the more the child accounts for the parent's fitness.
+     * the closer K is to 0.0, the less the child accounts for fitness,
+     * in which case unfit individuals are about as likely to be imitated as fit individuals.
+     */
+    public void evoFD(Player child, Player parent){
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        double K = selNoise;
+        double evolve_probability = 1 / (1 + Math.exp(child.getU() - parent.getU() / K));
+        if (random_double < evolve_probability){
+            evoCopy(child, parent);
         }
     }
 
