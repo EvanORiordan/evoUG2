@@ -100,10 +100,10 @@ public class Env extends Thread{ // environment simulator
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
     static double
             //punisherCost;
-            punishmentCost; // cost incurred by punisher
+            punishCost; // cost incurred by punisher
     static double
 //            punisheeCost;
-            punishmentFine; // fine received by punishee
+            punishFine; // fine received by punishee
 
 
 
@@ -262,7 +262,7 @@ public class Env extends Thread{ // environment simulator
             case "newER" -> {
                 rounds = 0;
                 for(gen = 1; gen <= gens; gen++){ // gens
-                    for(int j = 0; j < ER; j++){ // rounds
+                    for(int round = 0; round < ER; round++){ // rounds
                         for(int i=0;i<N;i++) {
                             play(pop[i]); // play DG
                         }
@@ -273,23 +273,38 @@ public class Env extends Thread{ // environment simulator
                         }
                         rounds++;
                     }
-                    if(EWT.equals("punishment")){
-                        for(int i=0;i<N;i++){
-                            punish(pop[i]); // punishment
+
+//                    if(EWT.equals("punishment")){
+//                        for(int i=0;i<N;i++){
+//                            punish(pop[i]); // punishment
+//                        }
+//                    }
+//                    if(EWT.equals("rewire")){
+//                        for(int i=0;i<N;i++){
+//                            rewire(pop[i]); // edge rewiring
+//                        }
+//                    }
+
+                    switch(EWT){
+                        case "rewire" -> {
+                            for(int i=0;i<N;i++){
+                                rewire(pop[i]);
+                            }
+                        }
+                        case "punishment" -> {
+                            for(int i=0;i<N;i++){
+                                punish(pop[i]);
+                            }
                         }
                     }
-                    if(EWT.equals("rewire")){
-                        for(int i=0;i<N;i++){
-                            rewire(pop[i]); // edge rewiring
-                        }
-                    }
+
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
                         if(!child.equals(parent)) {
                             evo(child, parent);
                         }
-                        if(selfMut || !child.equals(parent)) { // if selfMut enabled, child always mutates. else, child only mutates if child is not parent.
+                        if(selfMut || !child.equals(parent)) { // if selfMut disabled, child only mutates if child is not parent.
                             mut(child);
                         }
                     }
@@ -1036,7 +1051,8 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //WPRS
             System.out.printf("| %-5s ", settings[CI++]); //WURS
             System.out.printf("| %-5s ", settings[CI++]); //WKRS
-            System.out.printf("| %-10s ", settings[CI++]); //writeRate
+//            System.out.printf("| %-10s ", settings[CI++]); //writeRate
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //writeRate
 //            System.out.printf("| %-10s ", settings[CI++]); //varying
 //            System.out.printf("| %s ", settings[CI++]); //variations
 //            String x;
@@ -1123,15 +1139,15 @@ public class Env extends Thread{ // environment simulator
             case "punishment" -> {
                 CI += 3;
                 try {
-                    punishmentCost = Double.parseDouble(settings[CI++]);
+                    punishCost = Double.parseDouble(settings[CI++]);
                 } catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid punishmentCost passed. Must pass a double.");
+                    System.out.println("[ERROR] Invalid punishCost passed. Must pass a double.");
                     exit();
                 }
                 try {
-                    punishmentFine = Double.parseDouble(settings[CI++]);
+                    punishFine = Double.parseDouble(settings[CI++]);
                 } catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid punishmentFine passed. Must pass a double.");
+                    System.out.println("[ERROR] Invalid punishFine passed. Must pass a double.");
                     exit();
                 }
             }
@@ -1218,9 +1234,8 @@ public class Env extends Thread{ // environment simulator
                 switch(settings[CI++]){
                     case "0" -> selfMut = false;
                     case "1" -> selfMut = true;
-                    case "" -> {}
                     default -> {
-                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\", \"\"");
+                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
                         exit();
                     }
                 }
@@ -1303,9 +1318,45 @@ public class Env extends Thread{ // environment simulator
         }else{
             CI++;
         }
-        if(CI!=settings.length){
+
+//        if(CI!=settings.length){
+//            varying = settings[CI++];
+//            switch(varying){
+//                case "ER",
+//                        "ROC",
+//                        "length",
+//                        "RP",
+//                        "gens",
+//                        "EWL",
+//                        "RA",
+//                        "RT",
+//                        "sel",
+//                        "selNoise",
+//                        "mutRate",
+//                        "mutBound",
+//                        "UF" -> {
+//                    for(String variation: settings[CI].split(";")){
+//                        variations.add(variation);
+//                    }
+//                    exps = variations.size() + 1;
+//                }
+//                default -> {}
+//                // check in case user passes an invalid varying parameter or
+//                // variation value? checking for invalid variations sounds
+//                // like a lot of work... i think i'd have to make modular functions
+//                // for setting each and every parameter in
+//                // configureEnvironment() which each check if a given value is
+//                // valid for a given param. then i could call those funcs
+//                // here instead of somehow incorporating every single
+//                // param check here (for each and every variation too!).
+//                // you'd check if varying is valid. then you'd check if
+//                // each variation value is valid using the validation funcs.
+//            }
+//        }
+
+        try{
             varying = settings[CI++];
-            switch(varying){
+            switch(varying) {
                 case "ER",
                         "ROC",
                         "length",
@@ -1319,23 +1370,16 @@ public class Env extends Thread{ // environment simulator
                         "mutRate",
                         "mutBound",
                         "UF" -> {
-                    for(String variation: settings[CI].split(";")){
+                    for (String variation : settings[CI].split(";")) {
                         variations.add(variation);
                     }
                     exps = variations.size() + 1;
                 }
-                default -> {}
-                // check in case user passes an invalid varying parameter or
-                // variation value? checking for invalid variations sounds
-                // like a lot of work... i think i'd have to make modular functions
-                // for setting each and every parameter in
-                // configureEnvironment() which each check if a given value is
-                // valid for a given param. then i could call those funcs
-                // here instead of somehow incorporating every single
-                // param check here (for each and every variation too!).
-                // you'd check if varying is valid. then you'd check if
-                // each variation value is valid using the validation funcs.
+                default -> {
+                }
             }
+        }catch(IndexOutOfBoundsException e){
+            System.out.println("[INFO] No follow-up experimentation involving parameter variation scheduled.");
         }
 
     }
@@ -1780,6 +1824,8 @@ public class Env extends Thread{ // environment simulator
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
                 settings += RT.equals("")? "": ",RT";
+                settings += punishCost != 0.0? ",punishCost": "";
+                settings += punishFine != 0.0? ",punishFine": "";
                 settings += EWL.equals("")? "": ",EWL";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
 //                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
@@ -1823,6 +1869,8 @@ public class Env extends Thread{ // environment simulator
             settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
             settings += RA.equals("")? "": "," + RA;
             settings += RT.equals("")? "": "," + RT;
+            settings += punishCost != 0.0? "," + punishCost: "";
+            settings += punishFine != 0.0? "," + punishFine: "";
             settings += EWL.equals("")? "": "," + EWL;
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
 //            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
@@ -2483,16 +2531,25 @@ public class Env extends Thread{ // environment simulator
         return parent;
     }
 
-
-    public void punish(Player player){
-        ArrayList<Double> weights = player.getEdgeWeights();
-        ArrayList<Player> omega = player.getOmega();
-        for(int i=0;i<player.getK();i++){
-            Player neighbour = omega.get(i);
+    /**
+     * player a tries to punish its neighbours.
+     * a denotes punisher.
+     * b denotes punishee i.e. the neighbour that may be punished by a.
+     * probability of punishing = 1 - w_ab.
+     * higher w_ab ==> lower probability of a punishing b.
+     * w_ab = 1.0 ==> guaranteed not to punish.
+     * w_ab = 0.0 ==> guaranteed to punish.
+     * @param a
+     */
+    public void punish(Player a){
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Player> omega_a = a.getOmega();
+        for(int i=0;i<a.getK();i++){
+            Player b = omega_a.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
-            if(weights.get(i) < random_double){ // probability of punishing = 1 - w_ab (where a is punisher, b is neighbour/punishee)
-                player.setU(player.getU() - punishmentCost);
-                neighbour.setU(neighbour.getU() - punishmentFine);
+            if(weights.get(i) < random_double){
+                a.setU(a.getU() - punishCost);
+                b.setU(b.getU() - punishFine);
             }
         }
     }
