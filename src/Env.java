@@ -104,7 +104,7 @@ public class Env extends Thread{ // environment simulator
     static double
 //            punisheeCost;
             punishFine; // fine received by punishee
-
+    static String punishFunc;
 
 
 
@@ -178,6 +178,8 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> mutRate = Double.parseDouble(variations.get(exp - 1));
                     case "mutBound" -> mutBound = Double.parseDouble(variations.get(exp - 1));
                     case "UF" -> UF = variations.get(exp - 1);
+                    case "punishCost" -> punishCost = Double.parseDouble(variations.get(exp - 1));
+                    case "punishFine" -> punishFine = Double.parseDouble(variations.get(exp - 1));
                 }
             }
         }
@@ -192,7 +194,7 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experiment(){
         for(run = 1; run <= runs; run++){
-//            System.out.println("start run " + run);
+            System.out.println("start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -273,18 +275,6 @@ public class Env extends Thread{ // environment simulator
                         }
                         rounds++;
                     }
-
-//                    if(EWT.equals("punishment")){
-//                        for(int i=0;i<N;i++){
-//                            punish(pop[i]); // punishment
-//                        }
-//                    }
-//                    if(EWT.equals("rewire")){
-//                        for(int i=0;i<N;i++){
-//                            rewire(pop[i]); // edge rewiring
-//                        }
-//                    }
-
                     switch(EWT){
                         case "rewire" -> {
                             for(int i=0;i<N;i++){
@@ -297,7 +287,6 @@ public class Env extends Thread{ // environment simulator
                             }
                         }
                     }
-
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
@@ -992,6 +981,7 @@ public class Env extends Thread{ // environment simulator
                 " %-5s |"+//RP
                 " %-15s |"+//RA
                 " %-5s |"+//RT
+                " %-10s |"+//punishFunc
                 " %-10s |"+//punishCost
                 " %-10s |"+//punishFine
                 " %-5s |"+//EWL
@@ -1011,9 +1001,9 @@ public class Env extends Thread{ // environment simulator
                 " %-5s |"+//WURS
                 " %-5s |"+//WKRS
                 " %-10s |"+//writeRate
-                " %-10s |"+//varying
+                " %-15s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishFunc","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -1033,24 +1023,47 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //RP
             System.out.printf("| %-15s ", settings[CI++]); //RA
             System.out.printf("| %-5s ", settings[CI++]); //RT
+            System.out.printf("| %-10s ", settings[CI++]); //punishFunc
             System.out.printf("| %-10s ", settings[CI++]); //punishCost
             System.out.printf("| %-10s ", settings[CI++]); //punishFine
             System.out.printf("| %-5s ", settings[CI++]); //EWL
             System.out.printf("| %-5s ", settings[CI++]); //ROC
             System.out.printf("| %-15s ", settings[CI++]); //sel
-            System.out.printf("| %-15s ", settings[CI++]); //RWT
-            System.out.printf("| %-10s ", settings[CI++]); //selNoise
-            System.out.printf("| %-10s ", settings[CI++]); //mut
-            System.out.printf("| %-10s ", settings[CI++]); //mutRate
-            System.out.printf("| %-10s ", settings[CI++]); //mutBound
-            System.out.printf("| %-10s ", settings[CI++]); //selfMut
-            System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-5s ", settings[CI++]); //WPGS
-            System.out.printf("| %-5s ", settings[CI++]); //WUGS
-            System.out.printf("| %-5s ", settings[CI++]); //WKGS
-            System.out.printf("| %-5s ", settings[CI++]); //WPRS
-            System.out.printf("| %-5s ", settings[CI++]); //WURS
-            System.out.printf("| %-5s ", settings[CI++]); //WKRS
+
+
+
+//            System.out.printf("| %-15s ", settings[CI++]); //RWT
+//            System.out.printf("| %-10s ", settings[CI++]); //selNoise
+//            System.out.printf("| %-10s ", settings[CI++]); //mut
+//            System.out.printf("| %-10s ", settings[CI++]); //mutRate
+//            System.out.printf("| %-10s ", settings[CI++]); //mutBound
+//            System.out.printf("| %-10s ", settings[CI++]); //selfMut
+//            System.out.printf("| %-10s ", settings[CI++]); //UF
+//            System.out.printf("| %-5s ", settings[CI++]); //WPGS
+//            System.out.printf("| %-5s ", settings[CI++]); //WUGS
+//            System.out.printf("| %-5s ", settings[CI++]); //WKGS
+//            System.out.printf("| %-5s ", settings[CI++]); //WPRS
+//            System.out.printf("| %-5s ", settings[CI++]); //WURS
+//            System.out.printf("| %-5s ", settings[CI++]); //WKRS
+
+
+
+            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RWT
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //selNoise
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mut
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutRate
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutBound
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //selfMut
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //UF
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPGS
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WUGS
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKGS
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPRS
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WURS
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKRS
+
+
+
 //            System.out.printf("| %-10s ", settings[CI++]); //writeRate
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //writeRate
 //            System.out.printf("| %-10s ", settings[CI++]); //varying
@@ -1061,7 +1074,7 @@ public class Env extends Thread{ // environment simulator
 ////            !x.equals("")? System.out.printf("| %-10s ", x):
 //            x = settings[CI++];
 //            System.out.printf("| %s ", x.equals("")? x: ""); //variations
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //varying
+            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //varying
             System.out.printf("| %s ", CI!=settings.length? settings[CI++]: ""); //variations
             System.out.println();
         }
@@ -1134,10 +1147,15 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("[ERROR] Invalid RT passed. Valid options: \"local\", \"pop\".");
                     exit();
                 }
-                CI += 2;
+                CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
             }
             case "punishment" -> {
-                CI += 3;
+                CI += 3; // increase CI by 3 since there were 3 params before this based on EWT.
+                punishFunc = settings[CI++];
+                if(!(punishFunc.equals("punishAll") || punishFunc.equals("punishOne"))){
+                    System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"punishAll\", \"punishOne\".");
+                    exit();
+                }
                 try {
                     punishCost = Double.parseDouble(settings[CI++]);
                 } catch(NumberFormatException e){
@@ -1151,8 +1169,7 @@ public class Env extends Thread{ // environment simulator
                     exit();
                 }
             }
-//            case "proposalProb", "none" -> CI += 3; // max extra EWT params: 3 ==> skip CI to that index.
-            case "proposalProb", "none" -> CI += 5; // num extra params based on EWT = 3
+            case "proposalProb", "none" -> CI += 6; // set CI to 6 since there are 6 extra params based on EWT.
             default -> {
                 System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punishment\", \"none\".");
                 exit();
@@ -1204,48 +1221,142 @@ public class Env extends Thread{ // environment simulator
                 exit();
             }
         }
-        mut = settings[CI++];
-        switch(mut){
-            case "global" -> {
-                try {
-                    mutRate = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-                    exit();
-                }
-                CI++;
-            }
-            case "local" -> {
-                try {
-                    mutRate = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutRate < 0.0 || mutRate > 1.0){
-                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-                    exit();
-                }
-                try {
-                    mutBound = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){}
-                if(mutBound < 0.0 || mutBound > 1.0){
-                    System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
-                    exit();
-                }
-                switch(settings[CI++]){
-                    case "0" -> selfMut = false;
-                    case "1" -> selfMut = true;
-                    default -> {
-                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+
+
+
+//        mut = settings[CI++];
+//        switch(mut){
+//            case "global" -> {
+//                try {
+//                    mutRate = Double.parseDouble(settings[CI++]);
+//                }catch(NumberFormatException e){}
+//                if(mutRate < 0.0 || mutRate > 1.0){
+//                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
+//                    exit();
+//                }
+//                CI++;
+//            }
+//            case "local" -> {
+//                try {
+//                    mutRate = Double.parseDouble(settings[CI++]);
+//                }catch(NumberFormatException e){}
+//                if(mutRate < 0.0 || mutRate > 1.0){
+//                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
+//                    exit();
+//                }
+//                try {
+//                    mutBound = Double.parseDouble(settings[CI++]);
+//                }catch(NumberFormatException e){}
+//                if(mutBound < 0.0 || mutBound > 1.0){
+//                    System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
+//                    exit();
+//                }
+//                switch(settings[CI++]){
+//                    case "0" -> selfMut = false;
+//                    case "1" -> selfMut = true;
+//                    default -> {
+//                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+//                        exit();
+//                    }
+//                }
+//            }
+//            default -> {
+//                System.out.println("[INFO] No mutation.");
+////                CI += 2;
+//                CI += 3; // increased from 2 to 3 due to the introduction of the selfmut param.
+//            }
+//        }
+
+
+
+
+        try{
+            mut = settings[CI++];
+            switch(mut){
+                case "global" -> {
+                    try {
+                        mutRate = Double.parseDouble(settings[CI++]);
+                    }catch(NumberFormatException e){
+                        System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
                         exit();
                     }
+                    if(mutRate < 0.0 || mutRate > 1.0){
+                        System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
+                        exit();
+                    }
+                    CI++; // increase CI by 1 to skip one param.
+                    switch(settings[CI++]){
+                        case "0" -> selfMut = false;
+                        case "1" -> selfMut = true;
+                        default -> {
+                            System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+                            exit();
+                        }
+                    }
                 }
+                case "local" -> {
+                    try {
+                        mutRate = Double.parseDouble(settings[CI++]);
+                    }catch(NumberFormatException e){
+                        System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
+                        exit();
+                    }
+                    if(mutRate < 0.0 || mutRate > 1.0){
+                        System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
+                        exit();
+                    }
+                    try {
+                        mutBound = Double.parseDouble(settings[CI++]);
+                    }catch(NumberFormatException e){}
+                    if(mutBound < 0.0 || mutBound > 1.0){
+                        System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
+                        exit();
+                    }
+
+
+//                    switch(settings[CI++]){
+//                        case "0" -> selfMut = false;
+//                        case "1" -> selfMut = true;
+//                        default -> {
+//                            System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+//                            exit();
+//                        }
+//                    }
+
+                    try{
+                        if(settings[CI].equals("0")){
+                            selfMut = false;
+                        } else if(settings[CI].equals("1")){
+                            selfMut = true;
+                        }
+                    }catch(ArrayIndexOutOfBoundsException e){
+                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+                    }
+                    CI++;
+
+
+                }
+//                default -> {
+//                    System.out.println("[INFO] No mutation.");
+//                    CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
+//                }
             }
-            default -> {
-                System.out.println("[INFO] No mutation.");
-//                CI += 2;
-                CI += 3; // increased from 2 to 3 due to the introduction of the selfmut param.
-            }
+        }catch(ArrayIndexOutOfBoundsException e){
+//            System.out.println("[INFO] No mutation.");
+//            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
         }
+
+
+        if(!(mut.equals("global") || mut.equals("local"))){
+            System.out.println("[INFO] No mutation.");
+            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
+        }
+
+
+
+
+
+
         UF = settings[CI++];
         switch(UF){
             case "cumulative", "normalised" -> {}
@@ -1254,60 +1365,157 @@ public class Env extends Thread{ // environment simulator
                 exit();
             }
         }
-        switch(settings[CI++]){
-            case "0" -> writePGenStats = false;
-            case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WPGS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+
+
+//        switch(settings[CI++]){
+//            case "0" -> writePGenStats = false;
+//            case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
+//            default -> {
+//                System.out.println("[ERROR] Invalid WPGS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+
+
+
+//        writePGenStats = Boolean.parseBoolean(settings[CI++]);
+
+
+//        try {
+//            writePGenStats = stringArgumentToBoolean(settings[CI++], "writePGenStats");
+//        }catch(ArrayIndexOutOfBoundsException e){
+//
+//        }
+
+
+//        writePGenStats = stringArgumentToBoolean(settings[CI++], "writeUGenStats");
+
+
+
+//        try {
+//            if(settings[CI].equals("0")){
+//                writePGenStats = false;
+//            } else if(settings[CI].equals("1")){
+//                writePGenStats = true;
+//            }
+//        }catch(InvalidBooleanException e){
+//
+//        }
+//        CI++; // move onto the next param.
+
+
+
+//        try {
+//            writePGenStats = stringArgumentToBoolean(settings[CI++], "writePGenStats");
+//        }catch(InvalidBooleanException e){
+////            System.out.println(e.getMessage());
+////            exit();
+//
+//            System.out.println(e.getMessage() + " hello");
+//        }
+//        CI++; // move onto the next param.
+
+
+
+        try{
+            if(settings[CI++].equals("1")){
+                writePGenStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record p gen stats.");
         }
-        switch(settings[CI++]){
-            case "0" -> writeUGenStats = false;
-            case "1" -> writeUGenStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WUGS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+        try{
+            if(settings[CI++].equals("1")){
+                writeUGenStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record u gen stats.");
         }
-        switch(settings[CI++]){
-            case "0" -> writeKGenStats = false;
-            case "1" -> writeKGenStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WDGS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+        try{
+            if(settings[CI++].equals("1")){
+                writeKGenStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record k gen stats.");
         }
-        switch(settings[CI++]){
-            case "0" -> writePRunStats = false;
-            case "1" -> writePRunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WPRS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+        try{
+            if(settings[CI++].equals("1")){
+                writePRunStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record p run stats.");
         }
-        switch(settings[CI++]){
-            case "0" -> writeURunStats = false;
-            case "1" -> writeURunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WKRS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+        try{
+            if(settings[CI++].equals("1")){
+                writeURunStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record u run stats.");
         }
-        switch(settings[CI++]){
-            case "0" -> writeKRunStats = false;
-            case "1" -> writeKRunStats = true;
-            case "" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid WDRS passed. Valid options: \"0\", \"1\", \"\"");
-                exit();
+
+        try{
+            if(settings[CI++].equals("1")){
+                writeKRunStats = true;
             }
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println("[INFO] Will not record k run stats.");
         }
+
+
+
+
+
+
+
+//        switch(settings[CI++]){
+//            case "0" -> writeUGenStats = false;
+//            case "1" -> writeUGenStats = true;
+//            default -> {
+//                System.out.println("[ERROR] Invalid WUGS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+//        switch(settings[CI++]){
+//            case "0" -> writeKGenStats = false;
+//            case "1" -> writeKGenStats = true;
+//            default -> {
+//                System.out.println("[ERROR] Invalid WDGS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+//        switch(settings[CI++]){
+//            case "0" -> writePRunStats = false;
+//            case "1" -> writePRunStats = true;
+//            default -> {
+//                System.out.println("[ERROR] Invalid WPRS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+//        switch(settings[CI++]){
+//            case "0" -> writeURunStats = false;
+//            case "1" -> writeURunStats = true;
+//            default -> {
+//                System.out.println("[ERROR] Invalid WKRS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+//        switch(settings[CI++]){
+//            case "0" -> writeKRunStats = false;
+//            case "1" -> writeKRunStats = true;
+//            default -> {
+//                System.out.println("[ERROR] Invalid WDRS passed. Valid options: \"0\", \"1\"");
+//                exit();
+//            }
+//        }
+
+
+
+
         if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
             writeRate = Integer.parseInt(settings[CI++]);
             // check in case user passes a double since what we want is an int?
@@ -1369,7 +1577,10 @@ public class Env extends Thread{ // environment simulator
                         "selNoise",
                         "mutRate",
                         "mutBound",
-                        "UF" -> {
+                        "UF",
+                        "punishCost",
+                        "punishFine"
+                        -> {
                     for (String variation : settings[CI].split(";")) {
                         variations.add(variation);
                     }
@@ -1997,6 +2208,8 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> output += "," + mutRate;
                     case "mutBound" -> output += "," + mutBound;
                     case "UF" -> output += "," + UF;
+                    case "punishCost" -> output += "," + punishCost;
+                    case "punishFine" -> output += "," + punishFine;
                 }
                 fw.append(output);
                 fw.close();
@@ -2532,7 +2745,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     /**
-     * player a tries to punish its neighbours.
+     * punisher tries to punish all neighbours.
      * a denotes punisher.
      * b denotes punishee i.e. the neighbour that may be punished by a.
      * probability of punishing = 1 - w_ab.
@@ -2541,7 +2754,8 @@ public class Env extends Thread{ // environment simulator
      * w_ab = 0.0 ==> guaranteed to punish.
      * @param a
      */
-    public void punish(Player a){
+//    public void punish(Player a){
+    public void punishAll(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getOmega();
         for(int i=0;i<a.getK();i++){
@@ -2572,4 +2786,61 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
+
+    public void punish(Player player){
+        switch(punishFunc){
+            case "punishAll" -> {
+                punishAll(player);
+            }
+            case "punishOne" -> {
+                punishOne(player);
+            }
+        }
+    }
+
+
+    /**
+     * punisher tries to punish one neighbours.
+     * a denotes punisher.
+     * b denotes punishee i.e. the neighbour that may be punished by a.
+     * probability of punishing = 1 - w_ab.
+     * higher w_ab ==> lower probability of a punishing b.
+     * w_ab = 1.0 ==> guaranteed not to punish.
+     * w_ab = 0.0 ==> guaranteed to punish.
+     * @param a
+     */
+    public void punishOne(Player a){
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Player> omega_a = a.getOmega();
+        int random_int = ThreadLocalRandom.current().nextInt(a.getK());
+        Player b = omega_a.get(random_int);
+        double random_double = ThreadLocalRandom.current().nextDouble();
+        if(weights.get(random_int) < random_double){
+            a.setU(a.getU() - punishCost);
+            b.setU(b.getU() - punishFine);
+        }
+    }
+
+
+//    /**
+//     * if arg value is 0, return false.<br>
+//     * if arg value is 1, return true.<br>
+//     * otherwise, exit.
+//     */
+//    public static boolean stringArgumentToBoolean(String arg_value, String arg_name) throws InvalidBooleanException{
+//        if(arg_value.equals("0")){
+//            return true;
+//        } else if(arg_value.equals("1")){
+//            return false;
+//        } else{
+//            throw new InvalidBooleanException("[ERROR] Invalid " + arg_name + " passed. Valid options: \"0\", \"1\".");
+//        }
+//    }
 }
+
+//class InvalidBooleanException extends Exception {
+//    public InvalidBooleanException(String message) {
+//        super(message);
+//    }
+//}
+
