@@ -104,8 +104,9 @@ public class Env extends Thread{ // environment simulator
     static double
 //            punisheeCost;
             punishFine; // fine received by punishee
-    static String punishFunc;
-
+    static String punishFunc = "";
+    static int CI; // configuration index
+    static String[] settings; // configuration settings
 
 
 
@@ -178,6 +179,7 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> mutRate = Double.parseDouble(variations.get(exp - 1));
                     case "mutBound" -> mutBound = Double.parseDouble(variations.get(exp - 1));
                     case "UF" -> UF = variations.get(exp - 1);
+                    case "punishFunc" -> punishFunc = variations.get(exp - 1);
                     case "punishCost" -> punishCost = Double.parseDouble(variations.get(exp - 1));
                     case "punishFine" -> punishFine = Double.parseDouble(variations.get(exp - 1));
                 }
@@ -216,9 +218,9 @@ public class Env extends Thread{ // environment simulator
         initRandomPop();
         for(int i=0;i<N;i++){
             switch(neighType){
-                case"VN","Moore","dia"->assignAdjacentNeighbours(pop[i]);
-                case"random"->assignRandomNeighbours(pop[i], neighSize);
-                case"all"->assignAllNeighbours(pop[i]);
+                case"VN","Moore","dia"->assignAdjacent(pop[i]);
+                case"random"->assignRandom(pop[i], neighSize);
+                case"all"->assignAll(pop[i]);
             }
         }
         if(writePosData && run == 1) writePosData();
@@ -281,10 +283,18 @@ public class Env extends Thread{ // environment simulator
                                 rewire(pop[i]);
                             }
                         }
-                        case "punishment" -> {
+                        case "punish" -> {
                             for(int i=0;i<N;i++){
                                 punish(pop[i]);
                             }
+//                            switch(punishFunc){
+//                                case "allProb" -> {
+//                                    punishAllProb
+//                                }
+//                            }
+//                            for(int i=0;i<N;i++){
+//                                punishProb(pop[i]);
+//                            }
                         }
                     }
                     for(int i=0;i<N;i++) {
@@ -413,11 +423,6 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-
-
-
-
-
     /**
      * Proposer initiates ultimatum game interaction with responder.<br>
      * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
@@ -433,47 +438,9 @@ public class Env extends Thread{ // environment simulator
             pi_b = M * p_a;
             pi_a = M - pi_b;
         }
-//        updateStatsUG(a, pi_a);
-//        updateStatsUG(b, pi_b);
-//        a.setU(a.getU() + pi_a);
-//        b.setU(b.getU() + pi_b);
         updateUtility(a, pi_a);
         updateUtility(b, pi_b);
     }
-
-//    /**
-//     * Proposer initiates ultimatum game interaction with responder.<br>
-//     * If p_a >= q_b, b accepts the proposal made by a, otherwise b rejects it.<br>
-//     * Uses w_ba to calculate payoffs of players.
-//     * Prize is effectively cut by w_ba percent.<br>
-//     * @param a proposer
-//     * @param b responder
-//     * @param w_ba weight of edge from b to a
-//     */
-//    public void UG(Player a, Player b, double w_ba){
-//        double p_a = a.getP();
-//        double q_b = b.getQ();
-//        double pi_a = 0.0;
-//        double pi_b = 0.0;
-//        double modified_M = M * w_ba; // denote formally by M'
-//        if(p_a >= q_b) {
-//            pi_b = modified_M * p_a;
-//            pi_a = modified_M - pi_b;
-//        }
-//        updateStatsUG(a, pi_a);
-//        updateStatsUG(b, pi_b);
-//    }
-
-
-
-
-//    public void updateStatsUG(Player player, double payoff){
-//        player.setPi(player.getPi() + payoff);
-//        player.setMNI(player.getMNI() + 1);
-//    }
-
-
-
 
 
 //    /**
@@ -853,10 +820,18 @@ public class Env extends Thread{ // environment simulator
      * Child's attributes are randomly and independently generated.
      */
     public void mutGlobal(Player child){
-        double new_p = ThreadLocalRandom.current().nextDouble();
-        double new_q = ThreadLocalRandom.current().nextDouble();
-        child.setP(new_p);
-        child.setQ(new_q);
+        switch(game){
+            case "UG" -> {
+                double new_p = ThreadLocalRandom.current().nextDouble();
+                double new_q = ThreadLocalRandom.current().nextDouble();
+                child.setP(new_p);
+                child.setQ(new_q);
+            }
+            case "DG" -> {
+                double new_p = ThreadLocalRandom.current().nextDouble();
+                child.setP(new_p);
+            }
+        }
     }
 
 
@@ -1009,8 +984,8 @@ public class Env extends Thread{ // environment simulator
         printTableLine();
 
         // display config table rows
-        int CI; // configuration index
-        String[] settings;
+//        int CI; // configuration index
+//        String[] settings;
         for(int i=0;i<configurations.size();i++){
             settings = configurations.get(i).split(",");
             CI = 0; // reset to 0 for each config
@@ -1149,29 +1124,50 @@ public class Env extends Thread{ // environment simulator
                 }
                 CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
             }
-            case "punishment" -> {
+            case "punish" -> {
                 CI += 3; // increase CI by 3 since there were 3 params before this based on EWT.
-                punishFunc = settings[CI++];
-                if(!(punishFunc.equals("punishAll") || punishFunc.equals("punishOne"))){
-                    System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"punishAll\", \"punishOne\".");
-                    exit();
+
+
+
+                assignPunishFunc();
+                switch(punishFunc){
+                    case "allProb", "oneProb" -> {
+//                        assignPunishFunc();
+                        assignPunishCost();
+                        assignPunishFine();
+                    }
+                    case "allAmount", "oneAmount" -> {
+//                        assignPunishFunc();
+                        CI += 2; // skip 2 params (punishCost, punishFine).
+                    }
                 }
-                try {
-                    punishCost = Double.parseDouble(settings[CI++]);
-                } catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid punishCost passed. Must pass a double.");
-                    exit();
-                }
-                try {
-                    punishFine = Double.parseDouble(settings[CI++]);
-                } catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid punishFine passed. Must pass a double.");
-                    exit();
-                }
+
+
+
+//                punishFunc = settings[CI++];
+//                if(!(punishFunc.equals("allProb") || punishFunc.equals("oneProb") || punishFunc.equals("allAmount") || punishFunc.equals("oneAmount"))){
+//                    System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"all\", \"one\".");
+//                    exit();
+//                }
+//                try {
+//                    punishCost = Double.parseDouble(settings[CI++]);
+//                } catch(NumberFormatException e){
+//                    System.out.println("[ERROR] Invalid punishCost passed. Must pass a double.");
+//                    exit();
+//                }
+//                try {
+//                    punishFine = Double.parseDouble(settings[CI++]);
+//                } catch(NumberFormatException e){
+//                    System.out.println("[ERROR] Invalid punishFine passed. Must pass a double.");
+//                    exit();
+//                }
+
+
+
             }
             case "proposalProb", "none" -> CI += 6; // set CI to 6 since there are 6 extra params based on EWT.
             default -> {
-                System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punishment\", \"none\".");
+                System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punish\", \"none\".");
                 exit();
             }
         }
@@ -1215,59 +1211,12 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
             }
-            case "elitist", "randomNeigh", "randomPop", "rankBasedNeigh" -> CI += 2;
+            case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2;
             default -> {
                 System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist");
                 exit();
             }
         }
-
-
-
-//        mut = settings[CI++];
-//        switch(mut){
-//            case "global" -> {
-//                try {
-//                    mutRate = Double.parseDouble(settings[CI++]);
-//                }catch(NumberFormatException e){}
-//                if(mutRate < 0.0 || mutRate > 1.0){
-//                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-//                    exit();
-//                }
-//                CI++;
-//            }
-//            case "local" -> {
-//                try {
-//                    mutRate = Double.parseDouble(settings[CI++]);
-//                }catch(NumberFormatException e){}
-//                if(mutRate < 0.0 || mutRate > 1.0){
-//                    System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-//                    exit();
-//                }
-//                try {
-//                    mutBound = Double.parseDouble(settings[CI++]);
-//                }catch(NumberFormatException e){}
-//                if(mutBound < 0.0 || mutBound > 1.0){
-//                    System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
-//                    exit();
-//                }
-//                switch(settings[CI++]){
-//                    case "0" -> selfMut = false;
-//                    case "1" -> selfMut = true;
-//                    default -> {
-//                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
-//                        exit();
-//                    }
-//                }
-//            }
-//            default -> {
-//                System.out.println("[INFO] No mutation.");
-////                CI += 2;
-//                CI += 3; // increased from 2 to 3 due to the introduction of the selfmut param.
-//            }
-//        }
-
-
 
 
         try{
@@ -1294,6 +1243,7 @@ public class Env extends Thread{ // environment simulator
                         }
                     }
                 }
+
                 case "local" -> {
                     try {
                         mutRate = Double.parseDouble(settings[CI++]);
@@ -1312,17 +1262,6 @@ public class Env extends Thread{ // environment simulator
                         System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
                         exit();
                     }
-
-
-//                    switch(settings[CI++]){
-//                        case "0" -> selfMut = false;
-//                        case "1" -> selfMut = true;
-//                        default -> {
-//                            System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
-//                            exit();
-//                        }
-//                    }
-
                     try{
                         if(settings[CI].equals("0")){
                             selfMut = false;
@@ -1333,28 +1272,13 @@ public class Env extends Thread{ // environment simulator
                         System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
                     }
                     CI++;
-
-
                 }
-//                default -> {
-//                    System.out.println("[INFO] No mutation.");
-//                    CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
-//                }
             }
-        }catch(ArrayIndexOutOfBoundsException e){
-//            System.out.println("[INFO] No mutation.");
-//            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
-        }
-
-
+        }catch(ArrayIndexOutOfBoundsException e){}
         if(!(mut.equals("global") || mut.equals("local"))){
             System.out.println("[INFO] No mutation.");
             CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
         }
-
-
-
-
 
 
         UF = settings[CI++];
@@ -1367,57 +1291,6 @@ public class Env extends Thread{ // environment simulator
         }
 
 
-
-//        switch(settings[CI++]){
-//            case "0" -> writePGenStats = false;
-//            case "1" -> writePGenStats = true; // its easier for user to pass a single digit than "true" or "false" for every writing boolean
-//            default -> {
-//                System.out.println("[ERROR] Invalid WPGS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-
-
-
-//        writePGenStats = Boolean.parseBoolean(settings[CI++]);
-
-
-//        try {
-//            writePGenStats = stringArgumentToBoolean(settings[CI++], "writePGenStats");
-//        }catch(ArrayIndexOutOfBoundsException e){
-//
-//        }
-
-
-//        writePGenStats = stringArgumentToBoolean(settings[CI++], "writeUGenStats");
-
-
-
-//        try {
-//            if(settings[CI].equals("0")){
-//                writePGenStats = false;
-//            } else if(settings[CI].equals("1")){
-//                writePGenStats = true;
-//            }
-//        }catch(InvalidBooleanException e){
-//
-//        }
-//        CI++; // move onto the next param.
-
-
-
-//        try {
-//            writePGenStats = stringArgumentToBoolean(settings[CI++], "writePGenStats");
-//        }catch(InvalidBooleanException e){
-////            System.out.println(e.getMessage());
-////            exit();
-//
-//            System.out.println(e.getMessage() + " hello");
-//        }
-//        CI++; // move onto the next param.
-
-
-
         try{
             if(settings[CI++].equals("1")){
                 writePGenStats = true;
@@ -1425,6 +1298,7 @@ public class Env extends Thread{ // environment simulator
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record p gen stats.");
         }
+
 
         try{
             if(settings[CI++].equals("1")){
@@ -1434,6 +1308,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record u gen stats.");
         }
 
+
         try{
             if(settings[CI++].equals("1")){
                 writeKGenStats = true;
@@ -1441,6 +1316,7 @@ public class Env extends Thread{ // environment simulator
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record k gen stats.");
         }
+
 
         try{
             if(settings[CI++].equals("1")){
@@ -1450,6 +1326,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record p run stats.");
         }
 
+
         try{
             if(settings[CI++].equals("1")){
                 writeURunStats = true;
@@ -1458,6 +1335,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record u run stats.");
         }
 
+
         try{
             if(settings[CI++].equals("1")){
                 writeKRunStats = true;
@@ -1465,55 +1343,6 @@ public class Env extends Thread{ // environment simulator
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record k run stats.");
         }
-
-
-
-
-
-
-
-//        switch(settings[CI++]){
-//            case "0" -> writeUGenStats = false;
-//            case "1" -> writeUGenStats = true;
-//            default -> {
-//                System.out.println("[ERROR] Invalid WUGS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-//        switch(settings[CI++]){
-//            case "0" -> writeKGenStats = false;
-//            case "1" -> writeKGenStats = true;
-//            default -> {
-//                System.out.println("[ERROR] Invalid WDGS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-//        switch(settings[CI++]){
-//            case "0" -> writePRunStats = false;
-//            case "1" -> writePRunStats = true;
-//            default -> {
-//                System.out.println("[ERROR] Invalid WPRS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-//        switch(settings[CI++]){
-//            case "0" -> writeURunStats = false;
-//            case "1" -> writeURunStats = true;
-//            default -> {
-//                System.out.println("[ERROR] Invalid WKRS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-//        switch(settings[CI++]){
-//            case "0" -> writeKRunStats = false;
-//            case "1" -> writeKRunStats = true;
-//            default -> {
-//                System.out.println("[ERROR] Invalid WDRS passed. Valid options: \"0\", \"1\"");
-//                exit();
-//            }
-//        }
-
-
 
 
         if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
@@ -1578,6 +1407,7 @@ public class Env extends Thread{ // environment simulator
                         "mutRate",
                         "mutBound",
                         "UF",
+                        "punishFunc",
                         "punishCost",
                         "punishFine"
                         -> {
@@ -1679,7 +1509,7 @@ public class Env extends Thread{ // environment simulator
      * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
      * for Moore neighbourhood.
     */
-    public void assignAdjacentNeighbours(Player player){
+    public void assignAdjacent(Player player){
         ArrayList<Player> omega = new ArrayList<>();
         double y = player.getY();
         double x = player.getX();
@@ -1723,7 +1553,7 @@ public class Env extends Thread{ // environment simulator
      * @param player
      * @param size
      */
-    public void assignRandomNeighbours(Player player, int size){
+    public void assignRandom(Player player, int size){
         ArrayList<Player> omega = player.getOmega();
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size){
@@ -1739,7 +1569,7 @@ public class Env extends Thread{ // environment simulator
 
 
     // assign all other players to neighbourhood
-    public void assignAllNeighbours(Player player){
+    public void assignAll(Player player){
         ArrayList <Player> omega = player.getOmega();
         int ID = player.getID();
         for(int i=0;i<N;i++){
@@ -1807,7 +1637,6 @@ public class Env extends Thread{ // environment simulator
     public void prepare(){
         for(int i=0;i<N;i++){
             Player player = pop[i];
-//            player.setPi(0);
             player.setU(0);
             player.setOldP(player.getP());
             max_p = 0.0;
@@ -1992,14 +1821,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Generic function to update stats
-     */
-//    public void updateStats(Player player, double payoff){
-//        player.setPi(player.getPi() + payoff);
-//        player.setMNI(player.getMNI() + 1);
-//    }
-
 
 
 
@@ -2035,6 +1856,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RP == 0.0 && !varying.equals("RP")? "": ",RP";
                 settings += RA.equals("")? "": ",RA";
                 settings += RT.equals("")? "": ",RT";
+                settings += punishFunc.isEmpty()? "": ",punishFunc";
                 settings += punishCost != 0.0? ",punishCost": "";
                 settings += punishFine != 0.0? ",punishFine": "";
                 settings += EWL.equals("")? "": ",EWL";
@@ -2080,6 +1902,7 @@ public class Env extends Thread{ // environment simulator
             settings += RP == 0.0 && !varying.equals("RP")? "": "," + RP;
             settings += RA.equals("")? "": "," + RA;
             settings += RT.equals("")? "": "," + RT;
+            settings += punishFunc.isEmpty()? "": "," + punishFunc;
             settings += punishCost != 0.0? "," + punishCost: "";
             settings += punishFine != 0.0? "," + punishFine: "";
             settings += EWL.equals("")? "": "," + EWL;
@@ -2208,6 +2031,7 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> output += "," + mutRate;
                     case "mutBound" -> output += "," + mutBound;
                     case "UF" -> output += "," + UF;
+                    case "punishFunc" -> output += "," + punishFunc;
                     case "punishCost" -> output += "," + punishCost;
                     case "punishFine" -> output += "," + punishFine;
                 }
@@ -2439,33 +2263,10 @@ public class Env extends Thread{ // environment simulator
             case "randomPop" -> parent = selRandomPop();
 //            case "crossover" -> crossover(child);
 //            case "RW2" -> parent = selRW2(child);
-            case "rankBasedNeigh" -> parent = selRankBasedNeigh(child);
+            case "rank" -> parent = selRank(child);
         }
         return parent;
     }
-
-
-
-////    public void evo(Player child, Player parent){
-//    public boolean evo(Player child, Player parent){
-//        boolean occurred = false;
-////        if(parent != null){
-//        if(!parent.equals(child)){
-//            switch (evo) {
-//                case "copy" -> evoCopy(child, parent);
-//                case "approach" -> evoApproach(child, parent);
-//                case "copyFitter" -> evoCopyFitter(child, parent);
-//                case "UD" -> evoUD(child, parent);
-//                case "UDN" -> evoUDN(child, parent);
-//            }
-//
-//            occurred = true;
-//
-//        }
-//
-//        return occurred;
-//
-//    }
 
 
     public void evo(Player child, Player parent){
@@ -2483,37 +2284,17 @@ public class Env extends Thread{ // environment simulator
     public void mut(Player child){
         switch (mut){
             case "global" -> {
-                if(mutationCheck())
+                if(mutationCheck()){
                     mutGlobal(child);
+                }
             }
             case "local" -> {
-                if(mutationCheck())
+                if(mutationCheck()){
                     mutLocal(child);
+                }
             }
         }
     }
-
-//    public void mut2(Player child, Player parent){
-//        switch (mut) {
-//            case "global" -> {
-//                if (mutationCheck())
-//                    mutGlobal(child);
-//            }
-//            case "local" -> {
-//                if (mutationCheck())
-//                    mutLocal(child);
-//            }
-//            case "localnoself" -> {
-//                if(parent != null){
-//                    if (!parent.equals(child)) {
-//                        if (mutationCheck()) {
-//                            mutLocal(child);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
 
 
 
@@ -2564,8 +2345,6 @@ public class Env extends Thread{ // environment simulator
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats(){
-//        if(writeRate != 0 && gen % writeRate == 0) {
-//        if(gen == 0 || (writeRate != 0 && gen % writeRate == 0)) {
         if(writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
             if(writePGenStats || writeUGenStats || writeKGenStats) writeGenStats();
             if(writePRunStats || writeURunStats || writeKRunStats) writeRunStats();
@@ -2696,7 +2475,7 @@ public class Env extends Thread{ // environment simulator
      * higher rank ==> higher probability of being selected.
      * candidates for selection are child and its neighbours.
       */
-    public Player selRankBasedNeigh(Player child){
+    public Player selRank(Player child){
         // get candidates
         Player parent = child; // if no neighbour is selected, child is parent by default
         ArrayList <Player> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
@@ -2754,8 +2533,7 @@ public class Env extends Thread{ // environment simulator
      * w_ab = 0.0 ==> guaranteed to punish.
      * @param a
      */
-//    public void punish(Player a){
-    public void punishAll(Player a){
+    public void punishAllProb(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getOmega();
         for(int i=0;i<a.getK();i++){
@@ -2789,11 +2567,17 @@ public class Env extends Thread{ // environment simulator
 
     public void punish(Player player){
         switch(punishFunc){
-            case "punishAll" -> {
-                punishAll(player);
+            case "allProb" -> {
+                punishAllProb(player);
             }
-            case "punishOne" -> {
-                punishOne(player);
+            case "oneProb" -> {
+                punishOneProb(player);
+            }
+            case "allAmount" -> {
+                punishAllAmount(player);
+            }
+            case "oneAmount" -> {
+                punishOneAmount(player);
             }
         }
     }
@@ -2809,7 +2593,7 @@ public class Env extends Thread{ // environment simulator
      * w_ab = 0.0 ==> guaranteed to punish.
      * @param a
      */
-    public void punishOne(Player a){
+    public void punishOneProb(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getOmega();
         int random_int = ThreadLocalRandom.current().nextInt(a.getK());
@@ -2822,25 +2606,44 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-//    /**
-//     * if arg value is 0, return false.<br>
-//     * if arg value is 1, return true.<br>
-//     * otherwise, exit.
-//     */
-//    public static boolean stringArgumentToBoolean(String arg_value, String arg_name) throws InvalidBooleanException{
-//        if(arg_value.equals("0")){
-//            return true;
-//        } else if(arg_value.equals("1")){
-//            return false;
-//        } else{
-//            throw new InvalidBooleanException("[ERROR] Invalid " + arg_name + " passed. Valid options: \"0\", \"1\".");
-//        }
-//    }
+    public void punishAllAmount(Player a){
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Player> omega_a = a.getOmega();
+        for(int i=0;i<a.getK();i++){
+            Player b = omega_a.get(i);
+            a.setU(a.getU() - weights.get(i));
+            b.setU(b.getU() - weights.get(i));
+        }
+    }
+    public void punishOneAmount(Player a){
+        // TODO: implement. use punishAllAmount() as a blueprint for how to implement the "amount" part.
+    }
+
+
+    // assigns valid value to punishCost param.
+    public static void assignPunishCost(){
+        try {
+            punishCost = Double.parseDouble(settings[CI++]);
+        } catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid punishCost passed. Must pass a double.");
+            exit();
+        }
+    }
+
+    public static void assignPunishFine(){
+        try {
+            punishFine = Double.parseDouble(settings[CI++]);
+        } catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid punishFine passed. Must pass a double.");
+            exit();
+        }
+    }
+
+    public static void assignPunishFunc(){
+        punishFunc = settings[CI++];
+        if(!(punishFunc.equals("allProb") || punishFunc.equals("oneProb") || punishFunc.equals("allAmount") || punishFunc.equals("oneAmount"))){
+            System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"all\", \"one\".");
+            exit();
+        }
+    }
 }
-
-//class InvalidBooleanException extends Exception {
-//    public InvalidBooleanException(String message) {
-//        super(message);
-//    }
-//}
-
