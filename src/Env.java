@@ -105,6 +105,7 @@ public class Env extends Thread{ // environment simulator
 //            punisheeCost;
             punishFine; // fine received by punishee
     static String punishFunc = "";
+    static double punishRatio;
     static int CI; // configuration index
     static String[] settings; // configuration settings
 
@@ -182,6 +183,7 @@ public class Env extends Thread{ // environment simulator
                     case "punishFunc" -> punishFunc = variations.get(exp - 1);
                     case "punishCost" -> punishCost = Double.parseDouble(variations.get(exp - 1));
                     case "punishFine" -> punishFine = Double.parseDouble(variations.get(exp - 1));
+                    case "punishRatio" -> punishRatio = Double.parseDouble(variations.get(exp - 1));
                 }
             }
         }
@@ -959,6 +961,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//punishFunc
                 " %-10s |"+//punishCost
                 " %-10s |"+//punishFine
+                " %-15s |"+//punishRatio
                 " %-5s |"+//EWL
                 " %-5s |"+//ROC
                 " %-15s |"+//sel
@@ -978,7 +981,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//writeRate
                 " %-15s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishFunc","punishCost","punishFine","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishFunc","punishCost","punishFine","punishRatio","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -995,34 +998,16 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", settings[CI++]); //ER
             System.out.printf("| %-10s ", settings[CI++]); //gens
             System.out.printf("| %-15s ", settings[CI++]); //EWT
-            System.out.printf("| %-5s ", settings[CI++]); //RP
-            System.out.printf("| %-15s ", settings[CI++]); //RA
-            System.out.printf("| %-5s ", settings[CI++]); //RT
-            System.out.printf("| %-10s ", settings[CI++]); //punishFunc
-            System.out.printf("| %-10s ", settings[CI++]); //punishCost
-            System.out.printf("| %-10s ", settings[CI++]); //punishFine
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //RP
+            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RA
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //RT
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFunc
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishCost
+            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFine
+            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
             System.out.printf("| %-5s ", settings[CI++]); //EWL
-            System.out.printf("| %-5s ", settings[CI++]); //ROC
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //ROC
             System.out.printf("| %-15s ", settings[CI++]); //sel
-
-
-
-//            System.out.printf("| %-15s ", settings[CI++]); //RWT
-//            System.out.printf("| %-10s ", settings[CI++]); //selNoise
-//            System.out.printf("| %-10s ", settings[CI++]); //mut
-//            System.out.printf("| %-10s ", settings[CI++]); //mutRate
-//            System.out.printf("| %-10s ", settings[CI++]); //mutBound
-//            System.out.printf("| %-10s ", settings[CI++]); //selfMut
-//            System.out.printf("| %-10s ", settings[CI++]); //UF
-//            System.out.printf("| %-5s ", settings[CI++]); //WPGS
-//            System.out.printf("| %-5s ", settings[CI++]); //WUGS
-//            System.out.printf("| %-5s ", settings[CI++]); //WKGS
-//            System.out.printf("| %-5s ", settings[CI++]); //WPRS
-//            System.out.printf("| %-5s ", settings[CI++]); //WURS
-//            System.out.printf("| %-5s ", settings[CI++]); //WKRS
-
-
-
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RWT
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //selNoise
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mut
@@ -1036,19 +1021,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPRS
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WURS
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKRS
-
-
-
-//            System.out.printf("| %-10s ", settings[CI++]); //writeRate
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //writeRate
-//            System.out.printf("| %-10s ", settings[CI++]); //varying
-//            System.out.printf("| %s ", settings[CI++]); //variations
-//            String x;
-//            x = settings[CI++];
-//            System.out.printf("| %-10s ", x.equals("")? x: ""); //varying
-////            !x.equals("")? System.out.printf("| %-10s ", x):
-//            x = settings[CI++];
-//            System.out.printf("| %s ", x.equals("")? x: ""); //variations
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //varying
             System.out.printf("| %s ", CI!=settings.length? settings[CI++]: ""); //variations
             System.out.println();
@@ -1077,28 +1050,12 @@ public class Env extends Thread{ // environment simulator
 
 
         Player.setGame(game);
-        runs = Integer.parseInt(settings[CI++]);
-        if(runs < 1){
-            System.out.println("[ERROR] Invalid runs passed. Must be greater than 1.");
-            exit();
-        }
-        length = Integer.parseInt(settings[CI++]);
-        if(length < 3){
-            System.out.println("[ERROR] Invalid length passed. Must be greater than 3");
-            exit();
-        }
+        assignRuns();
+        assignLength();
         width = length;
         N = length * width;
-        ER = Integer.parseInt(settings[CI++]);
-        if(ER < 1){
-            System.out.println("[ERROR] Invalid ER passed. Must be greater than 1.");
-            exit();
-        }
-        gens = Integer.parseInt(settings[CI++]);
-        if(gens < 1){
-            System.out.println("[ERROR] Invalid gens passed. Must be greater than 1.");
-            exit();
-        }
+        assignER();
+        assignGens();
         EWT = settings[CI++];
         switch(EWT){
             case "rewire" -> {
@@ -1125,47 +1082,9 @@ public class Env extends Thread{ // environment simulator
                 CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
             }
             case "punish" -> {
-                CI += 3; // increase CI by 3 since there were 3 params before this based on EWT.
-
-
-
-                assignPunishFunc();
-                switch(punishFunc){
-                    case "allProb", "oneProb" -> {
-//                        assignPunishFunc();
-                        assignPunishCost();
-                        assignPunishFine();
-                    }
-                    case "allAmount", "oneAmount" -> {
-//                        assignPunishFunc();
-                        CI += 2; // skip 2 params (punishCost, punishFine).
-                    }
-                }
-
-
-
-//                punishFunc = settings[CI++];
-//                if(!(punishFunc.equals("allProb") || punishFunc.equals("oneProb") || punishFunc.equals("allAmount") || punishFunc.equals("oneAmount"))){
-//                    System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"all\", \"one\".");
-//                    exit();
-//                }
-//                try {
-//                    punishCost = Double.parseDouble(settings[CI++]);
-//                } catch(NumberFormatException e){
-//                    System.out.println("[ERROR] Invalid punishCost passed. Must pass a double.");
-//                    exit();
-//                }
-//                try {
-//                    punishFine = Double.parseDouble(settings[CI++]);
-//                } catch(NumberFormatException e){
-//                    System.out.println("[ERROR] Invalid punishFine passed. Must pass a double.");
-//                    exit();
-//                }
-
-
-
+                assignPunish();
             }
-            case "proposalProb", "none" -> CI += 6; // set CI to 6 since there are 6 extra params based on EWT.
+            case "proposalProb", "none" -> CI += 7; // skip 7 params (RP, RA, RT, punishFunc, punishCost, punishFine, punishRatio).
             default -> {
                 System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punish\", \"none\".");
                 exit();
@@ -1174,16 +1093,7 @@ public class Env extends Thread{ // environment simulator
         EWL = settings[CI++];
         switch(EWL){
             case "PROC", "UROC" -> {
-                try {
-                    ROC = Double.parseDouble(settings[CI++]);
-                }catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid ROC passed. Must pass a double.");
-                    exit();
-                }
-                if(ROC < 0.0 || ROC > 1.0){
-                    System.out.println("[ERROR] Invalid ROC passed. Must be between 0.0 and 1.0.");
-                    exit();
-                }
+                assignROC();
             }
             case "PD", "UD", "none" -> CI++; // max extra EWL params: 1 ==> skip CI that many indices.
             default -> {
@@ -1213,72 +1123,13 @@ public class Env extends Thread{ // environment simulator
             }
             case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2;
             default -> {
-                System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist");
+                System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist\", \"rank\", \"randomNeigh\"");
                 exit();
             }
         }
 
 
-        try{
-            mut = settings[CI++];
-            switch(mut){
-                case "global" -> {
-                    try {
-                        mutRate = Double.parseDouble(settings[CI++]);
-                    }catch(NumberFormatException e){
-                        System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
-                        exit();
-                    }
-                    if(mutRate < 0.0 || mutRate > 1.0){
-                        System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-                        exit();
-                    }
-                    CI++; // increase CI by 1 to skip one param.
-                    switch(settings[CI++]){
-                        case "0" -> selfMut = false;
-                        case "1" -> selfMut = true;
-                        default -> {
-                            System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
-                            exit();
-                        }
-                    }
-                }
-
-                case "local" -> {
-                    try {
-                        mutRate = Double.parseDouble(settings[CI++]);
-                    }catch(NumberFormatException e){
-                        System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
-                        exit();
-                    }
-                    if(mutRate < 0.0 || mutRate > 1.0){
-                        System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
-                        exit();
-                    }
-                    try {
-                        mutBound = Double.parseDouble(settings[CI++]);
-                    }catch(NumberFormatException e){}
-                    if(mutBound < 0.0 || mutBound > 1.0){
-                        System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
-                        exit();
-                    }
-                    try{
-                        if(settings[CI].equals("0")){
-                            selfMut = false;
-                        } else if(settings[CI].equals("1")){
-                            selfMut = true;
-                        }
-                    }catch(ArrayIndexOutOfBoundsException e){
-                        System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
-                    }
-                    CI++;
-                }
-            }
-        }catch(ArrayIndexOutOfBoundsException e){}
-        if(!(mut.equals("global") || mut.equals("local"))){
-            System.out.println("[INFO] No mutation.");
-            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
-        }
+        assignMut();
 
 
         UF = settings[CI++];
@@ -1409,7 +1260,8 @@ public class Env extends Thread{ // environment simulator
                         "UF",
                         "punishFunc",
                         "punishCost",
-                        "punishFine"
+                        "punishFine",
+                        "punishRatio"
                         -> {
                     for (String variation : settings[CI].split(";")) {
                         variations.add(variation);
@@ -1859,6 +1711,7 @@ public class Env extends Thread{ // environment simulator
                 settings += punishFunc.isEmpty()? "": ",punishFunc";
                 settings += punishCost != 0.0? ",punishCost": "";
                 settings += punishFine != 0.0? ",punishFine": "";
+                settings += punishRatio != 0.0? ",punishRatio": "";
                 settings += EWL.equals("")? "": ",EWL";
                 settings += ROC == 0.0 && !varying.equals("ROC")? "": ",ROC";
 //                settings += alpha == 0.0 && !varying.equals("alpha")? "": ",alpha";
@@ -1905,6 +1758,7 @@ public class Env extends Thread{ // environment simulator
             settings += punishFunc.isEmpty()? "": "," + punishFunc;
             settings += punishCost != 0.0? "," + punishCost: "";
             settings += punishFine != 0.0? "," + punishFine: "";
+            settings += punishRatio != 0.0? "," + punishRatio: "";
             settings += EWL.equals("")? "": "," + EWL;
             settings += ROC == 0.0 && !varying.equals("ROC")? "": "," + ROC;
 //            settings += alpha == 0.0 && !varying.equals("alpha")? "": "," + alpha;
@@ -2034,6 +1888,7 @@ public class Env extends Thread{ // environment simulator
                     case "punishFunc" -> output += "," + punishFunc;
                     case "punishCost" -> output += "," + punishCost;
                     case "punishFine" -> output += "," + punishFine;
+                    case "punishRatio" -> output += "," + punishRatio;
                 }
                 fw.append(output);
                 fw.close();
@@ -2605,14 +2460,23 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-
+    // for every 1 unit spent by punisher to punish, victim loses punishRatio units. inspired by fehr2002altrustic.
     public void punishAllAmount(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Player> omega_a = a.getOmega();
         for(int i=0;i<a.getK();i++){
             Player b = omega_a.get(i);
-            a.setU(a.getU() - weights.get(i));
-            b.setU(b.getU() - weights.get(i));
+            double w_ab = weights.get(i);
+
+//            a.setU(a.getU() - (1 - w_ab));
+//            b.setU(b.getU() - (1 - w_ab));
+
+//            a.setU(a.getU() - (1 - w_ab));
+//            b.setU(b.getU() - 3 * (1 - w_ab));
+
+            a.setU(a.getU() - (1 - w_ab));
+            b.setU(b.getU() - punishRatio * (1 - w_ab));
+
         }
     }
     public void punishOneAmount(Player a){
@@ -2629,7 +2493,6 @@ public class Env extends Thread{ // environment simulator
             exit();
         }
     }
-
     public static void assignPunishFine(){
         try {
             punishFine = Double.parseDouble(settings[CI++]);
@@ -2638,12 +2501,129 @@ public class Env extends Thread{ // environment simulator
             exit();
         }
     }
-
     public static void assignPunishFunc(){
         punishFunc = settings[CI++];
         if(!(punishFunc.equals("allProb") || punishFunc.equals("oneProb") || punishFunc.equals("allAmount") || punishFunc.equals("oneAmount"))){
             System.out.println("[ERROR] Invalid punishFunc passed. Valid options: \"all\", \"one\".");
             exit();
+        }
+    }
+    public static void assignPunishRatio(){
+        try {
+            punishRatio = Double.parseDouble(settings[CI++]);
+        } catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid punishRatio passed. Must pass a double.");
+            exit();
+        }
+    }
+    public static void assignMutRate(){
+        try {
+            mutRate = Double.parseDouble(settings[CI++]);
+        }catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid mutRate passed. Must pass a double.");
+            exit();
+        }
+        if(mutRate < 0.0 || mutRate > 1.0){
+            System.out.println("[ERROR] Invalid mutRate passed. Must be between 0.0 and 1.0.");
+            exit();
+        }
+    }
+    public static void assignROC(){
+        try {
+            ROC = Double.parseDouble(settings[CI++]);
+        }catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid ROC passed. Must pass a double.");
+            exit();
+        }
+        if(ROC < 0.0 || ROC > 1.0){
+            System.out.println("[ERROR] Invalid ROC passed. Must be between 0.0 and 1.0.");
+            exit();
+        }
+    }
+    public static void assignGens(){
+        gens = Integer.parseInt(settings[CI++]);
+        if(gens < 1){
+            System.out.println("[ERROR] Invalid gens passed. Must be greater than 1.");
+            exit();
+        }
+    }
+    public static void assignER(){
+        ER = Integer.parseInt(settings[CI++]);
+        if(ER < 1){
+            System.out.println("[ERROR] Invalid ER passed. Must be greater than 1.");
+            exit();
+        }
+    }
+    public static void assignLength(){
+        length = Integer.parseInt(settings[CI++]);
+        if(length < 3){
+            System.out.println("[ERROR] Invalid length passed. Must be greater than 3");
+            exit();
+        }
+    }
+    public static void assignRuns(){
+        runs = Integer.parseInt(settings[CI++]);
+        if(runs < 1){
+            System.out.println("[ERROR] Invalid runs passed. Must be greater than 1.");
+            exit();
+        }
+    }
+    public static void assignPunish(){
+        CI += 3; // increase CI by 3 since there were 3 params before this based on EWT.
+        assignPunishFunc();
+        switch(punishFunc){
+            case "allProb", "oneProb" -> {
+                assignPunishCost();
+                assignPunishFine();
+                CI++; // skip 1 param (punishRatio).
+            }
+            case "allAmount", "oneAmount" -> {
+                CI += 2; // skip 2 params (punishCost, punishFine).
+                assignPunishRatio();
+            }
+        }
+    }
+    public static void assignSelfMut(){
+        switch(settings[CI++]){
+            case "0" -> selfMut = false;
+            case "1" -> selfMut = true;
+            default -> {
+                System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
+                exit();
+            }
+        }
+    }
+    public static void assignMutBound(){
+        try {
+            mutBound = Double.parseDouble(settings[CI++]);
+        }catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid mutBound passed. Must pass a double.");
+            exit();
+        }
+        if(mutBound < 0.0 || mutBound > 1.0){
+            System.out.println("[ERROR] Invalid mutBound passed. Must be between 0.0 and 1.0.");
+            exit();
+        }
+    }
+    public static void assignMut(){
+        try{
+            mut = settings[CI++];
+            switch(mut){
+                case "global" -> {
+                    assignMutRate();
+                    CI++; // skip 1 param (mutBound)
+                    assignSelfMut();
+                }
+                case "local" -> {
+                    assignMutRate();
+                    assignMutBound();
+                    assignSelfMut();
+                }
+            }
+        }catch(ArrayIndexOutOfBoundsException e){}
+        if(!(mut.equals("global") || mut.equals("local"))){
+            System.out.println("[INFO] No mutation.");
+            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
         }
     }
 }
