@@ -169,6 +169,7 @@ public class Env extends Thread{ // environment simulator
                     case "gens" -> gens = Integer.parseInt(variations.get(exp - 1));
                     case "length" -> {
                         length = Integer.parseInt(variations.get(exp - 1));
+                        width = length; // added this line 4/12/25.
                         N = length * width;
                     }
                     case "ER" -> ER = Integer.parseInt(variations.get(exp - 1));
@@ -217,6 +218,7 @@ public class Env extends Thread{ // environment simulator
      */
     @Override
     public void start(){
+        // initialise population and edge network
         initRandomPop();
         for(int i=0;i<N;i++){
             switch(neighType){
@@ -225,46 +227,18 @@ public class Env extends Thread{ // environment simulator
                 case"all"->assignAll(pop[i]);
             }
         }
-        if(writePosData && run == 1) writePosData();
+        if(writePosData && run == 1) {
+            writePosData();
+        }
         for(int i=0;i<N;i++){
             initialiseEdgeWeights(pop[i]);
         }
-
 
         // get stats for gen 0
         calculateStats();
         writeGenAndRunStats();
 
-
         switch(EM){
-//            case "oldER" -> {
-////                gen = 1;
-////                gens = 1;
-//                gen = 0;
-//                gens = 0;
-//                // oldER alg iterates "rounds" times; 1 iteration of this loop ==> 1 "round"
-////                for(int round = 1; round < rounds; round++){
-//                for(int round = 1; round <= rounds; round++){
-//                    for(int i=0;i<N;i++) play(pop[i]);
-//                    for(int i=0;i<N;i++) updateUtility(pop[i]);
-//                    for(int i=0;i<N;i++) EWL(pop[i]);
-//                    if(round % ER == 0){ // if true, a generation is going to pass
-//                        for(int i=0;i<N;i++) if(EWT.equals("rewire")) rewire(pop[i]); // rewire if applicable
-//                        for(int i=0;i<N;i++) {
-//                            Player child = pop[i];
-//                            Player parent = sel(child);
-//                            if(evo(child, parent))
-//                                mut(child);
-//                        }
-//                        // calculate and write stats at end of gen
-//                        calculateStats();
-//                        gen++; // moving onto to the next gen
-//                        gens++; // for recording the total number of gens that occurred
-//                        writeGenAndRunStats();
-//                    }
-//                    prepare(); // reset certain attributes at end of round
-//                }
-//            }
             case "newER" -> {
                 rounds = 0;
                 for(gen = 1; gen <= gens; gen++){ // gens
@@ -1045,10 +1019,6 @@ public class Env extends Thread{ // environment simulator
         // apply config
         settings = configurations.get(config_num).split(",");
         CI = 0;
-//        int CI2;
-//        int CI3;
-
-
         Player.setGame(game);
         assignRuns();
         assignLength();
@@ -1056,92 +1026,13 @@ public class Env extends Thread{ // environment simulator
         N = length * width;
         assignER();
         assignGens();
-        EWT = settings[CI++];
-        switch(EWT){
-            case "rewire" -> {
-                try {
-                    RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
-                    if(RP < 0.0 || RP > 1.0){
-                        System.out.println("[ERROR] Invalid RP passed. Must be between 0.0 and 1.0.");
-                        exit();
-                    }
-                }catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
-                    exit();
-                }
-                RA = settings[CI++]; // strings dont get an exception when input = ""
-                if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
-                    System.out.println("[ERROR] Invalid RA passed. Valid options: \"smoothstep\", \"smootherstep\", \"linear\", \"0Many\".");
-                    exit();
-                }
-                RT = settings[CI++];
-                if(!(RT.equals("local") || RT.equals("pop"))){
-                    System.out.println("[ERROR] Invalid RT passed. Valid options: \"local\", \"pop\".");
-                    exit();
-                }
-                CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
-            }
-            case "punish" -> {
-                assignPunish();
-            }
-            case "proposalProb", "none" -> CI += 7; // skip 7 params (RP, RA, RT, punishFunc, punishCost, punishFine, punishRatio).
-            default -> {
-                System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punish\", \"none\".");
-                exit();
-            }
-        }
-        EWL = settings[CI++];
-        switch(EWL){
-            case "PROC", "UROC" -> {
-                assignROC();
-            }
-            case "PD", "UD", "none" -> CI++; // max extra EWL params: 1 ==> skip CI that many indices.
-            default -> {
-                System.out.println("[ERROR] Invalid EWL passed. Valid options: \"PROC\", \"UROC\", \"PD\", \"UD\", \"none\".");
-                exit();
-            }
-        }
-        sel = settings[CI++];
-        switch(sel){
-            case "RW" -> {
-                RWT = settings[CI++];
-                switch(RWT){
-                    case "exponential" -> {
-                        try {
-                            selNoise = Double.parseDouble(settings[CI++]);
-                        }catch(NumberFormatException e){
-                            System.out.println("[ERROR] Invalid selNoise passed. Must be a double.");
-                    exit();
-                        }
-                    }
-                    case "normal" -> CI++;
-                    default -> {
-                        System.out.println("[ERROR] Invalid RWT passed. Valid options: \"exponential\", \"normal\".");
-                        exit();
-                    }
-                }
-            }
-            case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2;
-            default -> {
-                System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist\", \"rank\", \"randomNeigh\"");
-                exit();
-            }
-        }
-
-
+        assignEWT();
+        assignEWL();
+        assignSel();
         assignMut();
+        assignUF();
 
-
-        UF = settings[CI++];
-        switch(UF){
-            case "cumulative", "normalised" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid UF passed. Valid options: \"cumulative\", \"normalised\".");
-                exit();
-            }
-        }
-
-
+        // assign writePGenStats
         try{
             if(settings[CI++].equals("1")){
                 writePGenStats = true;
@@ -1150,7 +1041,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record p gen stats.");
         }
 
-
+        // assign writeUGenStats
         try{
             if(settings[CI++].equals("1")){
                 writeUGenStats = true;
@@ -1159,7 +1050,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record u gen stats.");
         }
 
-
+        // assign writeKGenStats
         try{
             if(settings[CI++].equals("1")){
                 writeKGenStats = true;
@@ -1168,7 +1059,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record k gen stats.");
         }
 
-
+        // assign writePRunStats
         try{
             if(settings[CI++].equals("1")){
                 writePRunStats = true;
@@ -1177,7 +1068,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record p run stats.");
         }
 
-
+        // assign writeURunStats
         try{
             if(settings[CI++].equals("1")){
                 writeURunStats = true;
@@ -1186,7 +1077,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Will not record u run stats.");
         }
 
-
+        // writeKRunStats
         try{
             if(settings[CI++].equals("1")){
                 writeKRunStats = true;
@@ -1326,6 +1217,7 @@ public class Env extends Thread{ // environment simulator
                         "=======================================================" +
                         "=======================================================" +
                         "=======================================================" +
+                        "=======================================================" +
                         "%n");
     }
 
@@ -1370,27 +1262,27 @@ public class Env extends Thread{ // environment simulator
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
-            omega.add(findPlayerByPos(y,x_plus));
-            omega.add(findPlayerByPos(y,x_minus));
-            omega.add(findPlayerByPos(y_plus,x));
-            omega.add(findPlayerByPos(y_minus,x));
+            omega.add(findPlayerByPos(y, x_plus));
+            omega.add(findPlayerByPos(y, x_minus));
+            omega.add(findPlayerByPos(y_plus, x));
+            omega.add(findPlayerByPos(y_minus, x));
             if(neighType.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-                    omega.add(findPlayerByPos(y_plus_minus,(x_plus_minus)));
-                    omega.add(findPlayerByPos(y_minus_plus,(x_plus_minus)));
-                    omega.add(findPlayerByPos(y_minus_plus,(x_minus_plus)));
-                    omega.add(findPlayerByPos(y_plus_minus,(x_minus_plus)));
+                    omega.add(findPlayerByPos(y_plus_minus, x_plus_minus));
+                    omega.add(findPlayerByPos(y_minus_plus, x_plus_minus));
+                    omega.add(findPlayerByPos(y_minus_plus, x_minus_plus));
+                    omega.add(findPlayerByPos(y_plus_minus, x_minus_plus));
                 }
             }
             if(neighType.equals("Moore")){
-                omega.add(findPlayerByPos(y_plus,x_plus));
-                omega.add(findPlayerByPos(y_minus,x_plus));
-                omega.add(findPlayerByPos(y_minus,x_minus));
-                omega.add(findPlayerByPos(y_plus,x_minus));
+                omega.add(findPlayerByPos(y_plus, x_plus));
+                omega.add(findPlayerByPos(y_minus, x_plus));
+                omega.add(findPlayerByPos(y_minus, x_minus));
+                omega.add(findPlayerByPos(y_plus, x_minus));
             }
         }
         player.setOmega(omega);
@@ -2467,16 +2359,10 @@ public class Env extends Thread{ // environment simulator
         for(int i=0;i<a.getK();i++){
             Player b = omega_a.get(i);
             double w_ab = weights.get(i);
-
-//            a.setU(a.getU() - (1 - w_ab));
-//            b.setU(b.getU() - (1 - w_ab));
-
-//            a.setU(a.getU() - (1 - w_ab));
-//            b.setU(b.getU() - 3 * (1 - w_ab));
-
-            a.setU(a.getU() - (1 - w_ab));
-            b.setU(b.getU() - punishRatio * (1 - w_ab));
-
+            double cost = 1 - w_ab; // cost of punishing for punisher.
+            double fine = punishRatio * (1 - w_ab); // fine applied to punishee.
+            a.setU(a.getU() - cost);
+            b.setU(b.getU() - fine);
         }
     }
     public void punishOneAmount(Player a){
@@ -2624,6 +2510,93 @@ public class Env extends Thread{ // environment simulator
         if(!(mut.equals("global") || mut.equals("local"))){
             System.out.println("[INFO] No mutation.");
             CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
+        }
+    }
+    public static void assignEWT(){
+        EWT = settings[CI++];
+        switch(EWT){
+            case "rewire" -> {
+                try {
+                    RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
+                    if(RP < 0.0 || RP > 1.0){
+                        System.out.println("[ERROR] Invalid RP passed. Must be between 0.0 and 1.0.");
+                        exit();
+                    }
+                }catch(NumberFormatException e){
+                    System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
+                    exit();
+                }
+                RA = settings[CI++]; // strings dont get an exception when input = ""
+                if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
+                    System.out.println("[ERROR] Invalid RA passed. Valid options: \"smoothstep\", \"smootherstep\", \"linear\", \"0Many\".");
+                    exit();
+                }
+                RT = settings[CI++];
+                if(!(RT.equals("local") || RT.equals("pop"))){
+                    System.out.println("[ERROR] Invalid RT passed. Valid options: \"local\", \"pop\".");
+                    exit();
+                }
+                CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
+            }
+            case "punish" -> assignPunish();
+            case "proposalProb", "none" -> CI += 7; // skip 7 params (RP, RA, RT, punishFunc, punishCost, punishFine, punishRatio).
+            default -> {
+                System.out.println("[ERROR] Invalid EWT passed. Valid options: \"proposalProb\", \"rewire\", \"punish\", \"none\".");
+                exit();
+            }
+        }
+    }
+    public static void assignEWL(){
+        EWL = settings[CI++];
+        switch(EWL){
+            case "PROC", "UROC" -> assignROC();
+            case "PD", "UD", "none" -> CI++; // skip 1 param (ROC).
+            default -> {
+                System.out.println("[ERROR] Invalid EWL passed. Valid options: \"PROC\", \"UROC\", \"PD\", \"UD\", \"none\".");
+                exit();
+            }
+        }
+    }
+    public static void assignSel(){
+        sel = settings[CI++];
+        switch(sel){
+            case "RW" -> assignRWT();
+            case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2; // skip 2 params (RWT, selNoise).
+            default -> {
+                System.out.println("[ERROR] Invalid sel passed. Valid options: \"RW\", \"elitist\", \"rank\", \"randomNeigh\"");
+                exit();
+            }
+        }
+    }
+    public static void assignRWT(){
+        RWT = settings[CI++];
+        switch(RWT){
+            case "exponential" -> {
+                assignSelNoise();
+            }
+            case "normal" -> CI++;
+            default -> {
+                System.out.println("[ERROR] Invalid RWT passed. Valid options: \"exponential\", \"normal\".");
+                exit();
+            }
+        }
+    }
+    public static void assignSelNoise(){
+        try {
+            selNoise = Double.parseDouble(settings[CI++]);
+        }catch(NumberFormatException e){
+            System.out.println("[ERROR] Invalid selNoise passed. Must be a double.");
+            exit();
+        }
+    }
+    public static void assignUF(){
+        UF = settings[CI++];
+        switch(UF){
+            case "cumulative", "normalised" -> {}
+            default -> {
+                System.out.println("[ERROR] Invalid UF passed. Valid options: \"cumulative\", \"normalised\".");
+                exit();
+            }
         }
     }
 }
