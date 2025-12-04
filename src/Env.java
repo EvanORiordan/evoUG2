@@ -86,9 +86,8 @@ public class Env extends Thread{ // environment simulator
     static String mut; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
-    static boolean selfMut; // indicates whether self mutation can occur. when enabled, mut always occurs. when disabled, mut does not occur if child is parent.
-//    static String EM; // evolution mechanism: the mechanism by which evolution occurs.
-    static String EM = "newER"; // evolution mechanism: the mechanism by which evolution occurs.
+//    static String EM;
+    static String EM = "newER"; // evolution mechanism / evolutionary dynamics / strategy update process: the mechanism by which evolution occurs.
     static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
     static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT = ""; // roulette wheel type
@@ -263,25 +262,26 @@ public class Env extends Thread{ // environment simulator
                             for(int i=0;i<N;i++){
                                 punish(pop[i]);
                             }
-//                            switch(punishFunc){
-//                                case "allProb" -> {
-//                                    punishAllProb
-//                                }
-//                            }
-//                            for(int i=0;i<N;i++){
-//                                punishProb(pop[i]);
-//                            }
                         }
                     }
                     for(int i=0;i<N;i++) {
                         Player child = pop[i];
                         Player parent = sel(child);
+
+
+//                        if(!child.equals(parent)) {
+//                            evo(child, parent);
+//                        }
+//                        if(selfMut || !child.equals(parent)) { // if selfMut disabled, child only mutates if child is not parent.
+//                            mut(child);
+//                        }
+
                         if(!child.equals(parent)) {
                             evo(child, parent);
-                        }
-                        if(selfMut || !child.equals(parent)) { // if selfMut disabled, child only mutates if child is not parent.
                             mut(child);
                         }
+
+
                     }
                     calculateStats(); // calculate stats at end of gen
                     writeGenAndRunStats(); // write gen and run stats at end of gen
@@ -944,7 +944,6 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//mut
                 " %-10s |"+//mutRate
                 " %-10s |"+//mutBound
-                " %-10s |"+//selfMut
                 " %-10s |"+//UF
                 " %-5s |"+//WPGS
                 " %-5s |"+//WUGS
@@ -955,7 +954,7 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//writeRate
                 " %-15s |"+//varying
                 " %s%n"//variations
-                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishFunc","punishCost","punishFine","punishRatio","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","selfMut","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
+                ,"config","runs","length","ER","gens","EWT","RP","RA","RT","punishFunc","punishCost","punishFine","punishRatio","EWL","ROC","sel","RWT","selNoise","mut","mutRate","mutBound","UF","WPGS","WUGS","WKGS","WPRS","WURS","WKRS","writeRate","varying","variations"
 
         );
         printTableLine();
@@ -987,7 +986,6 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mut
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutRate
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutBound
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //selfMut
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //UF
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPGS
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WUGS
@@ -1618,7 +1616,6 @@ public class Env extends Thread{ // environment simulator
                 settings += mut.equals("local") || mut.equals("global")? ",mutRate": "";
 //                settings += mut.equals("local") || mut.equals("localnoself")? ",mutBound": "";
                 settings += mut.equals("local")? ",mutBound": "";
-                settings += !mut.equals("")? ",selfMut": "";
                 settings += ",UF";
 //                settings += injRound == 0? "": ",injRound";
 //                settings += injP == 0.0? "": ",injP";
@@ -1663,7 +1660,6 @@ public class Env extends Thread{ // environment simulator
             settings += !mut.equals("")? "," + mut: "";
             settings += mut.equals("local") || mut.equals("global")? "," + mutRate: "";
             settings += mut.equals("local")? "," + mutBound: "";
-            settings += !mut.equals("")? "," + selfMut: "";
             settings += "," + UF;
 //            settings += injRound == 0? "": "," + injRound;
 //            settings += injP == 0.0? "": "," + injP;
@@ -2469,16 +2465,6 @@ public class Env extends Thread{ // environment simulator
             }
         }
     }
-    public static void assignSelfMut(){
-        switch(settings[CI++]){
-            case "0" -> selfMut = false;
-            case "1" -> selfMut = true;
-            default -> {
-                System.out.println("[ERROR] Invalid selfMut passed. Valid options: \"0\", \"1\".");
-                exit();
-            }
-        }
-    }
     public static void assignMutBound(){
         try {
             mutBound = Double.parseDouble(settings[CI++]);
@@ -2492,24 +2478,20 @@ public class Env extends Thread{ // environment simulator
         }
     }
     public static void assignMut(){
-        try{
-            mut = settings[CI++];
-            switch(mut){
-                case "global" -> {
-                    assignMutRate();
-                    CI++; // skip 1 param (mutBound)
-                    assignSelfMut();
-                }
-                case "local" -> {
-                    assignMutRate();
-                    assignMutBound();
-                    assignSelfMut();
-                }
+        mut = settings[CI++];
+        switch(mut){
+            case "global" -> {
+                assignMutRate();
+                CI++; // skip 1 param (mutBound).
             }
-        }catch(ArrayIndexOutOfBoundsException e){}
-        if(!(mut.equals("global") || mut.equals("local"))){
-            System.out.println("[INFO] No mutation.");
-            CI += 3; // increase CI by 3 since we want to skip the 3 params based on mut.
+            case "local" -> {
+                assignMutRate();
+                assignMutBound();
+            }
+            default -> {
+                System.out.println("[INFO] No mutation.");
+                CI += 2; // skip 2 params (mutRate, mutBound).
+            }
         }
     }
     public static void assignEWT(){
