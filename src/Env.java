@@ -83,7 +83,7 @@ public class Env extends Thread{ // environment simulator
     static double evoNoise = 0; // noise affecting evolution
     static String sel; // indicates which selection function to call
     static double selNoise = 0.0; // noise affecting selection
-    static String mut; // indicates which mutation function to call
+    static String mut = ""; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
 //    static String EM;
@@ -106,7 +106,7 @@ public class Env extends Thread{ // environment simulator
     static String punishFunc = "";
     static double punishRatio;
     static int CI; // configuration index
-    static String[] settings; // configuration settings
+//    static String[] settings; // configuration settings
 
 
 
@@ -115,7 +115,7 @@ public class Env extends Thread{ // environment simulator
      * Main method of Java program.
       */
     public static void main(String[] args) {
-        configureEnvironment();
+        configEnv();
         LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
         old_timestamp = start_timestamp;
         String start_timestamp_string = start_timestamp.getYear()
@@ -159,23 +159,20 @@ public class Env extends Thread{ // environment simulator
             experiment(); // run an experiment of the series
             if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
                 switch(VP){
-                    case "EWL" -> EWL = variations.get(exp - 1);
-                    case "RA" -> RA = variations.get(exp - 1);
-                    case "RT" -> RT = variations.get(exp - 1);
-                    case "sel" -> sel = variations.get(exp - 1);
-                    case "evo" -> evo = variations.get(exp - 1);
-                    case "EWT" -> EWT = variations.get(exp - 1);
-                    case "gens" -> gens = Integer.parseInt(variations.get(exp - 1));
+                    case "EWL" -> assignEWL(variations.get(exp - 1));
+                    case "RA" -> assignRA(variations.get(exp - 1));
+                    case "RT" -> assignRT(variations.get(exp - 1));
+                    case "sel" -> assignSel(variations.get(exp - 1));
+                    case "EWT" -> assignEWT(variations.get(exp - 1));
+                    case "gens" -> assignGens(variations.get(exp - 1));
                     case "length" -> {
-                        length = Integer.parseInt(variations.get(exp - 1));
-                        width = length; // added this line 4/12/25.
-                        N = length * width;
+                        assignLength(variations.get(exp - 1));
+                        assignWidth();
+                        assignN();
                     }
-                    case "ER" -> ER = Integer.parseInt(variations.get(exp - 1));
-                    case "NIS" -> NIS = Integer.parseInt(variations.get(exp - 1));
-                    case "ROC" -> ROC = Double.parseDouble(variations.get(exp - 1));
-                    case "RP" -> RP = Double.parseDouble(variations.get(exp - 1));
-                    case "M" -> M = Double.parseDouble(variations.get(exp - 1));
+                    case "ER" -> assignER(variations.get(exp - 1));
+                    case "ROC" -> assignROC(variations.get(exp - 1));
+                    case "RP" -> assignRP(variations.get(exp - 1));
                     case "selNoise" -> selNoise = Double.parseDouble(variations.get(exp - 1));
                     case "mutRate" -> mutRate = Double.parseDouble(variations.get(exp - 1));
                     case "mutBound" -> mutBound = Double.parseDouble(variations.get(exp - 1));
@@ -221,7 +218,7 @@ public class Env extends Thread{ // environment simulator
         // initialise population and edge network.
         initRandomPop();
         for(int i=0;i<N;i++){
-            assignNeighbourhood(pop[i]);
+            getNeighbours(pop[i]);
         }
         if(writePosData && run == 1) {
             writePosData();
@@ -830,13 +827,13 @@ public class Env extends Thread{ // environment simulator
     /**
      * Loads in a configuration of settings from the config file, allowing the user to choose the values of the environmental parameters.
      */
-    public static void configureEnvironment(){
+    public static void configEnv(){
         // load configurations
         ArrayList<String> configurations = new ArrayList<>(); // stores configs
         try{
             br = new BufferedReader(new FileReader(config_filename));
-            String line; // initialise String to store rows of data
-            br.readLine(); // purposely ignore the row of headings
+            String line; // initialises String to store rows of data
+            br.readLine(); // ignores the row of headings
             while((line = br.readLine()) != null){
                 configurations.add(line);
             }
@@ -844,7 +841,7 @@ public class Env extends Thread{ // environment simulator
             e.printStackTrace();
         }
 
-        // display intro and config table headings
+        // displays intro and config table headings
         System.out.printf("=========================================%n");
         System.out.printf("   Artificial Life Simulator%n");
         System.out.printf("   By Evan O'Riordan%n");
@@ -885,12 +882,11 @@ public class Env extends Thread{ // environment simulator
         );
         printTableLine();
 
-        // display config table rows
-//        int CI; // configuration index
-//        String[] settings;
+        // displays config table rows
+        String[] settings; // configuration settings
         for(int i=0;i<configurations.size();i++){
             settings = configurations.get(i).split(",");
-            CI = 0; // reset to 0 for each config
+            CI = 0;
             System.out.printf("%-10d ", i); //config
             System.out.printf("| %-5s ", settings[CI++]); //runs
             System.out.printf("| %-10s ", settings[CI++]); //length
@@ -904,7 +900,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishCost
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFine
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
-            System.out.printf("| %-5s ", settings[CI++]); //EWL
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //EWL
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //ROC
             System.out.printf("| %-15s ", settings[CI++]); //sel
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RWT
@@ -912,7 +908,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mut
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutRate
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutBound
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //UF
+            System.out.printf("| %-10s ", settings[CI++]); //UF
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPGS
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WUGS
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKGS
@@ -930,7 +926,7 @@ public class Env extends Thread{ // environment simulator
         System.out.println("Which config would you like to use? (int)");
         boolean config_selected = false;
         int config_num;
-        do{ // ensure user selects valid config
+        do{ // ensures user selects valid config
             config_num = scanner.nextInt();
             if(0 <= config_num && config_num < configurations.size()){
                 config_selected = true;
@@ -939,29 +935,42 @@ public class Env extends Thread{ // environment simulator
             }
         }while(!config_selected);
 
-        // assigns values to environmental parameters.
+        // assigns values from user-selected configuration to environmental parameters.
         settings = configurations.get(config_num).split(",");
         CI = 0;
-        Player.setGame(game);
-        assignRuns();
-        assignLength();
-        width = length; // assign width.
-        N = length * width; // assign N.
-        assignER();
-        assignGens();
-        assignEWT();
-        assignEWL();
-        assignSel();
-        assignMut();
-        assignUF();
-        assignWritePGenStats();
-        assignWriteUGenStats();
-        assignWriteKGenStats();
-        assignWritePRunStats();
-        assignWriteURunStats();
-        assignWriteKRunStats();
-        assignWriteRate();
-        assignVP();
+        assignGame();
+        assignRuns(settings[CI++]);
+        assignLength(settings[CI++]);
+        assignWidth();
+        assignN();
+        assignER(settings[CI++]);
+        assignGens(settings[CI++]);
+        assignEWT(CI!=settings.length? settings[CI++]: "");
+        assignRP(CI!=settings.length? settings[CI++]: "");
+        assignRA(CI!=settings.length? settings[CI++]: "");
+        assignRT(CI!=settings.length? settings[CI++]: "");
+        assignPunishFunc(CI!=settings.length? settings[CI++]: "");
+        assignPunishCost(CI!=settings.length? settings[CI++]: "");
+        assignPunishFine(CI!=settings.length? settings[CI++]: "");
+        assignPunishRatio(CI!=settings.length? settings[CI++]: "");
+        assignEWL(CI!=settings.length? settings[CI++]: "");
+        assignROC(CI!=settings.length? settings[CI++]: "");
+        assignSel(settings[CI++]);
+        assignRWT(CI!=settings.length? settings[CI++]: "");
+        assignSelNoise(CI!=settings.length? settings[CI++]: "");
+        assignMut(CI!=settings.length? settings[CI++]: "");
+        assignMutRate(CI!=settings.length? settings[CI++]: "");
+        assignMutBound(CI!=settings.length? settings[CI++]: "");
+        assignUF(settings[CI++]);
+        assignWritePGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteUGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteKGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWritePRunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteURunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteKRunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteRate(CI!=settings.length? settings[CI++]: "");
+        assignVP(CI!=settings.length? settings[CI++]: "");
+        assignVariations(CI!=settings.length? settings[CI++]: "");
     }
 
 
@@ -1109,7 +1118,7 @@ public class Env extends Thread{ // environment simulator
 
 
     // assign all other players to neighbourhood
-    public void allNeigh(Player player){
+    public void allPopNeigh(Player player){
         ArrayList <Player> omega = player.getOmega();
         int ID = player.getID();
         for(int i=0;i<N;i++){
@@ -1392,7 +1401,7 @@ public class Env extends Thread{ // environment simulator
                 settings += punishCost != 0.0? ",punishCost": "";
                 settings += punishFine != 0.0? ",punishFine": "";
                 settings += punishRatio != 0.0? ",punishRatio": "";
-                settings += EWL.equals("")? "": ",EWL";
+                settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0 && !VP.equals("ROC")? "": ",ROC";
                 settings += ",sel";
                 settings += sel.equals("RW")? ",RWT": "";
@@ -1421,7 +1430,7 @@ public class Env extends Thread{ // environment simulator
             settings += punishCost != 0.0? "," + punishCost: "";
             settings += punishFine != 0.0? "," + punishFine: "";
             settings += punishRatio != 0.0? "," + punishRatio: "";
-            settings += EWL.equals("")? "": "," + EWL;
+            settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0 && !VP.equals("ROC")? "": "," + ROC;
             settings += "," + sel;
             settings += sel.equals("RW")? "," + RWT: "";
@@ -2132,446 +2141,253 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-    // assigns valid value to punishCost param.
-    public static void assignPunishCost(){
-        String s = settings[CI++];
-        validatePunishCost(s);
-        punishCost = Double.parseDouble(s);
-    }
-    public static void validatePunishCost(String s){
-        try{
-            double x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid punishCost ("+s+"): must be a double.");
-            exit();
-        }
-    }
-
-    public static void assignPunishFine(){
-//        try {
-//            punishFine = Double.parseDouble(settings[CI++]);
-//        } catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid punishFine: must be a double.");
-//            exit();
-//        }
-        String s = settings[CI++];
-        validatePunishFine(s);
-        punishFine = Double.parseDouble(s);
-    }
-    public static void validatePunishFine(String s){
-        try{
-            double x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid punishFine ("+s+"): must be a double.");
-            exit();
-        }
-    }
-
-    public static void assignPunishFunc(){
-//        punishFunc = settings[CI++];
-//        if(!(punishFunc.equals("allProb") || punishFunc.equals("oneProb") || punishFunc.equals("allAmount") || punishFunc.equals("oneAmount"))){
-//            System.out.println("[ERROR] Invalid punishFunc. Valid options: \"all\", \"one\".");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validatePunishFunc(s);
-        punishFunc = s;
-    }
-    public static void validatePunishFunc(String s){
-        switch(s){
-            case "allProb", "oneProb", "allAmount", "oneAmount" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid punishFunc. Valid options: allProb, oneProb, allAmount, oneAmount.");
-                exit();
-            }
-        }
-    }
-
-    public static void assignPunishRatio(){
-//        try {
-//            punishRatio = Double.parseDouble(settings[CI++]);
-//        } catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid punishRatio: must be a double.");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validatePunishRatio(s);
-        punishRatio = Double.parseDouble(s);
-    }
-    public static void validatePunishRatio(String s){
-        try{
-            double x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid punishRatio ("+s+"): must be a double.");
-            exit();
-        }
-    }
-
-    public static void assignMutRate(){
-//        try {
-//            mutRate = Double.parseDouble(settings[CI++]);
-//        }catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid mutRate: must be a double.");
-//            exit();
-//        }
-//        if(mutRate < 0.0 || mutRate > 1.0){
-//            System.out.println("[ERROR] Invalid mutRate: must be between 0.0 and 1.0.");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validateMutRate(s);
-        mutRate = Double.parseDouble(s);
-    }
-    public static void validateMutRate(String s){
-        double x=0;
-        try{
-            x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid mutRate ("+s+"): must be a double.");
-            exit();
-        }
-        if(x < 0.0 || x > 1.0){
-            System.out.println("[ERROR] Invalid mutRate ("+s+"): must be between 0.0 and 1.0.");
-            exit();
-        }
-    }
-
-    public static void assignROC(){
-//        try {
-//            ROC = Double.parseDouble(settings[CI++]);
-//        }catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid ROC: must be a double.");
-//            exit();
-//        }
-//        if(ROC < 0.0 || ROC > 1.0){
-//            System.out.println("[ERROR] Invalid ROC: must be between 0.0 and 1.0.");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validateROC(s);
-        ROC = Double.parseDouble(s);
-    }
-    public static void validateROC(String s){
-        double x=0;
-        try{
-            x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid ROC ("+s+"): must be a double.");
-            exit();
-        }
-        if(x < 0.0 || x > 1.0){
-            System.out.println("[ERROR] Invalid ROC ("+s+"): must be between 0.0 and 1.0.");
-            exit();
-        }
-    }
-
-    public static void assignGens(){
-//        gens = Integer.parseInt(settings[CI++]);
-//        if(gens < 1){
-//            System.out.println("[ERROR] Invalid gens: must be greater than 1.");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validateGens(s);
-        gens = Integer.parseInt(s);
-    }
-    public static void validateGens(String s){
-        int x=0;
-        try{
-            x = Integer.parseInt(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid gens ("+s+"): must be a integer.");
-            exit();
-        }
-        if(x < 1){
-            System.out.println("[ERROR] Invalid gens ("+s+"): must be greater than or equal to 1.");
-            exit();
-        }
-    }
-
-    public static void assignER(){
-//        ER = Integer.parseInt(settings[CI++]);
-//        if(ER < 1){
-//            System.out.println("[ERROR] Invalid ER: must be greater than 1.");
-//            exit();
-//        }
-        String s = settings[CI++];
-        validateER(s);
-        ER = Integer.parseInt(s);
-    }
-    public static void validateER(String s){
-        int x=0;
-        try{
-            x = Integer.parseInt(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid ER ("+s+"): must be a integer.");
-            exit();
-        }
-        if(x < 1){
-            System.out.println("[ERROR] Invalid ER ("+s+"): must be greater than or equal to 1.");
-            exit();
-        }
-    }
-
-    public static void assignLength(){
-//        length = Integer.parseInt(settings[CI++]);
-//        if(length < 3){
-//            System.out.println("[ERROR] Invalid length: must be greater than 3");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validateLength(s);
-        length = Integer.parseInt(s);
-    }
-    public static void validateLength(String s){
-        int x=0;
-        try{
-            x = Integer.parseInt(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid length ("+s+"): must be a integer.");
-            exit();
-        }
-        if(x < 3){
-            System.out.println("[ERROR] Invalid length ("+s+"): must be greater than or equal to 3.");
-            exit();
-        }
-    }
-
-    public static void assignRuns(){
-        runs = Integer.parseInt(settings[CI++]);
-        if(runs < 1){
-            System.out.println("[ERROR] Invalid runs: must be greater than 1.");
-            exit();
-        }
-    }
-
-    public static void assignPunish(){
-        CI += 3; // increase CI by 3 since there were 3 params before this based on EWT.
-        assignPunishFunc();
+    public static void assignPunishCost(String value){
         switch(punishFunc){
-            case "allProb", "oneProb" -> {
-                assignPunishCost();
-                assignPunishFine();
-                CI++; // skip 1 param (punishRatio).
-            }
-            case "allAmount", "oneAmount" -> {
-                CI += 2; // skip 2 params (punishCost, punishFine).
-                assignPunishRatio();
+
+            // punishCost must be valid if punishFunc is oneProb or allProb.
+            case "oneProb", "allProb" -> {
+                try{
+                    punishCost = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid punishCost: must be a double");
+                    exit();
+                }
             }
         }
     }
 
-    public static void assignMutBound(){
-//        try {
-//            mutBound = Double.parseDouble(settings[CI++]);
-//        }catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid mutBound: must be a double.");
-//            exit();
-//        }
-//        if(mutBound < 0.0 || mutBound > 1.0){
-//            System.out.println("[ERROR] Invalid mutBound: must be between 0.0 and 1.0.");
-//            exit();
-//        }
+    public static void assignPunishFine(String value){
+        switch(punishFunc){
 
-        String s = settings[CI++];
-        validateMutBound(s);
-        mutBound = Double.parseDouble(s);
-    }
-    public static void validateMutBound(String s){
-        double x=0;
-        try{
-            x = Double.parseDouble(s);
-        }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid mutBound ("+s+"): must be a double.");
-            exit();
-        }
-        if(x < 0.0 || x > 1.0){
-            System.out.println("[ERROR] Invalid mutBound ("+s+"): must be between 0.0 and 1.0.");
-            exit();
-        }
-    }
-
-    public static void assignMut(){
-        mut = settings[CI++];
-        switch(mut){
-            case "global" -> {
-                assignMutRate();
-                CI++; // skip 1 param (mutBound).
-            }
-            case "local" -> {
-                assignMutRate();
-                assignMutBound();
-            }
-            default -> {
-                System.out.println("[INFO] No mutation.");
-                CI += 2; // skip 2 params (mutRate, mutBound).
+            // punishFine must be valid if punishFunc is oneProb or allProb.
+            case "oneProb", "allProb" -> {
+                try{
+                    punishFine = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid punishFine: must be a double");
+                    exit();
+                }
             }
         }
     }
 
-    public static void assignEWT(){
-        EWT = settings[CI++];
+    public static void assignPunishFunc(String value){
         switch(EWT){
-            case "rewire" -> {
-                try {
-                    RP = Double.parseDouble(settings[CI++]); // numerical data types get an exception when input = ""
-                    if(RP < 0.0 || RP > 1.0){
-                        System.out.println("[ERROR] Invalid RP passed. Must be between 0.0 and 1.0.");
+
+            // punishFunc must be valid if EWT = punish.
+            case "punish" -> {
+                switch(value){
+
+                    // case where value is valid.
+                    case "allProb", "oneProb", "allAmount", "oneAmount" -> punishFunc = value;
+
+                    // case where value is invalid.
+                    default -> {
+                        System.out.println("invalid punishFunc");
                         exit();
                     }
+                }
+            }
+        }
+    }
+
+    public static void assignPunishRatio(String value){
+        switch(punishFunc){
+
+            // punishRatio must be valid if punishFunc is oneAmount or allAmount.
+            case "oneAmount", "allAmount" -> {
+                try{
+                    punishRatio = Double.parseDouble(value);
                 }catch(NumberFormatException e){
-                    System.out.println("[ERROR] Invalid RP passed. Must pass a double.");
+                    System.out.println("invalid punishRatio: must be a double");
                     exit();
                 }
-                RA = settings[CI++]; // strings dont get an exception when input = ""
-                if(!(RA.equals("smoothstep") || RA.equals("smootherstep") || RA.equals("linear") || RA.equals("0Many"))){
-                    System.out.println("[ERROR] Invalid RA passed. Valid options: \"smoothstep\", \"smootherstep\", \"linear\", \"0Many\".");
-                    exit();
-                }
-                RT = settings[CI++];
-                if(!(RT.equals("local") || RT.equals("pop"))){
-                    System.out.println("[ERROR] Invalid RT passed. Valid options: \"local\", \"pop\".");
-                    exit();
-                }
-                CI += 3; // increase CI by 3 since there are 3 more params left based on EWT.
-            }
-            case "punish" -> assignPunish();
-            case "proposalProb", "none" -> CI += 7; // skip 7 params (RP, RA, RT, punishFunc, punishCost, punishFine, punishRatio).
-            default -> {
-                System.out.println("[ERROR] Invalid EWT. Valid options: \"proposalProb\", \"rewire\", \"punish\", \"none\".");
-                exit();
             }
         }
     }
 
-    public static void assignEWL(){
-//        EWL = settings[CI++];
-//        switch(EWL){
-//            case "PROC", "UROC" -> assignROC();
-//            case "PD", "UD", "none" -> CI++; // skip 1 param (ROC).
-//            default -> {
-//                System.out.println("[ERROR] Invalid EWL. Valid options: \"PROC\", \"UROC\", \"PD\", \"UD\", \"none\".");
-//                exit();
-//            }
-//        }
+    public static void assignMutRate(String value){
+        switch(mut){
+            case "global", "local" -> {
+                try{
+                    mutRate = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid mutRate");
+                    exit();
+                }
+            }
+        }
+    }
 
-        String s = settings[CI++];
-        validateEWL(s);
-        EWL = s;
+    // if EWL is not PROC or UROC, nothing happens.
+    public static void assignROC(String value){
         switch(EWL){
-            case "PROC", "UROC" -> assignROC();
-            case "PD", "UD", "none" -> CI++; // skip 1 param (ROC).
-        }
-    }
-    public static void validateEWL(String s){
-//        switch(s){
-//            case "PROC", "UROC" -> assignROC();
-//            case "PD", "UD", "none" -> CI++; // skip 1 param (ROC).
-//            default -> {
-//                System.out.println("[ERROR] Invalid EWL. Valid options: \"PROC\", \"UROC\", \"PD\", \"UD\", \"none\".");
-//                exit();
-//            }
-//        }
-
-        switch(s){
-            case "PROC", "UROC", "PD", "UD", "none" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid EWL ("+s+"). Valid options: PROC, UROC, PD, UD, none.");
-                exit();
+            case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
+                try{
+                    ROC = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid ROC: must be a double");
+                    exit();
+                }
+                if(ROC < 0 && ROC > 1){
+                    System.out.println("invalid ROC: must be between 0 and 1.");
+                    exit();
+                }
             }
         }
     }
 
-    public static void assignSel(){
-//        sel = settings[CI++];
-//        switch(sel){
-//            case "RW" -> assignRWT();
-//            case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2; // skip 2 params (RWT, selNoise).
-//            default -> {
-//                System.out.println("[ERROR] Invalid sel. Valid options: \"RW\", \"elitist\", \"rank\", \"randomNeigh\"");
-//                exit();
-//            }
-//        }
-
-        String s = settings[CI++];
-        validateSel(s);
-        sel = s;
-        switch(sel){
-            case "RW" -> assignRWT();
-            case "elitist", "randomNeigh", "randomPop", "rank" -> CI += 2; // skip 2 params (RWT, selNoise).
-        }
-    }
-    public static void validateSel(String s){
-        switch(s){
-            case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> {}
-            default -> {
-                System.out.println("[ERROR] Invalid sel ("+s+"). Valid options: RW, elitist, rank, randomNeigh.");
-                exit();
-            }
-        }
-    }
-
-    public static void assignRWT(){
-        RWT = settings[CI++];
-        switch(RWT){
-            case "exponential" -> assignSelNoise();
-            case "normal" -> CI++;
-            default -> {
-                System.out.println("[ERROR] Invalid RWT. Valid options: \"exponential\", \"normal\".");
-                exit();
-            }
-        }
-    }
-
-    public static void assignSelNoise(){
-//        try {
-//            selNoise = Double.parseDouble(settings[CI++]);
-//        }catch(NumberFormatException e){
-//            System.out.println("[ERROR] Invalid selNoise: must be a double.");
-//            exit();
-//        }
-
-        String s = settings[CI++];
-        validateSelNoise(s);
-        selNoise = Double.parseDouble(s);
-    }
-    public static void validateSelNoise(String s){
+    public static void assignGens(String value){
         try{
-            double x = Double.parseDouble(s);
+            gens = Integer.parseInt(value);
         }catch(NumberFormatException e){
-            System.out.println("[ERROR] Invalid selNoise ("+s+"): must be a double.");
+            System.out.println("invalid gens: must be an integer");
+            exit();
+        }
+        if(gens < 1){
+            System.out.println("invalid gens: must be >= 1.");
             exit();
         }
     }
 
-    public static void assignUF(){
-//        UF = settings[CI++];
-//        switch(UF){
-//            case "cumulative", "normalised" -> {}
-//            default -> {
-//                System.out.println("[ERROR] Invalid UF. Valid options: \"cumulative\", \"normalised\".");
-//                exit();
-//            }
-//        }
-
-        String s = settings[CI++];
-        validateUF(s);
-        UF = s;
+    public static void assignER(String value){
+        try{
+            ER = Integer.parseInt(value);
+        }catch(NumberFormatException e){
+            System.out.println("invalid ER: must be an integer");
+            exit();
+        }
+        if(ER < 1){
+            System.out.println("invalid ER: must be >= 1.");
+            exit();
+        }
     }
-    public static void validateUF(String s){
-        switch(s){
-            case "cumulative", "normalised" -> {}
+
+    public static void assignLength(String value){
+        try{
+            length = Integer.parseInt(value);
+        }catch(NumberFormatException e){
+            System.out.println("invalid length: must be an integer");
+            exit();
+        }
+        if(length < 3){
+            System.out.println("invalid length: must be >= 3.");
+            exit();
+        }
+    }
+
+    public static void assignRuns(String value){
+        try{
+            runs = Integer.parseInt(value);
+        }catch(NumberFormatException e){
+            System.out.println("invalid runs: must be an integer");
+            exit();
+        }
+        if(runs < 1){
+            System.out.println("invalid runs: must be >= 1.");
+            exit();
+        }
+    }
+
+    public static void assignMutBound(String value){
+        switch(mut){
+            case "local" -> {
+                try{
+                    mutBound = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid mutBound");
+                    exit();
+                }
+            }
+        }
+    }
+
+    public static void assignMut(String value){
+        switch(value){
+            case "global", "local" -> mut = value;
+            default -> System.out.println("no mut");
+        }
+    }
+
+    public static void assignEWT(String value){
+        switch(value){
+
+            // case where value is valid.
+            case "proposalProb", "punish", "rewire" -> EWT = value;
+
+            // case where value is invalid.
+            // EWT can be unassigned.
+            default -> System.out.println("no EWT");
+        }
+    }
+
+    public static void assignEWL(String value){
+        switch(value){
+
+            // case where value is valid.
+            case "PROC", "UROC", "PD", "UD" -> EWL = value;
+
+            // case where value is invalid.
+            // EWL can be unassigned.
+            default -> System.out.println("no EWL");
+        }
+    }
+
+    public static void assignSel(String value){
+        switch(value){
+
+            // case where value is valid.
+            case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> sel = value;
+
+            // case where value is invalid.
             default -> {
-                System.out.println("[ERROR] Invalid UF ("+s+"). Valid options: cumulative, normalised.");
+                System.out.println("invalid sel");
                 exit();
             }
         }
+    }
+
+    public static void assignRWT(String value){
+        switch(sel){
+            case "RW" -> {
+                switch(value){
+                    case "exponential", "local" -> RWT = value;
+                    default -> {
+                        System.out.println("invalid RWT");
+                        exit();
+                    }
+                }
+            }
+        }
+    }
+
+    // the func leaves room for more sel funcs utilising selNoise, including one's not based on RW sel.
+    public static void assignSelNoise(String value){
+        switch(sel){
+            case "RW" -> {
+                switch(RWT) {
+                    case "exponential" -> {
+                        try{
+                            selNoise = Double.parseDouble(value);
+                        }catch(NumberFormatException e){
+                            System.out.println("invalid selNoise: must be a double");
+                            exit();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void assignUF(String value){
+        switch(value){
+            case "cumulative", "normalised" -> UF = value;
+            default -> {
+                System.out.println("invalid UF");
+                exit();
+            }
+        }
+
     }
 
     // accumulates VP (var param (variable parameter)) info inside and writes the output String to a file.
@@ -2621,21 +2437,60 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignVP(){
-        VP = settings[CI++];
-        switch(VP){
-            case "ER", "ROC", "length", "RP", "gens", "EWL", "RA", "RT", "sel", "selNoise", "mutRate", "mutBound", "UF", "punishFunc", "punishCost", "punishFine", "punishRatio" -> {
-                assignVariations();
-            }
+    public static void assignVP(String value){
+//        VP = settings[CI++];
+//        switch(VP){
+//            case    "ER",
+//                    "ROC",
+//                    "length",
+//                    "RP",
+//                    "gens",
+//                    "EWL",
+//                    "RA",
+//                    "RT",
+//                    "sel",
+//                    "selNoise",
+//                    "mut",
+//                    "mutRate",
+//                    "mutBound",
+//                    "UF",
+//                    "punishFunc",
+//                    "punishCost",
+//                    "punishFine",
+//                    "punishRatio" -> {
+//                assignVariations();
+//            }
+//            default -> System.out.println("[INFO] No follow-up experimentation involving parameter variation scheduled.");
+//        }
+
+        switch(value){
+            case    "ER",
+                    "ROC",
+                    "length",
+                    "RP",
+                    "gens",
+                    "EWL",
+                    "RA",
+                    "RT",
+                    "sel",
+                    "selNoise",
+                    "mut",
+                    "mutRate",
+                    "mutBound",
+                    "UF",
+                    "punishFunc",
+                    "punishCost",
+                    "punishFine",
+                    "punishRatio" -> VP = value;
             default -> System.out.println("[INFO] No follow-up experimentation involving parameter variation scheduled.");
         }
     }
 
-    public void assignNeighbourhood(Player player){
+    public void getNeighbours(Player player){
         switch(neighType){
             case"VN","Moore","dia"->adjacentNeigh(player);
             case"random"->randomNeigh(player, neighSize);
-            case"all"->allNeigh(player);
+            case"all"->allPopNeigh(player);
         }
     }
 
@@ -2646,7 +2501,7 @@ public class Env extends Thread{ // environment simulator
                 for(int i=0;i<N;i++) {
                     play(pop[i]); // play DG
                 }
-                if(!EWL.equals("")){
+                if(!EWL.isEmpty()){
                     for(int i=0;i<N;i++){
                         EWL(pop[i]); // edge weight learning
                     }
@@ -2717,42 +2572,31 @@ public class Env extends Thread{ // environment simulator
             for(int i=0;i<N;i++) {
                 play(pop[i]); // play DG
             }
+            if(!EWL.isEmpty()){
+                for(int i=0;i<N;i++) {
+                    EWL(pop[i]);
+                }
+            }
             int random_int = ThreadLocalRandom.current().nextInt(N);
             Player child = findPlayerByID(random_int);
             Player parent = selRandomNeigh(child);
             evoFD(child, parent);
+            mutGlobal(child);
         }
     }
 
-    public static void assignVariations(){
-        for (String variation : settings[CI].split(";")) {
-            switch(VP){
-                case "ER" -> validateER(variation);
-                case "ROC" -> validateROC(variation);
-                case "length" -> validateLength(variation);
-//                        case "RP" -> validateRP(variation);
-                case "gens" -> validateGens(variation);
-                case "EWL" -> validateEWL(variation);
-//                        case "RA" -> validateRA(variation);
-//                        case "RT" -> validateRT(variation);
-                case "sel" -> validateSel(variation);
-                case "selNoise" -> validateSelNoise(variation);
-                case "mutRate" -> validateMutRate(variation);
-                case "mutBound" -> validateMutBound(variation);
-                case "UF" -> validateUF(variation);
-                case "punishFunc" -> validatePunishFunc(variation);
-                case "punishCost" -> validatePunishCost(variation);
-                case "punishFine" -> validatePunishFine(variation);
-                case "punishRatio" -> validatePunishRatio(variation);
+    public static void assignVariations(String value){
+        if(!value.isEmpty()){
+            for (String variation : value.split(";")) {
+                variations.add(variation);
             }
-            variations.add(variation);
+            exps = variations.size() + 1;
         }
-        exps = variations.size() + 1;
     }
 
-    public static void assignWritePGenStats(){
+    public static void assignWritePGenStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writePGenStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2760,9 +2604,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteUGenStats(){
+    public static void assignWriteUGenStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writeUGenStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2770,9 +2614,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteKGenStats(){
+    public static void assignWriteKGenStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writeKGenStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2780,9 +2624,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWritePRunStats(){
+    public static void assignWritePRunStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writePRunStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2790,9 +2634,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteURunStats(){
+    public static void assignWriteURunStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writeURunStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2800,9 +2644,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteKRunStats(){
+    public static void assignWriteKRunStats(String value){
         try{
-            if(settings[CI++].equals("1")){
+            if(value.equals("1")){
                 writeKRunStats = true;
             }
         }catch(ArrayIndexOutOfBoundsException e){
@@ -2810,16 +2654,79 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteRate(){
+    public static void assignWriteRate(String value){
         if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
-            writeRate = Integer.parseInt(settings[CI++]);
-            // check in case user passes a double since what we want is an int?
-            if(writeRate < 1 || writeRate > gens){
-                System.out.println("[ERROR] Invalid writeRate passed. Must be between 1 and gens.");
+            try{
+                writeRate = Integer.parseInt(value);
+            }catch(NumberFormatException e){
+                System.out.println("invalid writeRate");
                 exit();
             }
-        }else{
-            CI++;
+        }
+    }
+
+    public static void assignWidth(){
+        width = length;
+    }
+
+    public static void assignN(){
+        N = length * width;
+    }
+
+    public static void assignGame(){
+        Player.setGame(game);
+    }
+
+    public static void assignRP(String value){
+        switch(EWT){
+            case "rewire" -> {
+                try{
+                    RP = Double.parseDouble(value);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid RP: must be a double");
+                    exit();
+                }
+                if(RP < 0 && RP > 1){
+                    System.out.println("invalid RP: must be between 0 and 1.");
+                    exit();
+                }
+            }
+        }
+    }
+
+    public static void assignRA(String value){
+        switch(EWT){ // value must be valid if EWT = rewire.
+            case "rewire" -> {
+                switch(value){
+
+                    // case where value is valid.
+                    case "smoothstep", "smootherstep", "linear", "0Many" -> RA = value;
+
+                    // case where value is invalid.
+                    default -> {
+                        System.out.println("invalid RA");
+                        exit();
+                    }
+                }
+            }
+        }
+    }
+
+    public static void assignRT(String value){
+        switch(EWT){ // value must be valid if EWT = rewire.
+            case "rewire" -> {
+                switch(value){
+
+                    // case where value is valid.
+                    case "local", "pop" -> RT = value;
+
+                    // case where value is invalid.
+                    default -> {
+                        System.out.println("invalid RT");
+                        exit();
+                    }
+                }
+            }
         }
     }
 }
