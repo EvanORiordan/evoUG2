@@ -892,7 +892,7 @@ public class Env extends Thread{ // environment simulator
         printTableLine();
 
         // asks user which configuration of settings they wish to use.
-        System.out.print("Beware: if you want to vary a parameter to some value that requires secondary parameters to be initialised, make sure to pass values to those secondary parameters!" +
+        System.out.print("Beware: if you want to vary a parameter to some value that requires secondary parameters to be initialised, make sure the configuration includes values for those secondary parameters!" +
                 "\nWhich config would you like to use? (int) ");
         boolean config_selected = false;
         int config_num;
@@ -1397,6 +1397,7 @@ public class Env extends Thread{ // environment simulator
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + sel;
+            settings += "," + evo;
             settings += !RWT.isEmpty()? "," + RWT: "";
             settings += noise != 0.0? "," + noise: "";
             settings += !mut.isEmpty() ? "," + mut: "";
@@ -2157,6 +2158,10 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid mutRate");
                     exit();
                 }
+                if(mutRate <= 0 || mutRate > 1){
+                    System.out.println("invalid mutRate: must be within the interval (0, 1].");
+                    exit();
+                }
             }
         }
     }
@@ -2171,8 +2176,8 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid ROC: must be a double");
                     exit();
                 }
-                if(ROC < 0 && ROC > 1){
-                    System.out.println("invalid ROC: must be between 0 and 1.");
+                if(ROC <= 0 || ROC > 1){
+                    System.out.println("invalid ROC: must be within the interval (0, 1].");
                     exit();
                 }
             }
@@ -2238,6 +2243,10 @@ public class Env extends Thread{ // environment simulator
                     mutBound = Double.parseDouble(value);
                 }catch(NumberFormatException e){
                     System.out.println("invalid mutBound");
+                    exit();
+                }
+                if(mutBound <= 0 || mutBound > 1){
+                    System.out.println("invalid mutBound: must be within the interval (0, 1].");
                     exit();
                 }
             }
@@ -2627,8 +2636,8 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid RP: must be a double");
                     exit();
                 }
-                if(RP < 0 && RP > 1){
-                    System.out.println("invalid RP: must be between 0 and 1.");
+                if(RP <= 0 || RP > 1){
+                    System.out.println("invalid RP: must be within the interval (0, 1].");
                     exit();
                 }
             }
