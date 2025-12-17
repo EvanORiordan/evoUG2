@@ -49,7 +49,8 @@ public class Env extends Thread{ // environment simulator
 //    static double S; // PD: sucker's payoff for cooperating with a defector
 //    static double l; // loner's payoff
     static String VP = ""; // variable parameter: indicates which parameter will be varied in experiment series.
-    static ArrayList<String> variations = new ArrayList<>();
+//    static ArrayList<String> variations = new ArrayList<>();
+    static String[] variations;
     static int exp; // indicates how far along we are through the experiment series
     static int exps = 1; // number of experiments in series
     static FileWriter fw;
@@ -85,7 +86,8 @@ public class Env extends Thread{ // environment simulator
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
 //    static String EM;
-    static String EM = "ERv2"; // evolution mechanism / evolutionary dynamics / strategy update process: the mechanism by which evolution occurs.
+//    static String EM = "ERv2"; // evolution mechanism / evolutionary dynamics / strategy update process: the mechanism by which evolution occurs.
+    static String genType; // indicates the type of generation the algorithm will employ.
     static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
     static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
     static String RWT = ""; // roulette wheel type
@@ -131,7 +133,7 @@ public class Env extends Thread{ // environment simulator
             }
             printPath();
         }
-        System.out.println("Starting timestamp: "+start_timestamp);
+        System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
         experimentSeries();
         LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
         System.out.println("Finishing timestamp: "+finish_timestamp);
@@ -150,37 +152,69 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experimentSeries(){
         for(exp = 1; exp <= exps; exp++){
-            System.out.println("start experiment " + exp);
+            System.out.println("Start experiment " + exp);
             exp_path = this_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-            if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
+            System.out.println("End experiment " + exp);
+
+//            if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
+//                switch(VP){
+//                    case "EWL" -> assignEWL(variations.get(exp - 1));
+//                    case "RA" -> assignRA(variations.get(exp - 1));
+//                    case "RT" -> assignRT(variations.get(exp - 1));
+//                    case "sel" -> assignSel(variations.get(exp - 1));
+//                    case "evo" -> assignEvo(variations.get(exp - 1));
+//                    case "noise" -> assignNoise(variations.get(exp - 1));
+//                    case "EWT" -> assignEWT(variations.get(exp - 1));
+//                    case "gens" -> assignGens(variations.get(exp - 1));
+//                    case "length" -> {
+//                        assignLength(variations.get(exp - 1));
+//                        assignWidth();
+//                        assignN();
+//                    }
+//                    case "ER" -> assignER(variations.get(exp - 1));
+//                    case "ROC" -> assignROC(variations.get(exp - 1));
+//                    case "RP" -> assignRP(variations.get(exp - 1));
+//                    case "mutRate" -> assignMutRate(variations.get(exp - 1));
+//                    case "mutBound" -> assignMutBound(variations.get(exp - 1));
+//                    case "UF" -> assignUF(variations.get(exp - 1));
+//                    case "punishFunc" -> assignPunishFunc(variations.get(exp - 1));
+//                    case "punishCost" -> assignPunishCost(variations.get(exp - 1));
+//                    case "punishFine" -> assignPunishFine(variations.get(exp - 1));
+//                    case "punishRatio" -> assignPunishRatio(variations.get(exp - 1));
+//                }
+//            }
+
+            if(exp <= variations.length){ // do not try to vary after the last experiment has ended
+                System.out.println("Varying "+VP+"...");
                 switch(VP){
-                    case "EWL" -> assignEWL(variations.get(exp - 1));
-                    case "RA" -> assignRA(variations.get(exp - 1));
-                    case "RT" -> assignRT(variations.get(exp - 1));
-                    case "sel" -> assignSel(variations.get(exp - 1));
-                    case "evo" -> assignEvo(variations.get(exp - 1));
-                    case "noise" -> assignNoise(variations.get(exp - 1));
-                    case "EWT" -> assignEWT(variations.get(exp - 1));
-                    case "gens" -> assignGens(variations.get(exp - 1));
+                    case "EWL" -> assignEWL(variations[exp - 1]);
+                    case "RA" -> assignRA(variations[exp - 1]);
+                    case "RT" -> assignRT(variations[exp - 1]);
+                    case "sel" -> assignSel(variations[exp - 1]);
+                    case "evo" -> assignEvo(variations[exp - 1]);
+                    case "noise" -> assignNoise(variations[exp - 1]);
+                    case "EWT" -> assignEWT(variations[exp - 1]);
+                    case "gens" -> assignGens(variations[exp - 1]);
                     case "length" -> {
-                        assignLength(variations.get(exp - 1));
+                        assignLength(variations[exp - 1]);
                         assignWidth();
                         assignN();
                     }
-                    case "ER" -> assignER(variations.get(exp - 1));
-                    case "ROC" -> assignROC(variations.get(exp - 1));
-                    case "RP" -> assignRP(variations.get(exp - 1));
-                    case "mutRate" -> assignMutRate(variations.get(exp - 1));
-                    case "mutBound" -> assignMutBound(variations.get(exp - 1));
-                    case "UF" -> assignUF(variations.get(exp - 1));
-                    case "punishFunc" -> assignPunishFunc(variations.get(exp - 1));
-                    case "punishCost" -> assignPunishCost(variations.get(exp - 1));
-                    case "punishFine" -> assignPunishFine(variations.get(exp - 1));
-                    case "punishRatio" -> assignPunishRatio(variations.get(exp - 1));
+                    case "ER" -> assignER(variations[exp - 1]);
+                    case "ROC" -> assignROC(variations[exp - 1]);
+                    case "RP" -> assignRP(variations[exp - 1]);
+                    case "mutRate" -> assignMutRate(variations[exp - 1]);
+                    case "mutBound" -> assignMutBound(variations[exp - 1]);
+                    case "UF" -> assignUF(variations[exp - 1]);
+                    case "punishFunc" -> assignPunishFunc(variations[exp - 1]);
+                    case "punishCost" -> assignPunishCost(variations[exp - 1]);
+                    case "punishFine" -> assignPunishFine(variations[exp - 1]);
+                    case "punishRatio" -> assignPunishRatio(variations[exp - 1]);
                 }
             }
+
         }
     }
 
@@ -193,7 +227,7 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experiment(){
         for(run = 1; run <= runs; run++){
-            System.out.println("start run " + run);
+            System.out.println("Start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -230,11 +264,11 @@ public class Env extends Thread{ // environment simulator
         writeGenAndRunStats();
 
         // activate population.
-        switch(EM){
-            case "ERv2" -> ERv2();
+        switch(genType){
+            case "ER" -> ER();
             case "MCv1" -> MCv1();
             case "MCv2" -> MCv2();
-            case "testEM1" -> testEM1();
+            case "oneGuyEvo" -> oneGuyEvo();
         }
         writeExpStats();
     }
@@ -786,6 +820,7 @@ public class Env extends Thread{ // environment simulator
                 " %-6s |"+//config
                 " %-4s |"+//runs
                 " %-6s |"+//length
+                " %-9s |"+//genType
                 " %-4s |"+//ER
                 " %-8s |"+//gens
                 " %-12s |"+//EWT
@@ -818,6 +853,7 @@ public class Env extends Thread{ // environment simulator
                 ,"config"
                 ,"runs"
                 ,"length"
+                ,"genType"
                 ,"ER"
                 ,"gens"
                 ,"EWT"
@@ -858,7 +894,8 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-6d ", i); //config
             System.out.printf("| %-4s ", settings[CI++]); //runs
             System.out.printf("| %-6s ", settings[CI++]); //length
-            System.out.printf("| %-4s ", settings[CI++]); //ER
+            System.out.printf("| %-9s ", settings[CI++]); // genType
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //ER
             System.out.printf("| %-8s ", settings[CI++]); //gens
             System.out.printf("| %-12s ", settings[CI++]); //EWT
             System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //RP
@@ -908,11 +945,13 @@ public class Env extends Thread{ // environment simulator
         // assigns values from user-selected configuration to environmental parameters.
         settings = configurations.get(config_num).split(",");
         CI = 0;
+        System.out.println("Start assigning settings...");
         assignGame();
         assignRuns(settings[CI++]);
         assignLength(settings[CI++]);
         assignWidth();
         assignN();
+        assignGenType(settings[CI++]);
         assignER(settings[CI++]);
         assignGens(settings[CI++]);
         assignEWT(CI!=settings.length? settings[CI++]: "");
@@ -1351,7 +1390,7 @@ public class Env extends Thread{ // environment simulator
                 settings += ",length";
                 settings += ",width";
                 settings += ",N";
-                settings += ",EM";
+                settings += ",genType";
                 settings += ER != 0? ",ER": "";
                 settings += NIS != 0? ",NIS": "";
                 settings += ",gens";
@@ -1381,7 +1420,7 @@ public class Env extends Thread{ // environment simulator
             settings += "," + length;
             settings += "," + width;
             settings += "," + N;
-            settings += "," + EM;
+            settings += "," + genType;
             settings += ER != 0? "," + ER: "";
             settings += NIS != 0? "," + NIS: "";
             settings += "," + gens;
@@ -1529,8 +1568,10 @@ public class Env extends Thread{ // environment simulator
 
     public Player selRandomNeigh(Player child){
         Player parent = child;
-        if(child.getK() > 0){
-            parent = child.getOmega().get(ThreadLocalRandom.current().nextInt(child.getK()));
+        int k = child.getK();
+        if(k > 0){
+            int random_int = ThreadLocalRandom.current().nextInt(k);
+            parent = child.getOmega().get(random_int);
         }
         return parent;
     }
@@ -2015,11 +2056,18 @@ public class Env extends Thread{ // environment simulator
      * the closer K is to infinity, the more the child accounts for the parent's fitness.
      * the closer K is to 0.0, the less the child accounts for fitness,
      * in which case unfit individuals are about as likely to be imitated as fit individuals.
+     * evolve_probability = 1 / (1 + Math.exp(child.getU() - parent.getU() / K));
      */
     public void evoFD(Player child, Player parent){
         double random_double = ThreadLocalRandom.current().nextDouble();
         double K = noise;
-        double evolve_probability = 1 / (1 + Math.exp(child.getU() - parent.getU() / K));
+        double u_x = child.getU();
+        double u_y = parent.getU();
+        double u_diff = u_x - u_y;
+        double divided_by_K = u_diff / K;
+        double exponential = Math.exp(divided_by_K);
+        double denominator = 1 + exponential;
+        double evolve_probability = 1 / denominator;
         if (random_double < evolve_probability){
             evoCopy(child, parent);
         }
@@ -2091,6 +2139,7 @@ public class Env extends Thread{ // environment simulator
             case "oneProb", "allProb" -> {
                 try{
                     punishCost = Double.parseDouble(value);
+                    System.out.println("punishCost="+punishCost);
                 }catch(NumberFormatException e){
                     System.out.println("invalid punishCost: must be a double");
                     exit();
@@ -2106,6 +2155,7 @@ public class Env extends Thread{ // environment simulator
             case "oneProb", "allProb" -> {
                 try{
                     punishFine = Double.parseDouble(value);
+                    System.out.println("punishFine="+punishFine);
                 }catch(NumberFormatException e){
                     System.out.println("invalid punishFine: must be a double");
                     exit();
@@ -2122,7 +2172,10 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
 
                     // case where value is valid.
-                    case "allProb", "oneProb", "allAmount", "oneAmount" -> punishFunc = value;
+                    case "allProb", "oneProb", "allAmount", "oneAmount" -> {
+                        punishFunc = value;
+                        System.out.println("punishFunc="+punishFunc);
+                    }
 
                     // case where value is invalid.
                     default -> {
@@ -2141,6 +2194,7 @@ public class Env extends Thread{ // environment simulator
             case "oneAmount", "allAmount" -> {
                 try{
                     punishRatio = Double.parseDouble(value);
+                    System.out.println("punishRatio="+punishRatio);
                 }catch(NumberFormatException e){
                     System.out.println("invalid punishRatio: must be a double");
                     exit();
@@ -2154,6 +2208,7 @@ public class Env extends Thread{ // environment simulator
             case "global", "local" -> {
                 try{
                     mutRate = Double.parseDouble(value);
+                    System.out.println("mutRate="+mutRate);
                 }catch(NumberFormatException e){
                     System.out.println("invalid mutRate");
                     exit();
@@ -2172,6 +2227,7 @@ public class Env extends Thread{ // environment simulator
             case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
                 try{
                     ROC = Double.parseDouble(value);
+                    System.out.println("ROC="+ROC);
                 }catch(NumberFormatException e){
                     System.out.println("invalid ROC: must be a double");
                     exit();
@@ -2187,6 +2243,7 @@ public class Env extends Thread{ // environment simulator
     public static void assignGens(String value){
         try{
             gens = Integer.parseInt(value);
+            System.out.println("gens="+gens);
         }catch(NumberFormatException e){
             System.out.println("invalid gens: must be an integer");
             exit();
@@ -2198,21 +2255,27 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void assignER(String value){
-        try{
-            ER = Integer.parseInt(value);
-        }catch(NumberFormatException e){
-            System.out.println("invalid ER: must be an integer");
-            exit();
-        }
-        if(ER < 1){
-            System.out.println("invalid ER: must be >= 1.");
-            exit();
+        switch(genType) {
+            case "ER" -> {
+                try{
+                    ER = Integer.parseInt(value);
+                    System.out.println("ER="+ER);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid ER: must be an integer");
+                    exit();
+                }
+                if(ER < 1){
+                    System.out.println("invalid ER: must be >= 1.");
+                    exit();
+                }
+            }
         }
     }
 
     public static void assignLength(String value){
         try{
             length = Integer.parseInt(value);
+            System.out.println("length="+length);
         }catch(NumberFormatException e){
             System.out.println("invalid length: must be an integer");
             exit();
@@ -2226,6 +2289,7 @@ public class Env extends Thread{ // environment simulator
     public static void assignRuns(String value){
         try{
             runs = Integer.parseInt(value);
+            System.out.println("runs="+runs);
         }catch(NumberFormatException e){
             System.out.println("invalid runs: must be an integer");
             exit();
@@ -2241,6 +2305,7 @@ public class Env extends Thread{ // environment simulator
             case "local" -> {
                 try{
                     mutBound = Double.parseDouble(value);
+                    System.out.println("mutBound="+mutBound);
                 }catch(NumberFormatException e){
                     System.out.println("invalid mutBound");
                     exit();
@@ -2255,7 +2320,10 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignMut(String value){
         switch(value){
-            case "global", "local" -> mut = value;
+            case "global", "local" -> {
+                mut = value;
+                System.out.println("mut="+mut);
+            }
             default -> System.out.println("no mut");
         }
     }
@@ -2264,7 +2332,10 @@ public class Env extends Thread{ // environment simulator
         switch(value){
 
             // case where value is valid.
-            case "proposalProb", "punish", "rewire" -> EWT = value;
+            case "proposalProb", "punish", "rewire" -> {
+                EWT = value;
+                System.out.println("EWT="+EWT);
+            }
 
             // case where value is invalid.
             // EWT can be unassigned.
@@ -2276,7 +2347,10 @@ public class Env extends Thread{ // environment simulator
         switch(value){
 
             // case where value is valid.
-            case "PROC", "UROC", "PD", "UD" -> EWL = value;
+            case "PROC", "UROC", "PD", "UD" -> {
+                EWL = value;
+                System.out.println("EWL="+EWL);
+            }
 
             // case where value is invalid.
             // EWL can be unassigned.
@@ -2288,7 +2362,10 @@ public class Env extends Thread{ // environment simulator
         switch(value){
 
             // case where value is valid.
-            case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> sel = value;
+            case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> {
+                sel = value;
+                System.out.println("sel="+sel);
+            }
 
             // case where value is invalid.
             default -> {
@@ -2302,7 +2379,10 @@ public class Env extends Thread{ // environment simulator
         switch(sel){
             case "RW" -> {
                 switch(value){
-                    case "exponential", "local" -> RWT = value;
+                    case "exponential", "local" -> {
+                        RWT = value;
+                        System.out.println("RWT="+RWT);
+                    }
                     default -> {
                         System.out.println("invalid RWT");
                         exit();
@@ -2318,9 +2398,7 @@ public class Env extends Thread{ // environment simulator
         switch(sel){
             case "RW" -> {
                 switch(RWT) {
-                    case "exponential" -> {
-                        assign = true;
-                    }
+                    case "exponential" -> assign = true;
                 }
             }
         }
@@ -2330,6 +2408,7 @@ public class Env extends Thread{ // environment simulator
         if(assign){
             try{
                 noise = Double.parseDouble(value);
+                System.out.println("noise="+noise);
             }catch(NumberFormatException e){
                 System.out.println("invalid noise: must be a double");
                 exit();
@@ -2339,7 +2418,10 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignUF(String value){
         switch(value){
-            case "cumulative", "normalised" -> UF = value;
+            case "cumulative", "normalised" -> {
+                UF = value;
+                System.out.println("UF="+UF);
+            }
             default -> {
                 System.out.println("invalid UF");
                 exit();
@@ -2415,7 +2497,10 @@ public class Env extends Thread{ // environment simulator
                     "punishFunc",
                     "punishCost",
                     "punishFine",
-                    "punishRatio" -> VP = value;
+                    "punishRatio" -> {
+                VP = value;
+                System.out.println("VP="+VP);
+            }
             default -> System.out.println("[INFO] No follow-up experimentation involving parameter variation scheduled.");
         }
     }
@@ -2428,7 +2513,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public void ERv2(){
+    public void ER(){
         rounds = 0;
         for(gen = 1; gen <= gens; gen++){ // gens
             for(int round = 0; round < ER; round++){ // rounds
@@ -2489,7 +2574,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public void MCv2(){
-//        for(gen=1;gen<=gens;gens++){
+//        for(gen=1;gen<=gens;gen++){
 //            for(int i=0;i<NIS;i++){
 //                int random_int = ThreadLocalRandom.current().nextInt(N);
 //                Player player = findPlayerByID(random_int);
@@ -2503,8 +2588,8 @@ public class Env extends Thread{ // environment simulator
     }
 
     // one agent may evolve per gen.
-    public void testEM1(){
-        for(gen=1;gen<=gens;gens++){
+    public void oneGuyEvo(){
+        for(gen=1;gen<=gens;gen++){
             for(int i=0;i<N;i++) {
                 play(pop[i]); // play DG
             }
@@ -2532,15 +2617,34 @@ public class Env extends Thread{ // environment simulator
                 evo(child, parent);
                 mut(child);
             }
+            calculateStats(); // calculate stats at end of gen
+            writeGenAndRunStats(); // write gen and run stats at end of gen
+            prepare(); // reset certain attributes at end of gen
         }
     }
 
     public static void assignVariations(String value){
         if(!value.isEmpty()){
-            for (String variation : value.split(";")) {
-                variations.add(variation);
+
+//            for (String variation : value.split(";")) {
+//                variations.add(variation);
+//                System.out.println("variation="+variation);
+//            }
+
+//            String[] split = value.split(";");
+//            for(int i=0;i<split.length;i++){
+//                String variation = split[i];
+//                variations.add(variation);
+//                System.out.println("variation"+(i+1)+"="+variation);
+//            }
+//            exps = variations.size() + 1;
+
+            variations = value.split(";");
+            for(int i=0;i<variations.length;i++){
+                System.out.println("variation"+(i+1)+"="+variations[i]);
             }
-            exps = variations.size() + 1;
+            exps = variations.length + 1;
+
         }
     }
 
@@ -2548,6 +2652,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writePGenStats = true;
+                System.out.println("writePGenStats="+writePGenStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record p gen stats.");
@@ -2558,6 +2663,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writeUGenStats = true;
+                System.out.println("writeUGenStats="+writeUGenStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record u gen stats.");
@@ -2568,6 +2674,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writeKGenStats = true;
+                System.out.println("writeKGenStats="+writeKGenStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record k gen stats.");
@@ -2578,6 +2685,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writePRunStats = true;
+                System.out.println("writePRunStats="+writePRunStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record p run stats.");
@@ -2588,6 +2696,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writeURunStats = true;
+                System.out.println("writeURunStats="+writeURunStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record u run stats.");
@@ -2598,6 +2707,7 @@ public class Env extends Thread{ // environment simulator
         try{
             if(value.equals("1")){
                 writeKRunStats = true;
+                System.out.println("writeKRunStats="+writeKRunStats);
             }
         }catch(ArrayIndexOutOfBoundsException e){
             System.out.println("[INFO] Will not record k run stats.");
@@ -2608,6 +2718,7 @@ public class Env extends Thread{ // environment simulator
         if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
             try{
                 writeRate = Integer.parseInt(value);
+                System.out.println("writeRate="+writeRate);
             }catch(NumberFormatException e){
                 System.out.println("invalid writeRate");
                 exit();
@@ -2617,14 +2728,17 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignWidth(){
         width = length;
+        System.out.println("width="+width);
     }
 
     public static void assignN(){
         N = length * width;
+        System.out.println("N="+N);
     }
 
     public static void assignGame(){
         Player.setGame(game);
+        System.out.println("game="+game);
     }
 
     public static void assignRP(String value){
@@ -2632,6 +2746,7 @@ public class Env extends Thread{ // environment simulator
             case "rewire" -> {
                 try{
                     RP = Double.parseDouble(value);
+                    System.out.println("RP="+RP);
                 }catch(NumberFormatException e){
                     System.out.println("invalid RP: must be a double");
                     exit();
@@ -2650,7 +2765,10 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
 
                     // case where value is valid.
-                    case "smoothstep", "smootherstep", "linear", "0Many" -> RA = value;
+                    case "smoothstep", "smootherstep", "linear", "0Many" -> {
+                        RA = value;
+                        System.out.println("RA="+RA);
+                    }
 
                     // case where value is invalid.
                     default -> {
@@ -2668,7 +2786,10 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
 
                     // case where value is valid.
-                    case "local", "pop" -> RT = value;
+                    case "local", "pop" -> {
+                        RT = value;
+                        System.out.println("RT="+RT);
+                    }
 
                     // case where value is invalid.
                     default -> {
@@ -2689,11 +2810,31 @@ public class Env extends Thread{ // environment simulator
                     "FD",
 //                    "approach",
                     "UD",
-                    "UDN" -> evo = value;
+                    "UDN" -> {
+                evo = value;
+                System.out.println("evo="+evo);
+            }
 
             // case where value is invalid.
             default -> {
                 System.out.println("invalid evo");
+                exit();
+            }
+        }
+    }
+
+    public static void assignGenType(String value){
+        switch(value){
+
+            // case where value is valid.
+            case "ER", "MCv1", "MCv2", "oneGuyEvo"-> {
+                genType = value;
+                System.out.println("genType="+genType);
+            }
+
+            // case where value is invalid.
+            default -> {
+                System.out.println("invalid genType");
                 exit();
             }
         }
