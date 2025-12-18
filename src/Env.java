@@ -50,7 +50,7 @@ public class Env extends Thread{ // environment simulator
 //    static double l; // loner's payoff
     static String VP = ""; // variable parameter: indicates which parameter will be varied in experiment series.
 //    static ArrayList<String> variations = new ArrayList<>();
-    static String[] variations;
+    static String[] variations = new String[]{};
     static int exp; // indicates how far along we are through the experiment series
     static int exps = 1; // number of experiments in series
     static FileWriter fw;
