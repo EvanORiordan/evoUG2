@@ -1435,8 +1435,10 @@ public class Env extends Thread{ // environment simulator
             settings += punishRatio != 0.0? "," + punishRatio: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
-            settings += "," + sel;
+//            settings += "," + sel;
+//            settings += "," + evo;
             settings += "," + evo;
+            settings += "," + sel;
             settings += !RWT.isEmpty()? "," + RWT: "";
             settings += noise != 0.0? "," + noise: "";
             settings += !mut.isEmpty() ? "," + mut: "";
@@ -2028,7 +2030,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * punisher tries to punish all neighbours.
      * a denotes punisher.
-     * b denotes punishee i.e. the neighbour that may be punished by a.
+     * b denotes punishee neighbour of a.
      * probability of punishing = 1 - w_ab.
      * higher w_ab ==> lower probability of a punishing b.
      * w_ab = 1.0 ==> guaranteed not to punish.
@@ -2041,7 +2043,9 @@ public class Env extends Thread{ // environment simulator
         for(int i=0;i<a.getK();i++){
             Player b = omega_a.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
-            if(weights.get(i) < random_double){
+            double w_ab = weights.get(i);
+            double punish_prob = 1 - w_ab;
+            if(punish_prob > random_double){
                 a.setU(a.getU() - punishCost);
                 b.setU(b.getU() - punishFine);
             }
