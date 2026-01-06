@@ -1435,8 +1435,6 @@ public class Env extends Thread{ // environment simulator
             settings += punishRatio != 0.0? "," + punishRatio: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
-//            settings += "," + sel;
-//            settings += "," + evo;
             settings += "," + evo;
             settings += "," + sel;
             settings += !RWT.isEmpty()? "," + RWT: "";
@@ -2383,7 +2381,7 @@ public class Env extends Thread{ // environment simulator
         switch(sel){
             case "RW" -> {
                 switch(value){
-                    case "exponential", "local" -> {
+                    case "exponential", "normal" -> {
                         RWT = value;
                         System.out.println("RWT="+RWT);
                     }
