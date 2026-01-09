@@ -2109,8 +2109,10 @@ public class Env extends Thread{ // environment simulator
         ArrayList<Player> omega_a = a.getOmega();
         int random_int = ThreadLocalRandom.current().nextInt(a.getK());
         Player b = omega_a.get(random_int);
+        double w_ab = weights.get(random_int);
+        double punish_prob = 1 - w_ab;
         double random_double = ThreadLocalRandom.current().nextDouble();
-        if(weights.get(random_int) < random_double){
+        if(punish_prob > random_double){
             a.setU(a.getU() - punishCost);
             b.setU(b.getU() - punishFine);
         }
