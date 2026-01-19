@@ -1448,7 +1448,7 @@ public class Env extends Thread{ // environment simulator
             String output = "";
             if(exp == 1) {
                 if(writePRunStats){
-                    output+="mean avg p,sigma mean p,";
+                    output+="mean avg p,sigma avg p,";
                 }
                 if(writeURunStats){
                     output+="mean avg u,";
@@ -1465,7 +1465,7 @@ public class Env extends Thread{ // environment simulator
                 output = removeTrailingComma(output);
             }
             double mean_avg_p = 0.0;
-            double sigma_mean_p = 0.0;
+            double sigma_avg_p = 0.0;
             double mean_avg_u = 0.0;
             double mean_sigma_k = 0.0;
             double[] mean_p_values = new double[runs];
@@ -1511,12 +1511,12 @@ public class Env extends Thread{ // environment simulator
                     mean_sigma_k /= runs;
                 }
                 for(int i=0;i<runs;i++){
-                    sigma_mean_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
+                    sigma_avg_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
                 }
-                sigma_mean_p = Math.pow(sigma_mean_p / runs, 0.5);
+                sigma_avg_p = Math.pow(sigma_avg_p / runs, 0.5);
                 output += "\n";
                 if(writePRunStats){
-                    output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_mean_p) + ",";
+                    output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
                 }
                 if(writeURunStats){
                     output+=DF4.format(mean_avg_u) + ",";

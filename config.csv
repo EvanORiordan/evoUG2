@@ -5,5 +5,10 @@ runs,length,EM,ER,gens,EWT,RP,RA,RT,punishFunc,punishCost,punishFine,punishRatio
 15,50,ER,1,10000,punish,,,,allProb,1,3,,1,PD,,copy,rank,,,global,0,,cumulative,,,,1,,,1,mutRate,.001;.002;.003;.005;.0075;.01;.02;.03;.05;.075;.1;.2;.3;.5;.75;1
 15,50,ER,1,10000,punish,,,,allProb,.1,.1,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishFine,.2;.3;.4;.5;.6;.7;.8;.9;1
 15,50,ER,1,10000,punish,,,,allProb,.1,.2,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishFine,.4;.6;.8;1;1.2;1.4;1.6;1.8;2.0
-15,50,ER,1,10000,punish,,,,allProb,.2,.2,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishFine,.4;.6;.8;1;1.2;1.4;1.6;1.8;2.0
 50,50,ER,1,10000,punish,,,,allProb,1,3,,1,PD,,copy,rank,,,global,.001,,cumulative,,,,1,,,1,,
+15,50,ER,1,10000,punish,,,,allProb,.2,.2,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishFine,.4;.6;.8;1;1.2;1.4;1.6;1.8;2.0
+15,50,ER,1,10000,punish,,,,allProb,.2,.2,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,,
+15,50,ER,1,10000,punish,,,,allProb,.25,.25,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishFine,.5;.75;1;1.25;1.5;1.75;2;2.25;2.5;2.75;3
+15,50,ER,1,10000,punish,,,,allProb,.25,3,,1,PD,,copy,rank,,,global,.01,,cumulative,,,,1,,,1,punishCost,.5;.75;1;1.25;1.5;1.75;2;2.25;2.5;2.75;3
+1,50,ER,1,10000,punish,,,,allProb,1,3,,1,PD,,copy,rank,,,global,.01,,cumulative,1,1,,1,1,,1,,
+1,50,ER,1,10000,punish,,,,allProb,1,2,,1,PD,,copy,rank,,,global,.01,,cumulative,1,1,,1,1,,1,,
