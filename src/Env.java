@@ -107,6 +107,7 @@ public class Env extends Thread{ // environment simulator
     static double punishRatio;
     static int CI; // configuration index
 //    static String[] settings; // configuration settings
+    static boolean NU; // negative utility param: if true, agents can have negative utility.
 
 
 
@@ -157,35 +158,6 @@ public class Env extends Thread{ // environment simulator
             createDataFolders();
             experiment(); // run an experiment of the series
             System.out.println("End experiment " + exp);
-
-//            if(exp <= variations.size()){ // do not try to vary after the last experiment has ended
-//                switch(VP){
-//                    case "EWL" -> assignEWL(variations.get(exp - 1));
-//                    case "RA" -> assignRA(variations.get(exp - 1));
-//                    case "RT" -> assignRT(variations.get(exp - 1));
-//                    case "sel" -> assignSel(variations.get(exp - 1));
-//                    case "evo" -> assignEvo(variations.get(exp - 1));
-//                    case "noise" -> assignNoise(variations.get(exp - 1));
-//                    case "EWT" -> assignEWT(variations.get(exp - 1));
-//                    case "gens" -> assignGens(variations.get(exp - 1));
-//                    case "length" -> {
-//                        assignLength(variations.get(exp - 1));
-//                        assignWidth();
-//                        assignN();
-//                    }
-//                    case "ER" -> assignER(variations.get(exp - 1));
-//                    case "ROC" -> assignROC(variations.get(exp - 1));
-//                    case "RP" -> assignRP(variations.get(exp - 1));
-//                    case "mutRate" -> assignMutRate(variations.get(exp - 1));
-//                    case "mutBound" -> assignMutBound(variations.get(exp - 1));
-//                    case "UF" -> assignUF(variations.get(exp - 1));
-//                    case "punishFunc" -> assignPunishFunc(variations.get(exp - 1));
-//                    case "punishCost" -> assignPunishCost(variations.get(exp - 1));
-//                    case "punishFine" -> assignPunishFine(variations.get(exp - 1));
-//                    case "punishRatio" -> assignPunishRatio(variations.get(exp - 1));
-//                }
-//            }
-
             if(exp <= variations.length){ // do not try to vary after the last experiment has ended
                 System.out.println("Varying "+VP+"...");
                 switch(VP){
@@ -212,9 +184,9 @@ public class Env extends Thread{ // environment simulator
                     case "punishCost" -> assignPunishCost(variations[exp - 1]);
                     case "punishFine" -> assignPunishFine(variations[exp - 1]);
                     case "punishRatio" -> assignPunishRatio(variations[exp - 1]);
+                    case "NU" -> assignNU(variations[exp - 1]);
                 }
             }
-
         }
     }
 
@@ -583,6 +555,7 @@ public class Env extends Thread{ // environment simulator
                     learning = -1.0;
                 }
             }
+            case "PDhalf" -> learning = (b.getP() - a.getP()) / 2;
         }
         return learning;
     }
@@ -610,7 +583,7 @@ public class Env extends Thread{ // environment simulator
         for(int i = 0; i < size; i++){
             switch(RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
-                case "exponential" -> pockets[i] = Math.exp(pool.get(i).getU() * noise);
+                case "expo" -> pockets[i] = Math.exp(pool.get(i).getU() * noise);
             }
             roulette_total += pockets[i];
         }
@@ -830,25 +803,26 @@ public class Env extends Thread{ // environment simulator
                 " %-10s |"+//punishFunc
                 " %-10s |"+//punishCost
                 " %-10s |"+//punishFine
-                " %-15s |"+//punishRatio
-                " %-5s |"+//EWL
+                " %-11s |"+//punishRatio
+                " %-2s |"+//NU
+                " %-6s |"+//EWL
                 " %-5s |"+//ROC
                 " %-10s |"+//evo
-                " %-15s |"+//sel
-                " %-15s |"+//RWT
-                " %-10s |"+//noise
-                " %-10s |"+//mut
-                " %-10s |"+//mutRate
-                " %-10s |"+//mutBound
+                " %-11s |"+//sel
+                " %-6s |"+//RWT
+                " %-5s |"+//noise
+                " %-6s |"+//mut
+                " %-7s |"+//mutRate
+                " %-8s |"+//mutBound
                 " %-10s |"+//UF
-                " %-5s |"+//WPGS
-                " %-5s |"+//WUGS
-                " %-5s |"+//WKGS
-                " %-5s |"+//WPRS
-                " %-5s |"+//WURS
-                " %-5s |"+//WKRS
-                " %-10s |"+//writeRate
-                " %-15s |"+//VP
+                " %-4s |"+//WPGS
+                " %-4s |"+//WUGS
+                " %-4s |"+//WKGS
+                " %-4s |"+//WPRS
+                " %-4s |"+//WURS
+                " %-4s |"+//WKRS
+                " %-9s |"+//writeRate
+                " %-11s |"+//VP
                 " %s%n"//variations
                 ,"config"
                 ,"runs"
@@ -864,6 +838,7 @@ public class Env extends Thread{ // environment simulator
                 ,"punishCost"
                 ,"punishFine"
                 ,"punishRatio"
+                ,"NU"
                 ,"EWL"
                 ,"ROC"
                 ,"evo"
@@ -904,25 +879,26 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFunc
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishCost
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFine
-            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //EWL
+            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
+            System.out.printf("| %-2s ", CI!=settings.length? settings[CI++]: ""); //NU
+            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //EWL
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //ROC
             System.out.printf("| %-10s ", settings[CI++]); //evo
-            System.out.printf("| %-15s ", settings[CI++]); //sel
-            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RWT
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //noise
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mut
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutRate
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //mutBound
+            System.out.printf("| %-11s ", settings[CI++]); //sel
+            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //RWT
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //noise
+            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //mut
+            System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //mutRate
+            System.out.printf("| %-8s ", CI!=settings.length? settings[CI++]: ""); //mutBound
             System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPGS
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WUGS
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKGS
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WPRS
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WURS
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //WKRS
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //writeRate
-            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //VP
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WPGS
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WUGS
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WKGS
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WPRS
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WURS
+            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WKRS
+            System.out.printf("| %-9s ", CI!=settings.length? settings[CI++]: ""); //writeRate
+            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //VP
             System.out.printf("| %s ", CI!=settings.length? settings[CI++]: ""); //variations
             System.out.println();
         }
@@ -962,6 +938,7 @@ public class Env extends Thread{ // environment simulator
         assignPunishCost(CI!=settings.length? settings[CI++]: "");
         assignPunishFine(CI!=settings.length? settings[CI++]: "");
         assignPunishRatio(CI!=settings.length? settings[CI++]: "");
+        assignNU(CI!=settings.length? settings[CI++]: "");
         assignEWL(CI!=settings.length? settings[CI++]: "");
         assignROC(CI!=settings.length? settings[CI++]: "");
         assignEvo(settings[CI++]);
@@ -1403,14 +1380,16 @@ public class Env extends Thread{ // environment simulator
                 settings += punishCost != 0.0? ",punishCost": "";
                 settings += punishFine != 0.0? ",punishFine": "";
                 settings += punishRatio != 0.0? ",punishRatio": "";
+                settings += EWT.equals("punish")? ",NU": ""; // NU
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
                 settings += ",sel";
                 settings += !RWT.isEmpty()? ",RWT": "";
                 settings += noise != 0.0? ",noise": "";
-                settings += !mut.isEmpty() ? ",mut": "";
-                settings += mutRate != 0.0? ",mutRate": "";
+                settings += mut.isEmpty()? "": ",mut";
+//                settings += mutRate != 0.0? ",mutRate": "";
+                settings += mut.isEmpty()? "": ",mutRate"; // mutRate
                 settings += mutBound != 0.0? ",mutBound": "";
                 settings += ",UF";
             }
@@ -1433,14 +1412,16 @@ public class Env extends Thread{ // environment simulator
             settings += punishCost != 0.0? "," + punishCost: "";
             settings += punishFine != 0.0? "," + punishFine: "";
             settings += punishRatio != 0.0? "," + punishRatio: "";
+            settings += EWT.equals("punish")? "," + NU: ""; // NU
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
             settings += "," + sel;
             settings += !RWT.isEmpty()? "," + RWT: "";
             settings += noise != 0.0? "," + noise: "";
-            settings += !mut.isEmpty() ? "," + mut: "";
-            settings += mutRate != 0.0? "," + mutRate: "";
+            settings += mut.isEmpty()? "": "," + mut;
+//            settings += mutRate != 0.0? "," + mutRate: "";
+            settings += mut.isEmpty()? "": "," + mutRate; // mutRate
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
             try{
@@ -2043,7 +2024,9 @@ public class Env extends Thread{ // environment simulator
             double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
             double punish_prob = 1 - w_ab;
-            if(punish_prob > random_double){
+//            if(punish_prob > random_double){
+//            if(punish_prob > random_double && a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
+            if(punish_prob > random_double && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
                 a.setU(a.getU() - punishCost);
                 b.setU(b.getU() - punishFine);
             }
@@ -2105,17 +2088,18 @@ public class Env extends Thread{ // environment simulator
      * @param a
      */
     public void punishOneProb(Player a){
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getOmega();
-        int random_int = ThreadLocalRandom.current().nextInt(a.getK());
-        Player b = omega_a.get(random_int);
-        double w_ab = weights.get(random_int);
-        double punish_prob = 1 - w_ab;
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        if(punish_prob > random_double){
-            a.setU(a.getU() - punishCost);
-            b.setU(b.getU() - punishFine);
-        }
+//        ArrayList<Double> weights = a.getEdgeWeights();
+//        ArrayList<Player> omega_a = a.getOmega();
+//        int random_int = ThreadLocalRandom.current().nextInt(a.getK());
+//        Player b = omega_a.get(random_int);
+//        double w_ab = weights.get(random_int);
+//        double punish_prob = 1 - w_ab;
+//        double random_double = ThreadLocalRandom.current().nextDouble();
+//        if(punish_prob > random_double){
+//            a.setU(a.getU() - punishCost);
+//            b.setU(b.getU() - punishFine);
+//        }
+        System.out.println("decommissioned since func does not consider negative utility...");
     }
 
     // for every 1 unit spent by punisher to punish, victim loses punishRatio units. inspired by fehr2002altrustic.
@@ -2217,8 +2201,8 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid mutRate");
                     exit();
                 }
-                if(mutRate <= 0 || mutRate > 1){
-                    System.out.println("invalid mutRate: must be within the interval (0, 1].");
+                if(mutRate < 0 || mutRate > 1){
+                    System.out.println("invalid mutRate: must be within the interval [0, 1].");
                     exit();
                 }
             }
@@ -2351,7 +2335,7 @@ public class Env extends Thread{ // environment simulator
         switch(value){
 
             // case where value is valid.
-            case "PROC", "UROC", "PD", "UD" -> {
+            case "PROC", "UROC", "PD", "UD", "PDhalf" -> {
                 EWL = value;
                 System.out.println("EWL="+EWL);
             }
@@ -2383,7 +2367,7 @@ public class Env extends Thread{ // environment simulator
         switch(sel){
             case "RW" -> {
                 switch(value){
-                    case "exponential", "normal" -> {
+                    case "expo", "normal" -> {
                         RWT = value;
                         System.out.println("RWT="+RWT);
                     }
@@ -2402,7 +2386,7 @@ public class Env extends Thread{ // environment simulator
         switch(sel){
             case "RW" -> {
                 switch(RWT) {
-                    case "exponential" -> assign = true;
+                    case "expo" -> assign = true;
                 }
             }
         }
@@ -2467,6 +2451,7 @@ public class Env extends Thread{ // environment simulator
                 case "punishCost" -> output += "\n" + punishCost;
                 case "punishFine" -> output += "\n" + punishFine;
                 case "punishRatio" -> output += "\n" + punishRatio;
+                case "NU" -> output += "\n" + NU;
             }
 
             // create the file and write the data.
@@ -2501,7 +2486,8 @@ public class Env extends Thread{ // environment simulator
                     "punishFunc",
                     "punishCost",
                     "punishFine",
-                    "punishRatio" -> {
+                    "punishRatio",
+                    "NU" -> {
                 VP = value;
                 System.out.println("VP="+VP);
             }
@@ -2842,5 +2828,35 @@ public class Env extends Thread{ // environment simulator
                 exit();
             }
         }
+    }
+
+    public static void assignNU(String value){
+        switch(EWT){
+            case "punish" -> {
+                switch(value){
+                    case "1" -> {
+                        NU = true;
+                        System.out.println("NU="+NU);
+                    }
+                    case "0" -> {
+                        NU = false;
+                        System.out.println("NU="+NU);
+                    }
+                    default -> {
+                        System.out.println("invalid NU");
+                        exit();
+                    }
+                }
+            }
+        }
+
+//        try{
+//            if(value.equals("1")){
+//                NU = true;
+//                System.out.println("NU="+NU);
+//            }
+//        }catch(ArrayIndexOutOfBoundsException e){
+//            System.out.println("[INFO] Will not record p gen stats.");
+//        }
     }
 }

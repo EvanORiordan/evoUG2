@@ -79,18 +79,17 @@ public class Player {
      * Augmented setter.
      * p must reside within [0,1].
       */
-    public void setP(double p){
-        this.p=p;
-        if(this.p>1){
-            this.p=1;
-//        } else if(this.p<0){
-        } else if(this.p<0){
-            this.p=0;
+    public void setP(double d){
+        p=d;
+        if(p>1){
+            p=1;
+        } else if(p<0){
+            p=0;
         }
     }
-//
-//
-//
+
+
+
 //    /**
 //     * Augmented setter.
 //     * q must reside within [0,1].
@@ -181,6 +180,19 @@ public class Player {
     }
 
 
+    public void setU(double d){
+        u=d;
+
+        // ensures that u >= 0.
+//        if(u<0){
+//            u=0;
+//        }
+
+    }
+
+
+
+
 
     // generic functions
     public int getID(){
@@ -258,7 +270,7 @@ public class Player {
     public static int getCount(){return count;}
     public static void setCount(int i){count=i;}
     public double getU(){return u;}
-    public void setU(double d){u=d;}
+//    public void setU(double d){u=d;}
     public int getK(){return k;}
     public void setK(int i){k=i;}
     public double getMeanPOmega(){return mean_p_omega;}
