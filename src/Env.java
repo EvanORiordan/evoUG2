@@ -22,7 +22,8 @@ public class Env extends Thread{ // environment simulator
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
 //    static String neighType; // indicates type of neighbourhood players will have.
-    static String neighType = "VN"; // indicates type of neighbourhood players will have.
+//    static String neighType = "VN"; // indicates type of neighbourhood players will have.
+    static String neighType; // indicates type of neighbourhood players will have.
 //    static int neighRadius; // radius of neighbourhood
     static int neighRadius = 1; // radius of neighbourhood
     static int neighSize; // size of neighbourhood (assuming randomNeigh neighType) i.e. num random neighbours
@@ -81,7 +82,7 @@ public class Env extends Thread{ // environment simulator
 //    static double beta = 0; // used in alpha-beta rating
     static String evo; // indicates which evolution function to call
     static String sel; // indicates which selection function to call
-    static double noise = 0.0; // noise affecting the evolutionary process.
+    static double EN = 0.0; // evolutionary noise
     static String mut = ""; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
@@ -104,10 +105,12 @@ public class Env extends Thread{ // environment simulator
 //            punisheeCost;
             punishFine; // fine received by punishee
     static String punishFunc = "";
-    static double punishRatio;
+//    static double punishRatio;
     static int CI; // configuration index
 //    static String[] settings; // configuration settings
-    static boolean NU; // negative utility param: if true, agents can have negative utility.
+    static boolean NU; // indicates whether an individual can have negative utility.
+    static double PN1; // punishment noise.
+    static double PN2; // another form of punishment noise.
 
 
 
@@ -166,7 +169,7 @@ public class Env extends Thread{ // environment simulator
                     case "RT" -> assignRT(variations[exp - 1]);
                     case "sel" -> assignSel(variations[exp - 1]);
                     case "evo" -> assignEvo(variations[exp - 1]);
-                    case "noise" -> assignNoise(variations[exp - 1]);
+                    case "EN" -> assignEN(variations[exp - 1]);
                     case "EWT" -> assignEWT(variations[exp - 1]);
                     case "gens" -> assignGens(variations[exp - 1]);
                     case "length" -> {
@@ -183,8 +186,10 @@ public class Env extends Thread{ // environment simulator
                     case "punishFunc" -> assignPunishFunc(variations[exp - 1]);
                     case "punishCost" -> assignPunishCost(variations[exp - 1]);
                     case "punishFine" -> assignPunishFine(variations[exp - 1]);
-                    case "punishRatio" -> assignPunishRatio(variations[exp - 1]);
+//                    case "punishRatio" -> assignPunishRatio(variations[exp - 1]);
                     case "NU" -> assignNU(variations[exp - 1]);
+                    case "PN1" -> assignPN1(variations[exp - 1]);
+                    case "PN2" -> assignPN2(variations[exp - 1]);
                 }
             }
         }
@@ -583,7 +588,7 @@ public class Env extends Thread{ // environment simulator
         for(int i = 0; i < size; i++){
             switch(RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
-                case "expo" -> pockets[i] = Math.exp(pool.get(i).getU() * noise);
+                case "expo" -> pockets[i] = Math.exp(pool.get(i).getU() * EN);
             }
             roulette_total += pockets[i];
         }
@@ -793,6 +798,7 @@ public class Env extends Thread{ // environment simulator
                 " %-6s |"+//config
                 " %-4s |"+//runs
                 " %-6s |"+//length
+                " %-9s |"+//neighType
                 " %-9s |"+//genType
                 " %-4s |"+//ER
                 " %-8s |"+//gens
@@ -800,17 +806,19 @@ public class Env extends Thread{ // environment simulator
                 " %-7s |"+//RP
                 " %-15s |"+//RA
                 " %-5s |"+//RT
-                " %-10s |"+//punishFunc
+                " %-12s |"+//punishFunc
                 " %-10s |"+//punishCost
                 " %-10s |"+//punishFine
-                " %-11s |"+//punishRatio
+//                " %-11s |"+//punishRatio
                 " %-2s |"+//NU
+                " %-5s |"+//PN1
+                " %-5s |"+//PN2
                 " %-6s |"+//EWL
                 " %-5s |"+//ROC
                 " %-10s |"+//evo
                 " %-11s |"+//sel
                 " %-6s |"+//RWT
-                " %-5s |"+//noise
+                " %-5s |"+//EN
                 " %-6s |"+//mut
                 " %-7s |"+//mutRate
                 " %-8s |"+//mutBound
@@ -827,6 +835,7 @@ public class Env extends Thread{ // environment simulator
                 ,"config"
                 ,"runs"
                 ,"length"
+                ,"neighType"
                 ,"genType"
                 ,"ER"
                 ,"gens"
@@ -837,14 +846,16 @@ public class Env extends Thread{ // environment simulator
                 ,"punishFunc"
                 ,"punishCost"
                 ,"punishFine"
-                ,"punishRatio"
+//                ,"punishRatio"
                 ,"NU"
+                ,"PN1"
+                ,"PN2"
                 ,"EWL"
                 ,"ROC"
                 ,"evo"
                 ,"sel"
                 ,"RWT"
-                ,"noise"
+                ,"EN"
                 ,"mut"
                 ,"mutRate"
                 ,"mutBound"
@@ -869,6 +880,7 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-6d ", i); //config
             System.out.printf("| %-4s ", settings[CI++]); //runs
             System.out.printf("| %-6s ", settings[CI++]); //length
+            System.out.printf("| %-9s ", settings[CI++]); //neighType
             System.out.printf("| %-9s ", settings[CI++]); // genType
             System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //ER
             System.out.printf("| %-8s ", settings[CI++]); //gens
@@ -876,17 +888,19 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //RP
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RA
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //RT
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFunc
+            System.out.printf("| %-12s ", CI!=settings.length? settings[CI++]: ""); //punishFunc
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishCost
             System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFine
-            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
+//            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
             System.out.printf("| %-2s ", CI!=settings.length? settings[CI++]: ""); //NU
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PN1
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PN2
             System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //EWL
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //ROC
             System.out.printf("| %-10s ", settings[CI++]); //evo
             System.out.printf("| %-11s ", settings[CI++]); //sel
             System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //RWT
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //noise
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //EN
             System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //mut
             System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //mutRate
             System.out.printf("| %-8s ", CI!=settings.length? settings[CI++]: ""); //mutBound
@@ -927,6 +941,7 @@ public class Env extends Thread{ // environment simulator
         assignLength(settings[CI++]);
         assignWidth();
         assignN();
+        assignNeighType(settings[CI++]);
         assignGenType(settings[CI++]);
         assignER(settings[CI++]);
         assignGens(settings[CI++]);
@@ -937,14 +952,16 @@ public class Env extends Thread{ // environment simulator
         assignPunishFunc(CI!=settings.length? settings[CI++]: "");
         assignPunishCost(CI!=settings.length? settings[CI++]: "");
         assignPunishFine(CI!=settings.length? settings[CI++]: "");
-        assignPunishRatio(CI!=settings.length? settings[CI++]: "");
+//        assignPunishRatio(CI!=settings.length? settings[CI++]: "");
         assignNU(CI!=settings.length? settings[CI++]: "");
+        assignPN1(CI!=settings.length? settings[CI++]: "");
+        assignPN2(CI!=settings.length? settings[CI++]: "");
         assignEWL(CI!=settings.length? settings[CI++]: "");
         assignROC(CI!=settings.length? settings[CI++]: "");
         assignEvo(settings[CI++]);
         assignSel(settings[CI++]);
         assignRWT(CI!=settings.length? settings[CI++]: "");
-        assignNoise(CI!=settings.length? settings[CI++]: "");
+        assignEN(CI!=settings.length? settings[CI++]: "");
         assignMut(CI!=settings.length? settings[CI++]: "");
         assignMutRate(CI!=settings.length? settings[CI++]: "");
         assignMutBound(CI!=settings.length? settings[CI++]: "");
@@ -1367,6 +1384,7 @@ public class Env extends Thread{ // environment simulator
                 settings += ",length";
                 settings += ",width";
                 settings += ",N";
+                settings += ",neighType";
                 settings += ",genType";
                 settings += ER != 0? ",ER": "";
                 settings += NIS != 0? ",NIS": "";
@@ -1379,16 +1397,18 @@ public class Env extends Thread{ // environment simulator
                 settings += punishFunc.isEmpty()? "": ",punishFunc";
                 settings += punishCost != 0.0? ",punishCost": "";
                 settings += punishFine != 0.0? ",punishFine": "";
-                settings += punishRatio != 0.0? ",punishRatio": "";
-                settings += EWT.equals("punish")? ",NU": ""; // NU
+//                settings += punishRatio != 0.0? ",punishRatio": "";
+                settings += EWT.equals("punish")? ",NU": "";
+                settings += punishFunc.equals("noisy")? ",PN1": "";
+                settings += EWT.equals("punish")? ",PN2": "";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
                 settings += ",sel";
                 settings += !RWT.isEmpty()? ",RWT": "";
-                settings += noise != 0.0? ",noise": "";
+//                settings += noise != 0.0? ",noise": "";
+                settings += RWT.equals("expo") || evo.equals("FD")? ",EN": "";
                 settings += mut.isEmpty()? "": ",mut";
-//                settings += mutRate != 0.0? ",mutRate": "";
                 settings += mut.isEmpty()? "": ",mutRate"; // mutRate
                 settings += mutBound != 0.0? ",mutBound": "";
                 settings += ",UF";
@@ -1399,6 +1419,7 @@ public class Env extends Thread{ // environment simulator
             settings += "," + length;
             settings += "," + width;
             settings += "," + N;
+            settings += "," + neighType;
             settings += "," + genType;
             settings += ER != 0? "," + ER: "";
             settings += NIS != 0? "," + NIS: "";
@@ -1411,16 +1432,18 @@ public class Env extends Thread{ // environment simulator
             settings += punishFunc.isEmpty()? "": "," + punishFunc;
             settings += punishCost != 0.0? "," + punishCost: "";
             settings += punishFine != 0.0? "," + punishFine: "";
-            settings += punishRatio != 0.0? "," + punishRatio: "";
-            settings += EWT.equals("punish")? "," + NU: ""; // NU
+//            settings += punishRatio != 0.0? "," + punishRatio: "";
+            settings += EWT.equals("punish")? "," + NU: "";
+            settings += punishFunc.equals("noisy")? "," + PN1: "";
+            settings += EWT.equals("punish")? "," + PN2: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
             settings += "," + sel;
             settings += !RWT.isEmpty()? "," + RWT: "";
-            settings += noise != 0.0? "," + noise: "";
+//            settings += noise != 0.0? "," + noise: "";
+            settings += RWT.equals("expo") || evo.equals("FD")? "," + EN: "";
             settings += mut.isEmpty()? "": "," + mut;
-//            settings += mutRate != 0.0? "," + mutRate: "";
             settings += mut.isEmpty()? "": "," + mutRate; // mutRate
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
@@ -1595,7 +1618,7 @@ public class Env extends Thread{ // environment simulator
                 switch(RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
                     case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
                     case "smootherstep" -> prob_rewire = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
-                    case "0Many" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
+                    case "on0" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
                     case "linear" -> prob_rewire = 1 - w_ab;
                     case "exponential" -> {
                         double k = 0.1; // manually set noise
@@ -2006,32 +2029,37 @@ public class Env extends Thread{ // environment simulator
         return parent;
     }
 
-    /**
-     * punisher tries to punish all neighbours.
-     * a denotes punisher.
-     * b denotes punishee neighbour of a.
-     * probability of punishing = 1 - w_ab.
-     * higher w_ab ==> lower probability of a punishing b.
-     * w_ab = 1.0 ==> guaranteed not to punish.
-     * w_ab = 0.0 ==> guaranteed to punish.
-     * @param a
-     */
-    public void punishAllProb(Player a){
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getOmega();
-        for(int i=0;i<a.getK();i++){
-            Player b = omega_a.get(i);
-            double random_double = ThreadLocalRandom.current().nextDouble();
-            double w_ab = weights.get(i);
-            double punish_prob = 1 - w_ab;
-//            if(punish_prob > random_double){
-//            if(punish_prob > random_double && a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
-            if(punish_prob > random_double && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
-                a.setU(a.getU() - punishCost);
-                b.setU(b.getU() - punishFine);
-            }
-        }
-    }
+//    /**
+//     * punisher tries to punish all neighbours.
+//     * a denotes punisher.
+//     * b denotes punishee neighbour of a.
+//     * probability of punishing = 1 - w_ab.
+//     * higher w_ab ==> lower probability of a punishing b.
+//     * w_ab = 1.0 ==> guaranteed not to punish.
+//     * w_ab = 0.0 ==> guaranteed to punish.
+//     * @param a
+//     */
+//    public void punishAllProb(Player a){
+//        ArrayList<Double> weights = a.getEdgeWeights();
+//        ArrayList<Player> omega_a = a.getOmega();
+//        for(int i=0;i<a.getK();i++){
+//            Player b = omega_a.get(i);
+//            double random_double = ThreadLocalRandom.current().nextDouble();
+//            double w_ab = weights.get(i);
+////            double punish_prob = 1 - w_ab;
+////            double punish_prob = (1 - w_ab) * (1 - PN);
+//            switch(punish){
+//
+//            }
+////            if(punish_prob > random_double){
+////            if(punish_prob > random_double && a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
+////            if(punish_prob > random_double && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
+//            if((punish_prob > random_double) && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
+//                a.setU(a.getU() - punishCost);
+//                b.setU(b.getU() - punishFine);
+//            }
+//        }
+//    }
 
     /**
      * Fermi-Dirac evolution function.
@@ -2045,7 +2073,7 @@ public class Env extends Thread{ // environment simulator
      */
     public void evoFD(Player child, Player parent){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        double K = noise;
+        double K = EN;
         double u_x = child.getU();
         double u_y = parent.getU();
         double u_diff = u_x - u_y;
@@ -2059,19 +2087,49 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-    public void punish(Player player){
-        switch(punishFunc){
-            case "allProb" -> {
-                punishAllProb(player);
+
+    /**
+     * punisher tries to punish all neighbours.
+     * a denotes punisher.
+     * b denotes punishee neighbour of a.
+     * probability of punishing = 1 - w_ab.
+     * higher w_ab ==> lower probability of a punishing b.
+     * w_ab = 1.0 ==> guaranteed not to punish.
+     * w_ab = 0.0 ==> guaranteed to punish.
+     * @param a
+     */
+    public void punish(Player a){
+        ArrayList<Double> weights = a.getEdgeWeights();
+        ArrayList<Player> omega_a = a.getOmega();
+        for(int i=0;i<a.getK();i++){
+            Player b = omega_a.get(i);
+            double random_double = ThreadLocalRandom.current().nextDouble();
+            double w_ab = weights.get(i);
+            double punish_prob = 0.0;
+            switch(punishFunc){
+                case "linear" -> punish_prob = 1 - w_ab;
+                case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
+                case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
+                case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
+                case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
             }
-            case "oneProb" -> {
-                punishOneProb(player);
+//            if(!NU){ // if negative utility not permitted...
+//                if(a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
+//                    punish_prob = 0.0; // if either party would have negative utility as a result of punishment, do not punish.
+//                }
+//            }
+            boolean punish = punish_prob > random_double;
+            double random_double2 = ThreadLocalRandom.current().nextDouble();
+            if(PN2 > random_double2){
+                if(punish){
+                    punish = false;
+                } else {
+                    punish = true;
+                }
             }
-            case "allAmount" -> {
-                punishAllAmount(player);
-            }
-            case "oneAmount" -> {
-                punishOneAmount(player);
+            if(punish){
+                a.setU(a.getU() - punishCost);
+                b.setU(b.getU() - punishFine);
             }
         }
     }
@@ -2102,29 +2160,42 @@ public class Env extends Thread{ // environment simulator
         System.out.println("decommissioned since func does not consider negative utility...");
     }
 
-    // for every 1 unit spent by punisher to punish, victim loses punishRatio units. inspired by fehr2002altrustic.
-    public void punishAllAmount(Player a){
-        ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getOmega();
-        for(int i=0;i<a.getK();i++){
-            Player b = omega_a.get(i);
-            double w_ab = weights.get(i);
-            double cost = 1 - w_ab; // cost of punishing for punisher.
-            double fine = punishRatio * (1 - w_ab); // fine applied to punishee.
-            a.setU(a.getU() - cost);
-            b.setU(b.getU() - fine);
-        }
-    }
-    public void punishOneAmount(Player a){
-        // TODO: implement. use punishAllAmount() as a blueprint for how to implement the "amount" part.
-    }
+//    // for every 1 unit spent by punisher to punish, victim loses punishRatio units. inspired by fehr2002altrustic.
+//    public void punishAllAmount(Player a){
+//        ArrayList<Double> weights = a.getEdgeWeights();
+//        ArrayList<Player> omega_a = a.getOmega();
+//        for(int i=0;i<a.getK();i++){
+//            Player b = omega_a.get(i);
+//            double w_ab = weights.get(i);
+//            double cost = 1 - w_ab; // cost of punishing for punisher.
+//            double fine = punishRatio * (1 - w_ab); // fine applied to punishee.
+//            a.setU(a.getU() - cost);
+//            b.setU(b.getU() - fine);
+//        }
+//    }
+//    public void punishOneAmount(Player a){
+//        // TODO: implement. use punishAllAmount() as a blueprint for how to implement the "amount" part.
+//    }
 
 
     public static void assignPunishCost(String value){
-        switch(punishFunc){
+//        switch(punishFunc){
+//
+//            // punishCost must be valid if punishFunc is oneProb or allProb.
+//            case "oneProb", "allProb" -> {
+//                try{
+//                    punishCost = Double.parseDouble(value);
+//                    System.out.println("punishCost="+punishCost);
+//                }catch(NumberFormatException e){
+//                    System.out.println("invalid punishCost: must be a double");
+//                    exit();
+//                }
+//            }
+//        }
 
-            // punishCost must be valid if punishFunc is oneProb or allProb.
-            case "oneProb", "allProb" -> {
+
+        switch(punishFunc){
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
                 try{
                     punishCost = Double.parseDouble(value);
                     System.out.println("punishCost="+punishCost);
@@ -2137,10 +2208,22 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void assignPunishFine(String value){
-        switch(punishFunc){
+//        switch(punishFunc){
+//
+//            // punishFine must be valid if punishFunc is oneProb or allProb.
+//            case "oneProb", "allProb" -> {
+//                try{
+//                    punishFine = Double.parseDouble(value);
+//                    System.out.println("punishFine="+punishFine);
+//                }catch(NumberFormatException e){
+//                    System.out.println("invalid punishFine: must be a double");
+//                    exit();
+//                }
+//            }
+//        }
 
-            // punishFine must be valid if punishFunc is oneProb or allProb.
-            case "oneProb", "allProb" -> {
+        switch(punishFunc){
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
                 try{
                     punishFine = Double.parseDouble(value);
                     System.out.println("punishFine="+punishFine);
@@ -2160,7 +2243,8 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
 
                     // case where value is valid.
-                    case "allProb", "oneProb", "allAmount", "oneAmount" -> {
+//                    case "allProb", "oneProb", "allAmount", "oneAmount" -> {
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
                         punishFunc = value;
                         System.out.println("punishFunc="+punishFunc);
                     }
@@ -2175,21 +2259,21 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignPunishRatio(String value){
-        switch(punishFunc){
-
-            // punishRatio must be valid if punishFunc is oneAmount or allAmount.
-            case "oneAmount", "allAmount" -> {
-                try{
-                    punishRatio = Double.parseDouble(value);
-                    System.out.println("punishRatio="+punishRatio);
-                }catch(NumberFormatException e){
-                    System.out.println("invalid punishRatio: must be a double");
-                    exit();
-                }
-            }
-        }
-    }
+//    public static void assignPunishRatio(String value){
+//        switch(punishFunc){
+//
+//            // punishRatio must be valid if punishFunc is oneAmount or allAmount.
+//            case "oneAmount", "allAmount" -> {
+//                try{
+//                    punishRatio = Double.parseDouble(value);
+//                    System.out.println("punishRatio="+punishRatio);
+//                }catch(NumberFormatException e){
+//                    System.out.println("invalid punishRatio: must be a double");
+//                    exit();
+//                }
+//            }
+//        }
+//    }
 
     public static void assignMutRate(String value){
         switch(mut){
@@ -2220,8 +2304,8 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid ROC: must be a double");
                     exit();
                 }
-                if(ROC <= 0 || ROC > 1){
-                    System.out.println("invalid ROC: must be within the interval (0, 1].");
+                if(ROC < 0 || ROC > 1){
+                    System.out.println("invalid ROC: must be within the interval [0, 1].");
                     exit();
                 }
             }
@@ -2381,7 +2465,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     // the func leaves room for more sel funcs utilising noise, including one's not based on RW sel.
-    public static void assignNoise(String value){
+    public static void assignEN(String value){
         boolean assign = false;
         switch(sel){
             case "RW" -> {
@@ -2395,10 +2479,10 @@ public class Env extends Thread{ // environment simulator
         }
         if(assign){
             try{
-                noise = Double.parseDouble(value);
-                System.out.println("noise="+noise);
+                EN = Double.parseDouble(value);
+                System.out.println("EN="+EN);
             }catch(NumberFormatException e){
-                System.out.println("invalid noise: must be a double");
+                System.out.println("invalid EN: must be a double");
                 exit();
             }
         }
@@ -2443,15 +2527,17 @@ public class Env extends Thread{ // environment simulator
                 case "RT" -> output += "\n" + RT;
                 case "sel" -> output += "\n" + sel;
                 case "evo" -> output += "\n" + evo;
-                case "noise" -> output += "\n" + noise;
+                case "EN" -> output += "\n" + EN;
                 case "mutRate" -> output += "\n" + mutRate;
                 case "mutBound" -> output += "\n" + mutBound;
                 case "UF" -> output += "\n" + UF;
                 case "punishFunc" -> output += "\n" + punishFunc;
                 case "punishCost" -> output += "\n" + punishCost;
                 case "punishFine" -> output += "\n" + punishFine;
-                case "punishRatio" -> output += "\n" + punishRatio;
+//                case "punishRatio" -> output += "\n" + punishRatio;
                 case "NU" -> output += "\n" + NU;
+                case "PN1" -> output += "\n" + PN1;
+                case "PN2" -> output += "\n" + PN2;
             }
 
             // create the file and write the data.
@@ -2478,7 +2564,7 @@ public class Env extends Thread{ // environment simulator
                     "RT",
                     "evo",
                     "sel",
-                    "noise",
+                    "EN",
                     "mut",
                     "mutRate",
                     "mutBound",
@@ -2486,8 +2572,11 @@ public class Env extends Thread{ // environment simulator
                     "punishFunc",
                     "punishCost",
                     "punishFine",
-                    "punishRatio",
-                    "NU" -> {
+//                    "punishRatio",
+                    "NU",
+                    "PN1",
+                    "PN2"
+                    -> {
                 VP = value;
                 System.out.println("VP="+VP);
             }
@@ -2755,7 +2844,7 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
 
                     // case where value is valid.
-                    case "smoothstep", "smootherstep", "linear", "0Many" -> {
+                    case "smoothstep", "smootherstep", "linear", "on0" -> {
                         RA = value;
                         System.out.println("RA="+RA);
                     }
@@ -2836,10 +2925,12 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
                     case "1" -> {
                         NU = true;
+                        Player.setNU(NU);
                         System.out.println("NU="+NU);
                     }
                     case "0" -> {
                         NU = false;
+                        Player.setNU(NU);
                         System.out.println("NU="+NU);
                     }
                     default -> {
@@ -2858,5 +2949,58 @@ public class Env extends Thread{ // environment simulator
 //        }catch(ArrayIndexOutOfBoundsException e){
 //            System.out.println("[INFO] Will not record p gen stats.");
 //        }
+    }
+
+    public static void assignNeighType(String value){
+        switch(value){
+
+            // case where value is valid.
+            case "VN", "Moore" -> {
+                neighType = value;
+                System.out.println("neighType="+neighType);
+            }
+
+            // case where value is invalid
+            default -> {
+                System.out.println("invalid neighType");
+                exit();
+            }
+        }
+    }
+
+    public static void assignPN1(String value){
+        switch(punishFunc){
+            case "noisy" -> {
+                try{
+                    PN1 = Double.parseDouble(value);
+                    System.out.println("PN1="+PN1);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid PN1: must be a double");
+                    exit();
+                }
+                if(PN1 < 0 || PN1 > 1){
+                    System.out.println("invalid PN1: must be within the interval [0, 1].");
+                    exit();
+                }
+            }
+        }
+    }
+
+    public static void assignPN2(String value){
+        switch(EWT){
+            case "punish" -> {
+                try{
+                    PN2 = Double.parseDouble(value);
+                    System.out.println("PN2="+PN2);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid PN2: must be a double");
+                    exit();
+                }
+                if(PN2 < 0 || PN2 > 1){
+                    System.out.println("invalid PN2: must be within the interval [0, 1].");
+                    exit();
+                }
+            }
+        }
     }
 }

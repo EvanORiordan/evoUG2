@@ -49,6 +49,7 @@ public class Player {
     private double u; // utility
     private int k; // degree
     private int sel_rank;
+    private static boolean NU = true; // by default, allow individuals to have negative utility.
 
 
 
@@ -183,11 +184,12 @@ public class Player {
     public void setU(double d){
         u=d;
 
-        // ensures that u >= 0.
-//        if(u<0){
-//            u=0;
-//        }
-
+        // ensures that u >= 0 if NU is disabled.
+        if(!NU){
+            if(u<0){
+                u=0;
+            }
+        }
     }
 
 
@@ -277,4 +279,7 @@ public class Player {
     public void setMeanPOmega(double d){mean_p_omega=d;}
     public int getSelRank(){return sel_rank;}
     public void setSelRank(int i){sel_rank=i;}
+    public static void setNU(boolean b){
+        NU=b;
+    }
 }
