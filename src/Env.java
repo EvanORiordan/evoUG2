@@ -15,13 +15,13 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Env extends Thread{ // environment simulator
 //    static String game; // indicates what game is being played
-    static String game = "DG"; // indicates what game is being played
-    static double M = 1.0; // default prize amount during a UG/DG
+    static String game = "DG"; // default game is DG.
+//    static double M = 1.0; // default prize amount during a UG/DG is 1.0.
+    static double M; // UG/DG prize
 //    static String space; // indicates what kind of space the population will reside within
     static String space = "grid"; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
     static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-//    static String neighType; // indicates type of neighbourhood players will have.
 //    static String neighType = "VN"; // indicates type of neighbourhood players will have.
     static String neighType; // indicates type of neighbourhood players will have.
 //    static int neighRadius; // radius of neighbourhood
@@ -50,7 +50,6 @@ public class Env extends Thread{ // environment simulator
 //    static double S; // PD: sucker's payoff for cooperating with a defector
 //    static double l; // loner's payoff
     static String VP = ""; // variable parameter: indicates which parameter will be varied in experiment series.
-//    static ArrayList<String> variations = new ArrayList<>();
     static String[] variations = new String[]{};
     static int exp; // indicates how far along we are through the experiment series
     static int exps = 1; // number of experiments in series
@@ -86,8 +85,6 @@ public class Env extends Thread{ // environment simulator
     static String mut = ""; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
     static double mutBound = 0.0; // denotes max mutation possible
-//    static String EM;
-//    static String EM = "ERv2"; // evolution mechanism / evolutionary dynamics / strategy update process: the mechanism by which evolution occurs.
     static String genType; // indicates the type of generation the algorithm will employ.
     static int ER = 0; // evolution rate: used in various ways to denote how often generations occur
     static int NIS = 0; // num inner steps: number of inner steps per generation using the monte carlo method; usually is set to value of N
@@ -98,19 +95,15 @@ public class Env extends Thread{ // environment simulator
 //    static int injRound; // injection round: indicates at which round strategy injection will occur. 0 ==> no injection.
     static double injP = 0.0; // injection p: indicates p value to be injected
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
-    static double
-            //punisherCost;
-            punishCost; // cost incurred by punisher
-    static double
-//            punisheeCost;
-            punishFine; // fine received by punishee
-    static String punishFunc = "";
-//    static double punishRatio;
+    static double cost; // the cost of punishing.
+    static double fine; // the fine for being punished.
+    static String PF = "";
     static int CI; // configuration index
-//    static String[] settings; // configuration settings
-    static boolean NU; // indicates whether an individual can have negative utility.
-    static double PN1; // punishment noise.
+    static boolean NU; // indicates whether individuals can have negative utility.
+    static double PN1; // indicates how much noise is present during the noisy punishment function.
     static double PN2; // another form of punishment noise.
+    static double LR; // learning rate.
+    static double PCFR = 0.0; // punishment cost:fine ratio.
 
 
 
@@ -174,7 +167,9 @@ public class Env extends Thread{ // environment simulator
                     case "gens" -> assignGens(variations[exp - 1]);
                     case "length" -> {
                         assignLength(variations[exp - 1]);
-                        assignWidth();
+                        if(space.equals("grid")){
+                            assignWidth();
+                        }
                         assignN();
                     }
                     case "ER" -> assignER(variations[exp - 1]);
@@ -183,13 +178,18 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> assignMutRate(variations[exp - 1]);
                     case "mutBound" -> assignMutBound(variations[exp - 1]);
                     case "UF" -> assignUF(variations[exp - 1]);
-                    case "punishFunc" -> assignPunishFunc(variations[exp - 1]);
-                    case "punishCost" -> assignPunishCost(variations[exp - 1]);
-                    case "punishFine" -> assignPunishFine(variations[exp - 1]);
-//                    case "punishRatio" -> assignPunishRatio(variations[exp - 1]);
+                    case "PF" -> assignPF(variations[exp - 1]);
+                    case "cost" -> {
+                        assignCost(variations[exp - 1]);
+                        if(PCFR >= 0){
+                            assignFine();
+                        }
+                    }
+                    case "fine" -> assignFine(variations[exp - 1]);
                     case "NU" -> assignNU(variations[exp - 1]);
                     case "PN1" -> assignPN1(variations[exp - 1]);
                     case "PN2" -> assignPN2(variations[exp - 1]);
+                    case "M" -> assignM(variations[exp - 1]);
                 }
             }
         }
@@ -252,52 +252,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-//    /**
-//     * a initiates games with neighbours.
-//     * @param a player
-//     */
-//    public void play(Player a) {
-//        ArrayList<Player> omega_a = a.getNeighbourhood(); // neighbourhood of a
-//        for(int i = 0; i < omega_a.size(); i++){
-//            Player b = omega_a.get(i); // neighbour of a
-//            ArrayList <Player> omega_b = b.getNeighbourhood(); // neighbourhood of b
-//            for (int j = 0; j < omega_b.size(); j++) {
-//                Player c = omega_b.get(j); // neighbour of b
-//                if (a.equals(c)) {
-//                    ArrayList <Double> weights_b = b.getEdgeWeights(); // weights of b
-//                    double w_ba = weights_b.get(j); // weight of edge from b to a
-//                    switch(EWT){
-//                        case "proposalProb" -> {
-//                            double d = ThreadLocalRandom.current().nextDouble();
-//                            if(w_ba > d){
-//                                switch(game){
-//                                    case "UG", "DG" -> UG(a, b);
-//                                    case "PD" -> PD(a, b);
-//                                }
-//                            } else{
-//                                updateStats(a,0);
-//                                updateStats(b,0);
-//                            }
-//                        }
-//                        case "payoffPercent" -> {
-//                            switch(game){
-//                                case "UG", "DG" -> UG(a, b, w_ba);
-//                                case "PD" -> PD(a, b, w_ba);
-//                            }
-//                        }
-//                        default -> {
-//                            switch(game){
-//                                case "UG", "DG" -> UG(a, b);
-//                                case "PD" -> PD(a, b);
-//                            }
-//                        }
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//    }
-
     /**
      * play Dictator Games
      * @param a focal player
@@ -307,7 +261,11 @@ public class Env extends Thread{ // environment simulator
         for(int i = 0; i < a.getK(); i++){
             Player b = omega_a.get(i); // neighbour of a
             switch(EWT) {
-                default -> UG(a, b);
+                default -> {
+                    switch(game){
+                        case "UG", "DG" -> UG(a, b);
+                    }
+                }
                 case "proposalProb"-> {
                     ArrayList <Player> omega_b = b.getOmega(); // neighbourhood of b
                     for (int j = 0; j < b.getK(); j++) {
@@ -316,7 +274,9 @@ public class Env extends Thread{ // environment simulator
                             double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
                             double random_double = ThreadLocalRandom.current().nextDouble();
                             if(w_ba > random_double){
-                                UG(a, b);
+                                switch(game){
+                                    case "UG", "DG" -> UG(a, b);
+                                }
                             }
                             break;
                         }
@@ -797,6 +757,7 @@ public class Env extends Thread{ // environment simulator
         System.out.printf("|" +
                 " %-6s |"+//config
                 " %-4s |"+//runs
+                " %-5s |"+//M
                 " %-6s |"+//length
                 " %-9s |"+//neighType
                 " %-9s |"+//genType
@@ -806,10 +767,10 @@ public class Env extends Thread{ // environment simulator
                 " %-7s |"+//RP
                 " %-15s |"+//RA
                 " %-5s |"+//RT
-                " %-12s |"+//punishFunc
-                " %-10s |"+//punishCost
-                " %-10s |"+//punishFine
-//                " %-11s |"+//punishRatio
+                " %-12s |"+//PF
+                " %-5s |"+//PCFR
+                " %-5s |"+//cost
+                " %-5s |"+//fine
                 " %-2s |"+//NU
                 " %-5s |"+//PN1
                 " %-5s |"+//PN2
@@ -834,6 +795,7 @@ public class Env extends Thread{ // environment simulator
                 " %s%n"//variations
                 ,"config"
                 ,"runs"
+                ,"M"
                 ,"length"
                 ,"neighType"
                 ,"genType"
@@ -843,10 +805,10 @@ public class Env extends Thread{ // environment simulator
                 ,"RP"
                 ,"RA"
                 ,"RT"
-                ,"punishFunc"
-                ,"punishCost"
-                ,"punishFine"
-//                ,"punishRatio"
+                ,"PF"
+                ,"PCFR"
+                ,"cost"
+                ,"fine"
                 ,"NU"
                 ,"PN1"
                 ,"PN2"
@@ -879,6 +841,7 @@ public class Env extends Thread{ // environment simulator
             CI = 0;
             System.out.printf("| %-6d ", i); //config
             System.out.printf("| %-4s ", settings[CI++]); //runs
+            System.out.printf("| %-5s ", settings[CI++]); //M
             System.out.printf("| %-6s ", settings[CI++]); //length
             System.out.printf("| %-9s ", settings[CI++]); //neighType
             System.out.printf("| %-9s ", settings[CI++]); // genType
@@ -888,9 +851,10 @@ public class Env extends Thread{ // environment simulator
             System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //RP
             System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RA
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //RT
-            System.out.printf("| %-12s ", CI!=settings.length? settings[CI++]: ""); //punishFunc
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishCost
-            System.out.printf("| %-10s ", CI!=settings.length? settings[CI++]: ""); //punishFine
+            System.out.printf("| %-12s ", CI!=settings.length? settings[CI++]: ""); //PF
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PCFR
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //cost
+            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //fine
 //            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
             System.out.printf("| %-2s ", CI!=settings.length? settings[CI++]: ""); //NU
             System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PN1
@@ -936,10 +900,13 @@ public class Env extends Thread{ // environment simulator
         settings = configurations.get(config_num).split(",");
         CI = 0;
         System.out.println("Start assigning settings...");
-        assignGame();
         assignRuns(settings[CI++]);
+        assignGame();
+        assignM(settings[CI++]);
         assignLength(settings[CI++]);
-        assignWidth();
+        if(space.equals("grid")){
+            assignWidth();
+        }
         assignN();
         assignNeighType(settings[CI++]);
         assignGenType(settings[CI++]);
@@ -949,10 +916,15 @@ public class Env extends Thread{ // environment simulator
         assignRP(CI!=settings.length? settings[CI++]: "");
         assignRA(CI!=settings.length? settings[CI++]: "");
         assignRT(CI!=settings.length? settings[CI++]: "");
-        assignPunishFunc(CI!=settings.length? settings[CI++]: "");
-        assignPunishCost(CI!=settings.length? settings[CI++]: "");
-        assignPunishFine(CI!=settings.length? settings[CI++]: "");
-//        assignPunishRatio(CI!=settings.length? settings[CI++]: "");
+        assignPF(CI!=settings.length? settings[CI++]: "");
+        assignPCFR(CI!=settings.length? settings[CI++]: "");
+        assignCost(CI!=settings.length? settings[CI++]: "");
+        if(PCFR >= 0){
+            assignFine();
+            CI++;
+        } else {
+            assignFine(CI!=settings.length? settings[CI++]: "");
+        }
         assignNU(CI!=settings.length? settings[CI++]: "");
         assignPN1(CI!=settings.length? settings[CI++]: "");
         assignPN2(CI!=settings.length? settings[CI++]: "");
@@ -1380,6 +1352,8 @@ public class Env extends Thread{ // environment simulator
             String settings = "";
             if(exp == 1){
                 settings += "runs";
+//                settings += ",game";
+                settings += ",M";
                 settings += ",space";
                 settings += ",length";
                 settings += ",width";
@@ -1394,12 +1368,12 @@ public class Env extends Thread{ // environment simulator
                 settings += RP == 0.0? "": ",RP";
                 settings += RA.isEmpty() ? "": ",RA";
                 settings += RT.isEmpty() ? "": ",RT";
-                settings += punishFunc.isEmpty()? "": ",punishFunc";
-                settings += punishCost != 0.0? ",punishCost": "";
-                settings += punishFine != 0.0? ",punishFine": "";
-//                settings += punishRatio != 0.0? ",punishRatio": "";
+                settings += PF.isEmpty()? "": ",PF";
+                settings += PF.isEmpty()? "": ",PCFR";
+                settings += cost != 0.0? ",cost": "";
+                settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
-                settings += punishFunc.equals("noisy")? ",PN1": "";
+                settings += PF.equals("noisy")? ",PN1": "";
                 settings += EWT.equals("punish")? ",PN2": "";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
@@ -1415,6 +1389,8 @@ public class Env extends Thread{ // environment simulator
             }
             settings += "\n";
             settings += runs;
+//            settings += "," + game;
+            settings += "," + M;
             settings += "," + space;
             settings += "," + length;
             settings += "," + width;
@@ -1429,12 +1405,12 @@ public class Env extends Thread{ // environment simulator
             settings += RP == 0.0? "": "," + RP;
             settings += RA.isEmpty() ? "": "," + RA;
             settings += RT.isEmpty() ? "": "," + RT;
-            settings += punishFunc.isEmpty()? "": "," + punishFunc;
-            settings += punishCost != 0.0? "," + punishCost: "";
-            settings += punishFine != 0.0? "," + punishFine: "";
-//            settings += punishRatio != 0.0? "," + punishRatio: "";
+            settings += PF.isEmpty()? "": "," + PF;
+            settings += PF.isEmpty()? "": "," + PCFR;
+            settings += cost != 0.0? "," + cost: "";
+            settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
-            settings += punishFunc.equals("noisy")? "," + PN1: "";
+            settings += PF.equals("noisy")? "," + PN1: "";
             settings += EWT.equals("punish")? "," + PN2: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
@@ -1474,7 +1450,7 @@ public class Env extends Thread{ // environment simulator
                     output+="mean avg p,sigma avg p,";
                 }
                 if(writeURunStats){
-                    output+="mean avg u,";
+                    output+="mean avg u,sigma avg u";
                 }
                 if(writeKRunStats){
                     output+="mean sigma k,";
@@ -1490,6 +1466,7 @@ public class Env extends Thread{ // environment simulator
             double mean_avg_p = 0.0;
             double sigma_avg_p = 0.0;
             double mean_avg_u = 0.0;
+            double sigma_avg_u = 0.0;
             double mean_sigma_k = 0.0;
             double[] mean_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
@@ -1535,14 +1512,16 @@ public class Env extends Thread{ // environment simulator
                 }
                 for(int i=0;i<runs;i++){
                     sigma_avg_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
+                    sigma_avg_u += Math.pow(mean_u_values[i] - mean_avg_u, 2);
                 }
                 sigma_avg_p = Math.pow(sigma_avg_p / runs, 0.5);
+                sigma_avg_u = Math.pow(sigma_avg_u / runs, 0.5);
                 output += "\n";
                 if(writePRunStats){
                     output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
                 }
                 if(writeURunStats){
-                    output+=DF4.format(mean_avg_u) + ",";
+                    output+=DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
                 }if(writeKRunStats){
                     output+=DF4.format(mean_sigma_k) + ",";
                 }
@@ -1554,8 +1533,15 @@ public class Env extends Thread{ // environment simulator
             }
 
             // display info in console
-            if(writePRunStats){
-                System.out.println("exp: "+exp+"; mean avg p: "+DF4.format(mean_avg_p));
+            if(writePRunStats || writeURunStats){
+                String console_output = "exp: "+exp;
+                if(writePRunStats){
+                    console_output += "; mean avg p: "+DF4.format(mean_avg_p);
+                }
+                if(writeURunStats){
+                    console_output += "; mean avg u: "+DF4.format(mean_avg_u);
+                }
+                System.out.println(console_output);
             }
         }
     }
@@ -1745,11 +1731,16 @@ public class Env extends Thread{ // environment simulator
 
 
             // display info in console
-            if(writePRunStats){
-                System.out.println("run: "+run+"; mean p: "+DF4.format(mean_p));
+            if(writePRunStats || writeURunStats){
+                String console_output = "run: "+run;
+                if(writePRunStats){
+                    console_output += "; mean p: "+DF4.format(mean_p);
+                }
+                if(writeURunStats){
+                    console_output += "; mean u: "+DF4.format(mean_u);
+                }
+                System.out.println(console_output);
             }
-
-
         }
     }
 
@@ -2029,37 +2020,7 @@ public class Env extends Thread{ // environment simulator
         return parent;
     }
 
-//    /**
-//     * punisher tries to punish all neighbours.
-//     * a denotes punisher.
-//     * b denotes punishee neighbour of a.
-//     * probability of punishing = 1 - w_ab.
-//     * higher w_ab ==> lower probability of a punishing b.
-//     * w_ab = 1.0 ==> guaranteed not to punish.
-//     * w_ab = 0.0 ==> guaranteed to punish.
-//     * @param a
-//     */
-//    public void punishAllProb(Player a){
-//        ArrayList<Double> weights = a.getEdgeWeights();
-//        ArrayList<Player> omega_a = a.getOmega();
-//        for(int i=0;i<a.getK();i++){
-//            Player b = omega_a.get(i);
-//            double random_double = ThreadLocalRandom.current().nextDouble();
-//            double w_ab = weights.get(i);
-////            double punish_prob = 1 - w_ab;
-////            double punish_prob = (1 - w_ab) * (1 - PN);
-//            switch(punish){
-//
-//            }
-////            if(punish_prob > random_double){
-////            if(punish_prob > random_double && a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
-////            if(punish_prob > random_double && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
-//            if((punish_prob > random_double) && ((a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0) || NU == true)){
-//                a.setU(a.getU() - punishCost);
-//                b.setU(b.getU() - punishFine);
-//            }
-//        }
-//    }
+
 
     /**
      * Fermi-Dirac evolution function.
@@ -2106,18 +2067,13 @@ public class Env extends Thread{ // environment simulator
             double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
             double punish_prob = 0.0;
-            switch(punishFunc){
+            switch(PF){
                 case "linear" -> punish_prob = 1 - w_ab;
                 case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
                 case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
                 case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
                 case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
             }
-//            if(!NU){ // if negative utility not permitted...
-//                if(a.getU() - punishCost >= 0 && b.getU() - punishFine >= 0){
-//                    punish_prob = 0.0; // if either party would have negative utility as a result of punishment, do not punish.
-//                }
-//            }
             boolean punish = punish_prob > random_double;
             double random_double2 = ThreadLocalRandom.current().nextDouble();
             if(PN2 > random_double2){
@@ -2128,152 +2084,62 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             if(punish){
-                a.setU(a.getU() - punishCost);
-                b.setU(b.getU() - punishFine);
+                a.setU(a.getU() - cost);
+                b.setU(b.getU() - fine);
             }
         }
     }
 
 
-    /**
-     * punisher tries to punish one neighbours.
-     * a denotes punisher.
-     * b denotes punishee i.e. the neighbour that may be punished by a.
-     * probability of punishing = 1 - w_ab.
-     * higher w_ab ==> lower probability of a punishing b.
-     * w_ab = 1.0 ==> guaranteed not to punish.
-     * w_ab = 0.0 ==> guaranteed to punish.
-     * @param a
-     */
-    public void punishOneProb(Player a){
-//        ArrayList<Double> weights = a.getEdgeWeights();
-//        ArrayList<Player> omega_a = a.getOmega();
-//        int random_int = ThreadLocalRandom.current().nextInt(a.getK());
-//        Player b = omega_a.get(random_int);
-//        double w_ab = weights.get(random_int);
-//        double punish_prob = 1 - w_ab;
-//        double random_double = ThreadLocalRandom.current().nextDouble();
-//        if(punish_prob > random_double){
-//            a.setU(a.getU() - punishCost);
-//            b.setU(b.getU() - punishFine);
-//        }
-        System.out.println("decommissioned since func does not consider negative utility...");
-    }
 
-//    // for every 1 unit spent by punisher to punish, victim loses punishRatio units. inspired by fehr2002altrustic.
-//    public void punishAllAmount(Player a){
-//        ArrayList<Double> weights = a.getEdgeWeights();
-//        ArrayList<Player> omega_a = a.getOmega();
-//        for(int i=0;i<a.getK();i++){
-//            Player b = omega_a.get(i);
-//            double w_ab = weights.get(i);
-//            double cost = 1 - w_ab; // cost of punishing for punisher.
-//            double fine = punishRatio * (1 - w_ab); // fine applied to punishee.
-//            a.setU(a.getU() - cost);
-//            b.setU(b.getU() - fine);
-//        }
-//    }
-//    public void punishOneAmount(Player a){
-//        // TODO: implement. use punishAllAmount() as a blueprint for how to implement the "amount" part.
-//    }
-
-
-    public static void assignPunishCost(String value){
-//        switch(punishFunc){
-//
-//            // punishCost must be valid if punishFunc is oneProb or allProb.
-//            case "oneProb", "allProb" -> {
-//                try{
-//                    punishCost = Double.parseDouble(value);
-//                    System.out.println("punishCost="+punishCost);
-//                }catch(NumberFormatException e){
-//                    System.out.println("invalid punishCost: must be a double");
-//                    exit();
-//                }
-//            }
-//        }
-
-
-        switch(punishFunc){
+    public static void assignCost(String value){
+        switch(PF){
             case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
                 try{
-                    punishCost = Double.parseDouble(value);
-                    System.out.println("punishCost="+punishCost);
+                    cost = Double.parseDouble(value);
+                    System.out.println("cost="+cost);
                 }catch(NumberFormatException e){
-                    System.out.println("invalid punishCost: must be a double");
+                    System.out.println("invalid cost: must be a double");
                     exit();
                 }
             }
         }
     }
 
-    public static void assignPunishFine(String value){
-//        switch(punishFunc){
-//
-//            // punishFine must be valid if punishFunc is oneProb or allProb.
-//            case "oneProb", "allProb" -> {
-//                try{
-//                    punishFine = Double.parseDouble(value);
-//                    System.out.println("punishFine="+punishFine);
-//                }catch(NumberFormatException e){
-//                    System.out.println("invalid punishFine: must be a double");
-//                    exit();
-//                }
-//            }
-//        }
-
-        switch(punishFunc){
+    public static void assignFine(String value){
+        switch(PF){
             case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
                 try{
-                    punishFine = Double.parseDouble(value);
-                    System.out.println("punishFine="+punishFine);
+                    fine = Double.parseDouble(value);
+                    System.out.println("fine="+fine);
                 }catch(NumberFormatException e){
-                    System.out.println("invalid punishFine: must be a double");
+                    System.out.println("invalid fine: must be a double");
                     exit();
                 }
             }
         }
     }
+    public static void assignFine(){
+        fine = cost * PCFR;
+        System.out.println("fine="+DF4.format(fine));
+    }
 
-    public static void assignPunishFunc(String value){
+    public static void assignPF(String value){
         switch(EWT){
-
-            // punishFunc must be valid if EWT = punish.
             case "punish" -> {
                 switch(value){
-
-                    // case where value is valid.
-//                    case "allProb", "oneProb", "allAmount", "oneAmount" -> {
                     case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
-                        punishFunc = value;
-                        System.out.println("punishFunc="+punishFunc);
+                        PF = value;
+                        System.out.println("PF="+PF);
                     }
-
-                    // case where value is invalid.
                     default -> {
-                        System.out.println("invalid punishFunc");
+                        System.out.println("invalid PF");
                         exit();
                     }
                 }
             }
         }
     }
-
-//    public static void assignPunishRatio(String value){
-//        switch(punishFunc){
-//
-//            // punishRatio must be valid if punishFunc is oneAmount or allAmount.
-//            case "oneAmount", "allAmount" -> {
-//                try{
-//                    punishRatio = Double.parseDouble(value);
-//                    System.out.println("punishRatio="+punishRatio);
-//                }catch(NumberFormatException e){
-//                    System.out.println("invalid punishRatio: must be a double");
-//                    exit();
-//                }
-//            }
-//        }
-//    }
 
     public static void assignMutRate(String value){
         switch(mut){
@@ -2531,13 +2397,13 @@ public class Env extends Thread{ // environment simulator
                 case "mutRate" -> output += "\n" + mutRate;
                 case "mutBound" -> output += "\n" + mutBound;
                 case "UF" -> output += "\n" + UF;
-                case "punishFunc" -> output += "\n" + punishFunc;
-                case "punishCost" -> output += "\n" + punishCost;
-                case "punishFine" -> output += "\n" + punishFine;
-//                case "punishRatio" -> output += "\n" + punishRatio;
+                case "PF" -> output += "\n" + PF;
+                case "cost" -> output += "\n" + cost;
+                case "fine" -> output += "\n" + fine;
                 case "NU" -> output += "\n" + NU;
                 case "PN1" -> output += "\n" + PN1;
                 case "PN2" -> output += "\n" + PN2;
+                case "PCFR" -> output += "\n" + PCFR;
             }
 
             // create the file and write the data.
@@ -2569,13 +2435,14 @@ public class Env extends Thread{ // environment simulator
                     "mutRate",
                     "mutBound",
                     "UF",
-                    "punishFunc",
-                    "punishCost",
-                    "punishFine",
-//                    "punishRatio",
+                    "PF",
+                    "cost",
+                    "fine",
                     "NU",
                     "PN1",
-                    "PN2"
+                    "PN2",
+                    "M",
+                    "PCFR"
                     -> {
                 VP = value;
                 System.out.println("VP="+VP);
@@ -2704,26 +2571,11 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignVariations(String value){
         if(!value.isEmpty()){
-
-//            for (String variation : value.split(";")) {
-//                variations.add(variation);
-//                System.out.println("variation="+variation);
-//            }
-
-//            String[] split = value.split(";");
-//            for(int i=0;i<split.length;i++){
-//                String variation = split[i];
-//                variations.add(variation);
-//                System.out.println("variation"+(i+1)+"="+variation);
-//            }
-//            exps = variations.size() + 1;
-
             variations = value.split(";");
             for(int i=0;i<variations.length;i++){
                 System.out.println("variation"+(i+1)+"="+variations[i]);
             }
             exps = variations.length + 1;
-
         }
     }
 
@@ -2809,12 +2661,26 @@ public class Env extends Thread{ // environment simulator
         width = length;
         System.out.println("width="+width);
     }
+    public static void assignWidth(String value){
+        try{
+            length = Integer.parseInt(value);
+            System.out.println("length="+length);
+        }catch(NumberFormatException e){
+            System.out.println("invalid length: must be an integer");
+            exit();
+        }
+        if(length < 3){
+            System.out.println("invalid length: must be >= 3.");
+            exit();
+        }
+    }
 
     public static void assignN(){
         N = length * width;
         System.out.println("N="+N);
     }
 
+    // this function just initialises Player.game.
     public static void assignGame(){
         Player.setGame(game);
         System.out.println("game="+game);
@@ -2969,7 +2835,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void assignPN1(String value){
-        switch(punishFunc){
+        switch(PF){
             case "noisy" -> {
                 try{
                     PN1 = Double.parseDouble(value);
@@ -2998,6 +2864,37 @@ public class Env extends Thread{ // environment simulator
                 }
                 if(PN2 < 0 || PN2 > 1){
                     System.out.println("invalid PN2: must be within the interval [0, 1].");
+                    exit();
+                }
+            }
+        }
+    }
+
+    public static void assignM(String value){
+        switch(game){
+            case "UG", "DG" -> {
+                try{
+                    M = Double.parseDouble(value);
+                    System.out.println("M="+M);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid M: must be a double");
+                    exit();
+                }
+                if(M < 0){
+                    System.out.println("invalid M: must be greater than 0");
+                }
+            }
+        }
+    }
+
+    public static void assignPCFR(String value){
+        switch(EWT){
+            case "punish" -> {
+                try{
+                    PCFR = Double.parseDouble(value);
+                    System.out.println("PCFR="+PCFR);
+                }catch(NumberFormatException e){
+                    System.out.println("invalid PCFR: must be a double");
                     exit();
                 }
             }
