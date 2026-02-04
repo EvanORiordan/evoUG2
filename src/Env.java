@@ -181,7 +181,7 @@ public class Env extends Thread{ // environment simulator
                     case "PF" -> assignPF(variations[exp - 1]);
                     case "cost" -> {
                         assignCost(variations[exp - 1]);
-                        if(PCFR >= 0){
+                        if(PCFR > 0){
                             assignFine();
                         }
                     }
@@ -919,7 +919,7 @@ public class Env extends Thread{ // environment simulator
         assignPF(CI!=settings.length? settings[CI++]: "");
         assignPCFR(CI!=settings.length? settings[CI++]: "");
         assignCost(CI!=settings.length? settings[CI++]: "");
-        if(PCFR >= 0){
+        if(PCFR > 0){
             assignFine();
             CI++;
         } else {
@@ -1370,6 +1370,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PF.isEmpty()? "": ",PF";
                 settings += PF.isEmpty()? "": ",PCFR";
+//                settings += PCFR != 0.0? ",PCFR": "";
                 settings += cost != 0.0? ",cost": "";
                 settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
@@ -1407,6 +1408,7 @@ public class Env extends Thread{ // environment simulator
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PF.isEmpty()? "": "," + PF;
             settings += PF.isEmpty()? "": "," + PCFR;
+//            settings += PCFR != 0.0? "," + PCFR: "";
             settings += cost != 0.0? "," + cost: "";
             settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
@@ -2896,6 +2898,9 @@ public class Env extends Thread{ // environment simulator
                 }catch(NumberFormatException e){
                     System.out.println("invalid PCFR: must be a double");
                     exit();
+                }
+                if(PCFR < 0){
+                    System.out.println("invalid PCFR: must be greater than or equal to 0");
                 }
             }
         }
