@@ -104,6 +104,8 @@ public class Env extends Thread{ // environment simulator
     static double PN2; // another form of punishment noise.
     static double LR; // learning rate.
     static double PCFR = 0.0; // punishment cost:fine ratio.
+    static ArrayList<String> configs = new ArrayList<>(); // stores configurations
+    static ArrayList<String> timestamps = new ArrayList<>();
 
 
 
@@ -112,34 +114,94 @@ public class Env extends Thread{ // environment simulator
      * Main method of Java program.
       */
     public static void main(String[] args) {
-        configEnv();
-        LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
-        old_timestamp = start_timestamp;
-        String start_timestamp_string = start_timestamp.getYear()
-                +"-"+start_timestamp.getMonthValue()
-                +"-"+start_timestamp.getDayOfMonth()
-                +"_"+start_timestamp.getHour()
-                +"-"+start_timestamp.getMinute()
-                +"-"+start_timestamp.getSecond();
-        this_path = general_path+"\\"+start_timestamp_string;
-        if (writeRate > 0) {
-            try {
-                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-            }catch(IOException e){
-                e.printStackTrace();
+
+
+
+//        configEnv();
+//        LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
+//        old_timestamp = start_timestamp;
+//        String start_timestamp_string = start_timestamp.getYear()
+//                +"-"+start_timestamp.getMonthValue()
+//                +"-"+start_timestamp.getDayOfMonth()
+//                +"_"+start_timestamp.getHour()
+//                +"-"+start_timestamp.getMinute()
+//                +"-"+start_timestamp.getSecond();
+//        this_path = general_path+"\\"+start_timestamp_string;
+//        if (writeRate > 0) {
+//            try {
+//                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+//            }catch(IOException e){
+//                e.printStackTrace();
+//            }
+//            printPath();
+//        }
+//        System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
+//        experimentSeries();
+//        LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
+//        System.out.println("Finishing timestamp: "+finish_timestamp);
+//        Duration duration = Duration.between(start_timestamp, finish_timestamp);
+//        long secondsElapsed = duration.toSeconds();
+//        long minutesElapsed = duration.toMinutes();
+//        long hoursElapsed = duration.toHours();
+//        System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
+//        if (writeRate > 0) {
+//            printPath();
+//        }
+
+
+
+        // load configurations
+        try{
+            br = new BufferedReader(new FileReader(config_filename));
+            String line; // initialises String to store rows of data
+            br.readLine(); // ignores the row of headings
+            while((line = br.readLine()) != null){
+                configs.add(line);
             }
-            printPath();
+        } catch(IOException e){
+            e.printStackTrace();
         }
-        System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
-        experimentSeries();
-        LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
-        System.out.println("Finishing timestamp: "+finish_timestamp);
-        Duration duration = Duration.between(start_timestamp, finish_timestamp);
-        long secondsElapsed = duration.toSeconds();
-        long minutesElapsed = duration.toMinutes();
-        long hoursElapsed = duration.toHours();
-        System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-        if (writeRate > 0) printPath();
+        System.out.println("STARTING EXPERIMENTATION");
+        for(String config_line_num: args){
+            configEnv(config_line_num);
+            LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
+            old_timestamp = start_timestamp;
+            String start_timestamp_string = start_timestamp.getYear()
+                    +"-"+start_timestamp.getMonthValue()
+                    +"-"+start_timestamp.getDayOfMonth()
+                    +"_"+start_timestamp.getHour()
+                    +"-"+start_timestamp.getMinute()
+                    +"-"+start_timestamp.getSecond();
+            timestamps.add(start_timestamp_string);
+            this_path = general_path+"\\"+start_timestamp_string;
+            if (writeRate > 0) {
+                try {
+                    Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+                printPath();
+            }
+            System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
+            experimentSeries();
+            LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
+            System.out.println("Finishing timestamp: "+finish_timestamp);
+            Duration duration = Duration.between(start_timestamp, finish_timestamp);
+            long secondsElapsed = duration.toSeconds();
+            long minutesElapsed = duration.toMinutes();
+            long hoursElapsed = duration.toHours();
+            System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
+            if (writeRate > 0) {
+//                printPath();
+                System.out.println("timestamps:");
+                for (String timestamp: timestamps){
+                    System.out.println(timestamp);
+                }
+            }
+        }
+
+
+
     }
 
 
@@ -900,6 +962,62 @@ public class Env extends Thread{ // environment simulator
         settings = configurations.get(config_num).split(",");
         CI = 0;
         System.out.println("Start assigning settings...");
+        assignRuns(settings[CI++]);
+        assignGame();
+        assignM(settings[CI++]);
+        assignLength(settings[CI++]);
+        if(space.equals("grid")){
+            assignWidth();
+        }
+        assignN();
+        assignNeighType(settings[CI++]);
+        assignGenType(settings[CI++]);
+        assignER(settings[CI++]);
+        assignGens(settings[CI++]);
+        assignEWT(CI!=settings.length? settings[CI++]: "");
+        assignRP(CI!=settings.length? settings[CI++]: "");
+        assignRA(CI!=settings.length? settings[CI++]: "");
+        assignRT(CI!=settings.length? settings[CI++]: "");
+        assignPF(CI!=settings.length? settings[CI++]: "");
+        assignPCFR(CI!=settings.length? settings[CI++]: "");
+        assignCost(CI!=settings.length? settings[CI++]: "");
+        if(PCFR > 0){
+            assignFine();
+            CI++;
+        } else {
+            assignFine(CI!=settings.length? settings[CI++]: "");
+        }
+        assignNU(CI!=settings.length? settings[CI++]: "");
+        assignPN1(CI!=settings.length? settings[CI++]: "");
+        assignPN2(CI!=settings.length? settings[CI++]: "");
+        assignEWL(CI!=settings.length? settings[CI++]: "");
+        assignROC(CI!=settings.length? settings[CI++]: "");
+        assignEvo(settings[CI++]);
+        assignSel(settings[CI++]);
+        assignRWT(CI!=settings.length? settings[CI++]: "");
+        assignEN(CI!=settings.length? settings[CI++]: "");
+        assignMut(CI!=settings.length? settings[CI++]: "");
+        assignMutRate(CI!=settings.length? settings[CI++]: "");
+        assignMutBound(CI!=settings.length? settings[CI++]: "");
+        assignUF(settings[CI++]);
+        assignWritePGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteUGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteKGenStats(CI!=settings.length? settings[CI++]: "");
+        assignWritePRunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteURunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteKRunStats(CI!=settings.length? settings[CI++]: "");
+        assignWriteRate(CI!=settings.length? settings[CI++]: "");
+        assignVP(CI!=settings.length? settings[CI++]: "");
+        assignVariations(CI!=settings.length? settings[CI++]: "");
+    }
+
+
+
+    // the config num should be set to the line number the config is on in config.csv.
+    public static void configEnv(String config_line_num){
+        String[] settings = configs.get(Integer.parseInt(config_line_num) - 2).split(",");
+        CI = 0;
+        System.out.println("CONFIG LINE NUM: " + config_line_num);
         assignRuns(settings[CI++]);
         assignGame();
         assignM(settings[CI++]);
