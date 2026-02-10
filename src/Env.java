@@ -60,7 +60,6 @@ public class Env extends Thread{ // environment simulator
 //    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
 //    static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
-    static LocalDateTime old_timestamp; // timestamp of end of previous experiment in series
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
     static String this_path; // address where stats for current experimentation is recorded
@@ -101,11 +100,12 @@ public class Env extends Thread{ // environment simulator
     static int CI; // configuration index
     static boolean NU; // indicates whether individuals can have negative utility.
     static double PN1; // indicates how much noise is present during the noisy punishment function.
-    static double PN2; // another form of punishment noise.
+    static double PN2; // probability of agents making the opposite choice regarding punishment.
     static double LR; // learning rate.
     static double PCFR = 0.0; // punishment cost:fine ratio.
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
+    int num_puns = 0;
 
 
 
@@ -114,94 +114,87 @@ public class Env extends Thread{ // environment simulator
      * Main method of Java program.
       */
     public static void main(String[] args) {
-
-
-
-//        configEnv();
-//        LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
-//        old_timestamp = start_timestamp;
-//        String start_timestamp_string = start_timestamp.getYear()
-//                +"-"+start_timestamp.getMonthValue()
-//                +"-"+start_timestamp.getDayOfMonth()
-//                +"_"+start_timestamp.getHour()
-//                +"-"+start_timestamp.getMinute()
-//                +"-"+start_timestamp.getSecond();
-//        this_path = general_path+"\\"+start_timestamp_string;
-//        if (writeRate > 0) {
-//            try {
-//                Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-//            }catch(IOException e){
-//                e.printStackTrace();
-//            }
-//            printPath();
-//        }
-//        System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
-//        experimentSeries();
-//        LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
-//        System.out.println("Finishing timestamp: "+finish_timestamp);
-//        Duration duration = Duration.between(start_timestamp, finish_timestamp);
-//        long secondsElapsed = duration.toSeconds();
-//        long minutesElapsed = duration.toMinutes();
-//        long hoursElapsed = duration.toHours();
-//        System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-//        if (writeRate > 0) {
-//            printPath();
-//        }
-
-
-
-        // load configurations
-        try{
+        
+        // load configurations.
+        try {
             br = new BufferedReader(new FileReader(config_filename));
             String line; // initialises String to store rows of data
             br.readLine(); // ignores the row of headings
-            while((line = br.readLine()) != null){
+            while ((line = br.readLine()) != null) {
                 configs.add(line);
             }
-        } catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("STARTING EXPERIMENTATION");
-        for(String config_line_num: args){
-            configEnv(config_line_num);
-            LocalDateTime start_timestamp = LocalDateTime.now(); // timestamp of start of experimentation
-            old_timestamp = start_timestamp;
+
+        // account for when args are vs aren't given.
+        int[] config_line_nums;
+        if (args.length == 0) {
+            config_line_nums = new int[1];
+            System.out.print("[REQUEST] Insert configuration line number: ");
+            config_line_nums[0] = scanner.nextInt();
+        } else {
+            config_line_nums = new int[args.length];
+            for(int i = 0; i < args.length; i++){
+                config_line_nums[i] = Integer.parseInt(args[i]);
+            }
+        }
+
+        // commence experimentation.
+        String console_str = "[INFO] Configuration line number(s) selected: ";
+        for (int config_line_num : config_line_nums) {
+            console_str += config_line_num + " ";
+        }
+        System.out.println(console_str);
+        for(int i = 0; i < config_line_nums.length; i++) {
+            System.out.println("[INFO] Current configuration line number: " + config_line_nums[i]);
+            try{
+                configEnv(config_line_nums[i]);
+            }catch (IndexOutOfBoundsException e){
+                System.out.println("[INFO] Invalid configuration number.");
+                exit(1);
+            }
+            LocalDateTime start_timestamp = LocalDateTime.now();
             String start_timestamp_string = start_timestamp.getYear()
-                    +"-"+start_timestamp.getMonthValue()
-                    +"-"+start_timestamp.getDayOfMonth()
-                    +"_"+start_timestamp.getHour()
-                    +"-"+start_timestamp.getMinute()
-                    +"-"+start_timestamp.getSecond();
+                        + "-" + start_timestamp.getMonthValue()
+                        + "-" + start_timestamp.getDayOfMonth()
+                        + "_" + start_timestamp.getHour()
+                        + "-" + start_timestamp.getMinute()
+                        + "-" + start_timestamp.getSecond();
             timestamps.add(start_timestamp_string);
-            this_path = general_path+"\\"+start_timestamp_string;
+            this_path = general_path + "\\" + start_timestamp_string;
             if (writeRate > 0) {
                 try {
                     Files.createDirectories(Paths.get(this_path)); // create stats storage folder
-                }catch(IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 printPath();
             }
-            System.out.println("Start experimentation...\nStarting timestamp: "+start_timestamp);
+//            System.out.println("Start experimentation...\nStarting timestamp: " + start_timestamp);
             experimentSeries();
             LocalDateTime finish_timestamp = LocalDateTime.now(); // marks the end of the main algorithm's runtime
-            System.out.println("Finishing timestamp: "+finish_timestamp);
+//            System.out.println("Finishing timestamp: " + finish_timestamp);
             Duration duration = Duration.between(start_timestamp, finish_timestamp);
             long secondsElapsed = duration.toSeconds();
             long minutesElapsed = duration.toMinutes();
             long hoursElapsed = duration.toHours();
-            System.out.println("Time elapsed: "+hoursElapsed+" hours, "+minutesElapsed%60+" minutes, "+secondsElapsed%60+" seconds");
-            if (writeRate > 0) {
-//                printPath();
-                System.out.println("timestamps:");
-                for (String timestamp: timestamps){
-                    System.out.println(timestamp);
-                }
+            System.out.println("[INFO] Time elapsed: " + hoursElapsed + " hours, " + minutesElapsed % 60 + " minutes, " + secondsElapsed % 60 + " seconds");
+        }
+        if (writeRate > 0) {
+            String console_output = "[INFO] IDs:";
+            for (String timestamp : timestamps) {
+                console_output += "\n" + timestamp;
             }
+            console_output += "\n[INFO] IDs for jupyter:\ncsv_data_address+'/" + timestamps.get(0) + "'";
+            for (int j = 1; j < timestamps.size(); j++) {
+                console_output += "\n,csv_data_address+'/" + timestamps.get(j) + "'";
+            }
+            System.out.println(console_output);
         }
 
-
-
+        // terminate program as intended.
+        exit(0);
     }
 
 
@@ -211,13 +204,14 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experimentSeries(){
         for(exp = 1; exp <= exps; exp++){
-            System.out.println("Start experiment " + exp);
+//            System.out.println("Start experiment " + exp);
             exp_path = this_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-            System.out.println("End experiment " + exp);
+//            System.out.println("End experiment " + exp);
             if(exp <= variations.length){ // do not try to vary after the last experiment has ended
-                System.out.println("Varying "+VP+"...");
+//                System.out.println("Varying "+VP+"...");
+                System.out.print("[INFO] Varying "+VP+": ");
                 switch(VP){
                     case "EWL" -> assignEWL(variations[exp - 1]);
                     case "RA" -> assignRA(variations[exp - 1]);
@@ -266,7 +260,7 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experiment(){
         for(run = 1; run <= runs; run++){
-            System.out.println("Start run " + run);
+//            System.out.println("Start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -487,7 +481,7 @@ public class Env extends Thread{ // environment simulator
             case "PED" -> learning = Math.exp(b.getP() - a.getP());
             case "UD" -> learning = b.getU() - a.getU();
             case "UED" -> learning = Math.exp(b.getU() - a.getU());
-            case "PDR" -> {
+            case "PDRv1" -> { // PDR: proposal value difference random.
                 double p_a = a.getP();
                 double p_b = b.getP();
                 double diff = p_b - p_a;
@@ -497,7 +491,7 @@ public class Env extends Thread{ // environment simulator
                     learning = -ThreadLocalRandom.current().nextDouble(-(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
                 }
             }
-            case "PDRv2" -> {
+            case "PDRv2" -> { // alternate implementation of PDR. i think v2 functions identically to v1.
                 double p_a = a.getP();
                 double p_b = b.getP();
                 if(p_a < p_b){
@@ -794,230 +788,11 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Loads in a configuration of settings from the config file, allowing the user to choose the values of the environmental parameters.
-     */
-    public static void configEnv(){
-        // load configurations
-        ArrayList<String> configurations = new ArrayList<>(); // stores configs
-        try{
-            br = new BufferedReader(new FileReader(config_filename));
-            String line; // initialises String to store rows of data
-            br.readLine(); // ignores the row of headings
-            while((line = br.readLine()) != null){
-                configurations.add(line);
-            }
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-
-        // displays intro and config table headings
-        System.out.printf("=========================================%n");
-        System.out.printf("|   Dictator Game Simulator             |%n");
-        System.out.printf("|   By Evan O'Riordan                   |%n");
-        printTableLine();
-        System.out.printf("|" +
-                " %-6s |"+//config
-                " %-4s |"+//runs
-                " %-5s |"+//M
-                " %-6s |"+//length
-                " %-9s |"+//neighType
-                " %-9s |"+//genType
-                " %-4s |"+//ER
-                " %-8s |"+//gens
-                " %-12s |"+//EWT
-                " %-7s |"+//RP
-                " %-15s |"+//RA
-                " %-5s |"+//RT
-                " %-12s |"+//PF
-                " %-5s |"+//PCFR
-                " %-5s |"+//cost
-                " %-5s |"+//fine
-                " %-2s |"+//NU
-                " %-5s |"+//PN1
-                " %-5s |"+//PN2
-                " %-6s |"+//EWL
-                " %-5s |"+//ROC
-                " %-10s |"+//evo
-                " %-11s |"+//sel
-                " %-6s |"+//RWT
-                " %-5s |"+//EN
-                " %-6s |"+//mut
-                " %-7s |"+//mutRate
-                " %-8s |"+//mutBound
-                " %-10s |"+//UF
-                " %-4s |"+//WPGS
-                " %-4s |"+//WUGS
-                " %-4s |"+//WKGS
-                " %-4s |"+//WPRS
-                " %-4s |"+//WURS
-                " %-4s |"+//WKRS
-                " %-9s |"+//writeRate
-                " %-11s |"+//VP
-                " %s%n"//variations
-                ,"config"
-                ,"runs"
-                ,"M"
-                ,"length"
-                ,"neighType"
-                ,"genType"
-                ,"ER"
-                ,"gens"
-                ,"EWT"
-                ,"RP"
-                ,"RA"
-                ,"RT"
-                ,"PF"
-                ,"PCFR"
-                ,"cost"
-                ,"fine"
-                ,"NU"
-                ,"PN1"
-                ,"PN2"
-                ,"EWL"
-                ,"ROC"
-                ,"evo"
-                ,"sel"
-                ,"RWT"
-                ,"EN"
-                ,"mut"
-                ,"mutRate"
-                ,"mutBound"
-                ,"UF"
-                ,"WPGS"
-                ,"WUGS"
-                ,"WKGS"
-                ,"WPRS"
-                ,"WURS"
-                ,"WKRS"
-                ,"writeRate"
-                ,"VP"
-                ,"variations"
-        );
-        printTableLine();
-
-        // displays config table rows
-        String[] settings; // configuration settings
-        for(int i=0;i<configurations.size();i++){
-            settings = configurations.get(i).split(",");
-            CI = 0;
-            System.out.printf("| %-6d ", i); //config
-            System.out.printf("| %-4s ", settings[CI++]); //runs
-            System.out.printf("| %-5s ", settings[CI++]); //M
-            System.out.printf("| %-6s ", settings[CI++]); //length
-            System.out.printf("| %-9s ", settings[CI++]); //neighType
-            System.out.printf("| %-9s ", settings[CI++]); // genType
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //ER
-            System.out.printf("| %-8s ", settings[CI++]); //gens
-            System.out.printf("| %-12s ", settings[CI++]); //EWT
-            System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //RP
-            System.out.printf("| %-15s ", CI!=settings.length? settings[CI++]: ""); //RA
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //RT
-            System.out.printf("| %-12s ", CI!=settings.length? settings[CI++]: ""); //PF
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PCFR
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //cost
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //fine
-//            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //punishRatio
-            System.out.printf("| %-2s ", CI!=settings.length? settings[CI++]: ""); //NU
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PN1
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //PN2
-            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //EWL
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //ROC
-            System.out.printf("| %-10s ", settings[CI++]); //evo
-            System.out.printf("| %-11s ", settings[CI++]); //sel
-            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //RWT
-            System.out.printf("| %-5s ", CI!=settings.length? settings[CI++]: ""); //EN
-            System.out.printf("| %-6s ", CI!=settings.length? settings[CI++]: ""); //mut
-            System.out.printf("| %-7s ", CI!=settings.length? settings[CI++]: ""); //mutRate
-            System.out.printf("| %-8s ", CI!=settings.length? settings[CI++]: ""); //mutBound
-            System.out.printf("| %-10s ", settings[CI++]); //UF
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WPGS
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WUGS
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WKGS
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WPRS
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WURS
-            System.out.printf("| %-4s ", CI!=settings.length? settings[CI++]: ""); //WKRS
-            System.out.printf("| %-9s ", CI!=settings.length? settings[CI++]: ""); //writeRate
-            System.out.printf("| %-11s ", CI!=settings.length? settings[CI++]: ""); //VP
-            System.out.printf("| %s ", CI!=settings.length? settings[CI++]: ""); //variations
-            System.out.println();
-        }
-        printTableLine();
-
-        // asks user which configuration of settings they wish to use.
-        System.out.print("Beware: if you want to vary a parameter to some value that requires secondary parameters to be initialised, make sure the configuration includes values for those secondary parameters!" +
-                "\nWhich config would you like to use? (int) ");
-        boolean config_selected = false;
-        int config_num;
-        do{ // ensures user selects valid config
-            config_num = scanner.nextInt();
-            if(0 <= config_num && config_num < configurations.size()){
-                config_selected = true;
-            } else{
-                System.out.println("[ERROR] Invalid config number, try again");
-            }
-        }while(!config_selected);
-
-        // assigns values from user-selected configuration to environmental parameters.
-        settings = configurations.get(config_num).split(",");
-        CI = 0;
-        System.out.println("Start assigning settings...");
-        assignRuns(settings[CI++]);
-        assignGame();
-        assignM(settings[CI++]);
-        assignLength(settings[CI++]);
-        if(space.equals("grid")){
-            assignWidth();
-        }
-        assignN();
-        assignNeighType(settings[CI++]);
-        assignGenType(settings[CI++]);
-        assignER(settings[CI++]);
-        assignGens(settings[CI++]);
-        assignEWT(CI!=settings.length? settings[CI++]: "");
-        assignRP(CI!=settings.length? settings[CI++]: "");
-        assignRA(CI!=settings.length? settings[CI++]: "");
-        assignRT(CI!=settings.length? settings[CI++]: "");
-        assignPF(CI!=settings.length? settings[CI++]: "");
-        assignPCFR(CI!=settings.length? settings[CI++]: "");
-        assignCost(CI!=settings.length? settings[CI++]: "");
-        if(PCFR > 0){
-            assignFine();
-            CI++;
-        } else {
-            assignFine(CI!=settings.length? settings[CI++]: "");
-        }
-        assignNU(CI!=settings.length? settings[CI++]: "");
-        assignPN1(CI!=settings.length? settings[CI++]: "");
-        assignPN2(CI!=settings.length? settings[CI++]: "");
-        assignEWL(CI!=settings.length? settings[CI++]: "");
-        assignROC(CI!=settings.length? settings[CI++]: "");
-        assignEvo(settings[CI++]);
-        assignSel(settings[CI++]);
-        assignRWT(CI!=settings.length? settings[CI++]: "");
-        assignEN(CI!=settings.length? settings[CI++]: "");
-        assignMut(CI!=settings.length? settings[CI++]: "");
-        assignMutRate(CI!=settings.length? settings[CI++]: "");
-        assignMutBound(CI!=settings.length? settings[CI++]: "");
-        assignUF(settings[CI++]);
-        assignWritePGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteUGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteKGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWritePRunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteURunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteKRunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteRate(CI!=settings.length? settings[CI++]: "");
-        assignVP(CI!=settings.length? settings[CI++]: "");
-        assignVariations(CI!=settings.length? settings[CI++]: "");
-    }
-
-
-
     // the config num should be set to the line number the config is on in config.csv.
-    public static void configEnv(String config_line_num){
-        String[] settings = configs.get(Integer.parseInt(config_line_num) - 2).split(",");
+    public static void configEnv(int config_line_num){
+        String[] settings = configs.get(config_line_num - 2).split(",");
         CI = 0;
-        System.out.println("CONFIG LINE NUM: " + config_line_num);
+        System.out.println("[INFO] Settings:");
         assignRuns(settings[CI++]);
         assignGame();
         assignM(settings[CI++]);
@@ -1142,7 +917,8 @@ public class Env extends Thread{ // environment simulator
      * Prints path of experiment stats folder.
      */
     public static void printPath(){
-        System.out.println("Address of experimentation data: \n" + this_path);
+//        System.out.println("[INFO] Address of experimentation data: \n" + this_path);
+        System.out.println("[INFO] Address of experimentation data: " + this_path);
     }
 
 
@@ -1549,7 +1325,7 @@ public class Env extends Thread{ // environment simulator
                 fw.close();
             } catch(IOException e){
                 e.printStackTrace();
-                System.exit(0);
+                exit(1);
             }
         }
     }
@@ -1654,7 +1430,7 @@ public class Env extends Thread{ // environment simulator
 
             // display info in console
             if(writePRunStats || writeURunStats){
-                String console_output = "exp: "+exp;
+                String console_output = "[STATS] exp: "+exp;
                 if(writePRunStats){
                     console_output += "; mean avg p: "+DF4.format(mean_avg_p);
                 }
@@ -1852,7 +1628,7 @@ public class Env extends Thread{ // environment simulator
 
             // display info in console
             if(writePRunStats || writeURunStats){
-                String console_output = "run: "+run;
+                String console_output = "[STATS] exp: "+exp+"; run: "+run;
                 if(writePRunStats){
                     console_output += "; mean p: "+DF4.format(mean_p);
                 }
@@ -2020,7 +1796,7 @@ public class Env extends Thread{ // environment simulator
             fw.close();
         }catch(IOException e){
             e.printStackTrace();
-            System.exit(0);
+            exit(1);
         }
     }
 
@@ -2032,26 +1808,36 @@ public class Env extends Thread{ // environment simulator
     public void writeRunStats() {
         String filename = run_path + "\\run_stats.csv";
         String s = "";
-//        if(gen / writeRate == 1){ // apply headings to file before writing data
         if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
-
-
-//            s += "gens,";
             s += "gen,";
-
-
-            if (writePRunStats) s += "mean p,sigma p,max p,";
-            if (writeURunStats) s += "mean u,sigma u,";
-//            if (writeDegRunStats && EWT.equals("rewire")) s += "sigma deg,";
-            if (writeKRunStats) s += "sigma k,";
+            if (writePRunStats) {
+                s += "mean p,sigma p,max p,";
+            }
+            if (writeURunStats) {
+                s += "mean u,sigma u,";
+            }
+            if (writeKRunStats) {
+                s += "sigma k,";
+            }
+            if (EWT.equals("punish")) {
+                s += "num puns";
+            }
             s = removeTrailingComma(s);
             s += "\n";
         }
         s += gen + ",";
-        if(writePRunStats) s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
-        if(writeURunStats) s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
-//        if(writeDegRunStats && EWT.equals("rewire")) s += DF4.format(sigma_deg) + ",";
-        if(writeKRunStats) s += DF4.format(sigma_k) + ",";
+        if(writePRunStats) {
+            s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
+        }
+        if(writeURunStats) {
+            s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
+        }
+        if(writeKRunStats) {
+            s += DF4.format(sigma_k) + ",";
+        }
+        if (EWT.equals("punish")) {
+            s += num_puns + ",";
+        }
         s = removeTrailingComma(s);
         s+="\n";
         try{
@@ -2060,7 +1846,7 @@ public class Env extends Thread{ // environment simulator
             fw.close();
         } catch(IOException e){
             e.printStackTrace();
-            System.exit(0);
+            exit(1);
         }
     }
 
@@ -2077,10 +1863,13 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-
-    public static void exit(){
-        System.out.println("[INFO] Exiting...");
-        Runtime.getRuntime().exit(0);
+    public static void exit(int status){
+        if(status == 0){
+            System.out.println("[INFO] Normal termination...");
+        } else if (status == 1){
+            System.out.println("[INFO] Terminating due to error...");
+        }
+        Runtime.getRuntime().exit(status);
     }
 
 
@@ -2186,14 +1975,7 @@ public class Env extends Thread{ // environment simulator
             Player b = omega_a.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
-            double punish_prob = 0.0;
-            switch(PF){
-                case "linear" -> punish_prob = 1 - w_ab;
-                case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
-                case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
-                case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
-                case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
-            }
+            double punish_prob = calculatePunishProb(w_ab); // the punish probability is a function of the weight.
             boolean punish = punish_prob > random_double;
             double random_double2 = ThreadLocalRandom.current().nextDouble();
             if(PN2 > random_double2){
@@ -2206,6 +1988,7 @@ public class Env extends Thread{ // environment simulator
             if(punish){
                 a.setU(a.getU() - cost);
                 b.setU(b.getU() - fine);
+                num_puns++;
             }
         }
     }
@@ -2214,13 +1997,13 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignCost(String value){
         switch(PF){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
                 try{
                     cost = Double.parseDouble(value);
                     System.out.println("cost="+cost);
                 }catch(NumberFormatException e){
                     System.out.println("invalid cost: must be a double");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2228,13 +2011,13 @@ public class Env extends Thread{ // environment simulator
 
     public static void assignFine(String value){
         switch(PF){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
                 try{
                     fine = Double.parseDouble(value);
                     System.out.println("fine="+fine);
                 }catch(NumberFormatException e){
                     System.out.println("invalid fine: must be a double");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2248,13 +2031,13 @@ public class Env extends Thread{ // environment simulator
         switch(EWT){
             case "punish" -> {
                 switch(value){
-                    case "linear", "smoothstep", "smootherstep", "on0", "noisy" -> {
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
                         PF = value;
                         System.out.println("PF="+PF);
                     }
                     default -> {
                         System.out.println("invalid PF");
-                        exit();
+                        exit(1);
                     }
                 }
             }
@@ -2269,11 +2052,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("mutRate="+mutRate);
                 }catch(NumberFormatException e){
                     System.out.println("invalid mutRate");
-                    exit();
+                    exit(1);
                 }
                 if(mutRate < 0 || mutRate > 1){
                     System.out.println("invalid mutRate: must be within the interval [0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2288,11 +2071,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("ROC="+ROC);
                 }catch(NumberFormatException e){
                     System.out.println("invalid ROC: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(ROC < 0 || ROC > 1){
                     System.out.println("invalid ROC: must be within the interval [0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2304,11 +2087,11 @@ public class Env extends Thread{ // environment simulator
             System.out.println("gens="+gens);
         }catch(NumberFormatException e){
             System.out.println("invalid gens: must be an integer");
-            exit();
+            exit(1);
         }
         if(gens < 1){
             System.out.println("invalid gens: must be >= 1.");
-            exit();
+            exit(1);
         }
     }
 
@@ -2320,11 +2103,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("ER="+ER);
                 }catch(NumberFormatException e){
                     System.out.println("invalid ER: must be an integer");
-                    exit();
+                    exit(1);
                 }
                 if(ER < 1){
                     System.out.println("invalid ER: must be >= 1.");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2336,11 +2119,11 @@ public class Env extends Thread{ // environment simulator
             System.out.println("length="+length);
         }catch(NumberFormatException e){
             System.out.println("invalid length: must be an integer");
-            exit();
+            exit(1);
         }
         if(length < 3){
             System.out.println("invalid length: must be >= 3.");
-            exit();
+            exit(1);
         }
     }
 
@@ -2350,11 +2133,11 @@ public class Env extends Thread{ // environment simulator
             System.out.println("runs="+runs);
         }catch(NumberFormatException e){
             System.out.println("invalid runs: must be an integer");
-            exit();
+            exit(1);
         }
         if(runs < 1){
             System.out.println("invalid runs: must be >= 1.");
-            exit();
+            exit(1);
         }
     }
 
@@ -2366,11 +2149,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("mutBound="+mutBound);
                 }catch(NumberFormatException e){
                     System.out.println("invalid mutBound");
-                    exit();
+                    exit(1);
                 }
                 if(mutBound <= 0 || mutBound > 1){
                     System.out.println("invalid mutBound: must be within the interval (0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2405,7 +2188,7 @@ public class Env extends Thread{ // environment simulator
         switch(value){
 
             // case where value is valid.
-            case "PROC", "UROC", "PD", "UD", "PDhalf" -> {
+            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2" -> {
                 EWL = value;
                 System.out.println("EWL="+EWL);
             }
@@ -2428,7 +2211,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is invalid.
             default -> {
                 System.out.println("invalid sel");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2443,7 +2226,7 @@ public class Env extends Thread{ // environment simulator
                     }
                     default -> {
                         System.out.println("invalid RWT");
-                        exit();
+                        exit(1);
                     }
                 }
             }
@@ -2469,7 +2252,7 @@ public class Env extends Thread{ // environment simulator
                 System.out.println("EN="+EN);
             }catch(NumberFormatException e){
                 System.out.println("invalid EN: must be a double");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2482,7 +2265,7 @@ public class Env extends Thread{ // environment simulator
             }
             default -> {
                 System.out.println("invalid UF");
-                exit();
+                exit(1);
             }
         }
 
@@ -2533,7 +2316,7 @@ public class Env extends Thread{ // environment simulator
                 fw.close();
             } catch(IOException e){
                 e.printStackTrace();
-                System.exit(0);
+                exit(1);
             }
         }
     }
@@ -2567,7 +2350,7 @@ public class Env extends Thread{ // environment simulator
                 VP = value;
                 System.out.println("VP="+VP);
             }
-            default -> System.out.println("[INFO] No follow-up experimentation involving parameter variation scheduled.");
+            default -> System.out.println("[INFO] No parameter variation scheduled with this configuration.");
         }
     }
 
@@ -2772,7 +2555,7 @@ public class Env extends Thread{ // environment simulator
                 System.out.println("writeRate="+writeRate);
             }catch(NumberFormatException e){
                 System.out.println("invalid writeRate");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2787,11 +2570,11 @@ public class Env extends Thread{ // environment simulator
             System.out.println("length="+length);
         }catch(NumberFormatException e){
             System.out.println("invalid length: must be an integer");
-            exit();
+            exit(1);
         }
         if(length < 3){
             System.out.println("invalid length: must be >= 3.");
-            exit();
+            exit(1);
         }
     }
 
@@ -2814,11 +2597,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("RP="+RP);
                 }catch(NumberFormatException e){
                     System.out.println("invalid RP: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(RP <= 0 || RP > 1){
                     System.out.println("invalid RP: must be within the interval (0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2838,7 +2621,7 @@ public class Env extends Thread{ // environment simulator
                     // case where value is invalid.
                     default -> {
                         System.out.println("invalid RA");
-                        exit();
+                        exit(1);
                     }
                 }
             }
@@ -2859,7 +2642,7 @@ public class Env extends Thread{ // environment simulator
                     // case where value is invalid.
                     default -> {
                         System.out.println("invalid RT");
-                        exit();
+                        exit(1);
                     }
                 }
             }
@@ -2883,7 +2666,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is invalid.
             default -> {
                 System.out.println("invalid evo");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2900,7 +2683,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is invalid.
             default -> {
                 System.out.println("invalid genType");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2921,7 +2704,7 @@ public class Env extends Thread{ // environment simulator
                     }
                     default -> {
                         System.out.println("invalid NU");
-                        exit();
+                        exit(1);
                     }
                 }
             }
@@ -2949,7 +2732,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is invalid
             default -> {
                 System.out.println("invalid neighType");
-                exit();
+                exit(1);
             }
         }
     }
@@ -2962,11 +2745,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("PN1="+PN1);
                 }catch(NumberFormatException e){
                     System.out.println("invalid PN1: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(PN1 < 0 || PN1 > 1){
                     System.out.println("invalid PN1: must be within the interval [0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2980,11 +2763,11 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("PN2="+PN2);
                 }catch(NumberFormatException e){
                     System.out.println("invalid PN2: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(PN2 < 0 || PN2 > 1){
                     System.out.println("invalid PN2: must be within the interval [0, 1].");
-                    exit();
+                    exit(1);
                 }
             }
         }
@@ -2998,7 +2781,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("M="+M);
                 }catch(NumberFormatException e){
                     System.out.println("invalid M: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(M < 0){
                     System.out.println("invalid M: must be greater than 0");
@@ -3015,12 +2798,33 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("PCFR="+PCFR);
                 }catch(NumberFormatException e){
                     System.out.println("invalid PCFR: must be a double");
-                    exit();
+                    exit(1);
                 }
                 if(PCFR < 0){
                     System.out.println("invalid PCFR: must be greater than or equal to 0");
                 }
             }
         }
+    }
+
+    public double calculatePunishProb(double w_ab){
+        double punish_prob = 0.0;
+        switch(PF){
+            case "linear" -> punish_prob = 1 - w_ab;
+            case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
+            case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
+            case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
+            case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
+            case "linear+thresholds" -> { // punishment is only stochastic when 0.2 < w_ab < 0.8.
+                if(w_ab >= 0.8){
+                    punish_prob = 0.0;
+                } else if(w_ab <= 0.2){
+                    punish_prob = 1.0;
+                } else {
+                    punish_prob = 1 - w_ab;
+                }
+            }
+        }
+        return punish_prob;
     }
 }
