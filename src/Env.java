@@ -96,7 +96,7 @@ public class Env extends Thread{ // environment simulator
     static int injSize = 0; // injection cluster size: indicates size of cluster to be injected
     static double cost; // the cost of punishing.
     static double fine; // the fine for being punished.
-    static String PF = "";
+    static String PP = ""; // punishment probability function
     static int CI; // configuration index
     static boolean NU; // indicates whether individuals can have negative utility.
     static double PN1; // indicates how much noise is present during the noisy punishment function.
@@ -106,6 +106,7 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
+    static String PA; // indicates how punishment amount is calculated
 
 
 
@@ -234,7 +235,7 @@ public class Env extends Thread{ // environment simulator
                     case "mutRate" -> assignMutRate(variations[exp - 1]);
                     case "mutBound" -> assignMutBound(variations[exp - 1]);
                     case "UF" -> assignUF(variations[exp - 1]);
-                    case "PF" -> assignPF(variations[exp - 1]);
+                    case "PP" -> assignPP(variations[exp - 1]);
                     case "cost" -> {
                         assignCost(variations[exp - 1]);
                         if(PCFR > 0){
@@ -809,7 +810,8 @@ public class Env extends Thread{ // environment simulator
         assignRP(CI!=settings.length? settings[CI++]: "");
         assignRA(CI!=settings.length? settings[CI++]: "");
         assignRT(CI!=settings.length? settings[CI++]: "");
-        assignPF(CI!=settings.length? settings[CI++]: "");
+        assignPP(CI!=settings.length? settings[CI++]: "");
+        assignPA(CI!=settings.length? settings[CI++]: "");
         assignPCFR(CI!=settings.length? settings[CI++]: "");
         assignCost(CI!=settings.length? settings[CI++]: "");
         if(PCFR > 0){
@@ -1262,13 +1264,13 @@ public class Env extends Thread{ // environment simulator
                 settings += RP == 0.0? "": ",RP";
                 settings += RA.isEmpty() ? "": ",RA";
                 settings += RT.isEmpty() ? "": ",RT";
-                settings += PF.isEmpty()? "": ",PF";
-                settings += PF.isEmpty()? "": ",PCFR";
+                settings += PP.isEmpty()? "": ",PP";
+                settings += PP.isEmpty()? "": ",PCFR";
 //                settings += PCFR != 0.0? ",PCFR": "";
                 settings += cost != 0.0? ",cost": "";
                 settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
-                settings += PF.equals("noisy")? ",PN1": "";
+                settings += PP.equals("noisy")? ",PN1": "";
                 settings += EWT.equals("punish")? ",PN2": "";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
@@ -1300,13 +1302,13 @@ public class Env extends Thread{ // environment simulator
             settings += RP == 0.0? "": "," + RP;
             settings += RA.isEmpty() ? "": "," + RA;
             settings += RT.isEmpty() ? "": "," + RT;
-            settings += PF.isEmpty()? "": "," + PF;
-            settings += PF.isEmpty()? "": "," + PCFR;
+            settings += PP.isEmpty()? "": "," + PP;
+            settings += PP.isEmpty()? "": "," + PCFR;
 //            settings += PCFR != 0.0? "," + PCFR: "";
             settings += cost != 0.0? "," + cost: "";
             settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
-            settings += PF.equals("noisy")? "," + PN1: "";
+            settings += PP.equals("noisy")? "," + PN1: "";
             settings += EWT.equals("punish")? "," + PN2: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
@@ -1975,7 +1977,9 @@ public class Env extends Thread{ // environment simulator
             Player b = omega_a.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
-            double punish_prob = calculatePunishProb(w_ab); // the punish probability is a function of the weight.
+            double u_a = a.getU();
+            double u_b = b.getU();
+            double punish_prob = calculatePunishProb(w_ab, u_a, u_b); // the punish probability is a function of the weight.
             boolean punish = punish_prob > random_double;
             double random_double2 = ThreadLocalRandom.current().nextDouble();
             if(PN2 > random_double2){
@@ -1986,8 +1990,20 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             if(punish){
-                a.setU(a.getU() - cost);
-                b.setU(b.getU() - fine);
+                switch(PA){
+                    case "normal" -> {
+                        a.setU(a.getU() - cost);
+                        b.setU(b.getU() - fine);
+                    }
+                    case "weighted" -> { // higher w_ab ==> lower cost and fine.
+                        a.setU(a.getU() - cost * (1 - w_ab));
+                        b.setU(b.getU() - fine * (1 - w_ab));
+                    }
+                    case "utility" -> {
+                        a.setU(a.getU());
+                    }
+                }
+
                 num_puns++;
             }
         }
@@ -1996,7 +2012,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void assignCost(String value){
-        switch(PF){
+        switch(PP){
             case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
                 try{
                     cost = Double.parseDouble(value);
@@ -2010,7 +2026,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void assignFine(String value){
-        switch(PF){
+        switch(PP){
             case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
                 try{
                     fine = Double.parseDouble(value);
@@ -2027,16 +2043,16 @@ public class Env extends Thread{ // environment simulator
         System.out.println("fine="+DF4.format(fine));
     }
 
-    public static void assignPF(String value){
+    public static void assignPP(String value){
         switch(EWT){
             case "punish" -> {
                 switch(value){
                     case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
-                        PF = value;
-                        System.out.println("PF="+PF);
+                        PP = value;
+                        System.out.println("PP="+PP);
                     }
                     default -> {
-                        System.out.println("invalid PF");
+                        System.out.println("invalid PP");
                         exit(1);
                     }
                 }
@@ -2300,7 +2316,7 @@ public class Env extends Thread{ // environment simulator
                 case "mutRate" -> output += "\n" + mutRate;
                 case "mutBound" -> output += "\n" + mutBound;
                 case "UF" -> output += "\n" + UF;
-                case "PF" -> output += "\n" + PF;
+                case "PP" -> output += "\n" + PP;
                 case "cost" -> output += "\n" + cost;
                 case "fine" -> output += "\n" + fine;
                 case "NU" -> output += "\n" + NU;
@@ -2338,7 +2354,7 @@ public class Env extends Thread{ // environment simulator
                     "mutRate",
                     "mutBound",
                     "UF",
-                    "PF",
+                    "PP",
                     "cost",
                     "fine",
                     "NU",
@@ -2738,7 +2754,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void assignPN1(String value){
-        switch(PF){
+        switch(PP){
             case "noisy" -> {
                 try{
                     PN1 = Double.parseDouble(value);
@@ -2807,9 +2823,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public double calculatePunishProb(double w_ab){
+    public double calculatePunishProb(double w_ab, double u_a, double u_b){
         double punish_prob = 0.0;
-        switch(PF){
+        switch(PP){
             case "linear" -> punish_prob = 1 - w_ab;
             case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
             case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
@@ -2824,7 +2840,27 @@ public class Env extends Thread{ // environment simulator
                     punish_prob = 1 - w_ab;
                 }
             }
+            case "Uv1" -> {
+                if(u_a < u_b){
+                    punish_prob = 1;
+                } else {
+                    punish_prob = 0;
+                }
+            }
+            case "Uv2" -> {
+                if(2 * u_a < u_b){ // if b is more than 2 times fitter than a
+                    punish_prob = 1;
+                } else if (u_a > 2 * u_b) { // if a is more than 2 times fitter than b
+                    punish_prob = 0;
+                } else { // else, revert to linear.
+                    punish_prob = 1 - w_ab;
+                }
+            }
         }
         return punish_prob;
+    }
+    
+    public static void assignPA(String value) {
+        PA = value;
     }
 }
