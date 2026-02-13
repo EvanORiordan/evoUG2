@@ -214,39 +214,39 @@ public class Env extends Thread{ // environment simulator
 //                System.out.println("Varying "+VP+"...");
                 System.out.print("[INFO] Varying "+VP+": ");
                 switch(VP){
-                    case "EWL" -> assignEWL(variations[exp - 1]);
-                    case "RA" -> assignRA(variations[exp - 1]);
-                    case "RT" -> assignRT(variations[exp - 1]);
-                    case "sel" -> assignSel(variations[exp - 1]);
-                    case "evo" -> assignEvo(variations[exp - 1]);
-                    case "EN" -> assignEN(variations[exp - 1]);
-                    case "EWT" -> assignEWT(variations[exp - 1]);
-                    case "gens" -> assignGens(variations[exp - 1]);
+                    case "EWL" -> setEWL(variations[exp - 1]);
+                    case "RA" -> setRA(variations[exp - 1]);
+                    case "RT" -> setRT(variations[exp - 1]);
+                    case "sel" -> setSel(variations[exp - 1]);
+                    case "evo" -> setEvo(variations[exp - 1]);
+                    case "EN" -> setEN(variations[exp - 1]);
+                    case "EWT" -> setEWT(variations[exp - 1]);
+                    case "gens" -> setGens(variations[exp - 1]);
                     case "length" -> {
-                        assignLength(variations[exp - 1]);
+                        setLength(variations[exp - 1]);
                         if(space.equals("grid")){
-                            assignWidth();
+                            setWidth();
                         }
-                        assignN();
+                        setN();
                     }
-                    case "ER" -> assignER(variations[exp - 1]);
-                    case "ROC" -> assignROC(variations[exp - 1]);
-                    case "RP" -> assignRP(variations[exp - 1]);
-                    case "mutRate" -> assignMutRate(variations[exp - 1]);
-                    case "mutBound" -> assignMutBound(variations[exp - 1]);
-                    case "UF" -> assignUF(variations[exp - 1]);
-                    case "PP" -> assignPP(variations[exp - 1]);
+                    case "ER" -> setER(variations[exp - 1]);
+                    case "ROC" -> setROC(variations[exp - 1]);
+                    case "RP" -> setRP(variations[exp - 1]);
+                    case "mutRate" -> setMutRate(variations[exp - 1]);
+                    case "mutBound" -> setMutBound(variations[exp - 1]);
+                    case "UF" -> setUF(variations[exp - 1]);
+                    case "PP" -> setPP(variations[exp - 1]);
                     case "cost" -> {
-                        assignCost(variations[exp - 1]);
+                        setCost(variations[exp - 1]);
                         if(PCFR > 0){
-                            assignFine();
+                            setFine();
                         }
                     }
-                    case "fine" -> assignFine(variations[exp - 1]);
-                    case "NU" -> assignNU(variations[exp - 1]);
-                    case "PN1" -> assignPN1(variations[exp - 1]);
-                    case "PN2" -> assignPN2(variations[exp - 1]);
-                    case "M" -> assignM(variations[exp - 1]);
+                    case "fine" -> setFine(variations[exp - 1]);
+                    case "NU" -> setNU(variations[exp - 1]);
+                    case "PN1" -> setPN1(variations[exp - 1]);
+                    case "PN2" -> setPN2(variations[exp - 1]);
+                    case "M" -> setM(variations[exp - 1]);
                 }
             }
         }
@@ -627,8 +627,6 @@ public class Env extends Thread{ // environment simulator
     /**
      * child selects fittest neighbour that is fitter than them.
      * if no such neighbours exist, child is parent by default.
-     * @param child
-     * @return parent
       */
     public Player selElitist(Player child){
         ArrayList<Player> omega = child.getOmega();
@@ -647,8 +645,6 @@ public class Env extends Thread{ // environment simulator
     /**
      * sel and evo effectively occur at once in one function.
      * crossover where one child adopts midway point between two parent strategies.
-     *
-     * @param child child produced as a result of crossover
      */
     public void crossover(Player child){
 
@@ -696,8 +692,6 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Use noise to move child strategy in direction of parent strategy.
-     * @param child
-     * @param parent
      */
     public void evoApproach(Player child, Player parent){
 //        int ID = child.getID();
@@ -794,54 +788,54 @@ public class Env extends Thread{ // environment simulator
         String[] settings = configs.get(config_line_num - 2).split(",");
         CI = 0;
         System.out.println("[INFO] Settings:");
-        assignRuns(settings[CI++]);
-        assignGame();
-        assignM(settings[CI++]);
-        assignLength(settings[CI++]);
+        setRuns(settings[CI++]);
+        setGame();
+        setM(settings[CI++]);
+        setLength(settings[CI++]);
         if(space.equals("grid")){
-            assignWidth();
+            setWidth();
         }
-        assignN();
-        assignNeighType(settings[CI++]);
-        assignGenType(settings[CI++]);
-        assignER(settings[CI++]);
-        assignGens(settings[CI++]);
-        assignEWT(CI!=settings.length? settings[CI++]: "");
-        assignRP(CI!=settings.length? settings[CI++]: "");
-        assignRA(CI!=settings.length? settings[CI++]: "");
-        assignRT(CI!=settings.length? settings[CI++]: "");
-        assignPP(CI!=settings.length? settings[CI++]: "");
-        assignPA(CI!=settings.length? settings[CI++]: "");
-        assignPCFR(CI!=settings.length? settings[CI++]: "");
-        assignCost(CI!=settings.length? settings[CI++]: "");
+        setN();
+        setNeighType(settings[CI++]);
+        setGenType(settings[CI++]);
+        setER(settings[CI++]);
+        setGens(settings[CI++]);
+        setEWT(CI!=settings.length? settings[CI++]: "");
+        setRP(CI!=settings.length? settings[CI++]: "");
+        setRA(CI!=settings.length? settings[CI++]: "");
+        setRT(CI!=settings.length? settings[CI++]: "");
+        setPP(CI!=settings.length? settings[CI++]: "");
+        setPA(CI!=settings.length? settings[CI++]: "");
+        setPCFR(CI!=settings.length? settings[CI++]: "");
+        setCost(CI!=settings.length? settings[CI++]: "");
         if(PCFR > 0){
-            assignFine();
+            setFine();
             CI++;
         } else {
-            assignFine(CI!=settings.length? settings[CI++]: "");
+            setFine(CI!=settings.length? settings[CI++]: "");
         }
-        assignNU(CI!=settings.length? settings[CI++]: "");
-        assignPN1(CI!=settings.length? settings[CI++]: "");
-        assignPN2(CI!=settings.length? settings[CI++]: "");
-        assignEWL(CI!=settings.length? settings[CI++]: "");
-        assignROC(CI!=settings.length? settings[CI++]: "");
-        assignEvo(settings[CI++]);
-        assignSel(settings[CI++]);
-        assignRWT(CI!=settings.length? settings[CI++]: "");
-        assignEN(CI!=settings.length? settings[CI++]: "");
-        assignMut(CI!=settings.length? settings[CI++]: "");
-        assignMutRate(CI!=settings.length? settings[CI++]: "");
-        assignMutBound(CI!=settings.length? settings[CI++]: "");
-        assignUF(settings[CI++]);
-        assignWritePGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteUGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteKGenStats(CI!=settings.length? settings[CI++]: "");
-        assignWritePRunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteURunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteKRunStats(CI!=settings.length? settings[CI++]: "");
-        assignWriteRate(CI!=settings.length? settings[CI++]: "");
-        assignVP(CI!=settings.length? settings[CI++]: "");
-        assignVariations(CI!=settings.length? settings[CI++]: "");
+        setNU(CI!=settings.length? settings[CI++]: "");
+        setPN1(CI!=settings.length? settings[CI++]: "");
+        setPN2(CI!=settings.length? settings[CI++]: "");
+        setEWL(CI!=settings.length? settings[CI++]: "");
+        setROC(CI!=settings.length? settings[CI++]: "");
+        setEvo(settings[CI++]);
+        setSel(settings[CI++]);
+        setRWT(CI!=settings.length? settings[CI++]: "");
+        setEN(CI!=settings.length? settings[CI++]: "");
+        setMut(CI!=settings.length? settings[CI++]: "");
+        setMutRate(CI!=settings.length? settings[CI++]: "");
+        setMutBound(CI!=settings.length? settings[CI++]: "");
+        setUF(settings[CI++]);
+        setWritePGenStats(CI!=settings.length? settings[CI++]: "");
+        setWriteUGenStats(CI!=settings.length? settings[CI++]: "");
+        setWriteKGenStats(CI!=settings.length? settings[CI++]: "");
+        setWritePRunStats(CI!=settings.length? settings[CI++]: "");
+        setWriteURunStats(CI!=settings.length? settings[CI++]: "");
+        setWriteKRunStats(CI!=settings.length? settings[CI++]: "");
+        setWriteRate(CI!=settings.length? settings[CI++]: "");
+        setVP(CI!=settings.length? settings[CI++]: "");
+        setVariations(CI!=settings.length? settings[CI++]: "");
     }
 
 
@@ -877,24 +871,6 @@ public class Env extends Thread{ // environment simulator
             }
             case "hex" -> {}
         }
-    }
-
-
-
-    /**
-     * Prints a line in the table of configurations.
-     */
-    public static void printTableLine(){
-        System.out.printf(
-                "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "=======================================================" +
-                        "%n");
     }
 
 
@@ -971,8 +947,6 @@ public class Env extends Thread{ // environment simulator
     /**
      * Randomly assigns either uni-directional or bi-directional edges to player.<br>
      * Assumes 2D square lattice grid population structure.
-     * @param player
-     * @param size
      */
     public void randomNeigh(Player player, int size){
         ArrayList<Player> omega = player.getOmega();
@@ -1265,6 +1239,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RA.isEmpty() ? "": ",RA";
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PP.isEmpty()? "": ",PP";
+                settings += PA.isEmpty()? "": ",PA";
                 settings += PP.isEmpty()? "": ",PCFR";
 //                settings += PCFR != 0.0? ",PCFR": "";
                 settings += cost != 0.0? ",cost": "";
@@ -1303,6 +1278,7 @@ public class Env extends Thread{ // environment simulator
             settings += RA.isEmpty() ? "": "," + RA;
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PP.isEmpty()? "": "," + PP;
+            settings += PA.isEmpty()? "": "," + PA;
             settings += PP.isEmpty()? "": "," + PCFR;
 //            settings += PCFR != 0.0? "," + PCFR: "";
             settings += cost != 0.0? "," + cost: "";
@@ -1557,10 +1533,7 @@ public class Env extends Thread{ // environment simulator
      * Fitter parent means greater probability.<br>
      * Greater child k means lesser probability.<br>
      * Inspired by cardinot2016optional.<br>
-     * @param child
-     * @param parent
      */
-//    public void evoUD(Player child, Player parent){
     public void evoUDN(Player child, Player parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = (parent.getU() - child.getU()) / child.getK();
@@ -1748,8 +1721,6 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Child copies parent if parent fitter.
-     * @param child
-     * @param parent
      */
     public void evoCopyFitter(Player child, Player parent){
         if(parent.getU() > child.getU()) {
@@ -1897,7 +1868,7 @@ public class Env extends Thread{ // environment simulator
         }
 
         // determine ranks
-        int ranks[] = new int[size];
+        int[] ranks = new int[size];
         for(int i=0;i<size;i++){
             ranks[i] = 1;
         }
@@ -1968,7 +1939,6 @@ public class Env extends Thread{ // environment simulator
      * higher w_ab ==> lower probability of a punishing b.
      * w_ab = 1.0 ==> guaranteed not to punish.
      * w_ab = 0.0 ==> guaranteed to punish.
-     * @param a
      */
     public void punish(Player a){
         ArrayList<Double> weights = a.getEdgeWeights();
@@ -1992,15 +1962,24 @@ public class Env extends Thread{ // environment simulator
             if(punish){
                 switch(PA){
                     case "normal" -> {
-                        a.setU(a.getU() - cost);
-                        b.setU(b.getU() - fine);
+                        a.setU(u_a - cost);
+                        b.setU(u_b - fine);
                     }
                     case "weighted" -> { // higher w_ab ==> lower cost and fine.
-                        a.setU(a.getU() - cost * (1 - w_ab));
-                        b.setU(b.getU() - fine * (1 - w_ab));
+                        a.setU(u_a - cost * (1 - w_ab));
+                        b.setU(u_b - fine * (1 - w_ab));
                     }
                     case "utility" -> {
-                        a.setU(a.getU());
+                        if(2 * u_a < u_b){ // if b has more than two times the utility of a, double the cost and fine.
+                            a.setU(u_a - 2 * cost);
+                            b.setU(u_b - 2 * fine);
+                        } else if(u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
+                            a.setU(u_a - cost / 2);
+                            b.setU(u_b - fine / 2);
+                        } else { // otherwise, revert to PA = normal.
+                            a.setU(u_a - cost);
+                            b.setU(u_b - fine);
+                        }
                     }
                 }
 
@@ -2011,9 +1990,9 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public static void assignCost(String value){
+    public static void setCost(String value){
         switch(PP){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
                 try{
                     cost = Double.parseDouble(value);
                     System.out.println("cost="+cost);
@@ -2025,9 +2004,9 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignFine(String value){
+    public static void setFine(String value){
         switch(PP){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
                 try{
                     fine = Double.parseDouble(value);
                     System.out.println("fine="+fine);
@@ -2038,16 +2017,16 @@ public class Env extends Thread{ // environment simulator
             }
         }
     }
-    public static void assignFine(){
+    public static void setFine(){
         fine = cost * PCFR;
         System.out.println("fine="+DF4.format(fine));
     }
 
-    public static void assignPP(String value){
+    public static void setPP(String value){
         switch(EWT){
             case "punish" -> {
                 switch(value){
-                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds" -> {
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
                         PP = value;
                         System.out.println("PP="+PP);
                     }
@@ -2060,7 +2039,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignMutRate(String value){
+    public static void setMutRate(String value){
         switch(mut){
             case "global", "local" -> {
                 try{
@@ -2079,7 +2058,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     // if EWL is not PROC or UROC, nothing happens.
-    public static void assignROC(String value){
+    public static void setROC(String value){
         switch(EWL){
             case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
                 try{
@@ -2097,7 +2076,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignGens(String value){
+    public static void setGens(String value){
         try{
             gens = Integer.parseInt(value);
             System.out.println("gens="+gens);
@@ -2111,7 +2090,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignER(String value){
+    public static void setER(String value){
         switch(genType) {
             case "ER" -> {
                 try{
@@ -2129,7 +2108,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignLength(String value){
+    public static void setLength(String value){
         try{
             length = Integer.parseInt(value);
             System.out.println("length="+length);
@@ -2143,7 +2122,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignRuns(String value){
+    public static void setRuns(String value){
         try{
             runs = Integer.parseInt(value);
             System.out.println("runs="+runs);
@@ -2157,7 +2136,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignMutBound(String value){
+    public static void setMutBound(String value){
         switch(mut){
             case "local" -> {
                 try{
@@ -2175,7 +2154,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignMut(String value){
+    public static void setMut(String value){
         switch(value){
             case "global", "local" -> {
                 mut = value;
@@ -2185,7 +2164,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignEWT(String value){
+    public static void setEWT(String value){
         switch(value){
 
             // case where value is valid.
@@ -2200,7 +2179,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignEWL(String value){
+    public static void setEWL(String value){
         switch(value){
 
             // case where value is valid.
@@ -2215,7 +2194,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignSel(String value){
+    public static void setSel(String value){
         switch(value){
 
             // case where value is valid.
@@ -2232,7 +2211,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignRWT(String value){
+    public static void setRWT(String value){
         switch(sel){
             case "RW" -> {
                 switch(value){
@@ -2250,7 +2229,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     // the func leaves room for more sel funcs utilising noise, including one's not based on RW sel.
-    public static void assignEN(String value){
+    public static void setEN(String value){
         boolean assign = false;
         switch(sel){
             case "RW" -> {
@@ -2273,7 +2252,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignUF(String value){
+    public static void setUF(String value){
         switch(value){
             case "cumulative", "normalised" -> {
                 UF = value;
@@ -2337,7 +2316,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignVP(String value){
+    public static void setVP(String value){
         switch(value){
             case    "ER",
                     "ROC",
@@ -2488,7 +2467,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignVariations(String value){
+    public static void setVariations(String value){
         if(!value.isEmpty()){
             variations = value.split(";");
             for(int i=0;i<variations.length;i++){
@@ -2498,7 +2477,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWritePGenStats(String value){
+    public static void setWritePGenStats(String value){
         try{
             if(value.equals("1")){
                 writePGenStats = true;
@@ -2509,7 +2488,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteUGenStats(String value){
+    public static void setWriteUGenStats(String value){
         try{
             if(value.equals("1")){
                 writeUGenStats = true;
@@ -2520,7 +2499,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteKGenStats(String value){
+    public static void setWriteKGenStats(String value){
         try{
             if(value.equals("1")){
                 writeKGenStats = true;
@@ -2531,7 +2510,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWritePRunStats(String value){
+    public static void setWritePRunStats(String value){
         try{
             if(value.equals("1")){
                 writePRunStats = true;
@@ -2542,7 +2521,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteURunStats(String value){
+    public static void setWriteURunStats(String value){
         try{
             if(value.equals("1")){
                 writeURunStats = true;
@@ -2553,7 +2532,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteKRunStats(String value){
+    public static void setWriteKRunStats(String value){
         try{
             if(value.equals("1")){
                 writeKRunStats = true;
@@ -2564,7 +2543,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWriteRate(String value){
+    public static void setWriteRate(String value){
         if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
             try{
                 writeRate = Integer.parseInt(value);
@@ -2576,11 +2555,11 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignWidth(){
+    public static void setWidth(){
         width = length;
         System.out.println("width="+width);
     }
-    public static void assignWidth(String value){
+    public static void setWidth(String value){
         try{
             length = Integer.parseInt(value);
             System.out.println("length="+length);
@@ -2594,18 +2573,18 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignN(){
+    public static void setN(){
         N = length * width;
         System.out.println("N="+N);
     }
 
     // this function just initialises Player.game.
-    public static void assignGame(){
+    public static void setGame(){
         Player.setGame(game);
         System.out.println("game="+game);
     }
 
-    public static void assignRP(String value){
+    public static void setRP(String value){
         switch(EWT){
             case "rewire" -> {
                 try{
@@ -2623,7 +2602,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignRA(String value){
+    public static void setRA(String value){
         switch(EWT){ // value must be valid if EWT = rewire.
             case "rewire" -> {
                 switch(value){
@@ -2644,7 +2623,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignRT(String value){
+    public static void setRT(String value){
         switch(EWT){ // value must be valid if EWT = rewire.
             case "rewire" -> {
                 switch(value){
@@ -2665,7 +2644,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignEvo(String value){
+    public static void setEvo(String value){
         switch(value){
 
             // case where value is valid.
@@ -2687,7 +2666,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignGenType(String value){
+    public static void setGenType(String value){
         switch(value){
 
             // case where value is valid.
@@ -2704,7 +2683,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignNU(String value){
+    public static void setNU(String value){
         switch(EWT){
             case "punish" -> {
                 switch(value){
@@ -2736,7 +2715,7 @@ public class Env extends Thread{ // environment simulator
 //        }
     }
 
-    public static void assignNeighType(String value){
+    public static void setNeighType(String value){
         switch(value){
 
             // case where value is valid.
@@ -2753,7 +2732,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignPN1(String value){
+    public static void setPN1(String value){
         switch(PP){
             case "noisy" -> {
                 try{
@@ -2771,7 +2750,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignPN2(String value){
+    public static void setPN2(String value){
         switch(EWT){
             case "punish" -> {
                 try{
@@ -2789,7 +2768,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignM(String value){
+    public static void setM(String value){
         switch(game){
             case "UG", "DG" -> {
                 try{
@@ -2806,7 +2785,7 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void assignPCFR(String value){
+    public static void setPCFR(String value){
         switch(EWT){
             case "punish" -> {
                 try{
@@ -2848,11 +2827,11 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "Uv2" -> {
-                if(2 * u_a < u_b){ // if b is more than 2 times fitter than a
+                if(2 * u_a < u_b){ // if b has more than two times the utility of a, a is guaranteed to punish b.
                     punish_prob = 1;
-                } else if (u_a > 2 * u_b) { // if a is more than 2 times fitter than b
+                } else if (u_a > 2 * u_b) { // if a has more than two times the utility of b, a is guaranteed to not punish b.
                     punish_prob = 0;
-                } else { // else, revert to linear.
+                } else { // otherwise, revert to PP = linear.
                     punish_prob = 1 - w_ab;
                 }
             }
@@ -2860,7 +2839,20 @@ public class Env extends Thread{ // environment simulator
         return punish_prob;
     }
     
-    public static void assignPA(String value) {
-        PA = value;
+    public static void setPA(String value) {
+        switch(EWT){
+            case "punish" -> {
+                switch(value){
+                    case "normal", "weighted", "utility" -> {
+                        PA = value;
+                        System.out.println("PA="+PA);
+                    }
+                    default -> {
+                        System.out.println("invalid PA");
+                        exit(1);
+                    }
+                }
+            }
+        }
     }
 }
