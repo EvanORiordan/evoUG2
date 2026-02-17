@@ -106,7 +106,7 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
-    static String PA; // indicates how punishment amount is calculated
+    static String PS; // indicates how the severity of punishment is calculated
 
 
 
@@ -805,7 +805,7 @@ public class Env extends Thread{ // environment simulator
         setRA(CI!=settings.length? settings[CI++]: "");
         setRT(CI!=settings.length? settings[CI++]: "");
         setPP(CI!=settings.length? settings[CI++]: "");
-        setPA(CI!=settings.length? settings[CI++]: "");
+        setPS(CI!=settings.length? settings[CI++]: "");
         setPCFR(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
         if(PCFR > 0){
@@ -1239,7 +1239,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RA.isEmpty() ? "": ",RA";
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PP.isEmpty()? "": ",PP";
-                settings += PA.isEmpty()? "": ",PA";
+                settings += PS.isEmpty()? "": ",PS";
                 settings += PP.isEmpty()? "": ",PCFR";
 //                settings += PCFR != 0.0? ",PCFR": "";
                 settings += cost != 0.0? ",cost": "";
@@ -1278,7 +1278,7 @@ public class Env extends Thread{ // environment simulator
             settings += RA.isEmpty() ? "": "," + RA;
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PP.isEmpty()? "": "," + PP;
-            settings += PA.isEmpty()? "": "," + PA;
+            settings += PS.isEmpty()? "": "," + PS;
             settings += PP.isEmpty()? "": "," + PCFR;
 //            settings += PCFR != 0.0? "," + PCFR: "";
             settings += cost != 0.0? "," + cost: "";
@@ -1960,12 +1960,12 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             if(punish){
-                switch(PA){
+                switch(PS){
                     case "normal" -> {
                         a.setU(u_a - cost);
                         b.setU(u_b - fine);
                     }
-                    case "weighted" -> { // higher w_ab ==> lower cost and fine.
+                    case "weighted" -> { // lower w_ab ==> higher cost and fine.
                         a.setU(u_a - cost * (1 - w_ab));
                         b.setU(u_b - fine * (1 - w_ab));
                     }
@@ -1976,7 +1976,7 @@ public class Env extends Thread{ // environment simulator
                         } else if(u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
                             a.setU(u_a - cost / 2);
                             b.setU(u_b - fine / 2);
-                        } else { // otherwise, revert to PA = normal.
+                        } else { // otherwise, revert to PS = normal.
                             a.setU(u_a - cost);
                             b.setU(u_b - fine);
                         }
@@ -2839,16 +2839,16 @@ public class Env extends Thread{ // environment simulator
         return punish_prob;
     }
     
-    public static void setPA(String value) {
+    public static void setPS(String value) {
         switch(EWT){
             case "punish" -> {
                 switch(value){
                     case "normal", "weighted", "utility" -> {
-                        PA = value;
-                        System.out.println("PA="+PA);
+                        PS = value;
+                        System.out.println("PS="+PS);
                     }
                     default -> {
-                        System.out.println("invalid PA");
+                        System.out.println("invalid PS");
                         exit(1);
                     }
                 }
