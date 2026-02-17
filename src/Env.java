@@ -14,23 +14,18 @@ import java.util.concurrent.ThreadLocalRandom;
  * University of Galway<br>
  */
 public class Env extends Thread{ // environment simulator
-//    static String game; // indicates what game is being played
     static String game = "DG"; // default game is DG.
-//    static double M = 1.0; // default prize amount during a UG/DG is 1.0.
     static double M; // UG/DG prize
-//    static String space; // indicates what kind of space the population will reside within
     static String space = "grid"; // indicates what kind of space the population will reside within
     static int length; // length of space; in 2D grid, len = num rows
-    static int width; // width of space; in 2D grid, wid = num cols i.e. num players per row
-//    static String neighType = "VN"; // indicates type of neighbourhood players will have.
-    static String neighType; // indicates type of neighbourhood players will have.
-//    static int neighRadius; // radius of neighbourhood
+    static int width; // width of space; in 2D grid, wid = num cols i.e. num agents per row
+    static String neighType; // indicates type of neighbourhood agents will have.
     static int neighRadius = 1; // radius of neighbourhood
     static int neighSize; // size of neighbourhood (assuming randomNeigh neighType) i.e. num random neighbours
     static int N; // population size
     static int run; // current run
     static int runs; // number of experiment runs to occur
-    Player[] pop; // array of players; assumes 2D space
+    Agent[] pop; // array of agents; assumes 2D space
     double mean_p; // mean proposal value; informally referred to as the performance of an experiment
 //    double mean_q; // mean acceptance threshold
     double mean_u; // mean utility
@@ -57,9 +52,9 @@ public class Env extends Thread{ // environment simulator
     static BufferedReader br;
     static Scanner scanner = new Scanner(System.in);
     static String config_filename = "config.csv";
-//    static DecimalFormat DF1 = Player.getDF1(); // formats numbers to 1 decimal place
-//    static DecimalFormat DF2 = Player.getDF2(); // formats numbers to 2 decimal place
-    static DecimalFormat DF4 = Player.getDF4(); // formats numbers to 4 decimal places
+//    static DecimalFormat DF1 = Agent.getDF1(); // formats numbers to 1 decimal place
+//    static DecimalFormat DF2 = Agent.getDF2(); // formats numbers to 2 decimal place
+    static DecimalFormat DF4 = Agent.getDF4(); // formats numbers to 4 decimal places
     static String project_path = Paths.get("").toAbsolutePath().toString();
     static String general_path = project_path + "\\csv_data"; // address where all data is recorded
     static String this_path; // address where stats for current experimentation is recorded
@@ -106,7 +101,7 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
-    static String PS; // indicates how the severity of punishment is calculated
+    static String PS; // punishment severity function
 
 
 
@@ -311,12 +306,12 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * play Dictator Games
-     * @param a focal player
+     * @param a focal agent
      */
-    public void play(Player a){
-        ArrayList<Player> omega_a = a.getOmega(); // neighbourhood of a
+    public void play(Agent a){
+        ArrayList<Agent> omega_a = a.getOmega(); // neighbourhood of a
         for(int i = 0; i < a.getK(); i++){
-            Player b = omega_a.get(i); // neighbour of a
+            Agent b = omega_a.get(i); // neighbour of a
             switch(EWT) {
                 default -> {
                     switch(game){
@@ -324,9 +319,9 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
                 case "proposalProb"-> {
-                    ArrayList <Player> omega_b = b.getOmega(); // neighbourhood of b
+                    ArrayList <Agent> omega_b = b.getOmega(); // neighbourhood of b
                     for (int j = 0; j < b.getK(); j++) {
-                        Player c = omega_b.get(j); // neighbour of b
+                        Agent c = omega_b.get(j); // neighbour of b
                         if (a.equals(c)) {
                             double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
                             double random_double = ThreadLocalRandom.current().nextDouble();
@@ -350,7 +345,7 @@ public class Env extends Thread{ // environment simulator
      * @param a proposer
      * @param b responder
      */
-    public void UG(Player a, Player b){
+    public void UG(Agent a, Agent b){
         double p_a = a.getP();
         double q_b = b.getQ();
         double pi_a = 0.0;
@@ -364,83 +359,14 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-//    /**
-//     * Prisoner's dilemma function.<br>
-//     * @param a player
-//     * @param b player
-//     */
-//    public void PD(Player a, Player b){
-//        String s_a = a.getStrategyPD();
-//        String s_b = b.getStrategyPD();
-//        double pi_a = 0.0;
-//        double pi_b = 0.0;
-//        if(s_a.equals("C") && s_b.equals("C")){
-//            pi_a = R;
-//            pi_b = R;
-//        } else if(s_a.equals("C") && s_b.equals("D")){
-//            pi_a = S;
-//            pi_b = T;
-//        }else if(s_a.equals("D") && s_b.equals("C")){
-//            pi_a = T;
-//            pi_b = S;
-//        }else if(s_a.equals("D") && s_b.equals("D")){
-//            pi_a = P;
-//            pi_b = P;
-//        }else if(s_a.equals("A") || s_b.equals("A")){
-//            pi_a = l;
-//            pi_b = l;
-//        }
-//        updateStatsPD(a, pi_a);
-//        updateStatsPD(b, pi_b);
-//    }
 
 
-//    /**
-//     * Prisoner's dilemma function.<br>
-//     * Uses w_ba to calculate payoffs of players.<br>
-//     * @param a player
-//     * @param b player
-//     */
-//    public void PD(Player a, Player b, double w_ba){
-//        String s_a = a.getStrategyPD();
-//        String s_b = b.getStrategyPD();
-//        double pi_a = 0.0;
-//        double pi_b = 0.0;
-//        if(s_a.equals("C") && s_b.equals("C")){
-//            pi_a = R * w_ba;
-//            pi_b = R * w_ba;
-//        } else if(s_a.equals("C") && s_b.equals("D")){
-//            pi_a = S * w_ba;
-//            pi_b = T * w_ba;
-//        }else if(s_a.equals("D") && s_b.equals("C")){
-//            pi_a = T * w_ba;
-//            pi_b = S * w_ba;
-//        }else if(s_a.equals("D") && s_b.equals("D")){
-//            pi_a = P * w_ba;
-//            pi_b = P * w_ba;
-//        }else if(s_a.equals("A") || s_b.equals("A")){
-//            pi_a = l * w_ba;
-//            pi_b = l * w_ba;
-//        }
-//        updateStatsPD(a, pi_a);
-//        updateStatsPD(b, pi_b);
-//    }
-
-
-
-//    public void updateStatsPD(Player player, double payoff){
-//        player.setPi(player.getPi() + payoff);
-//        player.setMNI(player.getMNI() + 1);
-//    }
-
-
-
-    public void initialiseEdgeWeights(Player player){
+    public void initialiseEdgeWeights(Agent agent){
         ArrayList <Double> edge_weights = new ArrayList<>();
-        for(int i=0;i<player.getK();i++){
+        for(int i = 0; i< agent.getK(); i++){
             edge_weights.add(1.0);
         }
-        player.setEdgeWeights(edge_weights);
+        agent.setEdgeWeights(edge_weights);
     }
 
 
@@ -448,11 +374,11 @@ public class Env extends Thread{ // environment simulator
     /**
      * Edge Weight Learning (EWL)
      */
-    public void EWL(Player a){
+    public void EWL(Agent a){
         ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getOmega();
+        ArrayList<Agent> omega_a = a.getOmega();
         for(int i = 0; i < a.getK(); i++){
-            Player b = omega_a.get(i);
+            Agent b = omega_a.get(i);
             double w_ab = weights.get(i); // weight from a to b
             w_ab += calculateLearning(a, b);
             if(w_ab > 1.0) {
@@ -466,7 +392,7 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public double calculateLearning(Player a, Player b){
+    public double calculateLearning(Agent a, Agent b){
         double learning = 0.0;
         switch(EWL){
             case "PROC" -> {
@@ -592,12 +518,12 @@ public class Env extends Thread{ // environment simulator
      * probability of selection depends directly on fitness in
      * comparison to other candidates in the pool.
      * fitter ==> greater probability.
-     * @param child player undergoing roulette wheel selection
+     * @param child agent undergoing roulette wheel selection
      * @return parent
      */
-    public Player selRW(Player child){
-        Player parent = child; // if no neighbour is selected, child is parent by default.
-        ArrayList <Player> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
+    public Agent selRW(Agent child){
+        Agent parent = child; // if no neighbour is selected, child is parent by default.
+        ArrayList <Agent> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
         pool.add(child);
         int size = pool.size();
         double[] pockets = new double[size];
@@ -628,11 +554,11 @@ public class Env extends Thread{ // environment simulator
      * child selects fittest neighbour that is fitter than them.
      * if no such neighbours exist, child is parent by default.
       */
-    public Player selElitist(Player child){
-        ArrayList<Player> omega = child.getOmega();
-        Player parent = child;
+    public Agent selElitist(Agent child){
+        ArrayList<Agent> omega = child.getOmega();
+        Agent parent = child;
         for(int i = 0; i < child.getK(); i++){
-            Player neighbour = omega.get(i);
+            Agent neighbour = omega.get(i);
             if(neighbour.getU() > parent.getU()){ // if candidate fitter than parent, parent is set to candidate
                 parent = neighbour;
             }
@@ -646,16 +572,16 @@ public class Env extends Thread{ // environment simulator
      * sel and evo effectively occur at once in one function.
      * crossover where one child adopts midway point between two parent strategies.
      */
-    public void crossover(Player child){
+    public void crossover(Agent child){
 
 //        // how to select parents?
 //
 //        // select two fittest neighbours?
-//        ArrayList <Player> omega = child.getOmega();
-//        Player parent1 = child; // fittest neighbour
-//        Player parent2 = child; // second-fittest neighbour
+//        ArrayList <Agent> omega = child.getOmega();
+//        Agent parent1 = child; // fittest neighbour
+//        Agent parent2 = child; // second-fittest neighbour
 //        for(int i=0;i<omega.size();i++){
-//            Player neighbour = omega.get(i);
+//            Agent neighbour = omega.get(i);
 //            double neighbour_u = neighbour.getU();
 //            double parent2_u = parent2.getU();
 //            if(neighbour_u > parent2_u){
@@ -663,7 +589,7 @@ public class Env extends Thread{ // environment simulator
 //                parent2_u = parent2.getU();
 //                double parent1_mean_score = parent1.getU();
 //                if(parent2_u > parent1_mean_score){
-//                    Player temp = parent1;
+//                    Agent temp = parent1;
 //                    parent1 = parent2;
 //                    parent2 = temp;
 //                }
@@ -684,7 +610,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Child wholly copies parent's DG strategy.
      */
-    public void evoCopy(Player child, Player parent){
+    public void evoCopy(Agent child, Agent parent){
         child.setP(parent.getOldP());
     }
 
@@ -693,7 +619,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Use noise to move child strategy in direction of parent strategy.
      */
-    public void evoApproach(Player child, Player parent){
+    public void evoApproach(Agent child, Agent parent){
 //        int ID = child.getID();
 //        int parent_ID = parent.getID();
 //        double p = child.getP();
@@ -739,7 +665,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Child's attributes are randomly and independently generated.
      */
-    public void mutGlobal(Player child){
+    public void mutGlobal(Agent child){
         if(mutationCheck()){
             switch(game){
                 case "UG" -> {
@@ -761,7 +687,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Slight mutations are independently applied to child's attributes.
      */
-    public void mutLocal(Player child){
+    public void mutLocal(Agent child){
         if(mutationCheck()){
             switch(game){
                 case "UG" -> {
@@ -841,30 +767,30 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Initialises a lattice grid population of players with randomly generated strategies.
+     * Initialises a lattice grid population of agents with randomly generated strategies.
      */
     public void initRandomPop(){
-        pop = new Player[N];
-        Player.setCount(0);
+        pop = new Agent[N];
+        Agent.setCount(0);
         int index = 0;
         switch(space){
             case "grid" -> {
                 for(int y=0;y<length;y++){
                     for(int x=0;x<width;x++){
-                        Player new_player = null;
+                        Agent new_agent = null;
                         switch(game){
                             case "UG" -> {
                                 double p = ThreadLocalRandom.current().nextDouble();
                                 double q = ThreadLocalRandom.current().nextDouble();
-                                new_player = new Player(x, y, p, q);
+                                new_agent = new Agent(x, y, p, q);
                             }
                             case "DG" -> {
                                 double p = ThreadLocalRandom.current().nextDouble();
-                                new_player = new Player(x, y, p, 0.0);
+                                new_agent = new Agent(x, y, p, 0.0);
                             }
                             case "PD" -> {}
                         }
-                        pop[index] = new_player;
+                        pop[index] = new_agent;
                         index++;
                     }
                 }
@@ -902,79 +828,79 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Assigns adjacent neighbour to player's neighbourhood.<br>
+     * Assigns adjacent neighbour to agent's neighbourhood.<br>
      * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
      * for Moore neighbourhood.
     */
-    public void adjacentNeigh(Player player){
-        ArrayList<Player> omega = new ArrayList<>();
-        double y = player.getY();
-        double x = player.getX();
+    public void adjacentNeigh(Agent agent){
+        ArrayList<Agent> omega = new ArrayList<>();
+        double y = agent.getY();
+        double x = agent.getX();
         for(int i=1;i<=neighRadius;i++){
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
-            omega.add(findPlayerByPos(y, x_plus));
-            omega.add(findPlayerByPos(y, x_minus));
-            omega.add(findPlayerByPos(y_plus, x));
-            omega.add(findPlayerByPos(y_minus, x));
+            omega.add(findAgentByPos(y, x_plus));
+            omega.add(findAgentByPos(y, x_minus));
+            omega.add(findAgentByPos(y_plus, x));
+            omega.add(findAgentByPos(y_minus, x));
             if(neighType.equals("dia")) {
                 if(i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-                    omega.add(findPlayerByPos(y_plus_minus, x_plus_minus));
-                    omega.add(findPlayerByPos(y_minus_plus, x_plus_minus));
-                    omega.add(findPlayerByPos(y_minus_plus, x_minus_plus));
-                    omega.add(findPlayerByPos(y_plus_minus, x_minus_plus));
+                    omega.add(findAgentByPos(y_plus_minus, x_plus_minus));
+                    omega.add(findAgentByPos(y_minus_plus, x_plus_minus));
+                    omega.add(findAgentByPos(y_minus_plus, x_minus_plus));
+                    omega.add(findAgentByPos(y_plus_minus, x_minus_plus));
                 }
             }
             if(neighType.equals("Moore")){
-                omega.add(findPlayerByPos(y_plus, x_plus));
-                omega.add(findPlayerByPos(y_minus, x_plus));
-                omega.add(findPlayerByPos(y_minus, x_minus));
-                omega.add(findPlayerByPos(y_plus, x_minus));
+                omega.add(findAgentByPos(y_plus, x_plus));
+                omega.add(findAgentByPos(y_minus, x_plus));
+                omega.add(findAgentByPos(y_minus, x_minus));
+                omega.add(findAgentByPos(y_plus, x_minus));
             }
         }
-        player.setOmega(omega);
-        player.setK(player.getOmega().size());
+        agent.setOmega(omega);
+        agent.setK(agent.getOmega().size());
     }
 
 
 
     /**
-     * Randomly assigns either uni-directional or bi-directional edges to player.<br>
+     * Randomly assigns either uni-directional or bi-directional edges to agent.<br>
      * Assumes 2D square lattice grid population structure.
      */
-    public void randomNeigh(Player player, int size){
-        ArrayList<Player> omega = player.getOmega();
+    public void randomNeigh(Agent agent, int size){
+        ArrayList<Agent> omega = agent.getOmega();
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size){
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
         for(int ID: IDs){
-            omega.add(findPlayerByID(ID));
+            omega.add(findAgentByID(ID));
         }
-        player.setK(player.getOmega().size());
+        agent.setK(agent.getOmega().size());
     }
 
 
 
-    // assign all other players to neighbourhood
-    public void allPopNeigh(Player player){
-        ArrayList <Player> omega = player.getOmega();
-        int ID = player.getID();
+    // assign all other agents to neighbourhood
+    public void allPopNeigh(Agent agent){
+        ArrayList <Agent> omega = agent.getOmega();
+        int ID = agent.getID();
         for(int i=0;i<N;i++){
-            Player player2 = pop[i];
-            int ID2 = player2.getID();
+            Agent agent2 = pop[i];
+            int ID2 = agent2.getID();
             if(ID != ID2){
-                omega.add(player2);
+                omega.add(agent2);
             }
         }
-        player.setK(player.getOmega().size());
+        agent.setK(agent.getOmega().size());
     }
 
 
@@ -1031,16 +957,16 @@ public class Env extends Thread{ // environment simulator
 
     public void prepare(){
         for(int i=0;i<N;i++){
-            Player player = pop[i];
-            player.setU(0);
-            player.setOldP(player.getP());
+            Agent agent = pop[i];
+            agent.setU(0);
+            agent.setOldP(agent.getP());
             max_p = 0.0;
         }
     }
 
 
 
-    // writes IDs and positions of players
+    // writes IDs and positions of agents
     public void writePosData(){
         try{
             String filename = exp_path + "\\pos_data.csv";
@@ -1048,8 +974,8 @@ public class Env extends Thread{ // environment simulator
             String s = "";
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
-                    Player player = findPlayerByPos(y,x);
-                    int ID = player.getID();
+                    Agent agent = findAgentByPos(y,x);
+                    int ID = agent.getID();
                     s += ID;
                     if (x + 1 < width)
                         s += ",";
@@ -1066,62 +992,62 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Finds a player given the integer ID parameter.<br>
+     * Finds an agent given the integer ID parameter.<br>
      * Currently not used.
-     * @param ID of the player to find
-     * @return player object with the given ID
+     * @param ID of the agent to find
+     * @return agent object with the given ID
      */
-    public Player findPlayerByID(int ID){
-        Player player = null;
+    public Agent findAgentByID(int ID){
+        Agent agent = null;
         for(int i=0;i<N;i++){
-            Player player2 = pop[i];
-            int ID2 = player2.getID();
+            Agent agent2 = pop[i];
+            int ID2 = agent2.getID();
             if(ID == ID2){
-                player = player2;
+                agent = agent2;
                 break;
             }
         }
 
-        return player;
+        return agent;
     }
 
 
 
     /**
-     * find player by position in the grid.<br>
-     * e.g. if you call findPlayerByPos(5, 2), it returns the player at position (2, 5).
-     * @param y y co-ordinate of the player
-     * @param x x co-ordinate of the player
-     * @return Player object at position (x, y) in the grid.
+     * find agent by position in the grid.<br>
+     * e.g. if you call findAgentByPos(5, 2), it returns the agent at position (2, 5).
+     * @param y y co-ordinate of the agent
+     * @param x x co-ordinate of the agent
+     * @return Agent object at position (x, y) in the grid.
      */
-    public Player findPlayerByPos(double y, double x){
-        Player player = null;
+    public Agent findAgentByPos(double y, double x){
+        Agent agent = null;
         boolean found = false;
         int i=0;
         do{
-            Player player2=pop[i];
-            double y2=player2.getY();
-            double x2=player2.getX();
+            Agent agent2 =pop[i];
+            double y2= agent2.getY();
+            double x2= agent2.getX();
             if(y2==y && x2==x){
-                player=player2;
+                agent = agent2;
                 found=true;
             }
             i++;
         }
         while(!found);
-        return player;
+        return agent;
     }
 
 
 
     /**
-     * Assign same strategy to cluster of players within the grid.
+     * Assign same strategy to cluster of agents within the grid.
      */
     public void injectStrategyCluster(){
         for(int i = 0; i < injSize; i++){
             for(int j = 0; j < injSize; j++){
-                Player player = findPlayerByPos(j, i);
-                player.setP(injP);
+                Agent agent = findAgentByPos(j, i);
+                agent.setP(injP);
             }
         }
     }
@@ -1140,22 +1066,22 @@ public class Env extends Thread{ // environment simulator
      * Find new neighbour by randomly choosing a neighbour of a neighbour.<br>
      * New neighbour cannot be rewirer or already a neighbour.<br>
      */
-    public void RTLocal(Player a, int num_rewires){
-        ArrayList<Player> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
-        ArrayList<Player> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
-        for(Player b: omega_a){ // b denotes neighbour of rewirer
-            ArrayList<Player> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
-            for(Player c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
+    public void RTLocal(Agent a, int num_rewires){
+        ArrayList<Agent> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
+        ArrayList<Agent> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
+        for(Agent b: omega_a){ // b denotes neighbour of rewirer
+            ArrayList<Agent> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
+            for(Agent c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
                 if(!c.equals(a)){ // do not add c to pool if c = a
                     boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
-                    for (Player d : pool) { // d denotes candidate in pool
+                    for (Agent d : pool) { // d denotes candidate in pool
                         if(c.equals(d)){ // if c = d, c must already be in the pool, therefore do not add c to the pool.
                             add_to_pool = false;
                             break;
                         }
                     }
                     if(!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
-                    for (Player e : omega_a) { // e denotes neighbour of rewirer.
+                    for (Agent e : omega_a) { // e denotes neighbour of rewirer.
                         if(c.equals(e)){ // if c = e, c must already be in omega_a, so you do not want to add c to pool.
                             add_to_pool = false;
                             break;
@@ -1166,10 +1092,10 @@ public class Env extends Thread{ // environment simulator
             }
         }
         if(pool.isEmpty()) {
-            RTPop(a, num_rewires); // if pool empty, default to rewiring to a random player in the pop.
-        } else{ // connect to local player.
+            RTPop(a, num_rewires); // if pool empty, default to rewiring to a random agent in the pop.
+        } else{ // connect to local agent.
             for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
-                Player f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
+                Agent f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
                 omega_a.add(f); // connect a to f.
                 a.getEdgeWeights().add(1.0);
                 f.getOmega().add(a); // connect f to a.
@@ -1181,22 +1107,22 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Find new neighbour by randomly choosing a player from the population.<br>
+     * Find new neighbour by randomly choosing a agent from the population.<br>
      * New neighbour cannot be rewirer or already a neighbour.<br>
      * @param a rewirer
      * @param b number of rewires to do
      */
-    public void RTPop(Player a, int b){
+    public void RTPop(Agent a, int b){
         for(int c=0;c<b;c++){ // c denotes number of rewires done so far.
-            ArrayList<Player> omega_a = a.getOmega(); // denotes neighbourhood of a.
-            Player d = null; // d denotes new neighbour.
+            ArrayList<Agent> omega_a = a.getOmega(); // denotes neighbourhood of a.
+            Agent d = null; // d denotes new neighbour.
             boolean found_new_neighbour = false;
             while(!found_new_neighbour){ // keep searching until you find a valid new neighbour
-                d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose player from pop.
+                d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose agent from pop.
                 if(!d.equals(a)){ // do not connect a to d if d = a.
 //                    boolean f = true; // f indicates whether there does not exist g in omega_a such that g = d.
                     boolean already_neighbours = false; // indicates whether a and d are already neighbours
-                    for(Player g: omega_a){ // g denotes neighbour of a.
+                    for(Agent g: omega_a){ // g denotes neighbour of a.
                         if(d.equals(g)){
 //                            f = false;
                             already_neighbours = true;
@@ -1421,17 +1347,17 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-    public void updateUtility(Player player, double payoff){
+    public void updateUtility(Agent agent, double payoff){
         switch(UF){
-            case "cumulative" -> player.setU(player.getU() + payoff);
-            case "normalised" -> player.setU(player.getU() + (payoff / player.getK()));
+            case "cumulative" -> agent.setU(agent.getU() + payoff);
+            case "normalised" -> agent.setU(agent.getU() + (payoff / agent.getK()));
         }
     }
 
 
 
-    public Player selRandomNeigh(Player child){
-        Player parent = child;
+    public Agent selRandomNeigh(Agent child){
+        Agent parent = child;
         int k = child.getK();
         if(k > 0){
             int random_int = ThreadLocalRandom.current().nextInt(k);
@@ -1442,8 +1368,8 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public Player selRandomPop(){
-        return findPlayerByID(ThreadLocalRandom.current().nextInt(N));
+    public Agent selRandomPop(){
+        return findAgentByID(ThreadLocalRandom.current().nextInt(N));
     }
 
 
@@ -1451,16 +1377,16 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Player may rewire their edges.<br>
+     * Agent may rewire their edges.<br>
      * Rewiring is guaranteed to occur once the edge is referenced in the
      * indices_of_edges_to_be_rewired ArrayList.<br>
-     * @param a player who may rewire
+     * @param a agent who may rewire
       */
-    public void rewire(Player a){
+    public void rewire(Agent a){
         double random_double = ThreadLocalRandom.current().nextDouble();
         if(RP > random_double){
             int num_rewires = 0;
-            ArrayList<Player> omega_a = a.getOmega();
+            ArrayList<Agent> omega_a = a.getOmega();
             ArrayList<Double> weights = a.getEdgeWeights();
             ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
             for(int i = 0; i < a.getK(); i++){
@@ -1485,7 +1411,7 @@ public class Env extends Thread{ // environment simulator
                         prob_rewire = Math.exp(-k * w_ab);
                     }
                     case "FD" -> {
-                        Player b = omega_a.get(i);
+                        Agent b = omega_a.get(i);
                         double k = 0.1; // manually set noise
                         prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
                     }
@@ -1498,10 +1424,10 @@ public class Env extends Thread{ // environment simulator
             }
             for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
                 int d = indices_of_edges_to_be_rewired.get(i);
-                Player e = omega_a.get(d);
-                ArrayList<Player> omega_e = e.getOmega();
+                Agent e = omega_a.get(d);
+                ArrayList<Agent> omega_e = e.getOmega();
                 for(int j = 0; j < e.getK(); j++){
-                    Player f = omega_e.get(j);
+                    Agent f = omega_e.get(j);
                     if(f.equals(a)){
                         omega_a.remove(d);
                         weights.remove(d);
@@ -1534,7 +1460,7 @@ public class Env extends Thread{ // environment simulator
      * Greater child k means lesser probability.<br>
      * Inspired by cardinot2016optional.<br>
      */
-    public void evoUDN(Player child, Player parent){
+    public void evoUDN(Agent child, Agent parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = (parent.getU() - child.getU()) / child.getK();
         if(random_number < prob_evolve)
@@ -1627,8 +1553,8 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public Player sel(Player child){
-        Player parent = null;
+    public Agent sel(Agent child){
+        Agent parent = null;
         switch(sel){
             case "RW" -> parent = selRW(child);
             case "elitist" -> parent = selElitist(child);
@@ -1642,7 +1568,7 @@ public class Env extends Thread{ // environment simulator
     }
 
 
-    public void evo(Player child, Player parent){
+    public void evo(Agent child, Agent parent){
         switch (evo) {
             case "copy" -> evoCopy(child, parent);
 //            case "approach" -> evoApproach(child, parent);
@@ -1655,7 +1581,7 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    public void mut(Player child){
+    public void mut(Agent child){
         switch (mut){
             case "global" -> mutGlobal(child);
             case "local" -> mutLocal(child);
@@ -1671,19 +1597,19 @@ public class Env extends Thread{ // environment simulator
      */
     public void calculateStats(){
         if(writePGenStats){
-            for(Player player: pop){
-                player.calculateMeanPOmega();
+            for(Agent agent : pop){
+                agent.calculateMeanPOmega();
             }
         }
 //        if(writeDegGenStats){
-//            for(Player player: pop){
-//                player.calculateDegree();
+//            for(Agent agent: pop){
+//                agent.calculateDegree();
 //            }
 //        }
 
-        // the only reason to use this loop is if degree is not being updated whenever a player's degree changes.
-//        for(Player player: pop){
-//            player.calculateDegree();
+        // the only reason to use this loop is if degree is not being updated whenever a agent's degree changes.
+//        for(Agent agent: pop){
+//            agent.calculateDegree();
 //        }
 
         if(writePRunStats) {
@@ -1706,7 +1632,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Calls the gen and run stat writing functions every writeRate gens.<br><br>
      * This function is typically called at the end of a gen.<br><br>
-     * Writes gen stats e.g. write p_x for all players x in the pop at gen t.<br><br>
+     * Writes gen stats e.g. write p_x for all agents x in the pop at gen t.<br><br>
      * Writes run stats e.g. write mean(p) of the pop at gen t.<br><br>
      * Whether a stat is recorded depends on the writing params.<br>
      */
@@ -1722,7 +1648,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * Child copies parent if parent fitter.
      */
-    public void evoCopyFitter(Player child, Player parent){
+    public void evoCopyFitter(Agent child, Agent parent){
         if(parent.getU() > child.getU()) {
             evoCopy(child, parent);
         }
@@ -1733,7 +1659,7 @@ public class Env extends Thread{ // environment simulator
     /**
      * evoUDN: evolution based on utility difference.<br>
      */
-    public void evoUD(Player child, Player parent){
+    public void evoUD(Agent child, Agent parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = parent.getU() - child.getU();
         if(random_number < prob_evolve)
@@ -1744,7 +1670,7 @@ public class Env extends Thread{ // environment simulator
 
 
     /**
-     * Writes the attributes (p, u, k) of all players in the pop at gen t.
+     * Writes the attributes (p, u, k) of all agents in the pop at gen t.
      * 1 file per gen.
      */
     public void writeGenStats(){
@@ -1755,12 +1681,12 @@ public class Env extends Thread{ // environment simulator
         if(writeUGenStats) s += "u,";
         if(writeKGenStats) s += "k,";
         s = removeTrailingComma(s);
-        for(Player player: pop){
+        for(Agent agent : pop){
             s += "\n";
 //            s += gen + ",";
-            if(writePGenStats) s += DF4.format(player.getP()) + "," + DF4.format(player.getMeanPOmega()) + ",";
-            if(writeUGenStats) s += DF4.format(player.getU()) + ",";
-            if(writeKGenStats) s += DF4.format(player.getK()) + ",";
+            if(writePGenStats) s += DF4.format(agent.getP()) + "," + DF4.format(agent.getMeanPOmega()) + ",";
+            if(writeUGenStats) s += DF4.format(agent.getU()) + ",";
+            if(writeKGenStats) s += DF4.format(agent.getK()) + ",";
             s = removeTrailingComma(s);
         }
         try{
@@ -1854,10 +1780,10 @@ public class Env extends Thread{ // environment simulator
      * higher rank ==> higher probability of being selected.
      * candidates for selection are child and its neighbours.
       */
-    public Player selRank(Player child){
+    public Agent selRank(Agent child){
         // get candidates
-        Player parent = child; // if no neighbour is selected, child is parent by default
-        ArrayList <Player> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
+        Agent parent = child; // if no neighbour is selected, child is parent by default
+        ArrayList <Agent> pool = new ArrayList<>(child.getOmega()); // pool of candidates for parent
         pool.add(child);
 
         // get utilities of candidates
@@ -1914,7 +1840,7 @@ public class Env extends Thread{ // environment simulator
      * in which case unfit individuals are about as likely to be imitated as fit individuals.
      * evolve_probability = 1 / (1 + Math.exp(child.getU() - parent.getU() / K));
      */
-    public void evoFD(Player child, Player parent){
+    public void evoFD(Agent child, Agent parent){
         double random_double = ThreadLocalRandom.current().nextDouble();
         double K = EN;
         double u_x = child.getU();
@@ -1940,11 +1866,11 @@ public class Env extends Thread{ // environment simulator
      * w_ab = 1.0 ==> guaranteed not to punish.
      * w_ab = 0.0 ==> guaranteed to punish.
      */
-    public void punish(Player a){
+    public void punish(Agent a){
         ArrayList<Double> weights = a.getEdgeWeights();
-        ArrayList<Player> omega_a = a.getOmega();
+        ArrayList<Agent> omega_a = a.getOmega();
         for(int i=0;i<a.getK();i++){
-            Player b = omega_a.get(i);
+            Agent b = omega_a.get(i);
             double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
             double u_a = a.getU();
@@ -2349,11 +2275,11 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public void getNeighbours(Player player){
+    public void getNeighbours(Agent agent){
         switch(neighType){
-            case"VN","Moore","dia"->adjacentNeigh(player);
-            case"random"->randomNeigh(player, neighSize);
-            case"all"->allPopNeigh(player);
+            case"VN","Moore","dia"->adjacentNeigh(agent);
+            case"random"->randomNeigh(agent, neighSize);
+            case"all"->allPopNeigh(agent);
         }
     }
 
@@ -2384,8 +2310,8 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             for(int i=0;i<N;i++) {
-                Player child = pop[i];
-                Player parent = sel(child);
+                Agent child = pop[i];
+                Agent parent = sel(child);
                 if(!child.equals(parent)) {
                     evo(child, parent);
                     mut(child);
@@ -2402,10 +2328,10 @@ public class Env extends Thread{ // environment simulator
 //            for(int i = 0; i < N; i++) play(pop[i]);
 //            for(int i=0;i<N;i++) updateUtility(pop[i]);
 //            for(int i = 0; i < NIS; i++){ // MC inner loop
-//                Player child = selRandomPop();
+//                Agent child = selRandomPop();
 //                EWL(child); // EWL inside or outside inner step loop?
 //                if(EWT.equals("rewire")) rewire(child); // rewire if applicable
-//                Player parent = sel(child);
+//                Agent parent = sel(child);
 //                if(evo(child, parent))
 //                    mut(child);
 //            }
@@ -2421,10 +2347,10 @@ public class Env extends Thread{ // environment simulator
 //        for(gen=1;gen<=gens;gen++){
 //            for(int i=0;i<NIS;i++){
 //                int random_int = ThreadLocalRandom.current().nextInt(N);
-//                Player player = findPlayerByID(random_int);
-//                play(player);
-//                Player parent = selRandomNeigh(player);
-//                evo(player, parent);
+//                Agent agent = findAgentByID(random_int);
+//                play(agent);
+//                Agent parent = selRandomNeigh(agent);
+//                evo(agent, parent);
 //            }
 //        }
 
@@ -2455,8 +2381,8 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             int random_int = ThreadLocalRandom.current().nextInt(N);
-            Player child = findPlayerByID(random_int);
-            Player parent = sel(child);
+            Agent child = findAgentByID(random_int);
+            Agent parent = sel(child);
             if(!child.equals(parent)) {
                 evo(child, parent);
                 mut(child);
@@ -2578,9 +2504,9 @@ public class Env extends Thread{ // environment simulator
         System.out.println("N="+N);
     }
 
-    // this function just initialises Player.game.
+    // this function just initialises Agent.game.
     public static void setGame(){
-        Player.setGame(game);
+        Agent.setGame(game);
         System.out.println("game="+game);
     }
 
@@ -2689,12 +2615,12 @@ public class Env extends Thread{ // environment simulator
                 switch(value){
                     case "1" -> {
                         NU = true;
-                        Player.setNU(NU);
+                        Agent.setNU(NU);
                         System.out.println("NU="+NU);
                     }
                     case "0" -> {
                         NU = false;
-                        Player.setNU(NU);
+                        Agent.setNU(NU);
                         System.out.println("NU="+NU);
                     }
                     default -> {
