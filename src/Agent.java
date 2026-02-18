@@ -32,7 +32,8 @@ public class Agent {
     private int k; // degree
     private int sel_rank;
     private static boolean NU = true; // by default, allow individuals to have negative utility.
-    private static double v; // vindictiveness of the agent
+    private double v; // vindictiveness of the agent i.e. their probability to punish. [0,1].
+    private static String V;
 
 
 
@@ -90,7 +91,7 @@ public class Agent {
         agent_desc += "ID="+ID;
 //        agent_desc += " pos=("+x+","+y+")";
         switch(game){
-            case"UG","DG"->{
+            case "UG", "DG"->{
                 agent_desc += " p=" + DF4.format(p) // p
                         + " ("+DF4.format(oldP) + ")"; // old p
                 switch(game){
@@ -101,7 +102,11 @@ public class Agent {
                 }
             }
         }
-//        agent_desc+=" pi="+DF4.format(pi); // score
+
+        switch(V){
+            case "random", "1", "0" -> agent_desc += " v=" + DF4.format(v);
+        }
+
         agent_desc += " u=" + DF4.format(u); // utility
 
         agent_desc += " omega=[";
@@ -217,4 +222,7 @@ public class Agent {
     public static void setNU(boolean b){
         NU=b;
     }
+    public double getV(){return v;}
+    public void setV(double d){v=d;}
+    public static void setStaticV(String s){V=s;}
 }

@@ -102,6 +102,7 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
     static String PS; // punishment severity function
+    static String V; // vindictiveness
 
 
 
@@ -137,7 +138,7 @@ public class Env extends Thread{ // environment simulator
         }
 
         // commence experimentation.
-        String console_str = "[INFO] Configuration line number(s) selected: ";
+        String console_str = "[INFO] Configuration line number(s) selected/loaded: ";
         for (int config_line_num : config_line_nums) {
             console_str += config_line_num + " ";
         }
@@ -242,6 +243,7 @@ public class Env extends Thread{ // environment simulator
                     case "PN1" -> setPN1(variations[exp - 1]);
                     case "PN2" -> setPN2(variations[exp - 1]);
                     case "M" -> setM(variations[exp - 1]);
+                    case "V" -> setV(variations[exp - 1]);
                 }
             }
         }
@@ -743,6 +745,7 @@ public class Env extends Thread{ // environment simulator
         setNU(CI!=settings.length? settings[CI++]: "");
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
+        setV(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
         setEvo(settings[CI++]);
@@ -790,6 +793,17 @@ public class Env extends Thread{ // environment simulator
                             }
                             case "PD" -> {}
                         }
+
+                        // assign vindictiveness
+                        switch(V){
+                            case "random" -> {
+                                double v = ThreadLocalRandom.current().nextDouble();
+                                new_agent.setV(v);
+                            }
+                            case "1" -> new_agent.setV(1); // all agents have max vindictiveness
+                            case "0" -> new_agent.setV(0); // no agents punish.
+                        }
+
                         pop[index] = new_agent;
                         index++;
                     }
@@ -1173,6 +1187,7 @@ public class Env extends Thread{ // environment simulator
                 settings += EWT.equals("punish")? ",NU": "";
                 settings += PP.equals("noisy")? ",PN1": "";
                 settings += EWT.equals("punish")? ",PN2": "";
+                settings += V.equals("")? "": ",V";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
@@ -1212,6 +1227,7 @@ public class Env extends Thread{ // environment simulator
             settings += EWT.equals("punish")? "," + NU: "";
             settings += PP.equals("noisy")? "," + PN1: "";
             settings += EWT.equals("punish")? "," + PN2: "";
+            settings += V.equals("")? "": "," + V;
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
@@ -1871,11 +1887,14 @@ public class Env extends Thread{ // environment simulator
         ArrayList<Agent> omega_a = a.getOmega();
         for(int i=0;i<a.getK();i++){
             Agent b = omega_a.get(i);
-            double random_double = ThreadLocalRandom.current().nextDouble();
             double w_ab = weights.get(i);
             double u_a = a.getU();
             double u_b = b.getU();
-            double punish_prob = calculatePunishProb(w_ab, u_a, u_b); // the punish probability is a function of the weight.
+            double v_a = a.getV();
+//            double punish_prob = calculatePunishProb(w_ab, u_a, u_b);
+//            punish_prob = punish_prob * v_a; // account for vindictiveness
+            double punish_prob = calculatePunishProb(w_ab, u_a, u_b, v_a);
+            double random_double = ThreadLocalRandom.current().nextDouble();
             boolean punish = punish_prob > random_double;
             double random_double2 = ThreadLocalRandom.current().nextDouble();
             if(PN2 > random_double2){
@@ -2728,7 +2747,8 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public double calculatePunishProb(double w_ab, double u_a, double u_b){
+//    public double calculatePunishProb(double w_ab, double u_a, double u_b){
+    public double calculatePunishProb(double w_ab, double u_a, double u_b, double v_a){
         double punish_prob = 0.0;
         switch(PP){
             case "linear" -> punish_prob = 1 - w_ab;
@@ -2761,7 +2781,13 @@ public class Env extends Thread{ // environment simulator
                     punish_prob = 1 - w_ab;
                 }
             }
+
+//            case "V+linear" -> punish_prob = v_a * (1 - w_ab);
+
         }
+
+        punish_prob = punish_prob * v_a; // account for vindictiveness
+
         return punish_prob;
     }
     
@@ -2778,6 +2804,41 @@ public class Env extends Thread{ // environment simulator
                         exit(1);
                     }
                 }
+            }
+        }
+    }
+
+    public static void setV(String value){
+        switch(EWT){
+            case "punish" -> {
+
+//                switch(PP){
+//                    case "V+linear" -> {
+//                        switch(value){
+//                            case "random" -> {
+//                                V = value;
+//                                System.out.println("V="+V);
+//                            }
+//                            default -> {
+//                                System.out.println("invalid V");
+//                                exit(1);
+//                            }
+//                        }
+//                    }
+//                }
+
+                switch(value){
+                    case "random", "1", "0" -> {
+                        V = value;
+                        Agent.setStaticV(V);
+                        System.out.println("V="+V);
+                    }
+                    default -> {
+                        System.out.println("invalid V");
+                        exit(1);
+                    }
+                }
+
             }
         }
     }
