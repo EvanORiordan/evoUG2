@@ -132,7 +132,7 @@ public class Env extends Thread{ // environment simulator
             config_line_nums[0] = scanner.nextInt();
         } else {
             config_line_nums = new int[args.length];
-            for(int i = 0; i < args.length; i++){
+            for (int i = 0; i < args.length; i++){
                 config_line_nums[i] = Integer.parseInt(args[i]);
             }
         }
@@ -143,7 +143,7 @@ public class Env extends Thread{ // environment simulator
             console_str += config_line_num + " ";
         }
         System.out.println(console_str);
-        for(int i = 0; i < config_line_nums.length; i++) {
+        for (int i = 0; i < config_line_nums.length; i++) {
             System.out.println("[INFO] Current configuration line number: " + config_line_nums[i]);
             try{
                 configEnv(config_line_nums[i]);
@@ -200,13 +200,13 @@ public class Env extends Thread{ // environment simulator
      * Runs an experiment series.
      */
     public static void experimentSeries(){
-        for(exp = 1; exp <= exps; exp++){
+        for (exp = 1; exp <= exps; exp++){
             exp_path = data_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-            if(exp <= variations.length){ // do not try to vary after the last experiment has ended
+            if (exp <= variations.length){ // do not try to vary after the last experiment has ended
                 System.out.print("[INFO] Varying "+VP+": ");
-                switch(VP){
+                switch (VP){
                     case "EWL" -> setEWL(variations[exp - 1]);
                     case "RA" -> setRA(variations[exp - 1]);
                     case "RT" -> setRT(variations[exp - 1]);
@@ -217,7 +217,7 @@ public class Env extends Thread{ // environment simulator
                     case "gens" -> setGens(variations[exp - 1]);
                     case "length" -> {
                         setLength(variations[exp - 1]);
-                        if(space.equals("grid")){
+                        if (space.equals("grid")){
                             setWidth();
                         }
                         setN();
@@ -231,10 +231,11 @@ public class Env extends Thread{ // environment simulator
                     case "PP" -> setPP(variations[exp - 1]);
 //                    case "cost" -> {
 //                        setCost(variations[exp - 1]);
-//                        if(PCFR > 0){
+//                        if (PCFR > 0){
 //                            setFine();
 //                        }
 //                    }
+                    case "PCFR" -> setPCFR(variations[exp - 1]);
                     case "cost" -> setCost(variations[exp - 1]);
                     case "fine" -> setFine(variations[exp - 1]);
                     case "NU" -> setNU(variations[exp - 1]);
@@ -255,7 +256,7 @@ public class Env extends Thread{ // environment simulator
      * Data is collected after each experiment.
      */
     public static void experiment(){
-        for(run = 1; run <= runs; run++){
+        for (run = 1; run <= runs; run++){
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -277,13 +278,13 @@ public class Env extends Thread{ // environment simulator
     public void start(){
         // initialise population and edge network.
         initRandomPop();
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             getNeighbours(pop[i]);
         }
-        if(writePosData && run == 1) {
+        if (writePosData && run == 1) {
             writePosData();
         }
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             initialiseEdgeWeights(pop[i]);
         }
 
@@ -292,7 +293,7 @@ public class Env extends Thread{ // environment simulator
         writeGenAndRunStats();
 
         // activate population.
-        switch(genType){
+        switch (genType){
             case "ER" -> ER();
             case "MCv1" -> MCv1();
             case "MCv2" -> MCv2();
@@ -309,11 +310,11 @@ public class Env extends Thread{ // environment simulator
      */
     public void play(Agent a){
         ArrayList<Agent> omega_a = a.getOmega(); // neighbourhood of a
-        for(int i = 0; i < a.getK(); i++){
+        for (int i = 0; i < a.getK(); i++){
             Agent b = omega_a.get(i); // neighbour of a
-            switch(EWT) {
+            switch (EWT) {
                 default -> {
-                    switch(game){
+                    switch (game){
                         case "UG", "DG" -> UG(a, b);
                     }
                 }
@@ -324,8 +325,8 @@ public class Env extends Thread{ // environment simulator
                         if (a.equals(c)) {
                             double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
                             double random_double = ThreadLocalRandom.current().nextDouble();
-                            if(w_ba > random_double){
-                                switch(game){
+                            if (w_ba > random_double){
+                                switch (game){
                                     case "UG", "DG" -> UG(a, b);
                                 }
                             }
@@ -349,7 +350,7 @@ public class Env extends Thread{ // environment simulator
         double q_b = b.getQ();
         double pi_a = 0.0;
         double pi_b = 0.0;
-        if(p_a >= q_b){
+        if (p_a >= q_b){
             pi_b = M * p_a;
             pi_a = M - pi_b;
         }
@@ -362,7 +363,7 @@ public class Env extends Thread{ // environment simulator
 
     public void initialiseEdgeWeights(Agent agent){
         ArrayList <Double> edge_weights = new ArrayList<>();
-        for(int i = 0; i< agent.getK(); i++){
+        for (int i = 0; i< agent.getK(); i++){
             edge_weights.add(1.0);
         }
         agent.setEdgeWeights(edge_weights);
@@ -376,13 +377,13 @@ public class Env extends Thread{ // environment simulator
     public void EWL(Agent a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Agent> omega_a = a.getOmega();
-        for(int i = 0; i < a.getK(); i++){
+        for (int i = 0; i < a.getK(); i++){
             Agent b = omega_a.get(i);
             double w_ab = weights.get(i); // weight from a to b
             w_ab += calculateLearning(a, b);
-            if(w_ab > 1.0) {
+            if (w_ab > 1.0) {
                 w_ab = 1.0;
-            } else if(w_ab < 0.0) {
+            } else if (w_ab < 0.0) {
                 w_ab = 0.0;
             }
             weights.set(i, w_ab); // replace old weight value
@@ -393,13 +394,13 @@ public class Env extends Thread{ // environment simulator
 
     public double calculateLearning(Agent a, Agent b){
         double learning = 0.0;
-        switch(EWL){
+        switch (EWL){
             case "PROC" -> {
                 double pa = a.getP();
                 double pb = b.getP();
-                if(pa < pb) {// if a unfairer than b, increase weight
+                if (pa < pb) {// if a unfairer than b, increase weight
                     learning = ROC;
-                }else if(pa > pb){ // else if a fairer than b, decrease weight
+                } else if (pa > pb){ // else if a fairer than b, decrease weight
                     learning = -ROC;
                 } // else no change
             }
@@ -411,25 +412,25 @@ public class Env extends Thread{ // environment simulator
                 double p_a = a.getP();
                 double p_b = b.getP();
                 double diff = p_b - p_a;
-                if(p_a < p_b){
+                if (p_a < p_b){
                     learning = ThreadLocalRandom.current().nextDouble(diff);
-                } else if(p_a > p_b){
+                } else if (p_a > p_b){
                     learning = -ThreadLocalRandom.current().nextDouble(-(diff)); // the minuses work around exceptions. ultimately, learning will be assigned a negative value.
                 }
             }
             case "PDRv2" -> { // alternate implementation of PDR. i think v2 functions identically to v1.
                 double p_a = a.getP();
                 double p_b = b.getP();
-                if(p_a < p_b){
+                if (p_a < p_b){
                     learning = ThreadLocalRandom.current().nextDouble(p_b - p_a);
-                } else if(p_a > p_b){
+                } else if (p_a > p_b){
                     learning = -ThreadLocalRandom.current().nextDouble(p_a - p_b);
                 }
             }
             case "PEDv2" -> {
                 double p_a = a.getP();
                 double p_b = b.getP();
-                if(p_a < p_b){ // if a unfairer than b, raise weight
+                if (p_a < p_b){ // if a unfairer than b, raise weight
                     learning = Math.pow((p_b - p_a), Math.exp(1));
                 } else { // if a fairer than b, reduce weight
                     learning = - Math.pow((p_a - p_b), Math.exp(1));
@@ -439,9 +440,9 @@ public class Env extends Thread{ // environment simulator
                 double p_a = a.getP();
                 double p_b = b.getP();
                 double exp = Math.exp(Math.abs(p_b - p_a));
-                if(p_a < p_b){
+                if (p_a < p_b){
                     learning = exp;
-                } else if(p_a > p_b){
+                } else if (p_a > p_b){
                     learning = -exp;
                 } else{
                     learning = 0.0;
@@ -450,18 +451,18 @@ public class Env extends Thread{ // environment simulator
             case "PStepwise" -> {
                 double pa = a.getP();
                 double pb = b.getP();
-                if(pa<pb){
+                if (pa<pb){
                     learning = 1.0;
-                } else if(pa>pb){
+                } else if (pa>pb){
                     learning = -1.0;
                 }
             }
             case "UROC" ->{
                 double ua = a.getU();
                 double ub = b.getU();
-                if(ua>ub){
+                if (ua>ub){
                     learning = ROC;
-                }else if(ua<ub){
+                } else if (ua<ub){
                     learning = -ROC;
                 }
             }
@@ -469,36 +470,36 @@ public class Env extends Thread{ // environment simulator
             case "PPEAD" -> {
                 double pa=a.getP();
                 double pb=b.getP();
-                if(pa<pb){
+                if (pa<pb){
                     learning = Math.exp(Math.abs(b.getP() - a.getP()));
-                } else if(pa>pb){
+                } else if (pa>pb){
                     learning = -Math.exp(Math.abs(b.getP() - a.getP()));
                 }
             }
             case "PPED"->{
                 double pa=a.getP();
                 double pb=b.getP();
-                if(pa<pb){
+                if (pa<pb){
                     learning = Math.exp(b.getP() - a.getP());
-                } else if(pa>pb){
+                } else if (pa>pb){
                     learning = -Math.exp(b.getP() - a.getP());
                 }
             }
             case "UUEAD" ->{
                 double ua=a.getU();
                 double ub=b.getU();
-                if(ua>ub){
+                if (ua>ub){
                     learning = Math.exp(Math.abs(b.getU() - a.getU()));
-                }else if(ua<ub){
+                } else if (ua<ub){
                     learning = -Math.exp(Math.abs(b.getU() - a.getU()));
                 }
             }
             case "UStepwise" ->{
                 double ua=a.getU();
                 double ub=b.getU();
-                if(ua>ub){
+                if (ua>ub){
                     learning = 1.0;
-                }else if(ua<ub){
+                } else if (ua<ub){
                     learning = -1.0;
                 }
             }
@@ -527,8 +528,8 @@ public class Env extends Thread{ // environment simulator
         int size = pool.size();
         double[] pockets = new double[size];
         double roulette_total = 0;
-        for(int i = 0; i < size; i++){
-            switch(RWT){
+        for (int i = 0; i < size; i++){
+            switch (RWT){
                 case "normal" -> pockets[i] = pool.get(i).getU();
                 case "expo" -> pockets[i] = Math.exp(pool.get(i).getU() * EN);
             }
@@ -536,10 +537,10 @@ public class Env extends Thread{ // environment simulator
         }
         double random_double = ThreadLocalRandom.current().nextDouble();
         double tally = 0;
-        for(int i = 0; i < size - 1; i++){ // if no neighbour candidate is selected, child is selected.
+        for (int i = 0; i < size - 1; i++){ // if no neighbour candidate is selected, child is selected.
             tally += pockets[i];
             double percent_taken = tally / roulette_total; // how much space in the wheel has been taken up so far
-            if(random_double < percent_taken){ // if true, the ball landed in the neighbour candidate's slot
+            if (random_double < percent_taken){ // if true, the ball landed in the neighbour candidate's slot
                 parent = pool.get(i); // select neighbour candidate as parent
                 break;
             }
@@ -556,9 +557,9 @@ public class Env extends Thread{ // environment simulator
     public Agent selElitist(Agent child){
         ArrayList<Agent> omega = child.getOmega();
         Agent parent = child;
-        for(int i = 0; i < child.getK(); i++){
+        for (int i = 0; i < child.getK(); i++){
             Agent neighbour = omega.get(i);
-            if(neighbour.getU() > parent.getU()){ // if candidate fitter than parent, parent is set to candidate
+            if (neighbour.getU() > parent.getU()){ // if candidate fitter than parent, parent is set to candidate
                 parent = neighbour;
             }
         }
@@ -579,15 +580,15 @@ public class Env extends Thread{ // environment simulator
 //        ArrayList <Agent> omega = child.getOmega();
 //        Agent parent1 = child; // fittest neighbour
 //        Agent parent2 = child; // second-fittest neighbour
-//        for(int i=0;i<omega.size();i++){
+//        for (int i=0;i<omega.size();i++){
 //            Agent neighbour = omega.get(i);
 //            double neighbour_u = neighbour.getU();
 //            double parent2_u = parent2.getU();
-//            if(neighbour_u > parent2_u){
+//            if (neighbour_u > parent2_u){
 //                parent2 = omega.get(i);
 //                parent2_u = parent2.getU();
 //                double parent1_mean_score = parent1.getU();
-//                if(parent2_u > parent1_mean_score){
+//                if (parent2_u > parent1_mean_score){
 //                    Agent temp = parent1;
 //                    parent1 = parent2;
 //                    parent2 = temp;
@@ -627,15 +628,15 @@ public class Env extends Thread{ // environment simulator
 //        double parent_old_q = parent.getOldQ();
 //
 //        // do not approach evolve if parent is child
-//        if(parent_ID != ID){
+//        if (parent_ID != ID){
 //
 //            // for attribute, if parent is lower, reduce child; else, increase.
 //            double approach = ThreadLocalRandom.current().nextDouble(noise);
-//            if(parent_old_p < p){
+//            if (parent_old_p < p){
 //                approach *= -1;
 //            }
 //            double new_p = p + approach;
-//            if(parent_old_q < q){
+//            if (parent_old_q < q){
 //                approach *= -1;
 //            }
 //            double new_q = q + approach;
@@ -665,8 +666,8 @@ public class Env extends Thread{ // environment simulator
      * Child's attributes are randomly and independently generated.
      */
     public void mutGlobal(Agent child){
-        if(mutationCheck()){
-            switch(game){
+        if (mutationCheck()){
+            switch (game){
                 case "UG" -> {
                     double new_p = ThreadLocalRandom.current().nextDouble();
                     double new_q = ThreadLocalRandom.current().nextDouble();
@@ -687,8 +688,8 @@ public class Env extends Thread{ // environment simulator
      * Slight mutations are independently applied to child's attributes.
      */
     public void mutLocal(Agent child){
-        if(mutationCheck()){
-            switch(game){
+        if (mutationCheck()){
+            switch (game){
                 case "UG" -> {
                     double p = child.getP();
                     double q = child.getQ();
@@ -717,7 +718,7 @@ public class Env extends Thread{ // environment simulator
         setGame();
         setM(settings[CI++]);
         setLength(settings[CI++]);
-        if(space.equals("grid")){
+        if (space.equals("grid")){
             setWidth();
         }
         setN();
@@ -733,12 +734,16 @@ public class Env extends Thread{ // environment simulator
         setPS(CI!=settings.length? settings[CI++]: "");
         setPCFR(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
-        if(PCFR > 0){
-            setFine();
-            CI++;
-        } else {
-            setFine(CI!=settings.length? settings[CI++]: "");
-        }
+
+//        if (PCFR > 0){
+//            setFine();
+//            CI++;
+//        } else {
+//            setFine(CI!=settings.length? settings[CI++]: "");
+//        }
+
+        setFine(CI!=settings.length? settings[CI++]: "");
+
         setNU(CI!=settings.length? settings[CI++]: "");
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
@@ -773,12 +778,12 @@ public class Env extends Thread{ // environment simulator
         pop = new Agent[N];
         Agent.setCount(0);
         int index = 0;
-        switch(space){
+        switch (space){
             case "grid" -> {
-                for(int y=0;y<length;y++){
-                    for(int x=0;x<width;x++){
+                for (int y=0;y<length;y++){
+                    for (int x=0;x<width;x++){
                         Agent new_agent = null;
-                        switch(game){
+                        switch (game){
                             case "UG" -> {
                                 double p = ThreadLocalRandom.current().nextDouble();
                                 double q = ThreadLocalRandom.current().nextDouble();
@@ -792,7 +797,7 @@ public class Env extends Thread{ // environment simulator
                         }
 
                         // assign vindictiveness
-                        switch(V){
+                        switch (V){
                             case "random" -> {
                                 double v = ThreadLocalRandom.current().nextDouble();
                                 new_agent.setV(v);
@@ -814,14 +819,14 @@ public class Env extends Thread{ // environment simulator
 
     public static void createDataFolders(){
         try{
-            if(writeRate > 0) {
+            if (writeRate > 0) {
                 Files.createDirectories(Paths.get(exp_path));
             }
-            for(int i=1;i<=runs;i++){
-                if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){ // add run stat writing params to this check
+            for (int i=1;i<=runs;i++){
+                if (writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){ // add run stat writing params to this check
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i));
                 }
-                if(writePGenStats || writeUGenStats || writeKGenStats){
+                if (writePGenStats || writeUGenStats || writeKGenStats){
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
                 }
             }
@@ -850,7 +855,7 @@ public class Env extends Thread{ // environment simulator
         ArrayList<Agent> omega = new ArrayList<>();
         double y = agent.getY();
         double x = agent.getX();
-        for(int i=1;i<=neighRadius;i++){
+        for (int i=1;i<=neighRadius;i++){
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
@@ -859,8 +864,8 @@ public class Env extends Thread{ // environment simulator
             omega.add(findAgentByPos(y, x_minus));
             omega.add(findAgentByPos(y_plus, x));
             omega.add(findAgentByPos(y_minus, x));
-            if(neighType.equals("dia")) {
-                if(i > 1) {
+            if (neighType.equals("dia")) {
+                if (i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
@@ -871,7 +876,7 @@ public class Env extends Thread{ // environment simulator
                     omega.add(findAgentByPos(y_plus_minus, x_minus_plus));
                 }
             }
-            if(neighType.equals("Moore")){
+            if (neighType.equals("Moore")){
                 omega.add(findAgentByPos(y_plus, x_plus));
                 omega.add(findAgentByPos(y_minus, x_plus));
                 omega.add(findAgentByPos(y_minus, x_minus));
@@ -895,7 +900,7 @@ public class Env extends Thread{ // environment simulator
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
-        for(int ID: IDs){
+        for (int ID: IDs){
             omega.add(findAgentByID(ID));
         }
         agent.setK(agent.getOmega().size());
@@ -907,10 +912,10 @@ public class Env extends Thread{ // environment simulator
     public void allPopNeigh(Agent agent){
         ArrayList <Agent> omega = agent.getOmega();
         int ID = agent.getID();
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             Agent agent2 = pop[i];
             int ID2 = agent2.getID();
-            if(ID != ID2){
+            if (ID != ID2){
                 omega.add(agent2);
             }
         }
@@ -921,7 +926,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateMeanP(){
         mean_p = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             mean_p += pop[i].getP();
         }
         mean_p /= N;
@@ -929,7 +934,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateSigmaP(){
         sigma_p = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             sigma_p += Math.pow(pop[i].getP() - mean_p, 2);
         }
         sigma_p = Math.pow(sigma_p / N, 0.5);
@@ -937,7 +942,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateMeanU(){
         mean_u = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             mean_u += pop[i].getU();
         }
         mean_u /= N;
@@ -945,7 +950,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateSigmaU(){
         sigma_u = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             sigma_u += Math.pow(pop[i].getU() - mean_u, 2);
         }
         sigma_u = Math.pow(sigma_u / N, 0.5);
@@ -953,7 +958,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateMeanK(){
         mean_k = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             mean_k += pop[i].getK();
         }
         mean_k /= N;
@@ -961,7 +966,7 @@ public class Env extends Thread{ // environment simulator
 
     public void calculateSigmaK(){
         sigma_k = 0;
-        for(int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++){
             sigma_k += Math.pow(pop[i].getK() - mean_k, 2);
         }
         sigma_k = Math.sqrt(sigma_k / N);
@@ -970,7 +975,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public void prepare(){
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             Agent agent = pop[i];
             agent.setU(0);
             agent.setOldP(agent.getP());
@@ -985,8 +990,8 @@ public class Env extends Thread{ // environment simulator
         try{
             fw = new FileWriter(exp_path + "\\pos_data.csv", false);
             String s = "";
-            for(int y=length-1;y>=0;y--){
-                for(int x=0;x<width;x++){
+            for (int y=length-1;y>=0;y--){
+                for (int x=0;x<width;x++){
                     Agent agent = findAgentByPos(y,x);
                     int ID = agent.getID();
                     s += ID;
@@ -1012,10 +1017,10 @@ public class Env extends Thread{ // environment simulator
      */
     public Agent findAgentByID(int ID){
         Agent agent = null;
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             Agent agent2 = pop[i];
             int ID2 = agent2.getID();
-            if(ID == ID2){
+            if (ID == ID2){
                 agent = agent2;
                 break;
             }
@@ -1041,7 +1046,7 @@ public class Env extends Thread{ // environment simulator
             Agent agent2 =pop[i];
             double y2= agent2.getY();
             double x2= agent2.getX();
-            if(y2==y && x2==x){
+            if (y2==y && x2==x){
                 agent = agent2;
                 found=true;
             }
@@ -1057,8 +1062,8 @@ public class Env extends Thread{ // environment simulator
      * Assign same strategy to cluster of agents within the grid.
      */
     public void injectStrategyCluster(){
-        for(int i = 0; i < injSize; i++){
-            for(int j = 0; j < injSize; j++){
+        for (int i = 0; i < injSize; i++){
+            for (int j = 0; j < injSize; j++){
                 Agent agent = findAgentByPos(j, i);
                 agent.setP(injP);
             }
@@ -1082,32 +1087,32 @@ public class Env extends Thread{ // environment simulator
     public void RTLocal(Agent a, int num_rewires){
         ArrayList<Agent> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
         ArrayList<Agent> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
-        for(Agent b: omega_a){ // b denotes neighbour of rewirer
+        for (Agent b: omega_a){ // b denotes neighbour of rewirer
             ArrayList<Agent> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
-            for(Agent c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
-                if(!c.equals(a)){ // do not add c to pool if c = a
+            for (Agent c: omega_b){ // c denotes neighbour of the neighbour of rewirer.
+                if (!c.equals(a)){ // do not add c to pool if c = a
                     boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
                     for (Agent d : pool) { // d denotes candidate in pool
-                        if(c.equals(d)){ // if c = d, c must already be in the pool, therefore do not add c to the pool.
+                        if (c.equals(d)){ // if c = d, c must already be in the pool, therefore do not add c to the pool.
                             add_to_pool = false;
                             break;
                         }
                     }
-                    if(!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
+                    if (!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
                     for (Agent e : omega_a) { // e denotes neighbour of rewirer.
-                        if(c.equals(e)){ // if c = e, c must already be in omega_a, so you do not want to add c to pool.
+                        if (c.equals(e)){ // if c = e, c must already be in omega_a, so you do not want to add c to pool.
                             add_to_pool = false;
                             break;
                         }
                     }
-                    if(add_to_pool) pool.add(c); // if deemed valid, add c to pool.
+                    if (add_to_pool) pool.add(c); // if deemed valid, add c to pool.
                 }
             }
         }
-        if(pool.isEmpty()) {
+        if (pool.isEmpty()) {
             RTPop(a, num_rewires); // if pool empty, default to rewiring to a random agent in the pop.
         } else{ // connect to local agent.
-            for(int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
+            for (int rewires_done = 0; rewires_done < num_rewires; rewires_done++){
                 Agent f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
                 omega_a.add(f); // connect a to f.
                 a.getEdgeWeights().add(1.0);
@@ -1126,17 +1131,17 @@ public class Env extends Thread{ // environment simulator
      * @param b number of rewires to do
      */
     public void RTPop(Agent a, int b){
-        for(int c=0;c<b;c++){ // c denotes number of rewires done so far.
+        for (int c=0;c<b;c++){ // c denotes number of rewires done so far.
             ArrayList<Agent> omega_a = a.getOmega(); // denotes neighbourhood of a.
             Agent d = null; // d denotes new neighbour.
             boolean found_new_neighbour = false;
             while(!found_new_neighbour){ // keep searching until you find a valid new neighbour
                 d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose agent from pop.
-                if(!d.equals(a)){ // do not connect a to d if d = a.
+                if (!d.equals(a)){ // do not connect a to d if d = a.
 //                    boolean f = true; // f indicates whether there does not exist g in omega_a such that g = d.
                     boolean already_neighbours = false; // indicates whether a and d are already neighbours
-                    for(Agent g: omega_a){ // g denotes neighbour of a.
-                        if(d.equals(g)){
+                    for (Agent g: omega_a){ // g denotes neighbour of a.
+                        if (d.equals(g)){
 //                            f = false;
                             already_neighbours = true;
                             break;
@@ -1156,9 +1161,9 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void writeSettings(){
-        if(writeRate > 0){
+        if (writeRate > 0){
             String settings = "";
-            if(exp == 1){
+            if (exp == 1){
                 settings += "runs";
 //                settings += ",game";
                 settings += ",M";
@@ -1178,8 +1183,13 @@ public class Env extends Thread{ // environment simulator
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
-                settings += PP.isEmpty()? "": ",PCFR";
+
+//                settings += PP.isEmpty()? "": ",PCFR";
+
 //                settings += PCFR != 0.0? ",PCFR": "";
+
+                settings += PS.equals("PCFR")? ",PCFR": "";
+
                 settings += cost != 0.0? ",cost": "";
                 settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
@@ -1218,8 +1228,13 @@ public class Env extends Thread{ // environment simulator
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
-            settings += PP.isEmpty()? "": "," + PCFR;
+
+//            settings += PP.isEmpty()? "": "," + PCFR;
+
 //            settings += PCFR != 0.0? "," + PCFR: "";
+
+            settings += PS.equals("PCFR")? "," + PCFR: "";
+
             settings += cost != 0.0? "," + cost: "";
             settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
@@ -1255,16 +1270,16 @@ public class Env extends Thread{ // environment simulator
      * Reads and writes local data.
      */
     public static void writeSeriesStats(){
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
+        if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
             String output = "";
-            if(exp == 1) {
-                if(writePRunStats){
+            if (exp == 1) {
+                if (writePRunStats){
                     output+="mean avg p,sigma avg p,";
                 }
-                if(writeURunStats){
+                if (writeURunStats){
                     output+="mean avg u,sigma avg u";
                 }
-                if(writeKRunStats){
+                if (writeKRunStats){
                     output+="mean sigma k,";
                 }
                 output = removeTrailingComma(output);
@@ -1281,54 +1296,54 @@ public class Env extends Thread{ // environment simulator
                 fw = new FileWriter(data_path + "\\series_stats.csv", true);
                 br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
                 br.readLine();
-                for(int i=0;i<runs;i++){
+                for (int i=0;i<runs;i++){
                     String row = br.readLine();
                     String[] row_contents = row.split(",");
                     int j = 0;
-                    if(writePRunStats){
+                    if (writePRunStats){
                         mean_p_values[i] = Double.parseDouble(row_contents[j]);
                         j++; // move past mean p
                         j++; // move past sigma p
                         j++; // move past max p
                     }
-                    if(writeURunStats) {
+                    if (writeURunStats) {
                         mean_u_values[i] = Double.parseDouble(row_contents[j]);
                         j++; // move past mean u
                         j++; // move past sigma u
                     }
-                    if(writeKRunStats) {
+                    if (writeKRunStats) {
                         sigma_k_values[i] = Double.parseDouble(row_contents[j]);
                     }
                 }
-                for(int i=0;i<runs;i++){
-                    if(writePRunStats){
+                for (int i=0;i<runs;i++){
+                    if (writePRunStats){
                         mean_avg_p += mean_p_values[i];
                     }
-                    if(writeURunStats){
+                    if (writeURunStats){
                         mean_avg_u += mean_u_values[i];
                     }
-                    if(writeKRunStats){
+                    if (writeKRunStats){
                         mean_sigma_k += sigma_k_values[i];
                     }
                 }
                 mean_avg_p /= runs;
                 mean_avg_u /= runs;
-                if(writeKRunStats) {
+                if (writeKRunStats) {
                     mean_sigma_k /= runs;
                 }
-                for(int i=0;i<runs;i++){
+                for (int i=0;i<runs;i++){
                     sigma_avg_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
                     sigma_avg_u += Math.pow(mean_u_values[i] - mean_avg_u, 2);
                 }
                 sigma_avg_p = Math.pow(sigma_avg_p / runs, 0.5);
                 sigma_avg_u = Math.pow(sigma_avg_u / runs, 0.5);
                 output += "\n";
-                if(writePRunStats){
+                if (writePRunStats){
                     output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
                 }
-                if(writeURunStats){
+                if (writeURunStats){
                     output+=DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
-                }if(writeKRunStats){
+                }if (writeKRunStats){
                     output+=DF4.format(mean_sigma_k) + ",";
                 }
                 output = removeTrailingComma(output);
@@ -1339,12 +1354,12 @@ public class Env extends Thread{ // environment simulator
             }
 
             // display info in console
-            if(writePRunStats || writeURunStats){
+            if (writePRunStats || writeURunStats){
                 String console_output = "[STATS] exp: "+exp;
-                if(writePRunStats){
+                if (writePRunStats){
                     console_output += "; mean avg p: "+DF4.format(mean_avg_p);
                 }
-                if(writeURunStats){
+                if (writeURunStats){
                     console_output += "; mean avg u: "+DF4.format(mean_avg_u);
                 }
                 System.out.println(console_output);
@@ -1354,7 +1369,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public void updateUtility(Agent agent, double payoff){
-        switch(UF){
+        switch (UF){
             case "cumulative" -> agent.setU(agent.getU() + payoff);
             case "normalised" -> agent.setU(agent.getU() + (payoff / agent.getK()));
         }
@@ -1365,7 +1380,7 @@ public class Env extends Thread{ // environment simulator
     public Agent selRandomNeigh(Agent child){
         Agent parent = child;
         int k = child.getK();
-        if(k > 0){
+        if (k > 0){
             int random_int = ThreadLocalRandom.current().nextInt(k);
             parent = child.getOmega().get(random_int);
         }
@@ -1390,12 +1405,12 @@ public class Env extends Thread{ // environment simulator
       */
     public void rewire(Agent a){
         double random_double = ThreadLocalRandom.current().nextDouble();
-        if(RP > random_double){
+        if (RP > random_double){
             int num_rewires = 0;
             ArrayList<Agent> omega_a = a.getOmega();
             ArrayList<Double> weights = a.getEdgeWeights();
             ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-            for(int i = 0; i < a.getK(); i++){
+            for (int i = 0; i < a.getK(); i++){
 //                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
 
                 // TODO: testing why the above commented out line doesnt sometimes work...
@@ -1407,7 +1422,7 @@ public class Env extends Thread{ // environment simulator
                 }
 
                 double prob_rewire = 0;
-                switch(RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
+                switch (RA){ // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
                     case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
                     case "smootherstep" -> prob_rewire = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
                     case "on0" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
@@ -1424,17 +1439,17 @@ public class Env extends Thread{ // environment simulator
                     case "linearR" -> prob_rewire = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
                 }
                 double c = ThreadLocalRandom.current().nextDouble();
-                if(prob_rewire > c){
+                if (prob_rewire > c){
                     indices_of_edges_to_be_rewired.add(i);
                 }
             }
-            for(int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
+            for (int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--){
                 int d = indices_of_edges_to_be_rewired.get(i);
                 Agent e = omega_a.get(d);
                 ArrayList<Agent> omega_e = e.getOmega();
-                for(int j = 0; j < e.getK(); j++){
+                for (int j = 0; j < e.getK(); j++){
                     Agent f = omega_e.get(j);
-                    if(f.equals(a)){
+                    if (f.equals(a)){
                         omega_a.remove(d);
                         weights.remove(d);
                         omega_e.remove(j);
@@ -1446,10 +1461,10 @@ public class Env extends Thread{ // environment simulator
             }
 
 
-            if(num_rewires > 0){
+            if (num_rewires > 0){
                 switch (RT){
-                    case"local"->RTLocal(a, num_rewires);
-                    case"pop"->RTPop(a, num_rewires);
+                    case "local"->RTLocal(a, num_rewires);
+                    case "pop"->RTPop(a, num_rewires);
                 }
             }
         }
@@ -1469,7 +1484,7 @@ public class Env extends Thread{ // environment simulator
     public void evoUDN(Agent child, Agent parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = (parent.getU() - child.getU()) / child.getK();
-        if(random_number < prob_evolve)
+        if (random_number < prob_evolve)
             evoCopy(child, parent);
     }
 
@@ -1480,18 +1495,18 @@ public class Env extends Thread{ // environment simulator
      * 1 file per exp.
      */
     public void writeExpStats() {
-        if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
+        if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
             String output = "";
             try {
                 fw = new FileWriter(exp_path + "\\exp_stats.csv", true);
                 br = new BufferedReader(new FileReader(run_path + "\\run_stats.csv"));
                 String line = br.readLine();
-                if(run == 1) {
+                if (run == 1) {
 
                     // remove gen column
                     String[] row_contents = line.split(",");
                     String no_gen_str = "";
-                    for(int i=1;i<row_contents.length;i++){
+                    for (int i=1;i<row_contents.length;i++){
                         no_gen_str += row_contents[i] + ",";
                     }
                     no_gen_str = removeTrailingComma(no_gen_str);
@@ -1499,14 +1514,14 @@ public class Env extends Thread{ // environment simulator
                 }
 
                 // skip to the last row of run stats
-                for(int i = 0; i <= gens / writeRate; i++){
+                for (int i = 0; i <= gens / writeRate; i++){
                     line = br.readLine();
                 }
 
                 // remove gen column
                 String[] row_contents = line.split(",");
                 String no_gen_str = "";
-                for(int i=1;i<row_contents.length;i++){
+                for (int i=1;i<row_contents.length;i++){
                     no_gen_str += row_contents[i] + ",";
                 }
                 no_gen_str = removeTrailingComma(no_gen_str);
@@ -1518,12 +1533,12 @@ public class Env extends Thread{ // environment simulator
             }
 
             // display info in console
-            if(writePRunStats || writeURunStats){
+            if (writePRunStats || writeURunStats){
                 String console_output = "[STATS] exp: "+exp+"; run: "+run;
-                if(writePRunStats){
+                if (writePRunStats){
                     console_output += "; mean p: "+DF4.format(mean_p);
                 }
-                if(writeURunStats){
+                if (writeURunStats){
                     console_output += "; mean u: "+DF4.format(mean_u);
                 }
                 System.out.println(console_output);
@@ -1534,9 +1549,9 @@ public class Env extends Thread{ // environment simulator
 
 
     public void calculateMaxP(){
-        for(int i=0;i<N;i++){
+        for (int i=0;i<N;i++){
             double p = pop[i].getP();
-            if(p > max_p)
+            if (p > max_p)
                 max_p = p;
         }
     }
@@ -1545,7 +1560,7 @@ public class Env extends Thread{ // environment simulator
 
     public Agent sel(Agent child){
         Agent parent = null;
-        switch(sel){
+        switch (sel){
             case "RW" -> parent = selRW(child);
             case "elitist" -> parent = selElitist(child);
             case "randomNeigh" -> parent = selRandomNeigh(child);
@@ -1586,32 +1601,32 @@ public class Env extends Thread{ // environment simulator
      * calculateStats() will be called every generation.
      */
     public void calculateStats(){
-        if(writePGenStats){
-            for(Agent agent : pop){
+        if (writePGenStats){
+            for (Agent agent : pop){
                 agent.calculateMeanPOmega();
             }
         }
-//        if(writeDegGenStats){
-//            for(Agent agent: pop){
+//        if (writeDegGenStats){
+//            for (Agent agent: pop){
 //                agent.calculateDegree();
 //            }
 //        }
 
         // the only reason to use this loop is if degree is not being updated whenever a agent's degree changes.
-//        for(Agent agent: pop){
+//        for (Agent agent: pop){
 //            agent.calculateDegree();
 //        }
 
-        if(writePRunStats) {
+        if (writePRunStats) {
             calculateMeanP();
             calculateSigmaP();
             calculateMaxP();
         }
-        if(writeURunStats) {
+        if (writeURunStats) {
             calculateMeanU();
             calculateSigmaU();
         }
-        if(writeKRunStats) {
+        if (writeKRunStats) {
             calculateMeanK();
             calculateSigmaK();
         }
@@ -1627,9 +1642,9 @@ public class Env extends Thread{ // environment simulator
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats(){
-        if(writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
-            if(writePGenStats || writeUGenStats || writeKGenStats) writeGenStats();
-            if(writePRunStats || writeURunStats || writeKRunStats) writeRunStats();
+        if (writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
+            if (writePGenStats || writeUGenStats || writeKGenStats) writeGenStats();
+            if (writePRunStats || writeURunStats || writeKRunStats) writeRunStats();
         }
     }
 
@@ -1639,7 +1654,7 @@ public class Env extends Thread{ // environment simulator
      * Child copies parent if parent fitter.
      */
     public void evoCopyFitter(Agent child, Agent parent){
-        if(parent.getU() > child.getU()) {
+        if (parent.getU() > child.getU()) {
             evoCopy(child, parent);
         }
     }
@@ -1652,7 +1667,7 @@ public class Env extends Thread{ // environment simulator
     public void evoUD(Agent child, Agent parent){
         double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = parent.getU() - child.getU();
-        if(random_number < prob_evolve)
+        if (random_number < prob_evolve)
             evoCopy(child, parent);
     }
 
@@ -1665,25 +1680,25 @@ public class Env extends Thread{ // environment simulator
      */
     public void writeGenStats(){
         String s = "";
-        if(writePGenStats) {
+        if (writePGenStats) {
             s += "p,mean p omega,";
         }
-        if(writeUGenStats) {
+        if (writeUGenStats) {
             s += "u,";
         }
-        if(writeKGenStats) {
+        if (writeKGenStats) {
             s += "k,";
         }
         s = removeTrailingComma(s);
-        for(Agent agent : pop){
+        for (Agent agent : pop){
             s += "\n";
-            if(writePGenStats) {
+            if (writePGenStats) {
                 s += DF4.format(agent.getP()) + "," + DF4.format(agent.getMeanPOmega()) + ",";
             }
-            if(writeUGenStats) {
+            if (writeUGenStats) {
                 s += DF4.format(agent.getU()) + ",";
             }
-            if(writeKGenStats) {
+            if (writeKGenStats) {
                 s += DF4.format(agent.getK()) + ",";
             }
             s = removeTrailingComma(s);
@@ -1705,7 +1720,7 @@ public class Env extends Thread{ // environment simulator
      */
     public void writeRunStats() {
         String s = "";
-        if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
+        if (gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
             s += "gen,";
             if (writePRunStats) {
                 s += "mean p,sigma p,max p,";
@@ -1723,13 +1738,13 @@ public class Env extends Thread{ // environment simulator
             s += "\n";
         }
         s += gen + ",";
-        if(writePRunStats) {
+        if (writePRunStats) {
             s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
         }
-        if(writeURunStats) {
+        if (writeURunStats) {
             s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
         }
-        if(writeKRunStats) {
+        if (writeKRunStats) {
             s += DF4.format(sigma_k) + ",";
         }
         if (EWT.equals("punish")) {
@@ -1753,7 +1768,7 @@ public class Env extends Thread{ // environment simulator
      * If last char of string is a comma, get rid of it.
       */
     public static String removeTrailingComma(String s){
-        if(s.length() > 0 && s.charAt(s.length() - 1) == ','){
+        if (s.length() > 0 && s.charAt(s.length() - 1) == ','){
             s = s.substring(0, s.length() - 1);
         }
         return s;
@@ -1761,7 +1776,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void exit(int status){
-        if(status == 0){
+        if (status == 0){
             System.out.println("[INFO] Normal termination...");
         } else if (status == 1){
             System.out.println("[INFO] Terminating due to error...");
@@ -1787,19 +1802,19 @@ public class Env extends Thread{ // environment simulator
         // get utilities of candidates
         int size = pool.size();
         double[] utilities = new double[size];
-        for(int i=0;i<size;i++){
+        for (int i=0;i<size;i++){
             utilities[i] = pool.get(i).getU();
         }
 
         // determine ranks
         int[] ranks = new int[size];
-        for(int i=0;i<size;i++){
+        for (int i=0;i<size;i++){
             ranks[i] = 1;
         }
-        for(int i=0;i<size;i++){
-            for(int j=0;j<size;j++){
-                if(i != j){
-                    if(utilities[i] > utilities[j]){
+        for (int i=0;i<size;i++){
+            for (int j=0;j<size;j++){
+                if (i != j){
+                    if (utilities[i] > utilities[j]){
                         ranks[i]++;
                     }
                 }
@@ -1811,14 +1826,14 @@ public class Env extends Thread{ // environment simulator
         // (where T_n denotes nth triangular number and n denotes candidate pool size).
         // lowest rank: 1.
         double total = 0;
-        for(int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++){
             total += ranks[i];
         }
         double random_double = ThreadLocalRandom.current().nextDouble(total);
         double tally = 0;
-        for(int i = 0; i < size - 1; i++){
+        for (int i = 0; i < size - 1; i++){
             tally += ranks[i];
-            if(random_double < tally){
+            if (random_double < tally){
                 parent = pool.get(i); // select candidate as parent
                 break;
             }
@@ -1867,7 +1882,7 @@ public class Env extends Thread{ // environment simulator
     public void punish(Agent a){
         ArrayList<Double> weights = a.getEdgeWeights();
         ArrayList<Agent> omega_a = a.getOmega();
-        for(int i=0;i<a.getK();i++){
+        for (int i=0;i<a.getK();i++){
             Agent b = omega_a.get(i);
             double w_ab = weights.get(i);
             double u_a = a.getU();
@@ -1879,15 +1894,15 @@ public class Env extends Thread{ // environment simulator
             double random_double = ThreadLocalRandom.current().nextDouble();
             boolean punish = punish_prob > random_double;
             double random_double2 = ThreadLocalRandom.current().nextDouble();
-            if(PN2 > random_double2){
-                if(punish){
+            if (PN2 > random_double2){
+                if (punish){
                     punish = false;
                 } else {
                     punish = true;
                 }
             }
-            if(punish){
-                switch(PS){
+            if (punish){
+                switch (PS){
                     case "normal" -> {
                         a.setU(u_a - cost);
                         b.setU(u_b - fine);
@@ -1897,10 +1912,10 @@ public class Env extends Thread{ // environment simulator
                         b.setU(u_b - fine * (1 - w_ab));
                     }
                     case "utility" -> {
-                        if(2 * u_a < u_b){ // if b has more than two times the utility of a, double the cost and fine.
+                        if (2 * u_a < u_b){ // if b has more than two times the utility of a, double the cost and fine.
                             a.setU(u_a - 2 * cost);
                             b.setU(u_b - 2 * fine);
-                        } else if(u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
+                        } else if (u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
                             a.setU(u_a - cost / 2);
                             b.setU(u_b - fine / 2);
                         } else { // otherwise, revert to PS = normal.
@@ -1910,22 +1925,25 @@ public class Env extends Thread{ // environment simulator
                     }
                     case "lowNoise" -> {
                         a.setU(u_a - cost);
-                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(2, 4);
-                        b.setU(u_b - random_fine);
+                        double random_double3 = ThreadLocalRandom.current().nextDouble(2, 4);
+                        double noisy_fine = cost * random_double3;
+                        b.setU(u_b - noisy_fine);
                     }
                     case "mediumNoise" -> {
                         a.setU(u_a - cost);
-                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(1, 5);
-                        b.setU(u_b - random_fine);
+                        double random_double3 = ThreadLocalRandom.current().nextDouble(1, 5);
+                        double noisy_fine = cost * random_double3;
+                        b.setU(u_b - noisy_fine);
                     }
                     case "highNoise" -> {
                         a.setU(u_a - cost);
-                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(0, 6);
-                        b.setU(u_b - random_fine);
+                        double random_double3 = ThreadLocalRandom.current().nextDouble(0, 6);
+                        double noisy_fine = cost * random_double3;
+                        b.setU(u_b - noisy_fine);
                     }
                     case "PCFR" -> { // PCFR: "punishment cost:fine ratio"
                         a.setU(u_a - cost);
-                        b.setU(u_b - (cost * PCFR));
+                        b.setU(u_b - cost * PCFR);
                     }
                 }
 
@@ -1937,7 +1955,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void setCost(String value){
-        switch(PP){
+        switch (PP){
             case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
                 try{
                     cost = Double.parseDouble(value);
@@ -1951,27 +1969,43 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setFine(String value){
-        switch(PP){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
-                try{
+
+//        switch (PP){
+//            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
+//                try{
+//                    fine = Double.parseDouble(value);
+//                    System.out.println("fine="+fine);
+//                }catch(NumberFormatException e){
+//                    System.out.println("invalid fine: must be a double");
+//                    exit(1);
+//                }
+//            }
+//        }
+
+        switch (PS){
+            case "normal", "weighted", "utility" -> {
+                try {
                     fine = Double.parseDouble(value);
-                    System.out.println("fine="+fine);
-                }catch(NumberFormatException e){
+                    System.out.println("fine=" + fine);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid fine: must be a double");
                     exit(1);
                 }
             }
+//            case "PCFR" -> {
+//
+//            }
         }
     }
-    public static void setFine(){
-        fine = cost * PCFR;
-        System.out.println("fine="+DF4.format(fine));
-    }
+//    public static void setFine(){
+//        fine = cost * PCFR;
+//        System.out.println("fine="+DF4.format(fine));
+//    }
 
     public static void setPP(String value){
-        switch(EWT){
+        switch (EWT){
             case "punish" -> {
-                switch(value){
+                switch (value){
                     case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
                         PP = value;
                         System.out.println("PP="+PP);
@@ -1986,7 +2020,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setMutRate(String value){
-        switch(mut){
+        switch (mut){
             case "global", "local" -> {
                 try{
                     mutRate = Double.parseDouble(value);
@@ -1995,7 +2029,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid mutRate");
                     exit(1);
                 }
-                if(mutRate < 0 || mutRate > 1){
+                if (mutRate < 0 || mutRate > 1){
                     System.out.println("invalid mutRate: must be within the interval [0, 1].");
                     exit(1);
                 }
@@ -2005,7 +2039,7 @@ public class Env extends Thread{ // environment simulator
 
     // if EWL is not PROC or UROC, nothing happens.
     public static void setROC(String value){
-        switch(EWL){
+        switch (EWL){
             case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
                 try{
                     ROC = Double.parseDouble(value);
@@ -2014,7 +2048,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid ROC: must be a double");
                     exit(1);
                 }
-                if(ROC < 0 || ROC > 1){
+                if (ROC < 0 || ROC > 1){
                     System.out.println("invalid ROC: must be within the interval [0, 1].");
                     exit(1);
                 }
@@ -2030,14 +2064,14 @@ public class Env extends Thread{ // environment simulator
             System.out.println("invalid gens: must be an integer");
             exit(1);
         }
-        if(gens < 1){
+        if (gens < 1){
             System.out.println("invalid gens: must be >= 1.");
             exit(1);
         }
     }
 
     public static void setER(String value){
-        switch(genType) {
+        switch (genType) {
             case "ER" -> {
                 try{
                     ER = Integer.parseInt(value);
@@ -2046,7 +2080,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid ER: must be an integer");
                     exit(1);
                 }
-                if(ER < 1){
+                if (ER < 1){
                     System.out.println("invalid ER: must be >= 1.");
                     exit(1);
                 }
@@ -2062,7 +2096,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("invalid length: must be an integer");
             exit(1);
         }
-        if(length < 3){
+        if (length < 3){
             System.out.println("invalid length: must be >= 3.");
             exit(1);
         }
@@ -2076,14 +2110,14 @@ public class Env extends Thread{ // environment simulator
             System.out.println("invalid runs: must be an integer");
             exit(1);
         }
-        if(runs < 1){
+        if (runs < 1){
             System.out.println("invalid runs: must be >= 1.");
             exit(1);
         }
     }
 
     public static void setMutBound(String value){
-        switch(mut){
+        switch (mut){
             case "local" -> {
                 try{
                     mutBound = Double.parseDouble(value);
@@ -2092,7 +2126,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid mutBound");
                     exit(1);
                 }
-                if(mutBound <= 0 || mutBound > 1){
+                if (mutBound <= 0 || mutBound > 1){
                     System.out.println("invalid mutBound: must be within the interval (0, 1].");
                     exit(1);
                 }
@@ -2101,7 +2135,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setMut(String value){
-        switch(value){
+        switch (value){
             case "global", "local" -> {
                 mut = value;
                 System.out.println("mut="+mut);
@@ -2111,7 +2145,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEWT(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "proposalProb", "punish", "rewire" -> {
@@ -2126,7 +2160,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEWL(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2" -> {
@@ -2141,7 +2175,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setSel(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> {
@@ -2158,9 +2192,9 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRWT(String value){
-        switch(sel){
+        switch (sel){
             case "RW" -> {
-                switch(value){
+                switch (value){
                     case "expo", "normal" -> {
                         RWT = value;
                         System.out.println("RWT="+RWT);
@@ -2177,17 +2211,17 @@ public class Env extends Thread{ // environment simulator
     // the func leaves room for more sel funcs utilising noise, including one's not based on RW sel.
     public static void setEN(String value){
         boolean assign = false;
-        switch(sel){
+        switch (sel){
             case "RW" -> {
-                switch(RWT) {
+                switch (RWT) {
                     case "expo" -> assign = true;
                 }
             }
         }
-        switch(evo){
+        switch (evo){
             case "FD" -> assign = true;
         }
-        if(assign){
+        if (assign){
             try{
                 EN = Double.parseDouble(value);
                 System.out.println("EN="+EN);
@@ -2199,7 +2233,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setUF(String value){
-        switch(value){
+        switch (value){
             case "cumulative", "normalised" -> {
                 UF = value;
                 System.out.println("UF="+UF);
@@ -2214,16 +2248,16 @@ public class Env extends Thread{ // environment simulator
 
     // write file with VP data.
     public static void writeVP(){
-        if(writeRate > 0){
+        if (writeRate > 0){
             String output = "";
 
             // includes the column header for the variable parameter.
-            if(exp == 1) {
+            if (exp == 1) {
                 output += VP;
             }
 
             // includes the current value of the variable parameter.
-            switch(VP){
+            switch (VP){
                 case "ER" -> output += "\n" + ER;
                 case "NIS" -> output += "\n" + NIS;
                 case "ROC" -> output += "\n" + ROC;
@@ -2262,7 +2296,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setVP(String value){
-        switch(value){
+        switch (value){
             case    "ER",
                     "ROC",
                     "length",
@@ -2295,43 +2329,43 @@ public class Env extends Thread{ // environment simulator
     }
 
     public void getNeighbours(Agent agent){
-        switch(neighType){
-            case"VN","Moore","dia"->adjacentNeigh(agent);
-            case"random"->randomNeigh(agent, neighSize);
-            case"all"->allPopNeigh(agent);
+        switch (neighType){
+            case "VN","Moore","dia"->adjacentNeigh(agent);
+            case "random"->randomNeigh(agent, neighSize);
+            case "all"->allPopNeigh(agent);
         }
     }
 
     public void ER(){
         rounds = 0;
-        for(gen = 1; gen <= gens; gen++){ // gens
-            for(int round = 0; round < ER; round++){ // rounds
-                for(int i=0;i<N;i++) {
+        for (gen = 1; gen <= gens; gen++){ // gens
+            for (int round = 0; round < ER; round++){ // rounds
+                for (int i=0;i<N;i++) {
                     play(pop[i]); // play DG
                 }
-                if(!EWL.isEmpty()){
-                    for(int i=0;i<N;i++){
+                if (!EWL.isEmpty()){
+                    for (int i=0;i<N;i++){
                         EWL(pop[i]); // edge weight learning
                     }
                 }
                 rounds++;
             }
-            switch(EWT){
+            switch (EWT){
                 case "rewire" -> {
-                    for(int i=0;i<N;i++){
+                    for (int i=0;i<N;i++){
                         rewire(pop[i]);
                     }
                 }
                 case "punish" -> {
-                    for(int i=0;i<N;i++){
+                    for (int i=0;i<N;i++){
                         punish(pop[i]);
                     }
                 }
             }
-            for(int i=0;i<N;i++) {
+            for (int i=0;i<N;i++) {
                 Agent child = pop[i];
                 Agent parent = sel(child);
-                if(!child.equals(parent)) {
+                if (!child.equals(parent)) {
                     evo(child, parent);
                     mut(child);
                 }
@@ -2343,15 +2377,15 @@ public class Env extends Thread{ // environment simulator
     }
 
     public void MCv1(){
-//        for(gen = 1; gen <= gens; gen++){ // MC outer loop
-//            for(int i = 0; i < N; i++) play(pop[i]);
-//            for(int i=0;i<N;i++) updateUtility(pop[i]);
-//            for(int i = 0; i < NIS; i++){ // MC inner loop
+//        for (gen = 1; gen <= gens; gen++){ // MC outer loop
+//            for (int i = 0; i < N; i++) play(pop[i]);
+//            for (int i=0;i<N;i++) updateUtility(pop[i]);
+//            for (int i = 0; i < NIS; i++){ // MC inner loop
 //                Agent child = selRandomPop();
 //                EWL(child); // EWL inside or outside inner step loop?
-//                if(EWT.equals("rewire")) rewire(child); // rewire if applicable
+//                if (EWT.equals("rewire")) rewire(child); // rewire if applicable
 //                Agent parent = sel(child);
-//                if(evo(child, parent))
+//                if (evo(child, parent))
 //                    mut(child);
 //            }
 //            calculateStats();
@@ -2363,8 +2397,8 @@ public class Env extends Thread{ // environment simulator
     }
 
     public void MCv2(){
-//        for(gen=1;gen<=gens;gen++){
-//            for(int i=0;i<NIS;i++){
+//        for (gen=1;gen<=gens;gen++){
+//            for (int i=0;i<NIS;i++){
 //                int random_int = ThreadLocalRandom.current().nextInt(N);
 //                Agent agent = findAgentByID(random_int);
 //                play(agent);
@@ -2378,23 +2412,23 @@ public class Env extends Thread{ // environment simulator
 
     // one agent may evolve per gen.
     public void oneGuyEvo(){
-        for(gen=1;gen<=gens;gen++){
-            for(int i=0;i<N;i++) {
+        for (gen=1;gen<=gens;gen++){
+            for (int i=0;i<N;i++) {
                 play(pop[i]); // play DG
             }
-            if(!EWL.isEmpty()){
-                for(int i=0;i<N;i++) {
+            if (!EWL.isEmpty()){
+                for (int i=0;i<N;i++) {
                     EWL(pop[i]);
                 }
             }
-            switch(EWT){
+            switch (EWT){
                 case "rewire" -> {
-                    for(int i=0;i<N;i++){
+                    for (int i=0;i<N;i++){
                         rewire(pop[i]);
                     }
                 }
                 case "punish" -> {
-                    for(int i=0;i<N;i++){
+                    for (int i=0;i<N;i++){
                         punish(pop[i]);
                     }
                 }
@@ -2402,7 +2436,7 @@ public class Env extends Thread{ // environment simulator
             int random_int = ThreadLocalRandom.current().nextInt(N);
             Agent child = findAgentByID(random_int);
             Agent parent = sel(child);
-            if(!child.equals(parent)) {
+            if (!child.equals(parent)) {
                 evo(child, parent);
                 mut(child);
             }
@@ -2413,9 +2447,9 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setVariations(String value){
-        if(!value.isEmpty()){
+        if (!value.isEmpty()){
             variations = value.split(";");
-            for(int i=0;i<variations.length;i++){
+            for (int i=0;i<variations.length;i++){
                 System.out.println("variation"+(i+1)+"="+variations[i]);
             }
             exps = variations.length + 1;
@@ -2424,7 +2458,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWritePGenStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writePGenStats = true;
                 System.out.println("writePGenStats="+writePGenStats);
             }
@@ -2435,7 +2469,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWriteUGenStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writeUGenStats = true;
                 System.out.println("writeUGenStats="+writeUGenStats);
             }
@@ -2446,7 +2480,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWriteKGenStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writeKGenStats = true;
                 System.out.println("writeKGenStats="+writeKGenStats);
             }
@@ -2457,7 +2491,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWritePRunStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writePRunStats = true;
                 System.out.println("writePRunStats="+writePRunStats);
             }
@@ -2468,7 +2502,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWriteURunStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writeURunStats = true;
                 System.out.println("writeURunStats="+writeURunStats);
             }
@@ -2479,7 +2513,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWriteKRunStats(String value){
         try{
-            if(value.equals("1")){
+            if (value.equals("1")){
                 writeKRunStats = true;
                 System.out.println("writeKRunStats="+writeKRunStats);
             }
@@ -2489,7 +2523,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setWriteRate(String value){
-        if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
+        if (writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){
             try{
                 writeRate = Integer.parseInt(value);
                 System.out.println("writeRate="+writeRate);
@@ -2512,7 +2546,7 @@ public class Env extends Thread{ // environment simulator
             System.out.println("invalid length: must be an integer");
             exit(1);
         }
-        if(length < 3){
+        if (length < 3){
             System.out.println("invalid length: must be >= 3.");
             exit(1);
         }
@@ -2530,7 +2564,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRP(String value){
-        switch(EWT){
+        switch (EWT){
             case "rewire" -> {
                 try{
                     RP = Double.parseDouble(value);
@@ -2539,7 +2573,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid RP: must be a double");
                     exit(1);
                 }
-                if(RP <= 0 || RP > 1){
+                if (RP <= 0 || RP > 1){
                     System.out.println("invalid RP: must be within the interval (0, 1].");
                     exit(1);
                 }
@@ -2548,9 +2582,9 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRA(String value){
-        switch(EWT){ // value must be valid if EWT = rewire.
+        switch (EWT){ // value must be valid if EWT = rewire.
             case "rewire" -> {
-                switch(value){
+                switch (value){
 
                     // case where value is valid.
                     case "smoothstep", "smootherstep", "linear", "on0" -> {
@@ -2569,9 +2603,9 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRT(String value){
-        switch(EWT){ // value must be valid if EWT = rewire.
+        switch (EWT){ // value must be valid if EWT = rewire.
             case "rewire" -> {
-                switch(value){
+                switch (value){
 
                     // case where value is valid.
                     case "local", "pop" -> {
@@ -2590,7 +2624,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEvo(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "copy",
@@ -2612,7 +2646,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setGenType(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "ER", "MCv1", "MCv2", "oneGuyEvo"-> {
@@ -2629,9 +2663,9 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setNU(String value){
-        switch(EWT){
+        switch (EWT){
             case "punish" -> {
-                switch(value){
+                switch (value){
                     case "1" -> {
                         NU = true;
                         Agent.setNU(NU);
@@ -2651,7 +2685,7 @@ public class Env extends Thread{ // environment simulator
         }
 
 //        try{
-//            if(value.equals("1")){
+//            if (value.equals("1")){
 //                NU = true;
 //                System.out.println("NU="+NU);
 //            }
@@ -2661,7 +2695,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setNeighType(String value){
-        switch(value){
+        switch (value){
 
             // case where value is valid.
             case "VN", "Moore" -> {
@@ -2678,7 +2712,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setPN1(String value){
-        switch(PP){
+        switch (PP){
             case "noisy" -> {
                 try{
                     PN1 = Double.parseDouble(value);
@@ -2687,7 +2721,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid PN1: must be a double");
                     exit(1);
                 }
-                if(PN1 < 0 || PN1 > 1){
+                if (PN1 < 0 || PN1 > 1){
                     System.out.println("invalid PN1: must be within the interval [0, 1].");
                     exit(1);
                 }
@@ -2696,7 +2730,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setPN2(String value){
-        switch(EWT){
+        switch (EWT){
             case "punish" -> {
                 try{
                     PN2 = Double.parseDouble(value);
@@ -2705,7 +2739,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid PN2: must be a double");
                     exit(1);
                 }
-                if(PN2 < 0 || PN2 > 1){
+                if (PN2 < 0 || PN2 > 1){
                     System.out.println("invalid PN2: must be within the interval [0, 1].");
                     exit(1);
                 }
@@ -2714,7 +2748,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setM(String value){
-        switch(game){
+        switch (game){
             case "UG", "DG" -> {
                 try{
                     M = Double.parseDouble(value);
@@ -2723,7 +2757,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid M: must be a double");
                     exit(1);
                 }
-                if(M < 0){
+                if (M < 0){
                     System.out.println("invalid M: must be greater than 0");
                 }
             }
@@ -2731,8 +2765,24 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setPCFR(String value){
-        switch(EWT){
-            case "punish" -> {
+
+//        switch (EWT){
+//            case "punish" -> {
+//                try{
+//                    PCFR = Double.parseDouble(value);
+//                    System.out.println("PCFR="+PCFR);
+//                }catch(NumberFormatException e){
+//                    System.out.println("invalid PCFR: must be a double");
+//                    exit(1);
+//                }
+//                if (PCFR < 0){
+//                    System.out.println("invalid PCFR: must be greater than or equal to 0");
+//                }
+//            }
+//        }
+
+        switch (PS){
+            case "PCFR" -> {
                 try{
                     PCFR = Double.parseDouble(value);
                     System.out.println("PCFR="+PCFR);
@@ -2740,7 +2790,7 @@ public class Env extends Thread{ // environment simulator
                     System.out.println("invalid PCFR: must be a double");
                     exit(1);
                 }
-                if(PCFR < 0){
+                if (PCFR < 0){
                     System.out.println("invalid PCFR: must be greater than or equal to 0");
                 }
             }
@@ -2750,30 +2800,30 @@ public class Env extends Thread{ // environment simulator
 //    public double calculatePunishProb(double w_ab, double u_a, double u_b){
     public double calculatePunishProb(double w_ab, double u_a, double u_b, double v_a){
         double punish_prob = 0.0;
-        switch(PP){
+        switch (PP){
             case "linear" -> punish_prob = 1 - w_ab;
             case "smoothstep" -> punish_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
             case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
             case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
             case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
             case "linear+thresholds" -> { // punishment is only stochastic when 0.2 < w_ab < 0.8.
-                if(w_ab >= 0.8){
+                if (w_ab >= 0.8){
                     punish_prob = 0.0;
-                } else if(w_ab <= 0.2){
+                } else if (w_ab <= 0.2){
                     punish_prob = 1.0;
                 } else {
                     punish_prob = 1 - w_ab;
                 }
             }
             case "Uv1" -> {
-                if(u_a < u_b){
+                if (u_a < u_b){
                     punish_prob = 1;
                 } else {
                     punish_prob = 0;
                 }
             }
             case "Uv2" -> {
-                if(2 * u_a < u_b){ // if b has more than two times the utility of a, a is guaranteed to punish b.
+                if (2 * u_a < u_b){ // if b has more than two times the utility of a, a is guaranteed to punish b.
                     punish_prob = 1;
                 } else if (u_a > 2 * u_b) { // if a has more than two times the utility of b, a is guaranteed to not punish b.
                     punish_prob = 0;
@@ -2792,10 +2842,10 @@ public class Env extends Thread{ // environment simulator
     }
     
     public static void setPS(String value) {
-        switch(EWT){
+        switch (EWT){
             case "punish" -> {
-                switch(value){
-                    case "normal", "weighted", "utility" -> {
+                switch (value){
+                    case "normal", "weighted", "utility", "PCFR", "lowNoise", "mediumNoise", "highNoise" -> {
                         PS = value;
                         System.out.println("PS="+PS);
                     }
@@ -2809,12 +2859,12 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setV(String value){
-        switch(EWT){
+        switch (EWT){
             case "punish" -> {
 
-//                switch(PP){
+//                switch (PP){
 //                    case "V+linear" -> {
-//                        switch(value){
+//                        switch (value){
 //                            case "random" -> {
 //                                V = value;
 //                                System.out.println("V="+V);
@@ -2827,7 +2877,7 @@ public class Env extends Thread{ // environment simulator
 //                    }
 //                }
 
-                switch(value){
+                switch (value){
                     case "random", "1", "0" -> {
                         V = value;
                         Agent.setStaticV(V);
