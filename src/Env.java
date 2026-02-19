@@ -55,9 +55,7 @@ public class Env extends Thread{ // environment simulator
 //    static DecimalFormat DF1 = Agent.getDF1(); // formats numbers to 1 decimal place
 //    static DecimalFormat DF2 = Agent.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Agent.getDF4(); // formats numbers to 4 decimal places
-    static String project_path = Paths.get("").toAbsolutePath().toString();
-    static String general_path = project_path + "\\csv_data"; // address where all data is recorded
-    static String this_path; // address where stats for current experimentation is recorded
+    static String data_path = "C:\\Users\\Evan O'Riordan\\Documents\\csv_data"; // data storage folder
     static String exp_path; // address where stats for current experiment are stored
     static String run_path; // address where stats for current run are stored
     static boolean writePGenStats;
@@ -66,7 +64,8 @@ public class Env extends Thread{ // environment simulator
     static boolean writePRunStats;
     static boolean writeURunStats;
     static boolean writeKRunStats;
-    static boolean writePosData;
+//    static boolean writePosData = true;
+    static boolean writePosData = false;
     static int writeRate = 0; // write data every x gens
     static String EWT; // EW type
     static String EWL = ""; // EWL function
@@ -97,7 +96,8 @@ public class Env extends Thread{ // environment simulator
     static double PN1; // indicates how much noise is present during the noisy punishment function.
     static double PN2; // probability of agents making the opposite choice regarding punishment.
     static double LR; // learning rate.
-    static double PCFR = 0.0; // punishment cost:fine ratio.
+//    static double PCFR = 0.0; // punishment cost:fine ratio.
+    static double PCFR; // punishment cost:fine ratio.
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
@@ -159,10 +159,10 @@ public class Env extends Thread{ // environment simulator
                         + "-" + start_timestamp.getMinute()
                         + "-" + start_timestamp.getSecond();
             timestamps.add(start_timestamp_string);
-            this_path = general_path + "\\" + start_timestamp_string;
+            data_path += "\\" + start_timestamp_string;
             if (writeRate > 0) {
                 try {
-                    Files.createDirectories(Paths.get(this_path)); // create stats storage folder
+                    Files.createDirectories(Paths.get(data_path)); // create stats storage folder
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -201,13 +201,10 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experimentSeries(){
         for(exp = 1; exp <= exps; exp++){
-//            System.out.println("Start experiment " + exp);
-            exp_path = this_path + "\\exp" + exp;
+            exp_path = data_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
-//            System.out.println("End experiment " + exp);
             if(exp <= variations.length){ // do not try to vary after the last experiment has ended
-//                System.out.println("Varying "+VP+"...");
                 System.out.print("[INFO] Varying "+VP+": ");
                 switch(VP){
                     case "EWL" -> setEWL(variations[exp - 1]);
@@ -232,12 +229,13 @@ public class Env extends Thread{ // environment simulator
                     case "mutBound" -> setMutBound(variations[exp - 1]);
                     case "UF" -> setUF(variations[exp - 1]);
                     case "PP" -> setPP(variations[exp - 1]);
-                    case "cost" -> {
-                        setCost(variations[exp - 1]);
-                        if(PCFR > 0){
-                            setFine();
-                        }
-                    }
+//                    case "cost" -> {
+//                        setCost(variations[exp - 1]);
+//                        if(PCFR > 0){
+//                            setFine();
+//                        }
+//                    }
+                    case "cost" -> setCost(variations[exp - 1]);
                     case "fine" -> setFine(variations[exp - 1]);
                     case "NU" -> setNU(variations[exp - 1]);
                     case "PN1" -> setPN1(variations[exp - 1]);
@@ -258,7 +256,6 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experiment(){
         for(run = 1; run <= runs; run++){
-//            System.out.println("Start run " + run);
             run_path = exp_path + "\\run" + run;
             Env pop = new Env();
             pop.start();
@@ -817,12 +814,16 @@ public class Env extends Thread{ // environment simulator
 
     public static void createDataFolders(){
         try{
-            if(writeRate > 0) Files.createDirectories(Paths.get(exp_path));
+            if(writeRate > 0) {
+                Files.createDirectories(Paths.get(exp_path));
+            }
             for(int i=1;i<=runs;i++){
-                if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats) // add run stat writing params to this check
+                if(writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats){ // add run stat writing params to this check
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i));
-                if(writePGenStats || writeUGenStats || writeKGenStats)
+                }
+                if(writePGenStats || writeUGenStats || writeKGenStats){
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
+                }
             }
         }catch(IOException e){
             e.printStackTrace();
@@ -835,8 +836,7 @@ public class Env extends Thread{ // environment simulator
      * Prints path of experiment stats folder.
      */
     public static void printPath(){
-//        System.out.println("[INFO] Address of experimentation data: \n" + this_path);
-        System.out.println("[INFO] Address of experimentation data: " + this_path);
+        System.out.println("[INFO] Address of experimentation data: " + data_path);
     }
 
 
@@ -983,8 +983,7 @@ public class Env extends Thread{ // environment simulator
     // writes IDs and positions of agents
     public void writePosData(){
         try{
-            String filename = exp_path + "\\pos_data.csv";
-            fw = new FileWriter(filename, false);
+            fw = new FileWriter(exp_path + "\\pos_data.csv", false);
             String s = "";
             for(int y=length-1;y>=0;y--){
                 for(int x=0;x<width;x++){
@@ -1158,7 +1157,6 @@ public class Env extends Thread{ // environment simulator
 
     public static void writeSettings(){
         if(writeRate > 0){
-            String settings_filename = this_path + "\\" + "settings.csv";
             String settings = "";
             if(exp == 1){
                 settings += "runs";
@@ -1240,7 +1238,7 @@ public class Env extends Thread{ // environment simulator
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
             try{
-                fw = new FileWriter(settings_filename, true);
+                fw = new FileWriter(data_path + "\\" + "settings.csv", true);
                 fw.append(settings);
                 fw.close();
             } catch(IOException e){
@@ -1258,8 +1256,6 @@ public class Env extends Thread{ // environment simulator
      */
     public static void writeSeriesStats(){
         if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
-            String series_stats_filename = this_path + "\\series_stats.csv";
-            String exp_stats_filename = exp_path + "\\exp_stats.csv";
             String output = "";
             if(exp == 1) {
                 if(writePRunStats){
@@ -1271,12 +1267,6 @@ public class Env extends Thread{ // environment simulator
                 if(writeKRunStats){
                     output+="mean sigma k,";
                 }
-
-//                // records the name of the varying param in series_stats.csv.
-//                if(!varying.equals("")){
-//                    output+=varying+",";
-//                }
-
                 output = removeTrailingComma(output);
             }
             double mean_avg_p = 0.0;
@@ -1288,8 +1278,8 @@ public class Env extends Thread{ // environment simulator
             double[] mean_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
             try{
-                fw = new FileWriter(series_stats_filename, true);
-                br = new BufferedReader(new FileReader(exp_stats_filename));
+                fw = new FileWriter(data_path + "\\series_stats.csv", true);
+                br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
                 br.readLine();
                 for(int i=0;i<runs;i++){
                     String row = br.readLine();
@@ -1491,18 +1481,12 @@ public class Env extends Thread{ // environment simulator
      */
     public void writeExpStats() {
         if(writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)){
-            String exp_stats_filename = exp_path + "\\exp_stats.csv";
-            String run_stats_filename = run_path + "\\run_stats.csv";
             String output = "";
             try {
-                fw = new FileWriter(exp_stats_filename, true);
-                br = new BufferedReader(new FileReader(run_stats_filename));
+                fw = new FileWriter(exp_path + "\\exp_stats.csv", true);
+                br = new BufferedReader(new FileReader(run_path + "\\run_stats.csv"));
                 String line = br.readLine();
                 if(run == 1) {
-
-
-//                    output += line; // write headings
-
 
                     // remove gen column
                     String[] row_contents = line.split(",");
@@ -1512,19 +1496,12 @@ public class Env extends Thread{ // environment simulator
                     }
                     no_gen_str = removeTrailingComma(no_gen_str);
                     output += no_gen_str;
-
-
                 }
 
                 // skip to the last row of run stats
-//                for(int i = 0; i < gens / writeRate; i++){
                 for(int i = 0; i <= gens / writeRate; i++){
                     line = br.readLine();
                 }
-
-
-//                output += "\n" + line; // write stats of last gen of run
-
 
                 // remove gen column
                 String[] row_contents = line.split(",");
@@ -1534,14 +1511,11 @@ public class Env extends Thread{ // environment simulator
                 }
                 no_gen_str = removeTrailingComma(no_gen_str);
                 output += "\n" + no_gen_str;
-
-
                 fw.append(output);
                 fw.close();
             }catch(Exception e){
                 e.printStackTrace();
             }
-
 
             // display info in console
             if(writePRunStats || writeURunStats){
@@ -1690,23 +1664,32 @@ public class Env extends Thread{ // environment simulator
      * 1 file per gen.
      */
     public void writeGenStats(){
-        String filename = run_path + "\\gen_stats\\gen" + gen + ".csv";
         String s = "";
-//        s += "gen,";
-        if(writePGenStats) s += "p,mean p omega,";
-        if(writeUGenStats) s += "u,";
-        if(writeKGenStats) s += "k,";
+        if(writePGenStats) {
+            s += "p,mean p omega,";
+        }
+        if(writeUGenStats) {
+            s += "u,";
+        }
+        if(writeKGenStats) {
+            s += "k,";
+        }
         s = removeTrailingComma(s);
         for(Agent agent : pop){
             s += "\n";
-//            s += gen + ",";
-            if(writePGenStats) s += DF4.format(agent.getP()) + "," + DF4.format(agent.getMeanPOmega()) + ",";
-            if(writeUGenStats) s += DF4.format(agent.getU()) + ",";
-            if(writeKGenStats) s += DF4.format(agent.getK()) + ",";
+            if(writePGenStats) {
+                s += DF4.format(agent.getP()) + "," + DF4.format(agent.getMeanPOmega()) + ",";
+            }
+            if(writeUGenStats) {
+                s += DF4.format(agent.getU()) + ",";
+            }
+            if(writeKGenStats) {
+                s += DF4.format(agent.getK()) + ",";
+            }
             s = removeTrailingComma(s);
         }
         try{
-            fw = new FileWriter(filename);
+            fw = new FileWriter(run_path + "\\gen_stats\\gen" + gen + ".csv");
             fw.append(s);
             fw.close();
         }catch(IOException e){
@@ -1721,7 +1704,6 @@ public class Env extends Thread{ // environment simulator
      * 1 file per run.
      */
     public void writeRunStats() {
-        String filename = run_path + "\\run_stats.csv";
         String s = "";
         if(gen == 0){ // apply headings to file before writing data // stop extra headings from printing...
             s += "gen,";
@@ -1756,7 +1738,7 @@ public class Env extends Thread{ // environment simulator
         s = removeTrailingComma(s);
         s+="\n";
         try{
-            fw = new FileWriter(filename, true);
+            fw = new FileWriter(run_path + "\\run_stats.csv", true);
             fw.append(s);
             fw.close();
         } catch(IOException e){
@@ -1925,6 +1907,25 @@ public class Env extends Thread{ // environment simulator
                             a.setU(u_a - cost);
                             b.setU(u_b - fine);
                         }
+                    }
+                    case "lowNoise" -> {
+                        a.setU(u_a - cost);
+                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(2, 4);
+                        b.setU(u_b - random_fine);
+                    }
+                    case "mediumNoise" -> {
+                        a.setU(u_a - cost);
+                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(1, 5);
+                        b.setU(u_b - random_fine);
+                    }
+                    case "highNoise" -> {
+                        a.setU(u_a - cost);
+                        double random_fine = fine * ThreadLocalRandom.current().nextDouble(0, 6);
+                        b.setU(u_b - random_fine);
+                    }
+                    case "PCFR" -> { // PCFR: "punishment cost:fine ratio"
+                        a.setU(u_a - cost);
+                        b.setU(u_b - (cost * PCFR));
                     }
                 }
 
@@ -2211,10 +2212,9 @@ public class Env extends Thread{ // environment simulator
 
     }
 
-    // accumulates VP (var param (variable parameter)) info inside and writes the output String to a file.
+    // write file with VP data.
     public static void writeVP(){
         if(writeRate > 0){
-            String filename = this_path + "\\" + "VP.csv";
             String output = "";
 
             // includes the column header for the variable parameter.
@@ -2251,7 +2251,7 @@ public class Env extends Thread{ // environment simulator
 
             // create the file and write the data.
             try{
-                fw = new FileWriter(filename, true);
+                fw = new FileWriter(data_path + "\\" + "VP.csv", true);
                 fw.append(output);
                 fw.close();
             } catch(IOException e){
