@@ -55,7 +55,8 @@ public class Env extends Thread{ // environment simulator
 //    static DecimalFormat DF1 = Agent.getDF1(); // formats numbers to 1 decimal place
 //    static DecimalFormat DF2 = Agent.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Agent.getDF4(); // formats numbers to 4 decimal places
-    static String data_path = "C:\\Users\\Evan O'Riordan\\Documents\\csv_data"; // data storage folder
+    static String general_path = "C:\\Users\\Evan O'Riordan\\Documents\\csv_data"; // path where all datasets are stored.
+    static String specific_path; // specific path of 1 dataset.
     static String exp_path; // address where stats for current experiment are stored
     static String run_path; // address where stats for current run are stored
     static boolean writePGenStats;
@@ -96,7 +97,6 @@ public class Env extends Thread{ // environment simulator
     static double PN1; // indicates how much noise is present during the noisy punishment function.
     static double PN2; // probability of agents making the opposite choice regarding punishment.
     static double LR; // learning rate.
-//    static double PCFR = 0.0; // punishment cost:fine ratio.
     static double PCFR; // punishment cost:fine ratio.
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
@@ -159,10 +159,11 @@ public class Env extends Thread{ // environment simulator
                         + "-" + start_timestamp.getMinute()
                         + "-" + start_timestamp.getSecond();
             timestamps.add(start_timestamp_string);
-            data_path += "\\" + start_timestamp_string;
+//            specific_path += "\\" + start_timestamp_string;
+            specific_path = general_path + "\\" + start_timestamp_string;
             if (writeRate > 0) {
                 try {
-                    Files.createDirectories(Paths.get(data_path)); // create stats storage folder
+                    Files.createDirectories(Paths.get(specific_path)); // create stats storage folder
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -201,7 +202,7 @@ public class Env extends Thread{ // environment simulator
      */
     public static void experimentSeries(){
         for (exp = 1; exp <= exps; exp++){
-            exp_path = data_path + "\\exp" + exp;
+            exp_path = specific_path + "\\exp" + exp;
             createDataFolders();
             experiment(); // run an experiment of the series
             if (exp <= variations.length){ // do not try to vary after the last experiment has ended
@@ -229,12 +230,6 @@ public class Env extends Thread{ // environment simulator
                     case "mutBound" -> setMutBound(variations[exp - 1]);
                     case "UF" -> setUF(variations[exp - 1]);
                     case "PP" -> setPP(variations[exp - 1]);
-//                    case "cost" -> {
-//                        setCost(variations[exp - 1]);
-//                        if (PCFR > 0){
-//                            setFine();
-//                        }
-//                    }
                     case "PCFR" -> setPCFR(variations[exp - 1]);
                     case "cost" -> setCost(variations[exp - 1]);
                     case "fine" -> setFine(variations[exp - 1]);
@@ -734,16 +729,7 @@ public class Env extends Thread{ // environment simulator
         setPS(CI!=settings.length? settings[CI++]: "");
         setPCFR(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
-
-//        if (PCFR > 0){
-//            setFine();
-//            CI++;
-//        } else {
-//            setFine(CI!=settings.length? settings[CI++]: "");
-//        }
-
         setFine(CI!=settings.length? settings[CI++]: "");
-
         setNU(CI!=settings.length? settings[CI++]: "");
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
@@ -841,7 +827,7 @@ public class Env extends Thread{ // environment simulator
      * Prints path of experiment stats folder.
      */
     public static void printPath(){
-        System.out.println("[INFO] Address of experimentation data: " + data_path);
+        System.out.println("[INFO] Address of experimentation data: " + specific_path);
     }
 
 
@@ -1183,13 +1169,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
-
-//                settings += PP.isEmpty()? "": ",PCFR";
-
-//                settings += PCFR != 0.0? ",PCFR": "";
-
                 settings += PS.equals("PCFR")? ",PCFR": "";
-
                 settings += cost != 0.0? ",cost": "";
                 settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
@@ -1228,13 +1208,7 @@ public class Env extends Thread{ // environment simulator
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
-
-//            settings += PP.isEmpty()? "": "," + PCFR;
-
-//            settings += PCFR != 0.0? "," + PCFR: "";
-
             settings += PS.equals("PCFR")? "," + PCFR: "";
-
             settings += cost != 0.0? "," + cost: "";
             settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
@@ -1253,7 +1227,7 @@ public class Env extends Thread{ // environment simulator
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
             try{
-                fw = new FileWriter(data_path + "\\" + "settings.csv", true);
+                fw = new FileWriter(specific_path + "\\" + "settings.csv", true);
                 fw.append(settings);
                 fw.close();
             } catch(IOException e){
@@ -1293,7 +1267,7 @@ public class Env extends Thread{ // environment simulator
             double[] mean_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
             try{
-                fw = new FileWriter(data_path + "\\series_stats.csv", true);
+                fw = new FileWriter(specific_path + "\\series_stats.csv", true);
                 br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
                 br.readLine();
                 for (int i=0;i<runs;i++){
@@ -1992,15 +1966,8 @@ public class Env extends Thread{ // environment simulator
                     exit(1);
                 }
             }
-//            case "PCFR" -> {
-//
-//            }
         }
     }
-//    public static void setFine(){
-//        fine = cost * PCFR;
-//        System.out.println("fine="+DF4.format(fine));
-//    }
 
     public static void setPP(String value){
         switch (EWT){
@@ -2285,7 +2252,7 @@ public class Env extends Thread{ // environment simulator
 
             // create the file and write the data.
             try{
-                fw = new FileWriter(data_path + "\\" + "VP.csv", true);
+                fw = new FileWriter(specific_path + "\\" + "VP.csv", true);
                 fw.append(output);
                 fw.close();
             } catch(IOException e){
@@ -2765,22 +2732,6 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setPCFR(String value){
-
-//        switch (EWT){
-//            case "punish" -> {
-//                try{
-//                    PCFR = Double.parseDouble(value);
-//                    System.out.println("PCFR="+PCFR);
-//                }catch(NumberFormatException e){
-//                    System.out.println("invalid PCFR: must be a double");
-//                    exit(1);
-//                }
-//                if (PCFR < 0){
-//                    System.out.println("invalid PCFR: must be greater than or equal to 0");
-//                }
-//            }
-//        }
-
         switch (PS){
             case "PCFR" -> {
                 try{
