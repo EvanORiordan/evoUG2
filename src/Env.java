@@ -96,8 +96,8 @@ public class Env extends Thread{ // environment simulator
     static boolean NU; // indicates whether individuals can have negative utility.
     static double PN1; // indicates how much noise is present during the noisy punishment function.
     static double PN2; // probability of agents making the opposite choice regarding punishment.
-    static double LR; // learning rate.
-    static double PCFR; // punishment cost:fine ratio.
+    static double LR; // learning rate
+    static double EF; // enhancement factor
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
@@ -230,7 +230,7 @@ public class Env extends Thread{ // environment simulator
                     case "mutBound" -> setMutBound(variations[exp - 1]);
                     case "UF" -> setUF(variations[exp - 1]);
                     case "PP" -> setPP(variations[exp - 1]);
-                    case "PCFR" -> setPCFR(variations[exp - 1]);
+                    case "EF" -> setEF(variations[exp - 1]);
                     case "cost" -> setCost(variations[exp - 1]);
                     case "fine" -> setFine(variations[exp - 1]);
                     case "NU" -> setNU(variations[exp - 1]);
@@ -727,7 +727,7 @@ public class Env extends Thread{ // environment simulator
         setRT(CI!=settings.length? settings[CI++]: "");
         setPP(CI!=settings.length? settings[CI++]: "");
         setPS(CI!=settings.length? settings[CI++]: "");
-        setPCFR(CI!=settings.length? settings[CI++]: "");
+        setEF(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
         setFine(CI!=settings.length? settings[CI++]: "");
         setNU(CI!=settings.length? settings[CI++]: "");
@@ -1169,7 +1169,7 @@ public class Env extends Thread{ // environment simulator
                 settings += RT.isEmpty() ? "": ",RT";
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
-                settings += PS.equals("PCFR")? ",PCFR": "";
+                settings += PS.equals("EF")? ",EF": "";
                 settings += cost != 0.0? ",cost": "";
                 settings += fine != 0.0? ",fine": "";
                 settings += EWT.equals("punish")? ",NU": "";
@@ -1208,7 +1208,7 @@ public class Env extends Thread{ // environment simulator
             settings += RT.isEmpty() ? "": "," + RT;
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
-            settings += PS.equals("PCFR")? "," + PCFR: "";
+            settings += PS.equals("EF")? "," + EF: "";
             settings += cost != 0.0? "," + cost: "";
             settings += fine != 0.0? "," + fine: "";
             settings += EWT.equals("punish")? "," + NU: "";
@@ -1862,8 +1862,6 @@ public class Env extends Thread{ // environment simulator
             double u_a = a.getU();
             double u_b = b.getU();
             double v_a = a.getV();
-//            double punish_prob = calculatePunishProb(w_ab, u_a, u_b);
-//            punish_prob = punish_prob * v_a; // account for vindictiveness
             double punish_prob = calculatePunishProb(w_ab, u_a, u_b, v_a);
             double random_double = ThreadLocalRandom.current().nextDouble();
             boolean punish = punish_prob > random_double;
@@ -1876,51 +1874,7 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             if (punish){
-                switch (PS){
-                    case "normal" -> {
-                        a.setU(u_a - cost);
-                        b.setU(u_b - fine);
-                    }
-                    case "weighted" -> { // lower w_ab ==> higher cost and fine.
-                        a.setU(u_a - cost * (1 - w_ab));
-                        b.setU(u_b - fine * (1 - w_ab));
-                    }
-                    case "utility" -> {
-                        if (2 * u_a < u_b){ // if b has more than two times the utility of a, double the cost and fine.
-                            a.setU(u_a - 2 * cost);
-                            b.setU(u_b - 2 * fine);
-                        } else if (u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
-                            a.setU(u_a - cost / 2);
-                            b.setU(u_b - fine / 2);
-                        } else { // otherwise, revert to PS = normal.
-                            a.setU(u_a - cost);
-                            b.setU(u_b - fine);
-                        }
-                    }
-                    case "lowNoise" -> {
-                        a.setU(u_a - cost);
-                        double random_double3 = ThreadLocalRandom.current().nextDouble(2, 4);
-                        double noisy_fine = cost * random_double3;
-                        b.setU(u_b - noisy_fine);
-                    }
-                    case "mediumNoise" -> {
-                        a.setU(u_a - cost);
-                        double random_double3 = ThreadLocalRandom.current().nextDouble(1, 5);
-                        double noisy_fine = cost * random_double3;
-                        b.setU(u_b - noisy_fine);
-                    }
-                    case "highNoise" -> {
-                        a.setU(u_a - cost);
-                        double random_double3 = ThreadLocalRandom.current().nextDouble(0, 6);
-                        double noisy_fine = cost * random_double3;
-                        b.setU(u_b - noisy_fine);
-                    }
-                    case "PCFR" -> { // PCFR: "punishment cost:fine ratio"
-                        a.setU(u_a - cost);
-                        b.setU(u_b - cost * PCFR);
-                    }
-                }
-
+                calculatePunishSeverity(a,b,u_a,u_b,w_ab);
                 num_puns++;
             }
         }
@@ -1929,42 +1883,39 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void setCost(String value){
+        boolean set = false;
         switch (PP){
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
-                try{
-                    cost = Double.parseDouble(value);
-                    System.out.println("cost="+cost);
-                }catch(NumberFormatException e){
-                    System.out.println("invalid cost: must be a double");
-                    exit(1);
-                }
+            case "sweetspot" -> set = true;
+        }
+        switch (PS){
+            case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF" -> set = true;
+        }
+        if(set){
+            try{
+                cost = Double.parseDouble(value);
+                System.out.println("cost="+cost);
+            }catch(NumberFormatException e){
+                System.out.println("invalid cost: must be a double");
+                exit(1);
             }
         }
     }
 
     public static void setFine(String value){
-
-//        switch (PP){
-//            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
-//                try{
-//                    fine = Double.parseDouble(value);
-//                    System.out.println("fine="+fine);
-//                }catch(NumberFormatException e){
-//                    System.out.println("invalid fine: must be a double");
-//                    exit(1);
-//                }
-//            }
-//        }
-
-        switch (PS){
-            case "normal", "weighted", "utility" -> {
-                try {
-                    fine = Double.parseDouble(value);
-                    System.out.println("fine=" + fine);
-                } catch (NumberFormatException e) {
-                    System.out.println("invalid fine: must be a double");
-                    exit(1);
-                }
+        boolean set = false;
+        switch (PP) {
+            case "sweetspotCostFine" -> set = true;
+        }
+        switch (PS) {
+            case "normal", "weighted", "utility" -> set = true;
+        }
+        if (set) {
+            try {
+                fine = Double.parseDouble(value);
+                System.out.println("fine=" + fine);
+            } catch (NumberFormatException e) {
+                System.out.println("invalid fine: must be a double");
+                exit(1);
             }
         }
     }
@@ -1973,7 +1924,7 @@ public class Env extends Thread{ // environment simulator
         switch (EWT){
             case "punish" -> {
                 switch (value){
-                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2" -> {
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot" -> {
                         PP = value;
                         System.out.println("PP="+PP);
                     }
@@ -2247,7 +2198,7 @@ public class Env extends Thread{ // environment simulator
                 case "NU" -> output += "\n" + NU;
                 case "PN1" -> output += "\n" + PN1;
                 case "PN2" -> output += "\n" + PN2;
-                case "PCFR" -> output += "\n" + PCFR;
+                case "EF" -> output += "\n" + EF;
             }
 
             // create the file and write the data.
@@ -2286,7 +2237,7 @@ public class Env extends Thread{ // environment simulator
                     "PN1",
                     "PN2",
                     "M",
-                    "PCFR"
+                    "EF"
                     -> {
                 VP = value;
                 System.out.println("VP="+VP);
@@ -2731,24 +2682,23 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void setPCFR(String value){
+    public static void setEF(String value){
         switch (PS){
-            case "PCFR" -> {
+            case "EF" -> {
                 try{
-                    PCFR = Double.parseDouble(value);
-                    System.out.println("PCFR="+PCFR);
+                    EF = Double.parseDouble(value);
+                    System.out.println("EF="+EF);
                 }catch(NumberFormatException e){
-                    System.out.println("invalid PCFR: must be a double");
+                    System.out.println("invalid EF: must be a double");
                     exit(1);
                 }
-                if (PCFR < 0){
-                    System.out.println("invalid PCFR: must be greater than or equal to 0");
+                if (EF < 0){
+                    System.out.println("invalid EF: must be greater than or equal to 0");
                 }
             }
         }
     }
 
-//    public double calculatePunishProb(double w_ab, double u_a, double u_b){
     public double calculatePunishProb(double w_ab, double u_a, double u_b, double v_a){
         double punish_prob = 0.0;
         switch (PP){
@@ -2778,17 +2728,20 @@ public class Env extends Thread{ // environment simulator
                     punish_prob = 1;
                 } else if (u_a > 2 * u_b) { // if a has more than two times the utility of b, a is guaranteed to not punish b.
                     punish_prob = 0;
-                } else { // otherwise, revert to PP = linear.
+                } else { // otherwise, punish prob is linear.
                     punish_prob = 1 - w_ab;
                 }
             }
-
-//            case "V+linear" -> punish_prob = v_a * (1 - w_ab);
-
+            case "sweetspot" -> { // if the cost is not too high and the fine is not too low, punish prob is linear.
+                double x = 2; // i might make this customisable later.
+                if (cost > u_a / x || x * fine < u_b) {
+                    punish_prob = 0;
+                } else {
+                    punish_prob = 1 - w_ab;
+                }
+            }
         }
-
         punish_prob = punish_prob * v_a; // account for vindictiveness
-
         return punish_prob;
     }
     
@@ -2796,7 +2749,7 @@ public class Env extends Thread{ // environment simulator
         switch (EWT){
             case "punish" -> {
                 switch (value){
-                    case "normal", "weighted", "utility", "PCFR", "lowNoise", "mediumNoise", "highNoise" -> {
+                    case "normal", "weighted", "utility", "EF", "lowNoise", "mediumNoise", "highNoise" -> {
                         PS = value;
                         System.out.println("PS="+PS);
                     }
@@ -2840,6 +2793,54 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
 
+            }
+        }
+    }
+
+    // calculates punishment severity and inflicts costs and fines.
+    public void calculatePunishSeverity(Agent a, Agent b, double u_a, double u_b, double w_ab){
+        switch (PS){
+            case "normal" -> {
+                a.setU(u_a - cost);
+                b.setU(u_b - fine);
+            }
+            case "weighted" -> { // lower w_ab ==> higher cost and fine.
+                a.setU(u_a - cost * (1 - w_ab));
+                b.setU(u_b - fine * (1 - w_ab));
+            }
+            case "utility" -> {
+                if (2 * u_a < u_b){ // if b has more than two times the utility of a, double the cost and fine.
+                    a.setU(u_a - 2 * cost);
+                    b.setU(u_b - 2 * fine);
+                } else if (u_a > 2 * u_b){ // if a has more than two times the utility of b, halve the cost and fine.
+                    a.setU(u_a - cost / 2);
+                    b.setU(u_b - fine / 2);
+                } else { // otherwise, revert to PS = normal.
+                    a.setU(u_a - cost);
+                    b.setU(u_b - fine);
+                }
+            }
+            case "lowNoise" -> {
+                a.setU(u_a - cost);
+                double random_double3 = ThreadLocalRandom.current().nextDouble(2, 4);
+                double noisy_fine = cost * random_double3;
+                b.setU(u_b - noisy_fine);
+            }
+            case "mediumNoise" -> {
+                a.setU(u_a - cost);
+                double random_double3 = ThreadLocalRandom.current().nextDouble(1, 5);
+                double noisy_fine = cost * random_double3;
+                b.setU(u_b - noisy_fine);
+            }
+            case "highNoise" -> {
+                a.setU(u_a - cost);
+                double random_double3 = ThreadLocalRandom.current().nextDouble(0, 6);
+                double noisy_fine = cost * random_double3;
+                b.setU(u_b - noisy_fine);
+            }
+            case "EF" -> { // use the enhancement factor parameter to determine the fine.
+                a.setU(u_a - cost);
+                b.setU(u_b - cost * EF);
             }
         }
     }
