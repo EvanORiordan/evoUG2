@@ -33,7 +33,8 @@ public class Agent {
     private int sel_rank;
     private static boolean NU = true; // by default, allow individuals to have negative utility.
     private double v; // vindictiveness of the agent i.e. their probability to punish. [0,1].
-    private static String V;
+    private static String V = "";
+    private static String EWT = "";
 
 
 
@@ -118,14 +119,29 @@ public class Agent {
         }
         agent_desc += "]";
 
-        agent_desc += " weights=[";
-        for(int i=0;i<edgeWeights.size();i++){
-            agent_desc += DF2.format(edgeWeights.get(i));
-            if((i + 1) < edgeWeights.size()){
-                agent_desc += ", ";
+
+//        agent_desc += " weights=[";
+//        for(int i=0;i<edgeWeights.size();i++){
+//            agent_desc += DF2.format(edgeWeights.get(i));
+//            if((i + 1) < edgeWeights.size()){
+//                agent_desc += ", ";
+//            }
+//        }
+//        agent_desc += "]";
+
+        switch (EWT){
+            case "proposalProb", "punish", "rewire" -> {
+                agent_desc += " weights=[";
+                for(int i=0;i<edgeWeights.size();i++){
+                    agent_desc += DF2.format(edgeWeights.get(i));
+                    if((i + 1) < edgeWeights.size()){
+                        agent_desc += ", ";
+                    }
+                }
+                agent_desc += "]";
             }
         }
-        agent_desc += "]";
+
 
         // interaction stats
 //        agent_desc += " NI="+ NI;
@@ -225,4 +241,5 @@ public class Agent {
     public double getV(){return v;}
     public void setV(double d){v=d;}
     public static void setStaticV(String s){V=s;}
+    public static void setEWT(String s){EWT=s;}
 }

@@ -68,7 +68,8 @@ public class Env extends Thread{ // environment simulator
 //    static boolean writePosData = true;
     static boolean writePosData = false;
     static int writeRate = 0; // write data every x gens
-    static String EWT; // EW type
+//    static String EWT; // EW type
+    static String EWT = ""; // EW type
     static String EWL = ""; // EWL function
     static double ROC = 0; // rate of change: fixed learning amount to EW
 //    static double alpha = 0; // used in alpha-beta rating
@@ -101,8 +102,12 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
-    static String PS; // punishment severity function
-    static String V; // vindictiveness
+//    static String PS; // punishment severity function
+    static String PS = ""; // punishment severity function
+//    static String V; // vindictiveness
+    static String V = ""; // vindictiveness
+    static String PWW; // PWW: punishment without weights.
+    static double PWWT; // PWWT: PWW threshold
 
 
 
@@ -279,9 +284,14 @@ public class Env extends Thread{ // environment simulator
         if (writePosData && run == 1) {
             writePosData();
         }
-        for (int i=0;i<N;i++){
-            initialiseEdgeWeights(pop[i]);
+        if(!EWL.equals("")){
+            for (int i=0;i<N;i++){
+                initialiseEdgeWeights(pop[i]);
+            }
         }
+
+        // testing Agent.toString().
+//        String string = pop[0].toString();
 
         // get stats for gen 0.
         calculateStats();
@@ -722,6 +732,8 @@ public class Env extends Thread{ // environment simulator
         setER(settings[CI++]);
         setGens(settings[CI++]);
         setEWT(CI!=settings.length? settings[CI++]: "");
+        setPWW(CI!=settings.length? settings[CI++]: "");
+        setPWWT(CI!=settings.length? settings[CI++]: "");
         setRP(CI!=settings.length? settings[CI++]: "");
         setRA(CI!=settings.length? settings[CI++]: "");
         setRT(CI!=settings.length? settings[CI++]: "");
@@ -1164,6 +1176,10 @@ public class Env extends Thread{ // environment simulator
                 settings += ",gens";
                 settings += rounds != 0? ",rounds": "";
                 settings += EWT.isEmpty()? "": ",EWT";
+
+                settings += PWW.isEmpty()? "": ",PWW";
+                settings += PWW.equals("threshold")? ",PWWT": "";
+
                 settings += RP == 0.0? "": ",RP";
                 settings += RA.isEmpty() ? "": ",RA";
                 settings += RT.isEmpty() ? "": ",RT";
@@ -1203,6 +1219,10 @@ public class Env extends Thread{ // environment simulator
             settings += "," + gens;
             settings += rounds != 0? "," + rounds: "";
             settings += EWT.isEmpty()? "": "," + EWT;
+
+            settings += PWW.isEmpty()? "": "," + PWW;
+            settings += PWW.equals("threshold")? "," + PWWT: "";
+
             settings += RP == 0.0? "": "," + RP;
             settings += RA.isEmpty() ? "": "," + RA;
             settings += RT.isEmpty() ? "": "," + RT;
@@ -1890,6 +1910,11 @@ public class Env extends Thread{ // environment simulator
         switch (PS){
             case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF" -> set = true;
         }
+
+        switch (PWW){
+            case "PD", "threshold" -> set = true;
+        }
+
         if(set){
             try{
                 cost = Double.parseDouble(value);
@@ -2280,6 +2305,42 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
             }
+
+            switch (PWW){
+                case "PD" -> {
+                    for (int i = 0; i < N; i++){
+                        Agent a = pop[i];
+                        ArrayList<Agent> omega_a = a.getOmega();
+                        for (int j = 0; j < a.getK(); j++) {
+                            Agent b = omega_a.get(j);
+                            double p_a = a.getP();
+                            double p_b = b.getP();
+                            double pun_prob = p_b - p_a;
+                            double random_double = ThreadLocalRandom.current().nextDouble();
+                            if (pun_prob > random_double){
+                                a.setU(a.getU() - cost);
+                                b.setU(b.getU() - fine);
+                            }
+                        }
+                    }
+                }
+                case "threshold" -> {
+                    for (int i = 0; i < N; i++){
+                        Agent a = pop[i];
+                        ArrayList<Agent> omega_a = a.getOmega();
+                        for (int j = 0; j < a.getK(); j++) {
+                            Agent b = omega_a.get(j);
+                            double p_a = a.getP();
+                            double p_b = b.getP();
+                            if (p_a > p_b + PWWT){ // if a is fairer than b with a handicap, then a punishes b.
+                                a.setU(a.getU() - cost);
+                                b.setU(b.getU() - fine);
+                            }
+                        }
+                    }
+                }
+            }
+
             for (int i=0;i<N;i++) {
                 Agent child = pop[i];
                 Agent parent = sel(child);
@@ -2581,35 +2642,54 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setNU(String value){
-        switch (EWT){
-            case "punish" -> {
-                switch (value){
-                    case "1" -> {
-                        NU = true;
-                        Agent.setNU(NU);
-                        System.out.println("NU="+NU);
-                    }
-                    case "0" -> {
-                        NU = false;
-                        Agent.setNU(NU);
-                        System.out.println("NU="+NU);
-                    }
-                    default -> {
-                        System.out.println("invalid NU");
-                        exit(1);
-                    }
+
+//        switch (EWT){
+//            case "punish" -> {
+//                switch (value){
+//                    case "1" -> {
+//                        NU = true;
+//                        Agent.setNU(NU);
+//                        System.out.println("NU="+NU);
+//                    }
+//                    case "0" -> {
+//                        NU = false;
+//                        Agent.setNU(NU);
+//                        System.out.println("NU="+NU);
+//                    }
+//                    default -> {
+//                        System.out.println("invalid NU");
+//                        exit(1);
+//                    }
+//                }
+//            }
+//        }
+
+        boolean set = false;
+        switch (EWT) {
+            case "punish" -> set = true;
+        }
+        switch (PWW) {
+            case "PD" -> set = true;
+        }
+        if(set){
+            switch (value){
+                case "1" -> {
+                    NU = true;
+                    Agent.setNU(NU);
+                    System.out.println("NU="+NU);
+                }
+                case "0" -> {
+                    NU = false;
+                    Agent.setNU(NU);
+                    System.out.println("NU="+NU);
+                }
+                default -> {
+                    System.out.println("invalid NU");
+                    exit(1);
                 }
             }
         }
 
-//        try{
-//            if (value.equals("1")){
-//                NU = true;
-//                System.out.println("NU="+NU);
-//            }
-//        }catch(ArrayIndexOutOfBoundsException e){
-//            System.out.println("[INFO] Will not record p gen stats.");
-//        }
     }
 
     public static void setNeighType(String value){
@@ -2683,20 +2763,29 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEF(String value){
+        boolean set = false;
+
         switch (PS){
-            case "EF" -> {
-                try{
-                    EF = Double.parseDouble(value);
-                    System.out.println("EF="+EF);
-                }catch(NumberFormatException e){
-                    System.out.println("invalid EF: must be a double");
-                    exit(1);
-                }
-                if (EF < 0){
-                    System.out.println("invalid EF: must be greater than or equal to 0");
-                }
+            case "EF" -> set = true;
+        }
+
+        switch (PWW){
+            case "PD", "threshold" -> set = true;
+        }
+
+        if(set){
+            try{
+                EF = Double.parseDouble(value);
+                System.out.println("EF="+EF);
+            }catch(NumberFormatException e){
+                System.out.println("invalid EF: must be a double");
+                exit(1);
+            }
+            if (EF < 0){
+                System.out.println("invalid EF: must be greater than or equal to 0");
             }
         }
+
     }
 
     public double calculatePunishProb(double w_ab, double u_a, double u_b, double v_a){
@@ -2843,5 +2932,16 @@ public class Env extends Thread{ // environment simulator
                 b.setU(u_b - cost * EF);
             }
         }
+    }
+
+
+    public static void setPWW(String value){
+        PWW = value;
+        System.out.println("PWW="+PWW);
+    }
+
+    public static void setPWWT(String value){
+        PWWT = Double.parseDouble(value);
+        System.out.println("PWWT="+PWWT);
     }
 }
