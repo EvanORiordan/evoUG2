@@ -1,4 +1,4 @@
-runs,M,length,neighType,genType,ER,gens,EWT,RP,RA,RT,PP,PS,EF,cost,fine,NU,PN1,PN2,V,PT,EWL,ROC,evo,sel,RWT,EN,mut,mutRate,mutBound,UF,WPGS,WUGS,WKGS,WPRS,WURS,WKRS,writingRate,VP,variations
+runs,M,length,neighType,genType,ER,gens,EWT,RP,RA,RT,PP,PS,EF,cost,fine,NU,PN1,PN2,V,leeway,EWL,ROC,evo,sel,RWT,EN,mut,mutRate,mutBound,UF,WPGS,WUGS,WKGS,WPRS,WURS,WKRS,writingRate,VP,variations
 10,1,10,VN,ER,1,10000,,,,,P,EF,3,.2,,1,,,1,,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
 10,1,10,VN,ER,1,10000,,,,,PD,EF,3,.2,,1,,,1,,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
 10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.1,,,FD,randomNeigh,,.05,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
@@ -7,3 +7,16 @@ runs,M,length,neighType,genType,ER,gens,EWT,RP,RA,RT,PP,PS,EF,cost,fine,NU,PN1,P
 10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.1,,,FD,randomNeigh,,.2,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
 10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.1,,,FD,randomNeigh,,.25,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
 10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.1,,,FD,randomNeigh,,.3,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.05,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.1,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.15,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.2,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.25,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,.05,1,.3,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.4,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.5,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.6,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.7,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.8,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+10,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.9,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,cost,.4;.6;.8;1;1.2;1.4;1.6;1.8;2;2.2;2.4;2.6;2.8;3
+1,1,10,VN,ER,1,10000,,,,,PT,EF,3,.2,,1,,,1,.9,,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,1,,1,,

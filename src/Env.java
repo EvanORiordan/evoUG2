@@ -100,7 +100,8 @@ public class Env extends Thread{ // environment simulator
 //    static String V; // vindictiveness
     static String V = ""; // vindictiveness
 //    static double PWWT; // PWWT: punishment without weights threshold
-    static double PT; // PT: proposal value threshold
+//    static double PT; // PT: proposal value threshold
+    static double leeway;
 
 
 
@@ -189,6 +190,7 @@ public class Env extends Thread{ // environment simulator
         }
 
         // terminate program as intended.
+        System.out.println("shutting down at " + LocalDateTime.now());
         exit(0);
     }
 
@@ -736,7 +738,7 @@ public class Env extends Thread{ // environment simulator
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
         setV(CI!=settings.length? settings[CI++]: "");
-        setPT(CI!=settings.length? settings[CI++]: "");
+        setLeeway(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
         setEvo(settings[CI++]);
@@ -1178,7 +1180,7 @@ public class Env extends Thread{ // environment simulator
                 settings += PP.equals("noisy")? ",PN1": "";
                 settings += PN2 != 0.0? ",PN2": "";
                 settings += V.equals("")? "": ",V";
-                settings += PT != 0.0? ",PT": "";
+                settings += leeway != 0.0? ",leeway": "";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
@@ -1216,7 +1218,7 @@ public class Env extends Thread{ // environment simulator
             settings += PP.equals("noisy")? "," + PN1: "";
             settings += PN2 != 0.0? "," + PN2: "";
             settings += V.equals("")? "": "," + V;
-            settings += PT != 0.0? "," + PT: "";
+            settings += leeway != 0.0? "," + leeway: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
@@ -1929,13 +1931,13 @@ public class Env extends Thread{ // environment simulator
             }
             default -> {
                 switch (value) {
-                    case "P", "PD", "PT" -> set = true;
+                    case "P", "PD", "leeway" -> set = true;
                 }
             }
         }
         if (set) {
             switch (value) {
-                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "PT" -> {
+                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
                     PP = value;
                     System.out.println("PP="+PP);
                 }
@@ -2594,7 +2596,7 @@ public class Env extends Thread{ // environment simulator
     public static void setNU(String value) {
         boolean set = false;
         switch (PP) { // if PP has been set, punishment may occur, therefore NU must be set.
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "PT" -> set = true;
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
         }
         if (set) {
             switch (value) {
@@ -2756,8 +2758,8 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PD" -> punish_prob = p_a - p_b;
-            case "PT" -> {
-                if (p_a > p_b + PT) { // a punishes b if b is not close enough to a's fairness
+            case "leeway" -> {
+                if (p_a > p_b + leeway) { // a punishes b if b is not close enough to a's fairness
                     punish_prob = 1;
                 } else {
                     punish_prob = 0;
@@ -2774,7 +2776,7 @@ public class Env extends Thread{ // environment simulator
             case "punish" -> set = true;
         }
         switch (PP) {
-            case "P", "PD", "PT" -> set = true;
+            case "P", "PD", "leeway" -> set = true;
         }
         if (set) {
             switch (value) {
@@ -2873,17 +2875,17 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void setPT(String value) {
+    public static void setLeeway(String value) {
         boolean set = false;
         switch (PP) {
-            case "PT" -> set = true;
+            case "leeway" -> set = true;
         }
         if (set) {
             try{
-                PT = Double.parseDouble(value);
-                System.out.println("PT="+PT);
+                leeway = Double.parseDouble(value);
+                System.out.println("leeway="+leeway);
             }catch(NumberFormatException e) {
-                System.out.println("invalid PT: must be a double");
+                System.out.println("invalid leeway: must be a double");
                 exit(1);
             }
         }
