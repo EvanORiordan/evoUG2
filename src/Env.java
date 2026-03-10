@@ -102,6 +102,7 @@ public class Env extends Thread{ // environment simulator
 //    static double PWWT; // PWWT: punishment without weights threshold
 //    static double PT; // PT: proposal value threshold
     static double leeway;
+    static double threshold; // affects threshold PP case
 
 
 
@@ -143,9 +144,9 @@ public class Env extends Thread{ // environment simulator
         System.out.println(console_str);
         for (int i = 0; i < config_line_nums.length; i++) {
             System.out.println("[INFO] Current configuration line number: " + config_line_nums[i]);
-            try{
+            try {
                 configEnv(config_line_nums[i]);
-            }catch (IndexOutOfBoundsException e) {
+            } catch (IndexOutOfBoundsException e) {
                 System.out.println("[INFO] Invalid configuration number.");
                 exit(1);
             }
@@ -237,6 +238,8 @@ public class Env extends Thread{ // environment simulator
                     case "PN2" -> setPN2(variations[exp - 1]);
                     case "M" -> setM(variations[exp - 1]);
                     case "V" -> setV(variations[exp - 1]);
+                    case "leeway" -> setLeeway(variations[exp - 1]);
+                    case "threshold" -> setThreshold(variations[exp - 1]);
                 }
             }
         }
@@ -285,7 +288,7 @@ public class Env extends Thread{ // environment simulator
         }
 
         // testing Agent.toString().
-//        String string = pop[0].toString();
+        String string = pop[0].toString();
 
         // get stats for gen 0.
         calculateStats();
@@ -503,6 +506,8 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PDhalf" -> learning = (b.getP() - a.getP()) / 2;
+            case "PDdouble" -> learning = (b.getP() - a.getP()) * 2;
+            case "PDtriple" -> learning = (b.getP() - a.getP()) * 3;
         }
         return learning;
     }
@@ -739,6 +744,7 @@ public class Env extends Thread{ // environment simulator
         setPN2(CI!=settings.length? settings[CI++]: "");
         setV(CI!=settings.length? settings[CI++]: "");
         setLeeway(CI!=settings.length? settings[CI++]: "");
+        setThreshold(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
         setEvo(settings[CI++]);
@@ -809,7 +815,7 @@ public class Env extends Thread{ // environment simulator
 
 
     public static void createDataFolders() {
-        try{
+        try {
             if (writeRate > 0) {
                 Files.createDirectories(Paths.get(exp_path));
             }
@@ -821,7 +827,7 @@ public class Env extends Thread{ // environment simulator
                     Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
                 }
             }
-        }catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -978,7 +984,7 @@ public class Env extends Thread{ // environment simulator
 
     // writes IDs and positions of agents
     public void writePosData() {
-        try{
+        try {
             fw = new FileWriter(exp_path + "\\pos_data.csv", false);
             String s = "";
             for (int y=length-1;y>=0;y--) {
@@ -993,7 +999,7 @@ public class Env extends Thread{ // environment simulator
             }
             fw.append(s);
             fw.close();
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -1178,9 +1184,11 @@ public class Env extends Thread{ // environment simulator
                 settings += fine != 0.0? ",fine": "";
                 settings += !PP.equals("")? ",NU": "";
                 settings += PP.equals("noisy")? ",PN1": "";
-                settings += PN2 != 0.0? ",PN2": "";
+//                settings += PN2 != 0.0? ",PN2": "";
+                settings += !PP.equals("")? ",PN2": "";
                 settings += V.equals("")? "": ",V";
                 settings += leeway != 0.0? ",leeway": "";
+                settings += !PP.equals("")? ",threshold": "";
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
@@ -1216,9 +1224,11 @@ public class Env extends Thread{ // environment simulator
             settings += fine != 0.0? "," + fine: "";
             settings += !PP.equals("")? "," + NU: "";
             settings += PP.equals("noisy")? "," + PN1: "";
-            settings += PN2 != 0.0? "," + PN2: "";
+//            settings += PN2 != 0.0? "," + PN2: "";
+            settings += !PP.equals("")? "," + PN2: "";
             settings += V.equals("")? "": "," + V;
             settings += leeway != 0.0? "," + leeway: "";
+            settings += !PP.equals("")? "," + threshold: "";
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
@@ -1229,11 +1239,11 @@ public class Env extends Thread{ // environment simulator
             settings += mut.isEmpty()? "": "," + mutRate;
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
-            try{
+            try {
                 fw = new FileWriter(specific_path + "\\" + "settings.csv", true);
                 fw.append(settings);
                 fw.close();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 exit(1);
             }
@@ -1269,7 +1279,7 @@ public class Env extends Thread{ // environment simulator
             double[] mean_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
-            try{
+            try {
                 fw = new FileWriter(specific_path + "\\series_stats.csv", true);
                 br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
                 br.readLine();
@@ -1326,7 +1336,7 @@ public class Env extends Thread{ // environment simulator
                 output = removeTrailingComma(output);
                 fw.append(output);
                 fw.close();
-            }catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -1394,7 +1404,7 @@ public class Env extends Thread{ // environment simulator
                 double w_ab=0;
                 try {
                     w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-                }catch(IndexOutOfBoundsException e) {
+                } catch (IndexOutOfBoundsException e) {
                     System.out.println("BP");
                 }
 
@@ -1505,7 +1515,7 @@ public class Env extends Thread{ // environment simulator
                 output += "\n" + no_gen_str;
                 fw.append(output);
                 fw.close();
-            }catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -1680,11 +1690,11 @@ public class Env extends Thread{ // environment simulator
             }
             s = removeTrailingComma(s);
         }
-        try{
+        try {
             fw = new FileWriter(run_path + "\\gen_stats\\gen" + gen + ".csv");
             fw.append(s);
             fw.close();
-        }catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             exit(1);
         }
@@ -1729,11 +1739,11 @@ public class Env extends Thread{ // environment simulator
         }
         s = removeTrailingComma(s);
         s+="\n";
-        try{
+        try {
             fw = new FileWriter(run_path + "\\run_stats.csv", true);
             fw.append(s);
             fw.close();
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             exit(1);
         }
@@ -1866,12 +1876,14 @@ public class Env extends Thread{ // environment simulator
             double punish_prob = calculatePunishProb(w_ab, u_a, u_b, v_a, p_a, p_b);
             double random_double = ThreadLocalRandom.current().nextDouble();
             boolean punish = punish_prob > random_double;
-            double random_double2 = ThreadLocalRandom.current().nextDouble();
-            if (PN2 > random_double2) {
-                if (punish) {
-                    punish = false;
-                } else {
-                    punish = true;
+            if (PN2 != 0.0) {
+                double random_double2 = ThreadLocalRandom.current().nextDouble();
+                if (PN2 > random_double2) {
+                    if (punish) {
+                        punish = false;
+                    } else {
+                        punish = true;
+                    }
                 }
             }
             if (punish) {
@@ -1892,10 +1904,10 @@ public class Env extends Thread{ // environment simulator
             case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF" -> set = true;
         }
         if (set) {
-            try{
+            try {
                 cost = Double.parseDouble(value);
-                System.out.println("cost="+cost);
-            }catch(NumberFormatException e) {
+                System.out.println("cost = "+cost);
+            } catch (NumberFormatException e) {
                 System.out.println("invalid cost: must be a double");
                 exit(1);
             }
@@ -1913,7 +1925,7 @@ public class Env extends Thread{ // environment simulator
         if (set) {
             try {
                 fine = Double.parseDouble(value);
-                System.out.println("fine=" + fine);
+                System.out.println("fine = " + fine);
             } catch (NumberFormatException e) {
                 System.out.println("invalid fine: must be a double");
                 exit(1);
@@ -1926,7 +1938,7 @@ public class Env extends Thread{ // environment simulator
         switch (EWT) {
             case "punish" -> {
                 switch (value) {
-                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot" -> set = true;
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot" -> set = true;
                 }
             }
             default -> {
@@ -1937,9 +1949,9 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
+                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
                     PP = value;
-                    System.out.println("PP="+PP);
+                    System.out.println("PP = "+PP);
                 }
                 default -> {
                     System.out.println("invalid PP");
@@ -1953,10 +1965,10 @@ public class Env extends Thread{ // environment simulator
     public static void setMutRate(String value) {
         switch (mut) {
             case "global", "local" -> {
-                try{
+                try {
                     mutRate = Double.parseDouble(value);
-                    System.out.println("mutRate="+mutRate);
-                }catch(NumberFormatException e) {
+                    System.out.println("mutRate = "+mutRate);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid mutRate");
                     exit(1);
                 }
@@ -1972,10 +1984,10 @@ public class Env extends Thread{ // environment simulator
     public static void setROC(String value) {
         switch (EWL) {
             case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
-                try{
+                try {
                     ROC = Double.parseDouble(value);
                     System.out.println("ROC="+ROC);
-                }catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     System.out.println("invalid ROC: must be a double");
                     exit(1);
                 }
@@ -1988,10 +2000,10 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setGens(String value) {
-        try{
+        try {
             gens = Integer.parseInt(value);
-            System.out.println("gens="+gens);
-        }catch(NumberFormatException e) {
+            System.out.println("gens = "+gens);
+        } catch (NumberFormatException e) {
             System.out.println("invalid gens: must be an integer");
             exit(1);
         }
@@ -2004,10 +2016,10 @@ public class Env extends Thread{ // environment simulator
     public static void setER(String value) {
         switch (genType) {
             case "ER" -> {
-                try{
+                try {
                     ER = Integer.parseInt(value);
-                    System.out.println("ER="+ER);
-                }catch(NumberFormatException e) {
+                    System.out.println("ER = "+ER);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid ER: must be an integer");
                     exit(1);
                 }
@@ -2020,10 +2032,10 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setLength(String value) {
-        try{
+        try {
             length = Integer.parseInt(value);
-            System.out.println("length="+length);
-        }catch(NumberFormatException e) {
+            System.out.println("length = "+length);
+        } catch (NumberFormatException e) {
             System.out.println("invalid length: must be an integer");
             exit(1);
         }
@@ -2034,10 +2046,10 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRuns(String value) {
-        try{
+        try {
             runs = Integer.parseInt(value);
-            System.out.println("runs="+runs);
-        }catch(NumberFormatException e) {
+            System.out.println("runs = "+runs);
+        } catch (NumberFormatException e) {
             System.out.println("invalid runs: must be an integer");
             exit(1);
         }
@@ -2050,10 +2062,10 @@ public class Env extends Thread{ // environment simulator
     public static void setMutBound(String value) {
         switch (mut) {
             case "local" -> {
-                try{
+                try {
                     mutBound = Double.parseDouble(value);
-                    System.out.println("mutBound="+mutBound);
-                }catch(NumberFormatException e) {
+                    System.out.println("mutBound = "+mutBound);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid mutBound");
                     exit(1);
                 }
@@ -2069,7 +2081,7 @@ public class Env extends Thread{ // environment simulator
         switch (value) {
             case "global", "local" -> {
                 mut = value;
-                System.out.println("mut="+mut);
+                System.out.println("mut = "+mut);
             }
             default -> System.out.println("no mut");
         }
@@ -2077,31 +2089,31 @@ public class Env extends Thread{ // environment simulator
 
     public static void setEWT(String value) {
         switch (value) {
-
-            // case where value is valid.
             case "proposalProb", "punish", "rewire" -> {
                 EWT = value;
-                System.out.println("EWT="+EWT);
+                Agent.setEWT(EWT);
+                System.out.println("EWT = "+EWT);
             }
-
-            // case where value is invalid.
-            // EWT can be unassigned.
             default -> System.out.println("no EWT");
         }
     }
 
     public static void setEWL(String value) {
-        switch (value) {
-
-            // case where value is valid.
-            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2" -> {
-                EWL = value;
-                System.out.println("EWL="+EWL);
+        boolean set = false;
+        switch (EWT) {
+            case "punish", "proposalProb", "rewire" -> set = true;
+        }
+        if (set) {
+            switch (value) {
+                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple" -> {
+                    EWL = value;
+                    System.out.println("EWL = "+EWL);
+                }
+                default -> {
+                    System.out.println("invalid EWL");
+                    exit(1);
+                }
             }
-
-            // case where value is invalid.
-            // EWL can be unassigned.
-            default -> System.out.println("no EWL");
         }
     }
 
@@ -2111,7 +2123,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is valid.
             case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> {
                 sel = value;
-                System.out.println("sel="+sel);
+                System.out.println("sel = "+sel);
             }
 
             // case where value is invalid.
@@ -2153,10 +2165,10 @@ public class Env extends Thread{ // environment simulator
             case "FD" -> assign = true;
         }
         if (assign) {
-            try{
+            try {
                 EN = Double.parseDouble(value);
-                System.out.println("EN="+EN);
-            }catch(NumberFormatException e) {
+                System.out.println("EN = "+EN);
+            } catch (NumberFormatException e) {
                 System.out.println("invalid EN: must be a double");
                 exit(1);
             }
@@ -2167,7 +2179,7 @@ public class Env extends Thread{ // environment simulator
         switch (value) {
             case "cumulative", "normalised" -> {
                 UF = value;
-                System.out.println("UF="+UF);
+                System.out.println("UF = "+UF);
             }
             default -> {
                 System.out.println("invalid UF");
@@ -2212,14 +2224,16 @@ public class Env extends Thread{ // environment simulator
                 case "PN1" -> output += "\n" + PN1;
                 case "PN2" -> output += "\n" + PN2;
                 case "EF" -> output += "\n" + EF;
+                case "leeway" -> output += "\n" + leeway;
+                case "threshold" -> output += "\n" + threshold;
             }
 
             // create the file and write the data.
-            try{
+            try {
                 fw = new FileWriter(specific_path + "\\" + "VP.csv", true);
                 fw.append(output);
                 fw.close();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 exit(1);
             }
@@ -2250,10 +2264,12 @@ public class Env extends Thread{ // environment simulator
                     "PN1",
                     "PN2",
                     "M",
-                    "EF"
+                    "EF",
+                    "leeway",
+                    "threshold"
                     -> {
                 VP = value;
-                System.out.println("VP="+VP);
+                System.out.println("VP = "+VP);
             }
             default -> System.out.println("[INFO] No parameter variation scheduled with this configuration.");
         }
@@ -2271,11 +2287,11 @@ public class Env extends Thread{ // environment simulator
         rounds = 0;
         for (gen = 1; gen <= gens; gen++) { // gens
             for (int round = 0; round < ER; round++) { // rounds
-                for (int i=0;i<N;i++) {
+                for (int i = 0; i < N; i++) {
                     play(pop[i]); // play DG
                 }
                 if (!EWL.isEmpty()) {
-                    for (int i=0;i<N;i++) {
+                    for (int i = 0; i < N; i++) {
                         EWL(pop[i]); // edge weight learning
                     }
                 }
@@ -2388,77 +2404,77 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setWritePGenStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writePGenStats = true;
                 System.out.println("writePGenStats="+writePGenStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p gen stats.");
         }
     }
 
     public static void setWriteUGenStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writeUGenStats = true;
                 System.out.println("writeUGenStats="+writeUGenStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u gen stats.");
         }
     }
 
     public static void setWriteKGenStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writeKGenStats = true;
                 System.out.println("writeKGenStats="+writeKGenStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record k gen stats.");
         }
     }
 
     public static void setWritePRunStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writePRunStats = true;
                 System.out.println("writePRunStats="+writePRunStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p run stats.");
         }
     }
 
     public static void setWriteURunStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writeURunStats = true;
                 System.out.println("writeURunStats="+writeURunStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u run stats.");
         }
     }
 
     public static void setWriteKRunStats(String value) {
-        try{
+        try {
             if (value.equals("1")) {
                 writeKRunStats = true;
                 System.out.println("writeKRunStats="+writeKRunStats);
             }
-        }catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record k run stats.");
         }
     }
 
     public static void setWriteRate(String value) {
         if (writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats) {
-            try{
+            try {
                 writeRate = Integer.parseInt(value);
                 System.out.println("writeRate="+writeRate);
-            }catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 System.out.println("invalid writeRate");
                 exit(1);
             }
@@ -2467,40 +2483,27 @@ public class Env extends Thread{ // environment simulator
 
     public static void setWidth() {
         width = length;
-        System.out.println("width="+width);
-    }
-    public static void setWidth(String value) {
-        try{
-            length = Integer.parseInt(value);
-            System.out.println("length="+length);
-        }catch(NumberFormatException e) {
-            System.out.println("invalid length: must be an integer");
-            exit(1);
-        }
-        if (length < 3) {
-            System.out.println("invalid length: must be >= 3.");
-            exit(1);
-        }
+//        System.out.println("width="+width);
     }
 
     public static void setN() {
         N = length * width;
-        System.out.println("N="+N);
+//        System.out.println("N="+N);
     }
 
     // this function just initialises Agent.game.
     public static void setGame() {
         Agent.setGame(game);
-        System.out.println("game="+game);
+//        System.out.println("game="+game);
     }
 
     public static void setRP(String value) {
         switch (EWT) {
             case "rewire" -> {
-                try{
+                try {
                     RP = Double.parseDouble(value);
                     System.out.println("RP="+RP);
-                }catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     System.out.println("invalid RP: must be a double");
                     exit(1);
                 }
@@ -2565,7 +2568,7 @@ public class Env extends Thread{ // environment simulator
                     "UD",
                     "UDN" -> {
                 evo = value;
-                System.out.println("evo="+evo);
+                System.out.println("evo = "+evo);
             }
 
             // case where value is invalid.
@@ -2582,7 +2585,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is valid.
             case "ER", "MCv1", "MCv2", "oneGuyEvo"-> {
                 genType = value;
-                System.out.println("genType="+genType);
+                System.out.println("genType = "+genType);
             }
 
             // case where value is invalid.
@@ -2596,19 +2599,19 @@ public class Env extends Thread{ // environment simulator
     public static void setNU(String value) {
         boolean set = false;
         switch (PP) { // if PP has been set, punishment may occur, therefore NU must be set.
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "linear+thresholds", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
         }
         if (set) {
             switch (value) {
                 case "1" -> {
                     NU = true;
                     Agent.setNU(NU);
-                    System.out.println("NU="+NU);
+                    System.out.println("NU = "+NU);
                 }
                 case "0" -> {
                     NU = false;
                     Agent.setNU(NU);
-                    System.out.println("NU="+NU);
+                    System.out.println("NU = "+NU);
                 }
                 default -> {
                     System.out.println("invalid NU");
@@ -2625,7 +2628,7 @@ public class Env extends Thread{ // environment simulator
             // case where value is valid.
             case "VN", "Moore" -> {
                 neighType = value;
-                System.out.println("neighType="+neighType);
+                System.out.println("neighType = "+neighType);
             }
 
             // case where value is invalid
@@ -2639,10 +2642,10 @@ public class Env extends Thread{ // environment simulator
     public static void setPN1(String value) {
         switch (PP) {
             case "noisy" -> {
-                try{
+                try {
                     PN1 = Double.parseDouble(value);
                     System.out.println("PN1="+PN1);
-                }catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     System.out.println("invalid PN1: must be a double");
                     exit(1);
                 }
@@ -2657,10 +2660,10 @@ public class Env extends Thread{ // environment simulator
     public static void setPN2(String value) {
         switch (EWT) {
             case "punish" -> {
-                try{
+                try {
                     PN2 = Double.parseDouble(value);
-                    System.out.println("PN2="+PN2);
-                }catch(NumberFormatException e) {
+                    System.out.println("PN2 = "+PN2);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid PN2: must be a double");
                     exit(1);
                 }
@@ -2675,10 +2678,10 @@ public class Env extends Thread{ // environment simulator
     public static void setM(String value) {
         switch (game) {
             case "UG", "DG" -> {
-                try{
+                try {
                     M = Double.parseDouble(value);
-                    System.out.println("M="+M);
-                }catch(NumberFormatException e) {
+                    System.out.println("M = "+M);
+                } catch (NumberFormatException e) {
                     System.out.println("invalid M: must be a double");
                     exit(1);
                 }
@@ -2697,7 +2700,7 @@ public class Env extends Thread{ // environment simulator
         if (set) {
             try {
                 EF = Double.parseDouble(value);
-                System.out.println("EF=" + EF);
+                System.out.println("EF = " + EF);
             } catch (NumberFormatException e) {
                 System.out.println("invalid EF: must be a double");
                 exit(1);
@@ -2717,10 +2720,10 @@ public class Env extends Thread{ // environment simulator
             case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
             case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
             case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
-            case "linear+thresholds" -> { // punishment is only stochastic when 0.2 < w_ab < 0.8.
-                if (w_ab >= 0.8) {
+            case "threshold" -> {
+                if (w_ab >= 1 - threshold) {
                     punish_prob = 0.0;
-                } else if (w_ab <= 0.2) {
+                } else if (w_ab <= threshold) {
                     punish_prob = 1.0;
                 } else {
                     punish_prob = 1 - w_ab;
@@ -2782,7 +2785,7 @@ public class Env extends Thread{ // environment simulator
             switch (value) {
                 case "normal", "weighted", "utility", "EF", "lowNoise", "mediumNoise", "highNoise" -> {
                     PS = value;
-                    System.out.println("PS="+PS);
+                    System.out.println("PS = "+PS);
                 }
                 default -> {
                     System.out.println("invalid PS");
@@ -2793,38 +2796,42 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setV(String value) {
-        switch (EWT) {
-            case "punish" -> {
 
-//                switch (PP) {
-//                    case "V+linear" -> {
-//                        switch (value) {
-//                            case "random" -> {
-//                                V = value;
-//                                System.out.println("V="+V);
-//                            }
-//                            default -> {
-//                                System.out.println("invalid V");
-//                                exit(1);
-//                            }
-//                        }
+//        switch (EWT) {
+//            case "punish" -> {
+//                switch (value) {
+//                    case "random", "1", "0" -> {
+//                        V = value;
+//                        Agent.setStaticV(V);
+//                        System.out.println("V="+V);
+//                    }
+//                    default -> {
+//                        System.out.println("invalid V");
+//                        exit(1);
 //                    }
 //                }
+//
+//            }
+//        }
 
-                switch (value) {
-                    case "random", "1", "0" -> {
-                        V = value;
-                        Agent.setStaticV(V);
-                        System.out.println("V="+V);
-                    }
-                    default -> {
-                        System.out.println("invalid V");
-                        exit(1);
-                    }
+        boolean set = false;
+        switch (PP) {
+            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
+        }
+        if (set) {
+            switch (value) {
+                case "random", "1", "0" -> {
+                    V = value;
+                    Agent.setStaticV(V);
+                    System.out.println("V = "+V);
                 }
-
+                default -> {
+                    System.out.println("invalid V");
+                    exit(1);
+                }
             }
         }
+
     }
 
     // calculates punishment severity and inflicts costs and fines.
@@ -2881,11 +2888,35 @@ public class Env extends Thread{ // environment simulator
             case "leeway" -> set = true;
         }
         if (set) {
-            try{
+            try {
                 leeway = Double.parseDouble(value);
-                System.out.println("leeway="+leeway);
-            }catch(NumberFormatException e) {
+                System.out.println("leeway = "+leeway);
+            } catch (NumberFormatException e) {
                 System.out.println("invalid leeway: must be a double");
+                exit(1);
+            }
+        }
+    }
+    
+    public static void setThreshold(String value){
+        boolean set = false;
+        switch (PP) {
+            case "threshold" -> set = true;
+        }
+        if (set) {
+            try {
+                threshold = Double.parseDouble(value);
+                System.out.println("threshold = "+threshold);
+            } catch (NumberFormatException e) {
+                System.out.println("invalid threshold: must be a double");
+                exit(1);
+            }
+//            if (threshold < 0 || threshold > 1) {
+//                System.out.println("invalid threshold: must be within the interval [0, 1].");
+//                exit(1);
+//            }
+            if (threshold < 0 || threshold >= 0.5) {
+                System.out.println("invalid threshold: must be within the interval [0, 5).");
                 exit(1);
             }
         }
