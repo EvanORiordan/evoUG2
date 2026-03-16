@@ -1901,7 +1901,7 @@ public class Env extends Thread{ // environment simulator
             case "sweetspot" -> set = true;
         }
         switch (PS) {
-            case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER" -> set = true;
+            case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER", "percent", "smallerPercent" -> set = true;
         }
         if (set) {
             try {
@@ -2783,7 +2783,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER" -> {
+                case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER", "percent", "smallerPercent" -> {
                     PS = value;
                     System.out.println("PS = "+PS);
                 }
@@ -2882,6 +2882,14 @@ public class Env extends Thread{ // environment simulator
             case "EF+ER" -> { // uses ER and EF to calculate cost and fine
                 a.setU(u_a - cost * ER);
                 b.setU(u_b - cost * EF * ER);
+            }
+            case "percent" -> {
+                a.setU(u_a - cost);
+                b.setU(u_b - u_b * cost);
+            }
+            case "smallerPercent" -> {
+                a.setU(u_a - cost);
+                b.setU(u_b - u_b * cost * .1);
             }
         }
     }
