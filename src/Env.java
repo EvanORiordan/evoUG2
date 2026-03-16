@@ -1901,7 +1901,7 @@ public class Env extends Thread{ // environment simulator
             case "sweetspot" -> set = true;
         }
         switch (PS) {
-            case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF" -> set = true;
+            case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER" -> set = true;
         }
         if (set) {
             try {
@@ -2695,7 +2695,7 @@ public class Env extends Thread{ // environment simulator
     public static void setEF(String value) {
         boolean set = false;
         switch (PS) {
-            case "EF" -> set = true;
+            case "EF", "EF+ER" -> set = true;
         }
         if (set) {
             try {
@@ -2762,7 +2762,7 @@ public class Env extends Thread{ // environment simulator
             }
             case "PD" -> punish_prob = p_a - p_b;
             case "leeway" -> {
-                if (p_a > p_b + leeway) { // a punishes b if b is not close enough to a's fairness
+                if (p_a > p_b + leeway) { // a punishes b if b is not close enough to being as fair as a.
                     punish_prob = 1;
                 } else {
                     punish_prob = 0;
@@ -2783,7 +2783,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "normal", "weighted", "utility", "EF", "lowNoise", "mediumNoise", "highNoise" -> {
+                case "normal", "weighted", "utility", "lowNoise", "mediumNoise", "highNoise", "EF", "EF+ER" -> {
                     PS = value;
                     System.out.println("PS = "+PS);
                 }
@@ -2879,6 +2879,10 @@ public class Env extends Thread{ // environment simulator
                 a.setU(u_a - cost);
                 b.setU(u_b - cost * EF);
             }
+            case "EF+ER" -> { // uses ER and EF to calculate cost and fine
+                a.setU(u_a - cost * ER);
+                b.setU(u_b - cost * EF * ER);
+            }
         }
     }
 
@@ -2893,6 +2897,10 @@ public class Env extends Thread{ // environment simulator
                 System.out.println("leeway = "+leeway);
             } catch (NumberFormatException e) {
                 System.out.println("invalid leeway: must be a double");
+                exit(1);
+            }
+            if (leeway < 0 || leeway > 1.0) {
+                System.out.println("invalid leeway: must be within the interval [0, 1].");
                 exit(1);
             }
         }
