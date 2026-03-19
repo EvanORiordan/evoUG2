@@ -103,6 +103,7 @@ public class Env extends Thread{ // environment simulator
 //    static double PT; // PT: proposal value threshold
     static double leeway;
     static double threshold; // affects threshold PP case
+    static boolean punish = false;
 
 
 
@@ -1261,13 +1262,16 @@ public class Env extends Thread{ // environment simulator
             String output = "";
             if (exp == 1) {
                 if (writePRunStats) {
-                    output+="mean avg p,sigma avg p,";
+                    output += "mean avg p,sigma avg p,";
                 }
                 if (writeURunStats) {
-                    output+="mean avg u,sigma avg u";
+                    output += "mean avg u,sigma avg u,";
                 }
                 if (writeKRunStats) {
-                    output+="mean sigma k,";
+                    output += "mean sigma k,";
+                }
+                if (punish) {
+                    output += "mean num puns,";
                 }
                 output = removeTrailingComma(output);
             }
@@ -1276,9 +1280,11 @@ public class Env extends Thread{ // environment simulator
             double mean_avg_u = 0.0;
             double sigma_avg_u = 0.0;
             double mean_sigma_k = 0.0;
+            int mean_num_puns = 0;
             double[] mean_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
+            int[] num_puns_values = new int[runs];
             try {
                 fw = new FileWriter(specific_path + "\\series_stats.csv", true);
                 br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
@@ -1300,6 +1306,11 @@ public class Env extends Thread{ // environment simulator
                     }
                     if (writeKRunStats) {
                         sigma_k_values[i] = Double.parseDouble(row_contents[j]);
+                        j++; // move past sigma k
+                    }
+                    if (punish) {
+                        num_puns_values[i] = Integer.parseInt(row_contents[j]);
+//                         j++; // enable to move past num puns
                     }
                 }
                 for (int i=0;i<runs;i++) {
@@ -1312,11 +1323,23 @@ public class Env extends Thread{ // environment simulator
                     if (writeKRunStats) {
                         mean_sigma_k += sigma_k_values[i];
                     }
+                    if (punish) {
+                        mean_num_puns += num_puns_values[i];
+                    }
                 }
-                mean_avg_p /= runs;
-                mean_avg_u /= runs;
+//                mean_avg_p /= runs;
+//                mean_avg_u /= runs;
+                if (writePRunStats) {
+                    mean_avg_p /= runs;
+                }
+                if (writeURunStats) {
+                    mean_avg_u /= runs;
+                }
                 if (writeKRunStats) {
                     mean_sigma_k /= runs;
+                }
+                if (punish) {
+                    mean_num_puns /= runs;
                 }
                 for (int i=0;i<runs;i++) {
                     sigma_avg_p += Math.pow(mean_p_values[i] - mean_avg_p, 2);
@@ -1326,12 +1349,16 @@ public class Env extends Thread{ // environment simulator
                 sigma_avg_u = Math.pow(sigma_avg_u / runs, 0.5);
                 output += "\n";
                 if (writePRunStats) {
-                    output+=DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
+                    output += DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
                 }
                 if (writeURunStats) {
-                    output+=DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
-                }if (writeKRunStats) {
-                    output+=DF4.format(mean_sigma_k) + ",";
+                    output += DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
+                }
+                if (writeKRunStats) {
+                    output += DF4.format(mean_sigma_k) + ",";
+                }
+                if (punish) {
+                    output += mean_num_puns + ",";
                 }
                 output = removeTrailingComma(output);
                 fw.append(output);
@@ -1344,10 +1371,16 @@ public class Env extends Thread{ // environment simulator
             if (writePRunStats || writeURunStats) {
                 String console_output = "[STATS] exp: "+exp;
                 if (writePRunStats) {
-                    console_output += "; mean avg p: "+DF4.format(mean_avg_p);
+                    console_output += "; mean avg p: " + DF4.format(mean_avg_p);
                 }
                 if (writeURunStats) {
-                    console_output += "; mean avg u: "+DF4.format(mean_avg_u);
+                    console_output += "; mean avg u: " + DF4.format(mean_avg_u);
+                }
+                if (writeKRunStats) {
+                    console_output += "; mean sigma k: " + DF4.format(mean_sigma_k);
+                }
+                if (punish) {
+                    console_output += "; mean num puns: " + mean_num_puns;
                 }
                 System.out.println(console_output);
             }
@@ -1718,8 +1751,8 @@ public class Env extends Thread{ // environment simulator
             if (writeKRunStats) {
                 s += "sigma k,";
             }
-            if (EWT.equals("punish")) {
-                s += "num puns";
+            if (punish) {
+                s += "num puns,";
             }
             s = removeTrailingComma(s);
             s += "\n";
@@ -1734,7 +1767,7 @@ public class Env extends Thread{ // environment simulator
         if (writeKRunStats) {
             s += DF4.format(sigma_k) + ",";
         }
-        if (EWT.equals("punish")) {
+        if (punish) {
             s += num_puns + ",";
         }
         s = removeTrailingComma(s);
@@ -1952,6 +1985,7 @@ public class Env extends Thread{ // environment simulator
                 case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
                     PP = value;
                     System.out.println("PP = "+PP);
+                    punish = true;
                 }
                 default -> {
                     System.out.println("invalid PP");
@@ -2089,10 +2123,17 @@ public class Env extends Thread{ // environment simulator
 
     public static void setEWT(String value) {
         switch (value) {
-            case "proposalProb", "punish", "rewire" -> {
+//            case "proposalProb", "punish", "rewire" -> {
+            case "proposalProb", "rewire" -> {
                 EWT = value;
                 Agent.setEWT(EWT);
                 System.out.println("EWT = "+EWT);
+            }
+            case "punish" -> {
+                EWT = value;
+                Agent.setEWT(EWT);
+                System.out.println("EWT = "+EWT);
+                punish = true;
             }
             default -> System.out.println("no EWT");
         }
@@ -2304,8 +2345,10 @@ public class Env extends Thread{ // environment simulator
                     }
                 }
             }
-            for (int i=0;i<N;i++) {
-                punish(pop[i]);
+            if (punish) {
+                for (int i=0;i<N;i++) {
+                    punish(pop[i]);
+                }
             }
             for (int i=0;i<N;i++) {
                 Agent child = pop[i];
@@ -2597,11 +2640,7 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setNU(String value) {
-        boolean set = false;
-        switch (PP) { // if PP has been set, punishment may occur, therefore NU must be set.
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
-        }
-        if (set) {
+        if (punish) {
             switch (value) {
                 case "1" -> {
                     NU = true;
@@ -2658,19 +2697,17 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setPN2(String value) {
-        switch (EWT) {
-            case "punish" -> {
-                try {
-                    PN2 = Double.parseDouble(value);
-                    System.out.println("PN2 = "+PN2);
-                } catch (NumberFormatException e) {
-                    System.out.println("invalid PN2: must be a double");
-                    exit(1);
-                }
-                if (PN2 < 0 || PN2 > 1) {
-                    System.out.println("invalid PN2: must be within the interval [0, 1].");
-                    exit(1);
-                }
+        if (punish) {
+            try {
+                PN2 = Double.parseDouble(value);
+                System.out.println("PN2 = "+PN2);
+            } catch (NumberFormatException e) {
+                System.out.println("invalid PN2: must be a double");
+                exit(1);
+            }
+            if (PN2 < 0 || PN2 > 1) {
+                System.out.println("invalid PN2: must be within the interval [0, 1].");
+                exit(1);
             }
         }
     }
@@ -2796,29 +2833,12 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setV(String value) {
-
-//        switch (EWT) {
-//            case "punish" -> {
-//                switch (value) {
-//                    case "random", "1", "0" -> {
-//                        V = value;
-//                        Agent.setStaticV(V);
-//                        System.out.println("V="+V);
-//                    }
-//                    default -> {
-//                        System.out.println("invalid V");
-//                        exit(1);
-//                    }
-//                }
-//
-//            }
+//        boolean set = false;
+//        switch (PP) {
+//            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
 //        }
-
-        boolean set = false;
-        switch (PP) {
-            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
-        }
-        if (set) {
+//        if (set) {
+        if (punish) {
             switch (value) {
                 case "random", "1", "0" -> {
                     V = value;
@@ -2831,7 +2851,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
         }
-
     }
 
     // calculates punishment severity and inflicts costs and fines.
