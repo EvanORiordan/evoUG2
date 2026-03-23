@@ -321,7 +321,7 @@ public class Env extends Thread{ // environment simulator
                         case "UG", "DG" -> UG(a, b);
                     }
                 }
-                case "proposalProb"-> {
+                case "prevention"-> {
                     ArrayList <Agent> omega_b = b.getOmega(); // neighbourhood of b
                     for (int j = 0; j < b.getK(); j++) {
                         Agent c = omega_b.get(j); // neighbour of b
@@ -1556,10 +1556,13 @@ public class Env extends Thread{ // environment simulator
             if (writePRunStats || writeURunStats) {
                 String console_output = "[STATS] exp: "+exp+"; run: "+run;
                 if (writePRunStats) {
-                    console_output += "; mean p: "+DF4.format(mean_p);
+                    console_output += "; mean p: " + DF4.format(mean_p);
                 }
                 if (writeURunStats) {
-                    console_output += "; mean u: "+DF4.format(mean_u);
+                    console_output += "; mean u: " + DF4.format(mean_u);
+                }
+                if (punish) {
+                    console_output += "; num puns: " + num_puns;
                 }
                 System.out.println(console_output);
             }
@@ -1992,7 +1995,6 @@ public class Env extends Thread{ // environment simulator
                     exit(1);
                 }
             }
-
         }
     }
 
@@ -2123,8 +2125,8 @@ public class Env extends Thread{ // environment simulator
 
     public static void setEWT(String value) {
         switch (value) {
-//            case "proposalProb", "punish", "rewire" -> {
-            case "proposalProb", "rewire" -> {
+//            case "prevention", "punish", "rewire" -> {
+            case "prevention", "rewire" -> {
                 EWT = value;
                 Agent.setEWT(EWT);
                 System.out.println("EWT = "+EWT);
@@ -2142,7 +2144,7 @@ public class Env extends Thread{ // environment simulator
     public static void setEWL(String value) {
         boolean set = false;
         switch (EWT) {
-            case "punish", "proposalProb", "rewire" -> set = true;
+            case "punish", "prevention", "rewire" -> set = true;
         }
         if (set) {
             switch (value) {
