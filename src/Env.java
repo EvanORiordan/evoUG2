@@ -95,12 +95,8 @@ public class Env extends Thread{ // environment simulator
     static ArrayList<String> configs = new ArrayList<>(); // stores configurations
     static ArrayList<String> timestamps = new ArrayList<>();
     int num_puns = 0;
-//    static String PS; // punishment severity function
     static String PS = ""; // punishment severity function
-//    static String V; // vindictiveness
     static String V = ""; // vindictiveness
-//    static double PWWT; // PWWT: punishment without weights threshold
-//    static double PT; // PT: proposal value threshold
     static double leeway;
     static double threshold; // affects threshold PP case
     static boolean punish = false;
@@ -192,7 +188,6 @@ public class Env extends Thread{ // environment simulator
         }
 
         // terminate program as intended.
-        System.out.println("shutting down at " + LocalDateTime.now());
         exit(0);
     }
 
@@ -1189,7 +1184,11 @@ public class Env extends Thread{ // environment simulator
                 settings += !PP.equals("")? ",PN2": "";
                 settings += V.equals("")? "": ",V";
                 settings += leeway != 0.0? ",leeway": "";
-                settings += !PP.equals("")? ",threshold": "";
+
+//                settings += !PP.equals("")? ",threshold": ""; // should the check not be if we are using a threshold-based PP?
+
+                settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? ",threshold": "";
+
                 settings += EWL.isEmpty()? "": ",EWL";
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
@@ -1229,7 +1228,11 @@ public class Env extends Thread{ // environment simulator
             settings += !PP.equals("")? "," + PN2: "";
             settings += V.equals("")? "": "," + V;
             settings += leeway != 0.0? "," + leeway: "";
-            settings += !PP.equals("")? "," + threshold: "";
+
+//            settings += !PP.equals("")? "," + threshold: "";
+
+            settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? "," + threshold: "";
+
             settings += EWL.isEmpty()? "": "," + EWL;
             settings += ROC == 0.0? "": "," + ROC;
             settings += "," + evo;
@@ -1804,6 +1807,7 @@ public class Env extends Thread{ // environment simulator
         } else if (status == 1) {
             System.out.println("[INFO] Terminating due to error...");
         }
+        System.out.println("shutting down at " + LocalDateTime.now());
         Runtime.getRuntime().exit(status);
     }
 
@@ -1974,7 +1978,7 @@ public class Env extends Thread{ // environment simulator
         switch (EWT) {
             case "punish" -> {
                 switch (value) {
-                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot" -> set = true;
+                    case "linear", "smoothstep", "smootherstep", "on0", "noisy", "thresholds", "thresholdUpper", "thresholdLower", "Uv1", "Uv2", "sweetspot" -> set = true;
                 }
             }
             default -> {
@@ -1985,7 +1989,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
+                case "linear", "smoothstep", "smootherstep", "on0", "noisy", "thresholds", "thresholdUpper", "thresholdLower", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> {
                     PP = value;
                     System.out.println("PP = "+PP);
                     punish = true;
@@ -2759,11 +2763,26 @@ public class Env extends Thread{ // environment simulator
             case "smootherstep" -> punish_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
             case "on0" -> punish_prob = w_ab == 0.0? 1.0: 0.0;
             case "noisy" -> punish_prob = (1 - w_ab) * (1 - PN1);
-            case "threshold" -> {
+//            case "threshold" -> {
+            case "thresholds" -> {
                 if (w_ab >= 1 - threshold) {
                     punish_prob = 0.0;
                 } else if (w_ab <= threshold) {
                     punish_prob = 1.0;
+                } else {
+                    punish_prob = 1 - w_ab;
+                }
+            }
+            case "thresholdUpper" -> {
+                if (w_ab >= 1 - threshold) {
+                    punish_prob = 0;
+                } else {
+                    punish_prob = 1 - w_ab;
+                }
+            }
+            case "thresholdLower" -> {
+                if (w_ab <= threshold) {
+                    punish_prob = 1;
                 } else {
                     punish_prob = 1 - w_ab;
                 }
@@ -2835,11 +2854,6 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setV(String value) {
-//        boolean set = false;
-//        switch (PP) {
-//            case "linear", "smoothstep", "smootherstep", "on0", "noisy", "threshold", "Uv1", "Uv2", "sweetspot", "P", "PD", "leeway" -> set = true;
-//        }
-//        if (set) {
         if (punish) {
             switch (value) {
                 case "random", "1", "0" -> {
@@ -2938,7 +2952,7 @@ public class Env extends Thread{ // environment simulator
     public static void setThreshold(String value){
         boolean set = false;
         switch (PP) {
-            case "threshold" -> set = true;
+            case "thresholds", "thresholdUpper", "thresholdLower" -> set = true;
         }
         if (set) {
             try {
@@ -2948,12 +2962,11 @@ public class Env extends Thread{ // environment simulator
                 System.out.println("invalid threshold: must be a double");
                 exit(1);
             }
-//            if (threshold < 0 || threshold > 1) {
-//                System.out.println("invalid threshold: must be within the interval [0, 1].");
-//                exit(1);
-//            }
-            if (threshold < 0 || threshold >= 0.5) {
+            if (PP.equals("thresholds") && (threshold < 0 || threshold >= 0.5)) {
                 System.out.println("invalid threshold: must be within the interval [0, 5).");
+                exit(1);
+            } else if (threshold < 0 || threshold > 1){
+                System.out.println("invalid threshold: must be within the interval [0, 1].");
                 exit(1);
             }
         }
