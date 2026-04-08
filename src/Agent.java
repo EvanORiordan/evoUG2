@@ -20,7 +20,8 @@ public class Agent {
     private double mean_p_omega;
     private double q; // acceptance threshold value residing within [0,1]
     private double oldQ; // q value held at beginning of gen to be inherited by children
-    private ArrayList<Agent> omega; // neighbourhood
+//    private ArrayList<Agent> omega; // neighbourhood
+    private ArrayList<Agent> omega = new ArrayList<>(); // neighbourhood
     private ArrayList <Double> edgeWeights; // using Double arraylist rather than double array allows us to use ArrayList.add() to add things to the collection without an index.
     private int NSP = 0; // num successful proposals (NSP)
     private int NSR = 0; // num successful receptions (NSR)
@@ -110,6 +111,8 @@ public class Agent {
 
         agent_desc += " u=" + DF4.format(u); // utility
 
+        agent_desc += " k=" + k; // degree
+
         agent_desc += " omega=[";
         for(int i=0;i<omega.size();i++){
             agent_desc += omega.get(i).ID;
@@ -189,6 +192,16 @@ public class Agent {
                 u=0;
             }
         }
+    }
+
+
+    public void addNeighbour(Agent neighbour){
+        omega.add(neighbour);
+        setK(omega.size());
+    }
+    public void removeNeighbourViaIndex(int index){
+        omega.remove(index);
+        setK(omega.size());
     }
 
 

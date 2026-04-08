@@ -320,7 +320,7 @@ public class Env extends Thread{ // environment simulator
                     ArrayList <Agent> omega_b = b.getOmega(); // neighbourhood of b
                     for (int j = 0; j < b.getK(); j++) {
                         Agent c = omega_b.get(j); // neighbour of b
-                        if (a.equals(c)) {
+                        if (a.equals(c)) { // find a in omega_b
                             double w_ba = b.getEdgeWeights().get(j); // weight of edge from b to a
                             double random_double = ThreadLocalRandom.current().nextDouble();
                             if (w_ba > random_double) {
@@ -554,11 +554,11 @@ public class Env extends Thread{ // environment simulator
      * child selects fittest neighbour that is fitter than them.
      * if no such neighbours exist, child is parent by default.
       */
-    public Agent selElitist(Agent child) {
-        ArrayList<Agent> omega = child.getOmega();
-        Agent parent = child;
-        for (int i = 0; i < child.getK(); i++) {
-            Agent neighbour = omega.get(i);
+    public Agent selElitist(Agent a) {
+        ArrayList<Agent> omega_a = a.getOmega();
+        Agent parent = a;
+        for (int i = 0; i < a.getK(); i++) {
+            Agent neighbour = omega_a.get(i);
             if (neighbour.getU() > parent.getU()) { // if candidate fitter than parent, parent is set to candidate
                 parent = neighbour;
             }
@@ -844,40 +844,41 @@ public class Env extends Thread{ // environment simulator
      * d denotes Manhattan distance for von Neumann neighbourhood or Chebyshev distance
      * for Moore neighbourhood.
     */
-    public void adjacentNeigh(Agent agent) {
-        ArrayList<Agent> omega = new ArrayList<>();
-        double y = agent.getY();
-        double x = agent.getX();
+    public void adjacentNeigh(Agent a) {
+//        ArrayList<Agent> omega_a = new ArrayList<>();
+        double y = a.getY();
+        double x = a.getX();
         for (int i=1;i<=neighRadius;i++) {
             double x_plus = adjustPosition(x, i, width);
             double x_minus = adjustPosition(x, -i, width);
             double y_plus = adjustPosition(y, i, length);
             double y_minus = adjustPosition(y, -i, length);
-            omega.add(findAgentByPos(y, x_plus));
-            omega.add(findAgentByPos(y, x_minus));
-            omega.add(findAgentByPos(y_plus, x));
-            omega.add(findAgentByPos(y_minus, x));
+//            omega_a.add(findAgentByPos(y, x_plus));
+            a.addNeighbour(findAgentByPos(y, x_plus));
+            a.addNeighbour(findAgentByPos(y, x_minus));
+            a.addNeighbour(findAgentByPos(y_plus, x));
+            a.addNeighbour(findAgentByPos(y_minus, x));
             if (neighType.equals("dia")) {
                 if (i > 1) {
                     double x_plus_minus = adjustPosition(x_plus, -1.0, width);
                     double x_minus_plus = adjustPosition(x_minus, 1.0, width);
                     double y_plus_minus = adjustPosition(y_plus, -1.0, length);
                     double y_minus_plus = adjustPosition(y_minus, 1.0, length);
-                    omega.add(findAgentByPos(y_plus_minus, x_plus_minus));
-                    omega.add(findAgentByPos(y_minus_plus, x_plus_minus));
-                    omega.add(findAgentByPos(y_minus_plus, x_minus_plus));
-                    omega.add(findAgentByPos(y_plus_minus, x_minus_plus));
+                    a.addNeighbour(findAgentByPos(y_plus_minus, x_plus_minus));
+                    a.addNeighbour(findAgentByPos(y_minus_plus, x_plus_minus));
+                    a.addNeighbour(findAgentByPos(y_minus_plus, x_minus_plus));
+                    a.addNeighbour(findAgentByPos(y_plus_minus, x_minus_plus));
                 }
             }
             if (neighType.equals("Moore")) {
-                omega.add(findAgentByPos(y_plus, x_plus));
-                omega.add(findAgentByPos(y_minus, x_plus));
-                omega.add(findAgentByPos(y_minus, x_minus));
-                omega.add(findAgentByPos(y_plus, x_minus));
+                a.addNeighbour(findAgentByPos(y_plus, x_plus));
+                a.addNeighbour(findAgentByPos(y_minus, x_plus));
+                a.addNeighbour(findAgentByPos(y_minus, x_minus));
+                a.addNeighbour(findAgentByPos(y_plus, x_minus));
             }
         }
-        agent.setOmega(omega);
-        agent.setK(agent.getOmega().size());
+//        a.setOmega(omega_a);
+//        a.setK(a.getOmega().size());
     }
 
 
@@ -886,33 +887,33 @@ public class Env extends Thread{ // environment simulator
      * Randomly assigns either uni-directional or bi-directional edges to agent.<br>
      * Assumes 2D square lattice grid population structure.
      */
-    public void randomNeigh(Agent agent, int size) {
-        ArrayList<Agent> omega = agent.getOmega();
+    public void randomNeigh(Agent a, int size) {
+        ArrayList<Agent> omega_a = a.getOmega();
         Set<Integer> IDs = new HashSet<>();
         while(IDs.size() < size) {
             int ID = ThreadLocalRandom.current().nextInt(N);
             IDs.add(ID);
         }
         for (int ID: IDs) {
-            omega.add(findAgentByID(ID));
+            a.addNeighbour(findAgentByID(ID));
         }
-        agent.setK(agent.getOmega().size());
+//        a.setK(a.getOmega().size());
     }
 
 
 
     // assign all other agents to neighbourhood
-    public void allPopNeigh(Agent agent) {
-        ArrayList <Agent> omega = agent.getOmega();
-        int ID = agent.getID();
+    public void allPopNeigh(Agent a) {
+        ArrayList <Agent> omega_a = a.getOmega();
+        int ID = a.getID();
         for (int i=0;i<N;i++) {
             Agent agent2 = pop[i];
             int ID2 = agent2.getID();
             if (ID != ID2) {
-                omega.add(agent2);
+                a.addNeighbour(agent2);
             }
         }
-        agent.setK(agent.getOmega().size());
+//        a.setK(a.getOmega().size());
     }
 
 
@@ -969,9 +970,9 @@ public class Env extends Thread{ // environment simulator
 
     public void prepare() {
         for (int i=0;i<N;i++) {
-            Agent agent = pop[i];
-            agent.setU(0);
-            agent.setOldP(agent.getP());
+            Agent a = pop[i];
+            a.setU(0);
+            a.setOldP(a.getP());
             max_p = 0.0;
         }
     }
@@ -985,8 +986,8 @@ public class Env extends Thread{ // environment simulator
             String s = "";
             for (int y=length-1;y>=0;y--) {
                 for (int x=0;x<width;x++) {
-                    Agent agent = findAgentByPos(y,x);
-                    int ID = agent.getID();
+                    Agent a = findAgentByPos(y,x);
+                    int ID = a.getID();
                     s += ID;
                     if (x + 1 < width)
                         s += ",";
@@ -1078,77 +1079,76 @@ public class Env extends Thread{ // environment simulator
      * New neighbour cannot be rewirer or already a neighbour.<br>
      */
     public void RTLocal(Agent a, int num_rewires) {
-        ArrayList<Agent> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
-        ArrayList<Agent> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
-        for (Agent b: omega_a) { // b denotes neighbour of rewirer
-            ArrayList<Agent> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
-            for (Agent c: omega_b) { // c denotes neighbour of the neighbour of rewirer.
-                if (!c.equals(a)) { // do not add c to pool if c = a
-                    boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
-                    for (Agent d : pool) { // d denotes candidate in pool
-                        if (c.equals(d)) { // if c = d, c must already be in the pool, therefore do not add c to the pool.
-                            add_to_pool = false;
-                            break;
-                        }
-                    }
-                    if (!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
-                    for (Agent e : omega_a) { // e denotes neighbour of rewirer.
-                        if (c.equals(e)) { // if c = e, c must already be in omega_a, so you do not want to add c to pool.
-                            add_to_pool = false;
-                            break;
-                        }
-                    }
-                    if (add_to_pool) pool.add(c); // if deemed valid, add c to pool.
-                }
-            }
-        }
-        if (pool.isEmpty()) {
-            RTPop(a, num_rewires); // if pool empty, default to rewiring to a random agent in the pop.
-        } else{ // connect to local agent.
-            for (int rewires_done = 0; rewires_done < num_rewires; rewires_done++) {
-                Agent f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
-                omega_a.add(f); // connect a to f.
-                a.getEdgeWeights().add(1.0);
-                f.getOmega().add(a); // connect f to a.
-                f.getEdgeWeights().add(1.0);
-            }
-        }
+//        ArrayList<Agent> pool = new ArrayList<>(); // pool of candidates the rewirer might rewire to
+//        ArrayList<Agent> omega_a = a.getOmega(); // omega_a denotes neighbourhood of rewirer.
+//        for (Agent b: omega_a) { // b denotes neighbour of rewirer
+//            ArrayList<Agent> omega_b = b.getOmega(); // omega_b denotes neighbourhood of neighbour of rewirer.
+//            for (Agent c: omega_b) { // c denotes neighbour of the neighbour of rewirer.
+//                if (!c.equals(a)) { // do not add c to pool if c = a
+//                    boolean add_to_pool = true; // boolean tracking whether c should be added to pool or not.
+//                    for (Agent d : pool) { // d denotes candidate in pool
+//                        if (c.equals(d)) { // if c = d, c must already be in the pool, therefore do not add c to the pool.
+//                            add_to_pool = false;
+//                            break;
+//                        }
+//                    }
+//                    if (!add_to_pool) continue; // move on to next c if this c has already been ruled out of contention.
+//                    for (Agent e : omega_a) { // e denotes neighbour of rewirer.
+//                        if (c.equals(e)) { // if c = e, c must already be in omega_a, so you do not want to add c to pool.
+//                            add_to_pool = false;
+//                            break;
+//                        }
+//                    }
+//                    if (add_to_pool) pool.add(c); // if deemed valid, add c to pool.
+//                }
+//            }
+//        }
+//        if (pool.isEmpty()) {
+//            RTPop(a, num_rewires); // if pool empty, default to rewiring to a random agent in the pop.
+//        } else{ // connect to local agent.
+//            for (int rewires_done = 0; rewires_done < num_rewires; rewires_done++) {
+//                Agent f = pool.get(ThreadLocalRandom.current().nextInt(pool.size())); // f denotes new neighbour of a.
+//                omega_a.add(f); // connect a to f.
+//                a.getEdgeWeights().add(1.0);
+//                f.getOmega().add(a); // connect f to a.
+//                f.getEdgeWeights().add(1.0);
+//            }
+//        }
+
+        System.out.println("Out of commission for now...");
     }
 
 
 
-    /**
-     * Find new neighbour by randomly choosing a agent from the population.<br>
-     * New neighbour cannot be rewirer or already a neighbour.<br>
-     * @param a rewirer
-     * @param b number of rewires to do
-     */
-    public void RTPop(Agent a, int b) {
-        for (int c=0;c<b;c++) { // c denotes number of rewires done so far.
-            ArrayList<Agent> omega_a = a.getOmega(); // denotes neighbourhood of a.
-            Agent d = null; // d denotes new neighbour.
-            boolean found_new_neighbour = false;
-            while(!found_new_neighbour) { // keep searching until you find a valid new neighbour
-                d = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // randomly choose agent from pop.
-                if (!d.equals(a)) { // do not connect a to d if d = a.
-//                    boolean f = true; // f indicates whether there does not exist g in omega_a such that g = d.
-                    boolean already_neighbours = false; // indicates whether a and d are already neighbours
-                    for (Agent g: omega_a) { // g denotes neighbour of a.
-                        if (d.equals(g)) {
-//                            f = false;
-                            already_neighbours = true;
-                            break;
-                        }
+
+    public void RTPop(Agent rewirer, int num_rewires_to_do) {
+        // find new neighbour.
+        for (int num_rewires_done = 0; num_rewires_done < num_rewires_to_do; num_rewires_done++) {
+            ArrayList<Agent> omega_a = rewirer.getOmega();
+            Agent new_neighbour = null;
+            boolean same_agent = true;
+            boolean already_neighbours = true;
+            while(same_agent || already_neighbours) { // new neighbour cannot be rewirer or already neighbours with rewirer.
+                new_neighbour = pop[ThreadLocalRandom.current().nextInt(pop.length)]; // find new neighbour by randomly choosing agents from the population.
+                same_agent = new_neighbour.equals(rewirer);
+                for (Agent existing_neighbour: omega_a) {
+                    already_neighbours = new_neighbour.equals(existing_neighbour);
+                    if (already_neighbours) {
+                        break;
                     }
-//                    found_new_neighbour = f;
-                    found_new_neighbour = !already_neighbours;
                 }
             }
-            omega_a.add(d); // connect a to d.
-            a.getEdgeWeights().add(1.0);
-            d.getOmega().add(a); // connect d to a.
-            d.getEdgeWeights().add(1.0);
+
+//            System.out.println("hello");
+
+            // connect rewirer to new neighbour.
+            rewirer.addNeighbour(new_neighbour);
+            rewirer.getEdgeWeights().add(1.0);
+            new_neighbour.getOmega().add(rewirer);
+            new_neighbour.getEdgeWeights().add(1.0);
+
         }
+//        rewirer.setK(rewirer.getOmega().size());
     }
 
 
@@ -1395,6 +1395,7 @@ public class Env extends Thread{ // environment simulator
         switch (UF) {
             case "cumulative" -> agent.setU(agent.getU() + payoff);
             case "normalised" -> agent.setU(agent.getU() + (payoff / agent.getK()));
+            case "divideBy8" -> agent.setU(agent.getU() + (payoff / 8));
         }
     }
 
@@ -1405,7 +1406,12 @@ public class Env extends Thread{ // environment simulator
         int k = child.getK();
         if (k > 0) {
             int random_int = ThreadLocalRandom.current().nextInt(k);
-            parent = child.getOmega().get(random_int);
+//            parent = child.getOmega().get(random_int);
+            try{
+                parent = child.getOmega().get(random_int);
+            }catch(IndexOutOfBoundsException e){
+                System.out.println("BP");
+            }
         }
         return parent;
     }
@@ -1420,78 +1426,70 @@ public class Env extends Thread{ // environment simulator
 
 
 
-    /**
-     * Agent may rewire their edges.<br>
-     * Rewiring is guaranteed to occur once the edge is referenced in the
-     * indices_of_edges_to_be_rewired ArrayList.<br>
-     * @param a agent who may rewire
-      */
     public void rewire(Agent a) {
-        double random_double = ThreadLocalRandom.current().nextDouble();
-        if (RP > random_double) {
-            int num_rewires = 0;
-            ArrayList<Agent> omega_a = a.getOmega();
-            ArrayList<Double> weights = a.getEdgeWeights();
-            ArrayList<Integer> indices_of_edges_to_be_rewired = new ArrayList<>();
-            for (int i = 0; i < a.getK(); i++) {
-//                double w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
+        int num_rewires = 0;
+        ArrayList<Agent> omega_a = a.getOmega();
+        ArrayList<Double> weights = a.getEdgeWeights();
 
-                // TODO: testing why the above commented out line doesnt sometimes work...
-                double w_ab=0;
-                try {
-                    w_ab = weights.get(i); // w_ab denotes weighted edge from a to neighbour b
-                } catch (IndexOutOfBoundsException e) {
-                    System.out.println("BP");
-                }
+        // sever edges.
+        for (int i = 0; i < a.getK(); i++) {
+//            Agent b = omega_a.get(i); // neighbour of a
 
-                double prob_rewire = 0;
-                switch (RA) { // I decided to bunch the rewire away functions into one switch because they are very similar functionally.
-                    case "smoothstep" -> prob_rewire = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
-                    case "smootherstep" -> prob_rewire = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
-                    case "on0" -> prob_rewire = w_ab == 0.0? 1.0: 0.0;
-                    case "linear" -> prob_rewire = 1 - w_ab;
-                    case "exponential" -> {
-                        double k = 0.1; // manually set noise
-                        prob_rewire = Math.exp(-k * w_ab);
-                    }
-                    case "FD" -> {
-                        Agent b = omega_a.get(i);
-                        double k = 0.1; // manually set noise
-                        prob_rewire = 1 / (1 + Math.exp((a.getU() - b.getU()) / k));
-                    }
-                    case "linearR" -> prob_rewire = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
-                }
-                double c = ThreadLocalRandom.current().nextDouble();
-                if (prob_rewire > c) {
-                    indices_of_edges_to_be_rewired.add(i);
-                }
+            Agent b = null;
+            try{
+                b = omega_a.get(i); // neighbour of a
+            }catch(IndexOutOfBoundsException e){
+                System.out.println("BP");
             }
-            for (int i = indices_of_edges_to_be_rewired.size() - 1; i >= 0; i--) {
-                int d = indices_of_edges_to_be_rewired.get(i);
-                Agent e = omega_a.get(d);
-                ArrayList<Agent> omega_e = e.getOmega();
-                for (int j = 0; j < e.getK(); j++) {
-                    Agent f = omega_e.get(j);
-                    if (f.equals(a)) {
-                        omega_a.remove(d);
-                        weights.remove(d);
-                        omega_e.remove(j);
-                        e.getEdgeWeights().remove(j);
+
+            double w_ab = weights.get(i); // weight of edge from a to b
+            double rewire_prob = 0; // probability of a disconnecting from b
+            double rewire_noise = 0.1; // manually set noise...
+            switch (RA) {
+                case "linear" -> rewire_prob = 1 - w_ab;
+                case "smoothstep" -> rewire_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
+                case "smootherstep" -> rewire_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
+                case "on0" -> rewire_prob = w_ab == 0.0? 1.0: 0.0;
+                case "exponential" -> rewire_prob = Math.exp(-rewire_noise * w_ab);
+                case "FD" -> rewire_prob = 1 / (1 + Math.exp((a.getU() - b.getU()) / rewire_noise));
+                case "linearR" -> rewire_prob = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
+            }
+            if (rewire_prob > ThreadLocalRandom.current().nextDouble()) {
+                ArrayList<Agent> omega_b = b.getOmega();
+                for (int j = 0; j < b.getK(); j++) {
+                    Agent neighbour = omega_b.get(j); // neighbour of b
+                    if (neighbour.equals(a)) {
+//                        omega_a.remove(i);
+                        a.removeNeighbourViaIndex(i);
+                        weights.remove(i);
+//                        omega_b.remove(j);
+                        b.removeNeighbourViaIndex(j);
+                        b.getEdgeWeights().remove(j);
                         num_rewires++;
+
+                        // this ensures that the loop function properly despite the size of the neighbourhood decreasing.
+                        i--;
+//                        a.setK(a.getOmega().size());
+
                         break;
                     }
                 }
             }
+        }
 
-
-            if (num_rewires > 0) {
-                switch (RT) {
-                    case "local"->RTLocal(a, num_rewires);
-                    case "pop"->RTPop(a, num_rewires);
-                }
+        // form new edges.
+        for (int i = 0; i < num_rewires; i++) {
+            switch (RT) {
+                case "pop" -> RTPop(a, num_rewires);
+                case "local" -> RTLocal(a, num_rewires);
             }
         }
-        a.setK(a.getOmega().size());
+
+//        a.setK(a.getOmega().size());
+
+//        if (a.getK() != a.getOmega().size()) {
+//            System.out.println("wtf...");
+//        }
     }
 
 
@@ -1505,10 +1503,10 @@ public class Env extends Thread{ // environment simulator
      * Inspired by cardinot2016optional.<br>
      */
     public void evoUDN(Agent child, Agent parent) {
-        double random_number = ThreadLocalRandom.current().nextDouble();
         double prob_evolve = (parent.getU() - child.getU()) / child.getK();
-        if (random_number < prob_evolve)
+        if (prob_evolve > ThreadLocalRandom.current().nextDouble()) {
             evoCopy(child, parent);
+        }
     }
 
 
@@ -2026,7 +2024,7 @@ public class Env extends Thread{ // environment simulator
             case "PROC", "UROC" -> { // value must be valid if EWL is PROC or UROC.
                 try {
                     ROC = Double.parseDouble(value);
-                    System.out.println("ROC="+ROC);
+                    System.out.println("ROC = "+ROC);
                 } catch (NumberFormatException e) {
                     System.out.println("invalid ROC: must be a double");
                     exit(1);
@@ -2187,7 +2185,7 @@ public class Env extends Thread{ // environment simulator
                 switch (value) {
                     case "expo", "normal" -> {
                         RWT = value;
-                        System.out.println("RWT="+RWT);
+                        System.out.println("RWT = "+RWT);
                     }
                     default -> {
                         System.out.println("invalid RWT");
@@ -2224,7 +2222,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setUF(String value) {
         switch (value) {
-            case "cumulative", "normalised" -> {
+            case "cumulative", "normalised", "divideBy8" -> {
                 UF = value;
                 System.out.println("UF = "+UF);
             }
@@ -2324,9 +2322,9 @@ public class Env extends Thread{ // environment simulator
 
     public void getNeighbours(Agent agent) {
         switch (neighType) {
-            case "VN","Moore","dia"->adjacentNeigh(agent);
-            case "random"->randomNeigh(agent, neighSize);
-            case "all"->allPopNeigh(agent);
+            case "VN", "Moore", "dia" -> adjacentNeigh(agent);
+            case "random" -> randomNeigh(agent, neighSize);
+            case "all" -> allPopNeigh(agent);
         }
     }
 
@@ -2489,7 +2487,7 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writePRunStats = true;
-                System.out.println("writePRunStats="+writePRunStats);
+                System.out.println("writePRunStats = "+writePRunStats);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p run stats.");
@@ -2500,7 +2498,7 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeURunStats = true;
-                System.out.println("writeURunStats="+writeURunStats);
+                System.out.println("writeURunStats = "+writeURunStats);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u run stats.");
@@ -2522,7 +2520,7 @@ public class Env extends Thread{ // environment simulator
         if (writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats) {
             try {
                 writeRate = Integer.parseInt(value);
-                System.out.println("writeRate="+writeRate);
+                System.out.println("writeRate = "+writeRate);
             } catch (NumberFormatException e) {
                 System.out.println("invalid writeRate");
                 exit(1);
@@ -2551,7 +2549,7 @@ public class Env extends Thread{ // environment simulator
             case "rewire" -> {
                 try {
                     RP = Double.parseDouble(value);
-                    System.out.println("RP="+RP);
+                    System.out.println("RP = "+RP);
                 } catch (NumberFormatException e) {
                     System.out.println("invalid RP: must be a double");
                     exit(1);
