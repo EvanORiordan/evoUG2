@@ -239,6 +239,7 @@ public class Env extends Thread{ // environment simulator
                     case "leeway" -> setLeeway(variations[exp - 1]);
                     case "threshold" -> setThreshold(variations[exp - 1]);
                     case "RN1" -> setRN1(variations[exp - 1]);
+                    case "RN2" -> setRN2(variations[exp - 1]);
                 }
             }
         }
@@ -1176,9 +1177,13 @@ public class Env extends Thread{ // environment simulator
                 settings += ",gens";
                 settings += rounds != 0? ",rounds": "";
                 settings += EWT.isEmpty()? "": ",EWT";
-                settings += RP == 0.0? "": ",RP";
-                settings += RA.isEmpty() ? "": ",RA";
-                settings += RT.isEmpty() ? "": ",RT";
+
+                settings += EWT.equals("rewire")? ",RP": "";
+                settings += EWT.equals("rewire")? ",RA": "";
+                settings += EWT.equals("rewire")? ",RT": "";
+                settings += EWT.equals("rewire")? ",RN1": "";
+                settings += EWT.equals("rewire") && (RA.equals("FD") || RA.equals("expo"))? ",RN2": "";
+
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
                 settings += EF != 0.0? ",EF": "";
@@ -1220,9 +1225,13 @@ public class Env extends Thread{ // environment simulator
             settings += "," + gens;
             settings += rounds != 0? "," + rounds: "";
             settings += EWT.isEmpty()? "": "," + EWT;
-            settings += RP == 0.0? "": "," + RP;
-            settings += RA.isEmpty() ? "": "," + RA;
-            settings += RT.isEmpty() ? "": "," + RT;
+
+            settings += EWT.equals("rewire")? "," + RP: "";
+            settings += EWT.equals("rewire")? "," + RA: "";
+            settings += EWT.equals("rewire")? "," + RT: "";
+            settings += EWT.equals("rewire")? "," + RN1: "";
+            settings += EWT.equals("rewire") && (RA.equals("FD") || RA.equals("expo"))? "," + RN2: "";
+
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
             settings += EF != 0.0? "," + EF: "";
@@ -1450,7 +1459,7 @@ public class Env extends Thread{ // environment simulator
                     case "smoothstep" -> rewire_prob = 1 - (3 * Math.pow(w_ab, 2) - 2 * Math.pow(w_ab, 3));
                     case "smootherstep" -> rewire_prob = 1 - (6 * Math.pow(w_ab, 5) - 15 * Math.pow(w_ab, 4) + 10 * Math.pow(w_ab, 3));
                     case "on0" -> rewire_prob = w_ab == 0.0? 1.0: 0.0;
-                    case "exponential" -> rewire_prob = Math.exp(-RN2 * w_ab);
+                    case "expo" -> rewire_prob = Math.exp(-RN2 * w_ab);
                     case "FD" -> rewire_prob = 1 / (1 + Math.exp((a.getU() - b.getU()) / RN2));
                     case "linearR" -> rewire_prob = w_ab < 1.0? ThreadLocalRandom.current().nextDouble(1 - w_ab): 0.0;
                 }
@@ -2279,6 +2288,8 @@ public class Env extends Thread{ // environment simulator
                 case "EF" -> output += "\n" + EF;
                 case "leeway" -> output += "\n" + leeway;
                 case "threshold" -> output += "\n" + threshold;
+                case "RN1" -> output += "\n" + RN1;
+                case "RN2" -> output += "\n" + RN2;
             }
 
             // create the file and write the data.
@@ -2464,7 +2475,7 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writePGenStats = true;
-                System.out.println("writePGenStats="+writePGenStats);
+                System.out.println("writePGenStats = "+writePGenStats);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p gen stats.");
@@ -2573,17 +2584,13 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setRA(String value) {
-        switch (EWT) { // value must be valid if EWT = rewire.
+        switch (EWT) {
             case "rewire" -> {
                 switch (value) {
-
-                    // case where value is valid.
-                    case "smoothstep", "smootherstep", "linear", "on0" -> {
+                    case "smoothstep", "smootherstep", "linear", "on0", "FD", "expo", "linearR" -> {
                         RA = value;
                         System.out.println("RA = "+RA);
                     }
-
-                    // case where value is invalid.
                     default -> {
                         System.out.println("invalid RA");
                         exit(1);
@@ -3001,12 +3008,16 @@ public class Env extends Thread{ // environment simulator
     public static void setRN2(String value) {
         switch (EWT) {
             case "rewire" -> {
-                try {
-                    RN2 = Double.parseDouble(value);
-                    System.out.println("RN2 = "+RN2);
-                } catch (NumberFormatException e) {
-                    System.out.println("invalid RN2: must be a double");
-                    exit(1);
+                switch (RA) {
+                    case "FD", "expo" -> {
+                        try {
+                            RN2 = Double.parseDouble(value);
+                            System.out.println("RN2 = "+RN2);
+                        } catch (NumberFormatException e) {
+                            System.out.println("invalid RN2: must be a double");
+                            exit(1);
+                        }
+                    }
                 }
             }
         }
