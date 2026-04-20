@@ -125,3 +125,10 @@ runs,M,length,neighType,genType,ER,gens,EWT,RP,RA,RT,RN1,RN2,PP,PS,EF,cost,fine,
 1,1,40,VN,ER,10,10,rewire,.1,linear,pop,0,0,,,,,,,,,,,,PD,,copy,RW,normal,,local,.01,.1,cumulative,,,,1,,,1,,
 1,1,40,VN,ER,10,12000,rewire,.1,linear,pop,0,0,,,,,,,,,,,,PD,,copy,RW,normal,,local,.01,.1,cumulative,,,,1,,,1,,
 1,1,40,VN,ER,10,12000,rewire,.1,linear,pop,0,0,,,,,,,,,,,,PD,,copy,RW,expo,.1,local,.01,.1,cumulative,,,,1,,,1,,
+2,1,4,VN,ER,1,5,punish,,,,,,linear,EF,3,.1,,1,,0,1,,,test1,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.2;.3;.4;.5;.6;.7;.8;.9;1
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.1,,1,,0,1,,,test1,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.2;.3;.4;.5;.6;.7;.8;.9;1
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.025,,1,,0,1,,,test1,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.05;.075;.1;.125;.15;.175;.2;.225;.25;.275;.3;.325;.35;.375;.4
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.05,,1,,0,1,,,test2,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.1;.15;.2;.25;.3;.35;.4;.45;.5;.55;.6;.65;.7;.75;.8;.85;.9;.95;1
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.3,,1,,0,1,,,test1,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.3025;.305;.3075;.31;.3125;.315;.3175;.32;.3225;.325;.3275;.33;.3325;.335;.3375;.34;.3425;.345;.3475;.35
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.1,,1,,0,1,,,test3,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.2;.3;.4;.5;.6;.7;.8;.9;1
+10,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.1,,1,,0,1,,,test4,,FD,randomNeigh,,.1,global,.01,,cumulative,,,,1,,,10000,cost,.2;.3;.4;.5;.6;.7;.8;.9;1

@@ -396,23 +396,24 @@ public class Env extends Thread{ // environment simulator
 
     public double calculateLearning(Agent a, Agent b) {
         double learning = 0.0;
+        double p_a = a.getP();
+        double p_b = b.getP();
+        double u_a = a.getU();
+        double u_b = b.getU();
+
         switch (EWL) {
             case "PROC" -> {
-                double pa = a.getP();
-                double pb = b.getP();
-                if (pa < pb) {// if a unfairer than b, increase weight
+                if (p_a < p_b) {// if b fairer than a, increase weight
                     learning = ROC;
-                } else if (pa > pb) { // else if a fairer than b, decrease weight
+                } else if (p_a > p_b) { // else if a fairer than b, decrease weight
                     learning = -ROC;
                 } // else no change
             }
-            case "PD" -> learning = b.getP() - a.getP();
-            case "PED" -> learning = Math.exp(b.getP() - a.getP());
-            case "UD" -> learning = b.getU() - a.getU();
-            case "UED" -> learning = Math.exp(b.getU() - a.getU());
+            case "PD" -> learning = p_b - p_a;
+            case "PED" -> learning = Math.exp(p_b - p_a);
+            case "UD" -> learning = u_b - u_a;
+            case "UED" -> learning = Math.exp(u_b - u_a);
             case "PDRv1" -> { // PDR: proposal value difference random.
-                double p_a = a.getP();
-                double p_b = b.getP();
                 double diff = p_b - p_a;
                 if (p_a < p_b) {
                     learning = ThreadLocalRandom.current().nextDouble(diff);
@@ -421,8 +422,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PDRv2" -> { // alternate implementation of PDR. i think v2 functions identically to v1.
-                double p_a = a.getP();
-                double p_b = b.getP();
                 if (p_a < p_b) {
                     learning = ThreadLocalRandom.current().nextDouble(p_b - p_a);
                 } else if (p_a > p_b) {
@@ -430,8 +429,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PEDv2" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
                 if (p_a < p_b) { // if a unfairer than b, raise weight
                     learning = Math.pow((p_b - p_a), Math.exp(1));
                 } else { // if a fairer than b, reduce weight
@@ -439,8 +436,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PEDv4" -> {
-                double p_a = a.getP();
-                double p_b = b.getP();
                 double exp = Math.exp(Math.abs(p_b - p_a));
                 if (p_a < p_b) {
                     learning = exp;
@@ -451,63 +446,89 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "PStepwise" -> {
-                double pa = a.getP();
-                double pb = b.getP();
-                if (pa<pb) {
+                if (p_a < p_b) {
                     learning = 1.0;
-                } else if (pa>pb) {
+                } else if (p_a > p_b) {
                     learning = -1.0;
                 }
             }
             case "UROC" ->{
-                double ua = a.getU();
-                double ub = b.getU();
-                if (ua>ub) {
+                if (u_a > u_b) {
                     learning = ROC;
-                } else if (ua<ub) {
+                } else if (u_a < u_b) {
                     learning = -ROC;
                 }
             }
-            case "PEAD" -> learning = Math.exp(Math.abs(b.getP() - a.getP()));
+            case "PEAD" -> learning = Math.exp(Math.abs(p_b - p_a));
             case "PPEAD" -> {
-                double pa=a.getP();
-                double pb=b.getP();
-                if (pa<pb) {
-                    learning = Math.exp(Math.abs(b.getP() - a.getP()));
-                } else if (pa>pb) {
-                    learning = -Math.exp(Math.abs(b.getP() - a.getP()));
+                if (p_a < p_b) {
+                    learning = Math.exp(Math.abs(p_b - p_a));
+                } else if (p_a > p_b) {
+                    learning = -Math.exp(Math.abs(p_b - p_a));
                 }
             }
             case "PPED"->{
-                double pa=a.getP();
-                double pb=b.getP();
-                if (pa<pb) {
-                    learning = Math.exp(b.getP() - a.getP());
-                } else if (pa>pb) {
-                    learning = -Math.exp(b.getP() - a.getP());
+                if (p_a < p_b) {
+                    learning = Math.exp(p_b - p_a);
+                } else if (p_a > p_b) {
+                    learning = -Math.exp(p_b - p_a);
                 }
             }
             case "UUEAD" ->{
-                double ua=a.getU();
-                double ub=b.getU();
-                if (ua>ub) {
+                if (u_a > u_b) {
                     learning = Math.exp(Math.abs(b.getU() - a.getU()));
-                } else if (ua<ub) {
+                } else if (u_a < u_b) {
                     learning = -Math.exp(Math.abs(b.getU() - a.getU()));
                 }
             }
             case "UStepwise" ->{
-                double ua=a.getU();
-                double ub=b.getU();
-                if (ua>ub) {
+                if (u_a > u_b) {
                     learning = 1.0;
-                } else if (ua<ub) {
+                } else if (u_a < u_b) {
                     learning = -1.0;
                 }
             }
-            case "PDhalf" -> learning = (b.getP() - a.getP()) / 2;
-            case "PDdouble" -> learning = (b.getP() - a.getP()) * 2;
-            case "PDtriple" -> learning = (b.getP() - a.getP()) * 3;
+            case "PDhalf" -> learning = (p_b - p_a) / 2;
+            case "PDdouble" -> learning = (p_b - p_a) * 2;
+            case "PDtriple" -> learning = (p_b - p_a) * 3;
+            case "test1" -> {
+                if (p_a > 0.5 && p_b > 0.5) {
+                    learning = 1;
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+            case "test2" -> {
+                if (p_b > 0.5) {
+                    learning = 1;
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+            case "test3" -> {
+                if (p_a > 0.5) {
+                    learning = 1;
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+
+            // EWL as a function of the p diff and the distance of p from 0.5.
+            // want to have less of high p guys punishing other high p guys.
+            // if p_b > 0.5, then if you are reducing w, it shouldnt be by much.
+            // in this case, the reduction is halved.
+            case "test4" -> {
+                learning = p_b - p_a;
+                if (p_a > p_b && p_b > 0.5) { // if p_a > p_b and p_b > 0.5, then logically, p_a > 0.5. the condition is essentially "if p_a > p_b > 0.5".
+                    learning *= 0.5; // if p_a > p_b > 0.5, the reduction of the weight is halved.
+                }
+            }
+
+            // TODO: theres gotta be a cool way of using the dist of p_b to affect learning when
+            //  p_a > p_b > 0.5. id like it so that in this case, the closer p_b is to 0.5, the
+            //  weaker the reduction to the weight will be. do something with p_b - 0.5: the greater
+            //  it is, the weaker the reduction should be.
+
         }
         return learning;
     }
@@ -2167,7 +2188,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple" -> {
+                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4" -> {
                     EWL = value;
                     System.out.println("EWL = "+EWL);
                 }
@@ -2463,6 +2484,12 @@ public class Env extends Thread{ // environment simulator
 
     public static void setVariations(String value) {
         if (!value.isEmpty()) {
+
+            // automatically generate variations using start, end, step.
+            // INCOMPLETE... (NOTE TO SELF: SEE STRINGSPLIT TEST FILE FOR WIP)
+//            if (value.startsWith("!")) {}
+
+
             variations = value.split(";");
             for (int i=0;i<variations.length;i++) {
                 System.out.println("variation"+(i+1)+"="+variations[i]);
