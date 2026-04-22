@@ -547,12 +547,6 @@ public class Env extends Thread{ // environment simulator
                 }
             }
 
-            /*
-            * TODO: MAKE CASE WHERE HIGH P GUY MAY INCREASE WEIGHT WITH SLIGHTLY
-            *  LOWER HIGH P GUY. MAYBE USE THE DIST OF P_B FROM 0.5 TO INCREASE IT (IN TEST4,
-            *  WE USE THE DIST TO MAKE LEARNING HIGHER BUT NEVER POSITIVE). PERHAPS THERE IS
-            *  STOCHASTICITY SO THAT W SOMETIMES INCREASES.
-            * */
             case "test6" -> {
                 if (p_a > p_b && p_b > 0.5) {
                     /*
@@ -562,6 +556,34 @@ public class Env extends Thread{ // environment simulator
                      */
                     learning = p_b - (p_a / 2);
 
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+
+            // same as test6 except denominator = 3, not 2.
+            case "test7" -> {
+                if (p_a > p_b && p_b > 0.5) {
+                    learning = p_b - (p_a / 3);
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+
+            // same as test6 except denominator = 4, not 2.
+            case "test8" -> {
+                if (p_a > p_b && p_b > 0.5) {
+                    learning = p_b - (p_a / 4);
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+
+            // same as test1 except first half of first clause is p_a > p_b rather than p_a > 0.5.
+            // same as test6 except first consequence is learning = 1 rather than learning = p_b - (p_a / 2).
+            case "test9" -> {
+                if (p_a > p_b && p_b > 0.5) {
+                    learning = 1;
                 } else {
                     learning = p_b - p_a;
                 }
@@ -2226,7 +2248,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6" -> {
+                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" -> {
                     EWL = value;
                     System.out.println("EWL = "+EWL);
                 }
