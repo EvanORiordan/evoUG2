@@ -589,6 +589,15 @@ public class Env extends Thread{ // environment simulator
                 }
             }
 
+            // if a is fairer than b but b gives more than half, do not modify weight.
+            case "test10" -> {
+                if (p_a > p_b && p_b > 0.5) {
+                    learning = 0;
+                } else {
+                    learning = p_b - p_a;
+                }
+            }
+
         }
         return learning;
     }
@@ -2248,7 +2257,7 @@ public class Env extends Thread{ // environment simulator
         }
         if (set) {
             switch (value) {
-                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" -> {
+                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
                     EWL = value;
                     System.out.println("EWL = "+EWL);
                 }
