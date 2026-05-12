@@ -35,14 +35,15 @@ public class Env extends Thread{ // environment simulator
     double sigma_u; // standard deviation of utility
     double sigma_k; // standard deviation of k
     double max_p; // highest p in population at a time
-    double variance_p; // the variance of p from the mean p of a population
+    double variance_p; // the variance of p from the mean p of the population
 //    int pBin1; // p in [0, 0.2]
 //    int pBin2; // p in (0.2, 0.4]
 //    int pBin3; // p in (0.4, 0.6]
 //    int pBin4; // p in (0.6, 0.8]
 //    int pBin5; // p in (0.8, 1]
     int[] pBins;
-    double skewness_p; // skewness of p in a population
+    double skewness_p; // skewness of p in the population
+    double mode_p; // mode of p in the population
     int gen; // current generation
     static int gens; // number of generations of evolution to occur per experiment run
     static int rounds; // number of rounds of play and EWL
@@ -1038,7 +1039,7 @@ public class Env extends Thread{ // environment simulator
         sigma_p = Math.pow(sigma_p / N, 0.5);
     }
 
-    public void calculateVarianceP(){
+    public void calculateVarianceP() {
         variance_p = 0;
         for (int i = 0; i < N; i++) {
             variance_p += Math.pow(pop[i].getP() - mean_p, 2);
@@ -1046,7 +1047,7 @@ public class Env extends Thread{ // environment simulator
         variance_p /= N;
     }
 
-    public void calculatePBins(){
+    public void calculatePBins() {
         pBins = new int[] {
                 0, // pBin1: p in [0, 0.2]
                 0, // pBin2: p in (0.2, 0.4]
@@ -1054,41 +1055,44 @@ public class Env extends Thread{ // environment simulator
                 0, // pBin4: p in (0.6, 0.8]
                 0  // pBin5: p in (0.8, 1]
         };
-//        pBin1 = 0;
-//        pBin2 = 0;
-//        pBin3 = 0;
-//        pBin4 = 0;
-//        pBin5 = 0;
         for (int i = 0; i < N; i++) {
             double p = pop[i].getP();
             if (p <= 0.2) {
-//                pBin1++;
                 pBins[0]++;
             } else if (p <= 0.4) {
-//                pBin2++;
                 pBins[1]++;
             } else if (p <= 0.6) {
-//                pBin3++;
                 pBins[2]++;
             } else if (p <= 0.8) {
-//                pBin4++;
                 pBins[3]++;
             } else {
-//                pBin5++;
                 pBins[4]++;
             }
         }
     }
 
-    public void calculateSkewnessP(){
+    public void calculateModeP() {
         int index_biggest_bin = 0;
         for (int i = 1; i < pBins.length; i++) {
             if (pBins[index_biggest_bin] < pBins[i]) {
                 index_biggest_bin = i;
             }
         }
-        int mode = pBins[index_biggest_bin];
-        skewness_p = (mean_p - mode) / sigma_p;
+        if (index_biggest_bin == 0) {
+            mode_p = 0.1;
+        } else if (index_biggest_bin == 1) {
+            mode_p = 0.3;
+        } else if (index_biggest_bin == 2) {
+            mode_p = 0.5;
+        } else if (index_biggest_bin == 3) {
+            mode_p = 0.7;
+        } else {
+            mode_p = 0.9;
+        }
+    }
+
+    public void calculateSkewnessP() {
+        skewness_p = (mean_p - mode_p) / sigma_p;
     }
 
     public void calculateMeanU() {
@@ -1802,6 +1806,7 @@ public class Env extends Thread{ // environment simulator
             calculateMaxP();
             calculateVarianceP();
             calculatePBins();
+            calculateModeP();
             calculateSkewnessP();
         }
         if (writeURunStats) {
@@ -1906,7 +1911,7 @@ public class Env extends Thread{ // environment simulator
             s += "gen,";
             if (writePRunStats) {
 //                s += "mean p,sigma p,max p,";
-                s += "mean p,sigma p,max p,variance p,pBin1,pBin2,pBin3,pBin4,pBin5,skewness p,";
+                s += "mean p,sigma p,max p,variance p,pBin1,pBin2,pBin3,pBin4,pBin5,mode p,skewness p,";
             }
             if (writeURunStats) {
                 s += "mean u,sigma u,";
@@ -1925,7 +1930,7 @@ public class Env extends Thread{ // environment simulator
 //            s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
             s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ","
                     + DF4.format(variance_p) + "," + pBins[0] + "," + pBins[1] + "," + pBins[2] + "," + pBins[3] + ","
-                    + pBins[4] + "," + DF4.format(skewness_p) + ",";
+                    + pBins[4] + "," + DF4.format(mode_p) +  "," + DF4.format(skewness_p) + ",";
         }
         if (writeURunStats) {
             s += DF4.format(mean_u) + "," + DF4.format(sigma_u) + ",";
