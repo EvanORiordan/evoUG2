@@ -111,6 +111,7 @@ public class Env extends Thread{ // environment simulator
     static boolean punish = false;
     static double RN1 = 0; // rewiring noise
     static double RN2; // 2nd form of rewiring noise
+    static double initWeight = 1.0;
 
 
 
@@ -213,7 +214,7 @@ public class Env extends Thread{ // environment simulator
             createDataFolders();
             experiment(); // run an experiment of the series
             if (exp <= variations.length) { // do not try to vary after the last experiment has ended
-                System.out.print("[INFO] Varying "+VP+": ");
+                System.out.print("[INFO] Applying variation: ");
                 switch (VP) {
                     case "EWL" -> setEWL(variations[exp - 1]);
                     case "RA" -> setRA(variations[exp - 1]);
@@ -249,6 +250,7 @@ public class Env extends Thread{ // environment simulator
                     case "threshold" -> setThreshold(variations[exp - 1]);
                     case "RN1" -> setRN1(variations[exp - 1]);
                     case "RN2" -> setRN2(variations[exp - 1]);
+                    case "initWeight" -> setInitWeight(variations[exp - 1]);
                 }
             }
         }
@@ -375,7 +377,7 @@ public class Env extends Thread{ // environment simulator
     public void initialiseEdgeWeights(Agent agent) {
         ArrayList <Double> edge_weights = new ArrayList<>();
         for (int i = 0; i< agent.getK(); i++) {
-            edge_weights.add(1.0);
+            edge_weights.add(initWeight);
         }
         agent.setEdgeWeights(edge_weights);
     }
@@ -847,6 +849,7 @@ public class Env extends Thread{ // environment simulator
         setLeeway(CI!=settings.length? settings[CI++]: "");
         setThreshold(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
+        setInitWeight(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
         setEvo(settings[CI++]);
         setSel(settings[CI++]);
@@ -1433,7 +1436,9 @@ public class Env extends Thread{ // environment simulator
     public static void writeSeriesStats() {
         if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)) {
             String output = "";
+//            String output = "exp num,";
             if (exp == 1) {
+                output += "exp,";
                 if (writePRunStats) {
                     output += "mean avg p,sigma avg p,";
                 }
@@ -1467,23 +1472,24 @@ public class Env extends Thread{ // environment simulator
                     String[] row_contents = row.split(",");
                     int j = 0;
                     if (writePRunStats) {
+                        j++; // ignore "run"
                         mean_p_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // move past mean p
-                        j++; // move past sigma p
-                        j++; // move past max p
+                        j++; // ignore mean p
+                        j++; // ignore sigma p
+                        j++; // ignore max p
                     }
                     if (writeURunStats) {
                         mean_u_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // move past mean u
-                        j++; // move past sigma u
+                        j++; // ignore mean u
+                        j++; // ignore sigma u
                     }
                     if (writeKRunStats) {
                         sigma_k_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // move past sigma k
+                        j++; // ignore sigma k
                     }
                     if (punish) {
                         num_puns_values[i] = Integer.parseInt(row_contents[j]);
-//                         j++; // enable to move past num puns
+//                         j++; // enable to ignore num puns
                     }
                 }
                 for (int i=0;i<runs;i++) {
@@ -1520,7 +1526,8 @@ public class Env extends Thread{ // environment simulator
                 }
                 sigma_avg_p = Math.pow(sigma_avg_p / runs, 0.5);
                 sigma_avg_u = Math.pow(sigma_avg_u / runs, 0.5);
-                output += "\n";
+//                output += "\n";
+                output += "\n" + exp + ",";
                 if (writePRunStats) {
                     output += DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
                 }
@@ -1685,20 +1692,25 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Write stats of experiment.
+     * These stats represent the end state of the pop.
      * 1 file per exp.
      */
     public void writeExpStats() {
         if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)) {
             String output = "";
+//            String output = "run,";
             try {
                 fw = new FileWriter(exp_path + "\\exp_stats.csv", true);
                 br = new BufferedReader(new FileReader(run_path + "\\run_stats.csv"));
                 String line = br.readLine();
+
+                // get column headings
                 if (run == 1) {
 
-                    // remove gen column
+                    // ignore gen column
                     String[] row_contents = line.split(",");
-                    String no_gen_str = "";
+//                    String no_gen_str = "";
+                    String no_gen_str = "run,";
                     for (int i=1;i<row_contents.length;i++) {
                         no_gen_str += row_contents[i] + ",";
                     }
@@ -1711,14 +1723,16 @@ public class Env extends Thread{ // environment simulator
                     line = br.readLine();
                 }
 
-                // remove gen column
+                // ignore gen column
                 String[] row_contents = line.split(",");
                 String no_gen_str = "";
                 for (int i=1;i<row_contents.length;i++) {
                     no_gen_str += row_contents[i] + ",";
                 }
                 no_gen_str = removeTrailingComma(no_gen_str);
-                output += "\n" + no_gen_str;
+
+//                output += "\n" + no_gen_str;
+                output += "\n" + run + "," + no_gen_str;
                 fw.append(output);
                 fw.close();
             } catch (Exception e) {
@@ -2440,6 +2454,7 @@ public class Env extends Thread{ // environment simulator
                 case "threshold" -> output += "\n" + threshold;
                 case "RN1" -> output += "\n" + RN1;
                 case "RN2" -> output += "\n" + RN2;
+                case "initWeight" -> output += "\n" + initWeight;
             }
 
             // create the file and write the data.
@@ -2482,7 +2497,8 @@ public class Env extends Thread{ // environment simulator
                     "leeway",
                     "threshold",
                     "RN1",
-                    "RN2"
+                    "RN2",
+                    "initWeight"
                     -> {
                 VP = value;
                 System.out.println("VP = "+VP);
@@ -2621,7 +2637,7 @@ public class Env extends Thread{ // environment simulator
 
             variations = value.split(";");
             for (int i=0;i<variations.length;i++) {
-                System.out.println("variation"+(i+1)+"="+variations[i]);
+                System.out.println("variation "+(i+1)+" = "+variations[i]);
             }
             exps = variations.length + 1;
         }
@@ -2642,7 +2658,7 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeUGenStats = true;
-                System.out.println("writeUGenStats="+writeUGenStats);
+                System.out.println("writeUGenStats = "+writeUGenStats);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u gen stats.");
@@ -3168,12 +3184,30 @@ public class Env extends Thread{ // environment simulator
                     case "FD", "expo" -> {
                         try {
                             RN2 = Double.parseDouble(value);
-                            System.out.println("RN2 = "+RN2);
+                            System.out.println("RN2 = " + RN2);
                         } catch (NumberFormatException e) {
                             System.out.println("invalid RN2: must be a double");
                             exit(1);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    public static void setInitWeight(String value) {
+        switch (EWT) {
+            case "prevention", "rewire", "punish" -> {
+                try {
+                    initWeight = Double.parseDouble(value);
+                    System.out.println("initWeight = " + initWeight);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid initWeight: must be a double");
+                    exit(1);
+                }
+                if (initWeight < 0 || initWeight > 1) {
+                    System.out.println("invalid initWeight: must be within the interval [0, 1].");
+                    exit(1);
                 }
             }
         }
