@@ -148,3 +148,5 @@ runs,M,length,neighType,genType,ER,gens,EWT,RP,RA,RT,RN1,RN2,PP,PS,EF,cost,fine,
 5,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.8,,1,,0,1,,,PD,0,,FD,randomNeigh,,.1,global,.01,,cumulative,1,1,,1,1,,10000,initWeight,.25;.5;.75;1
 3,1,5,VN,ER,1,5,punish,,,,,,linear,EF,3,.8,,1,,0,1,,,PD,0,,FD,randomNeigh,,.1,global,.01,,cumulative,1,1,,1,1,,1,initWeight,.25;.5
 3,1,5,VN,ER,1,5,punish,,,,,,linear,EF,3,.8,,1,,0,1,,,PD,0,,FD,randomNeigh,,.1,global,.01,,cumulative,1,1,,,,,1,initWeight,.25;.5
+1,1,50,VN,ER,1,10000,punish,,,,,,linear,EF,3,.85,,1,,0,1,,,PD,1,,FD,randomNeigh,,.1,global,.01,,cumulative,1,1,,1,1,,10000,,
+1,1,50,VN,ER,1,100,punish,,,,,,linear,EF,3,.85,,1,,0,1,,,PD,1,,FD,randomNeigh,,.1,global,.01,,cumulative,1,1,,1,1,,100,,

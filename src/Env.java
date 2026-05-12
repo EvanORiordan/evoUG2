@@ -1471,26 +1471,33 @@ public class Env extends Thread{ // environment simulator
                     String row = br.readLine();
                     String[] row_contents = row.split(",");
                     int j = 0;
+
+                    // when i add or remove a run/exp stat, make sure to account for that here!
                     if (writePRunStats) {
-                        j++; // ignore "run"
-                        mean_p_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // ignore mean p
+                        j++; // ignore run
+                        mean_p_values[i] = Double.parseDouble(row_contents[j++]);
                         j++; // ignore sigma p
                         j++; // ignore max p
+                        j++; // ignore variance p
+                        j++; // ignore pBin1
+                        j++; // ignore pBin2
+                        j++; // ignore pBin3
+                        j++; // ignore pBin4
+                        j++; // ignore pBin5
+                        j++; // ignore mode p
+                        j++; // ignore skewness p
                     }
                     if (writeURunStats) {
-                        mean_u_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // ignore mean u
+                        mean_u_values[i] = Double.parseDouble(row_contents[j++]);
                         j++; // ignore sigma u
                     }
                     if (writeKRunStats) {
-                        sigma_k_values[i] = Double.parseDouble(row_contents[j]);
-                        j++; // ignore sigma k
+                        sigma_k_values[i] = Double.parseDouble(row_contents[j++]);
                     }
                     if (punish) {
-                        num_puns_values[i] = Integer.parseInt(row_contents[j]);
-//                         j++; // enable to ignore num puns
+                        num_puns_values[i] = Integer.parseInt(row_contents[j++]);
                     }
+
                 }
                 for (int i=0;i<runs;i++) {
                     if (writePRunStats) {
@@ -1506,8 +1513,6 @@ public class Env extends Thread{ // environment simulator
                         mean_num_puns += num_puns_values[i];
                     }
                 }
-//                mean_avg_p /= runs;
-//                mean_avg_u /= runs;
                 if (writePRunStats) {
                     mean_avg_p /= runs;
                 }
