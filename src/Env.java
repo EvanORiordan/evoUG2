@@ -76,8 +76,10 @@ public class Env extends Thread{ // environment simulator
     static String EWT = ""; // EWT: edge weight type
     static String EWL = ""; // EWL function
     static double ROC = 0; // rate of change: fixed learning amount to EW
-    static String evo; // indicates which evolution function to call
-    static String sel; // indicates which selection function to call
+//    static String evo; // indicates which evolution function to call
+    static String evo = ""; // indicates which evolution function to call
+//    static String sel; // indicates which selection function to call
+    static String sel = ""; // indicates which selection function to call
     static double EN = 0.0; // evolutionary noise
     static String mut = ""; // indicates which mutation function to call
     static double mutRate = 0.0; // probability of mutation
@@ -239,8 +241,19 @@ public class Env extends Thread{ // environment simulator
                     case "UF" -> setUF(variations[exp - 1]);
                     case "PP" -> setPP(variations[exp - 1]);
                     case "EF" -> setEF(variations[exp - 1]);
-                    case "cost" -> setCost(variations[exp - 1]);
-                    case "fine" -> setFine(variations[exp - 1]);
+
+
+
+//                    case "cost" -> setCost(variations[exp - 1]);
+//                    case "fine" -> setFine(variations[exp - 1]);
+
+                    case "cost" -> {
+                        setCost(variations[exp - 1]);
+                        setFine();
+                    }
+
+
+
                     case "NU" -> setNU(variations[exp - 1]);
                     case "PN1" -> setPN1(variations[exp - 1]);
                     case "PN2" -> setPN2(variations[exp - 1]);
@@ -292,7 +305,8 @@ public class Env extends Thread{ // environment simulator
         if (writePosData && run == 1) {
             writePosData();
         }
-        if (!EWL.equals("")) {
+//        if (!EWL.equals("")) {
+        if (!EWT.equals("")) { // if EWT is set, then we plan to use weights, hence we need to initialise them.
             for (int i=0;i<N;i++) {
                 initialiseEdgeWeights(pop[i]);
             }
@@ -832,6 +846,7 @@ public class Env extends Thread{ // environment simulator
         setER(settings[CI++]);
         setGens(settings[CI++]);
         setEWT(CI!=settings.length? settings[CI++]: "");
+        setInitWeight(CI!=settings.length? settings[CI++]: "");
         setRP(CI!=settings.length? settings[CI++]: "");
         setRA(CI!=settings.length? settings[CI++]: "");
         setRT(CI!=settings.length? settings[CI++]: "");
@@ -841,7 +856,7 @@ public class Env extends Thread{ // environment simulator
         setPS(CI!=settings.length? settings[CI++]: "");
         setEF(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
-        setFine(CI!=settings.length? settings[CI++]: "");
+//        setFine(CI!=settings.length? settings[CI++]: "");
         setNU(CI!=settings.length? settings[CI++]: "");
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
@@ -849,10 +864,16 @@ public class Env extends Thread{ // environment simulator
         setLeeway(CI!=settings.length? settings[CI++]: "");
         setThreshold(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
-        setInitWeight(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
-        setEvo(settings[CI++]);
-        setSel(settings[CI++]);
+
+
+//        setEvo(settings[CI++]);
+//        setSel(settings[CI++]);
+
+        setEvo(CI!=settings.length? settings[CI++]: "");
+        setSel(CI!=settings.length? settings[CI++]: "");
+
+
         setRWT(CI!=settings.length? settings[CI++]: "");
         setEN(CI!=settings.length? settings[CI++]: "");
         setMut(CI!=settings.length? settings[CI++]: "");
@@ -1336,6 +1357,8 @@ public class Env extends Thread{ // environment simulator
                 settings += rounds != 0? ",rounds": "";
                 settings += EWT.isEmpty()? "": ",EWT";
 
+                settings += EWT.isEmpty()? "": ",initWeight";
+
                 settings += EWT.equals("rewire")? ",RP": "";
                 settings += EWT.equals("rewire")? ",RA": "";
                 settings += EWT.equals("rewire")? ",RT": "";
@@ -1344,27 +1367,54 @@ public class Env extends Thread{ // environment simulator
 
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
-                settings += EF != 0.0? ",EF": "";
-                settings += cost != 0.0? ",cost": "";
-                settings += fine != 0.0? ",fine": "";
-                settings += !PP.equals("")? ",NU": "";
+
+
+//                settings += EF != 0.0? ",EF": "";
+//                settings += cost != 0.0? ",cost": "";
+//                settings += fine != 0.0? ",fine": "";
+
+                settings += EWT.equals("punish")? ",EF": "";
+                settings += EWT.equals("punish")? ",cost": "";
+                settings += EWT.equals("punish")? ",fine": "";
+
+
+                settings += !PP.isEmpty() ? ",NU": "";
                 settings += PP.equals("noisy")? ",PN1": "";
 //                settings += PN2 != 0.0? ",PN2": "";
-                settings += !PP.equals("")? ",PN2": "";
-                settings += V.equals("")? "": ",V";
+                settings += !PP.isEmpty() ? ",PN2": "";
+                settings += V.isEmpty() ? "": ",V";
                 settings += leeway != 0.0? ",leeway": "";
 
 //                settings += !PP.equals("")? ",threshold": ""; // should the check not be if we are using a threshold-based PP?
 
                 settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? ",threshold": "";
 
-                settings += EWL.isEmpty()? "": ",EWL";
+
+//                settings += EWL.isEmpty()? "": ",EWL";
+
+//                settings += EWL.isEmpty()? ",disabled": ",EWL";
+
+                settings += EWT.isEmpty()? "": ",EWL";
+
+
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
-                settings += ",sel";
+
+
+//                settings += ",sel";
+
+                settings += evo.isEmpty()? "": ",sel";
+
+
                 settings += !RWT.isEmpty()? ",RWT": "";
                 settings += RWT.equals("expo") || evo.equals("FD")? ",EN": "";
-                settings += mut.isEmpty()? "": ",mut";
+
+
+//                settings += mut.isEmpty()? "": ",mut";
+
+                settings += ",mut";
+
+
                 settings += mut.isEmpty()? "": ",mutRate";
                 settings += mutBound != 0.0? ",mutBound": "";
                 settings += ",UF";
@@ -1384,6 +1434,8 @@ public class Env extends Thread{ // environment simulator
             settings += rounds != 0? "," + rounds: "";
             settings += EWT.isEmpty()? "": "," + EWT;
 
+            settings += EWT.isEmpty()? "": "," + initWeight;
+
             settings += EWT.equals("rewire")? "," + RP: "";
             settings += EWT.equals("rewire")? "," + RA: "";
             settings += EWT.equals("rewire")? "," + RT: "";
@@ -1392,27 +1444,53 @@ public class Env extends Thread{ // environment simulator
 
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
-            settings += EF != 0.0? "," + EF: "";
-            settings += cost != 0.0? "," + cost: "";
-            settings += fine != 0.0? "," + fine: "";
-            settings += !PP.equals("")? "," + NU: "";
+
+
+//            settings += EF != 0.0? "," + EF: "";
+//            settings += cost != 0.0? "," + cost: "";
+//            settings += fine != 0.0? "," + fine: "";
+
+            settings += EWT.equals("punish")? "," + EF: "";
+            settings += EWT.equals("punish")? "," + cost: "";
+            settings += EWT.equals("punish")? "," + fine: "";
+
+
+            settings += !PP.isEmpty() ? "," + NU: "";
             settings += PP.equals("noisy")? "," + PN1: "";
 //            settings += PN2 != 0.0? "," + PN2: "";
-            settings += !PP.equals("")? "," + PN2: "";
-            settings += V.equals("")? "": "," + V;
+            settings += !PP.isEmpty() ? "," + PN2: "";
+            settings += V.isEmpty() ? "": "," + V;
             settings += leeway != 0.0? "," + leeway: "";
 
 //            settings += !PP.equals("")? "," + threshold: "";
 
             settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? "," + threshold: "";
 
-            settings += EWL.isEmpty()? "": "," + EWL;
+
+//            settings += EWL.isEmpty()? "": "," + EWL;
+
+            settings += EWL.isEmpty()? ",disabled": "," + EWL;
+
+
             settings += ROC == 0.0? "": "," + ROC;
-            settings += "," + evo;
-            settings += "," + sel;
+
+
+//            settings += "," + evo;
+//            settings += "," + sel;
+
+            settings += evo.isEmpty()? ",disabled": "," + evo;
+            settings += evo.isEmpty()? "": "," + sel;
+
+
             settings += !RWT.isEmpty()? "," + RWT: "";
             settings += RWT.equals("expo") || evo.equals("FD")? "," + EN: "";
-            settings += mut.isEmpty()? "": "," + mut;
+
+
+//            settings += mut.isEmpty()? "": "," + mut;
+
+            settings += mut.isEmpty()? ",disabled": "," + mut;
+
+
             settings += mut.isEmpty()? "": "," + mutRate;
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
@@ -1472,7 +1550,7 @@ public class Env extends Thread{ // environment simulator
                     String[] row_contents = row.split(",");
                     int j = 0;
 
-                    // when i add or remove a run/exp stat, make sure to account for that here!
+                    // if a run/exp stat is added or removed, make sure to account for that here!
                     if (writePRunStats) {
                         j++; // ignore run
                         mean_p_values[i] = Double.parseDouble(row_contents[j++]);
@@ -1777,12 +1855,12 @@ public class Env extends Thread{ // environment simulator
         Agent parent = null;
         switch (sel) {
             case "RW" -> parent = selRW(child);
-            case "elitist" -> parent = selElitist(child);
             case "randomNeigh" -> parent = selRandomNeigh(child);
             case "randomPop" -> parent = selRandomPop();
+//            case "elitist" -> parent = selElitist(child);
 //            case "crossover" -> crossover(child);
 //            case "RW2" -> parent = selRW2(child);
-            case "rank" -> parent = selRank(child);
+//            case "rank" -> parent = selRank(child);
         }
         return parent;
     }
@@ -1792,10 +1870,10 @@ public class Env extends Thread{ // environment simulator
         switch (evo) {
             case "copy" -> evoCopy(child, parent);
 //            case "approach" -> evoApproach(child, parent);
-            case "copyFitter" -> evoCopyFitter(child, parent);
-            case "UD" -> evoUD(child, parent);
-            case "UDN" -> evoUDN(child, parent);
-            case "FD" -> evoFD(child, parent);
+//            case "copyFitter" -> evoCopyFitter(child, parent);
+//            case "UD" -> evoUD(child, parent);
+//            case "UDN" -> evoUDN(child, parent);
+//            case "FD" -> evoFD(child, parent);
         }
     }
 
@@ -2096,7 +2174,6 @@ public class Env extends Thread{ // environment simulator
             double v_a = a.getV();
             double p_a = a.getP();
             double p_b = b.getP();
-//            double punish_prob = calculatePunishProb(w_ab, u_a, u_b, v_a);
             double punish_prob = calculatePunishProb(w_ab, u_a, u_b, v_a, p_a, p_b);
             double random_double = ThreadLocalRandom.current().nextDouble();
             boolean punish = punish_prob > random_double;
@@ -2138,24 +2215,33 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void setFine(String value) {
-        boolean set = false;
-        switch (PP) {
-            case "sweetspotCostFine" -> set = true;
-        }
-        switch (PS) {
-            case "normal", "weighted", "utility" -> set = true;
-        }
-        if (set) {
-            try {
-                fine = Double.parseDouble(value);
-                System.out.println("fine = " + fine);
-            } catch (NumberFormatException e) {
-                System.out.println("invalid fine: must be a double");
-                exit(1);
-            }
-        }
+
+
+//    public static void setFine(String value) {
+//        boolean set = false;
+//        switch (PP) {
+//            case "sweetspotCostFine" -> set = true;
+//        }
+//        switch (PS) {
+//            case "normal", "weighted", "utility" -> set = true;
+//        }
+//        if (set) {
+//            try {
+//                fine = Double.parseDouble(value);
+//                System.out.println("fine = " + fine);
+//            } catch (NumberFormatException e) {
+//                System.out.println("invalid fine: must be a double");
+//                exit(1);
+//            }
+//        }
+//    }
+
+    public static void setFine(){
+        fine = EF * cost;
     }
+
+
+
 
     public static void setPP(String value) {
         boolean set = false;
@@ -2307,7 +2393,7 @@ public class Env extends Thread{ // environment simulator
                 mut = value;
                 System.out.println("mut = "+mut);
             }
-            default -> System.out.println("no mut");
+            default -> System.out.println("mut is disabled");
         }
     }
 
@@ -2330,37 +2416,57 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEWL(String value) {
-        boolean set = false;
-        switch (EWT) {
-            case "punish", "prevention", "rewire" -> set = true;
-        }
-        if (set) {
-            switch (value) {
-                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
-                    EWL = value;
-                    System.out.println("EWL = "+EWL);
-                }
-                default -> {
-                    System.out.println("invalid EWL");
-                    exit(1);
-                }
+
+
+
+        // USING THE CODE BELOW, YOU CANNOT DISABLE EWL IF EWT IS VALID.
+//        boolean set = false;
+//        switch (EWT) {
+//            case "punish", "prevention", "rewire" -> set = true;
+//        }
+//        if (set) {
+//            switch (value) {
+//                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
+//                    EWL = value;
+//                    System.out.println("EWL = "+EWL);
+//                }
+//                default -> {
+//                    System.out.println("invalid EWL");
+//                    exit(1);
+//                }
+//            }
+//        }
+
+
+        switch(value) {
+            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
+                EWL = value;
+                System.out.println("EWL = "+EWL);
             }
+            default -> System.out.println("EWL is disabled");
         }
+
+
     }
 
     public static void setSel(String value) {
-        switch (value) {
-
-            // case where value is valid.
-            case "RW", "elitist", "randomNeigh", "randomPop", "rank" -> {
-                sel = value;
-                System.out.println("sel = "+sel);
-            }
-
-            // case where value is invalid.
-            default -> {
-                System.out.println("invalid sel");
-                exit(1);
+        switch (evo) {
+            case "copy"
+//                    , "copyFitter", "FD", "UD", "UDN"
+                    -> {
+                switch (value) {
+                    case "RW", "randomNeigh", "randomPop"
+//                            , "elitist"
+//                            , "rank"
+                            -> {
+                        sel = value;
+                        System.out.println("sel = "+sel);
+                    }
+                    default -> {
+                        System.out.println("invalid sel");
+                        exit(1);
+                    }
+                }
             }
         }
     }
@@ -2450,7 +2556,7 @@ public class Env extends Thread{ // environment simulator
                 case "UF" -> output += "\n" + UF;
                 case "PP" -> output += "\n" + PP;
                 case "cost" -> output += "\n" + cost;
-                case "fine" -> output += "\n" + fine;
+//                case "fine" -> output += "\n" + fine;
                 case "NU" -> output += "\n" + NU;
                 case "PN1" -> output += "\n" + PN1;
                 case "PN2" -> output += "\n" + PN2;
@@ -2493,7 +2599,7 @@ public class Env extends Thread{ // environment simulator
                     "UF",
                     "PP",
                     "cost",
-                    "fine",
+//                    "fine",
                     "NU",
                     "PN1",
                     "PN2",
@@ -2799,25 +2905,39 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEvo(String value) {
-        switch (value) {
 
-            // case where value is valid.
-            case "copy",
-                    "copyFitter",
-                    "FD",
-//                    "approach",
-                    "UD",
-                    "UDN" -> {
+
+//        switch (value) {
+//
+//            // case where value is valid.
+//            case "copy",
+//                    "copyFitter",
+//                    "FD",
+////                    "approach",
+//                    "UD",
+//                    "UDN" -> {
+//                evo = value;
+//                System.out.println("evo = "+evo);
+//            }
+//
+//            // case where value is invalid.
+//            default -> {
+//                System.out.println("invalid evo");
+//                exit(1);
+//            }
+//        }
+
+        switch (value) {
+            case "copy"
+//                    , "copyFitter", "FD", "UD", "UDN"
+                    -> {
                 evo = value;
                 System.out.println("evo = "+evo);
             }
-
-            // case where value is invalid.
-            default -> {
-                System.out.println("invalid evo");
-                exit(1);
-            }
+            default -> System.out.println("evo is disabled");
         }
+
+
     }
 
     public static void setGenType(String value) {
@@ -2995,14 +3115,14 @@ public class Env extends Thread{ // environment simulator
                     punish_prob = 1 - w_ab;
                 }
             }
-            case "sweetspot" -> { // if the cost is not too high and the fine is not too low, punish prob is linear.
-                double x = 2; // i might make this customisable later.
-                if (cost > u_a / x || x * fine < u_b) {
-                    punish_prob = 0;
-                } else {
-                    punish_prob = 1 - w_ab;
-                }
-            }
+//            case "sweetspot" -> { // if the cost is not too high and the fine is not too low, punish prob is linear.
+//                double x = 2; // i might make this customisable later.
+//                if (cost > u_a / x || x * fine < u_b) {
+//                    punish_prob = 0;
+//                } else {
+//                    punish_prob = 1 - w_ab;
+//                }
+//            }
             case "P" -> {
                 if (p_a > p_b) { // a punish b if a fairer than b
                     punish_prob = 1;
@@ -3064,26 +3184,26 @@ public class Env extends Thread{ // environment simulator
     // calculates punishment severity and inflicts costs and fines.
     public void calculatePunishSeverity(Agent a, Agent b, double u_a, double u_b, double w_ab) {
         switch (PS) {
-            case "normal" -> {
-                a.setU(u_a - cost);
-                b.setU(u_b - fine);
-            }
-            case "weighted" -> { // lower w_ab ==> higher cost and fine.
-                a.setU(u_a - cost * (1 - w_ab));
-                b.setU(u_b - fine * (1 - w_ab));
-            }
-            case "utility" -> {
-                if (2 * u_a < u_b) { // if b has more than two times the utility of a, double the cost and fine.
-                    a.setU(u_a - 2 * cost);
-                    b.setU(u_b - 2 * fine);
-                } else if (u_a > 2 * u_b) { // if a has more than two times the utility of b, halve the cost and fine.
-                    a.setU(u_a - cost / 2);
-                    b.setU(u_b - fine / 2);
-                } else { // otherwise, revert to PS = normal.
-                    a.setU(u_a - cost);
-                    b.setU(u_b - fine);
-                }
-            }
+//            case "normal" -> {
+//                a.setU(u_a - cost);
+//                b.setU(u_b - fine);
+//            }
+//            case "weighted" -> { // lower w_ab ==> higher cost and fine.
+//                a.setU(u_a - cost * (1 - w_ab));
+//                b.setU(u_b - fine * (1 - w_ab));
+//            }
+//            case "utility" -> {
+//                if (2 * u_a < u_b) { // if b has more than two times the utility of a, double the cost and fine.
+//                    a.setU(u_a - 2 * cost);
+//                    b.setU(u_b - 2 * fine);
+//                } else if (u_a > 2 * u_b) { // if a has more than two times the utility of b, halve the cost and fine.
+//                    a.setU(u_a - cost / 2);
+//                    b.setU(u_b - fine / 2);
+//                } else { // otherwise, revert to PS = normal.
+//                    a.setU(u_a - cost);
+//                    b.setU(u_b - fine);
+//                }
+//            }
             case "lowNoise" -> {
                 a.setU(u_a - cost);
                 double random_double3 = ThreadLocalRandom.current().nextDouble(2, 4);
@@ -3104,11 +3224,13 @@ public class Env extends Thread{ // environment simulator
             }
             case "EF" -> { // use the enhancement factor parameter to determine the fine.
                 a.setU(u_a - cost);
-                b.setU(u_b - cost * EF);
+//                b.setU(u_b - cost * EF);
+                b.setU(u_b - fine);
             }
-            case "EF+ER" -> { // uses ER and EF to calculate cost and fine
+            case "EF+ER" -> { // uses ER and EF to calculate cost and fine.
                 a.setU(u_a - cost * ER);
-                b.setU(u_b - cost * EF * ER);
+//                b.setU(u_b - cost * EF * ER);
+                b.setU(u_b - fine * ER);
             }
             case "percent" -> {
                 a.setU(u_a - cost);
