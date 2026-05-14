@@ -1343,7 +1343,14 @@ public class Env extends Thread{ // environment simulator
         if (writeRate > 0) {
             String settings = "";
             if (exp == 1) {
-                settings += "runs";
+
+
+//                settings += "runs";
+
+                settings += "exp";
+                settings += ",runs";
+
+
                 settings += ",M";
                 settings += ",space";
                 settings += ",length";
@@ -1420,7 +1427,14 @@ public class Env extends Thread{ // environment simulator
                 settings += ",UF";
             }
             settings += "\n";
-            settings += runs;
+
+
+//            settings += runs;
+
+            settings += exp;
+            settings += "," + runs;
+
+
             settings += "," + M;
             settings += "," + space;
             settings += "," + length;
@@ -2416,28 +2430,6 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEWL(String value) {
-
-
-
-        // USING THE CODE BELOW, YOU CANNOT DISABLE EWL IF EWT IS VALID.
-//        boolean set = false;
-//        switch (EWT) {
-//            case "punish", "prevention", "rewire" -> set = true;
-//        }
-//        if (set) {
-//            switch (value) {
-//                case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
-//                    EWL = value;
-//                    System.out.println("EWL = "+EWL);
-//                }
-//                default -> {
-//                    System.out.println("invalid EWL");
-//                    exit(1);
-//                }
-//            }
-//        }
-
-
         switch(value) {
             case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
                 EWL = value;
@@ -2445,8 +2437,6 @@ public class Env extends Thread{ // environment simulator
             }
             default -> System.out.println("EWL is disabled");
         }
-
-
     }
 
     public static void setSel(String value) {
