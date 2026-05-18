@@ -114,6 +114,10 @@ public class Env extends Thread{ // environment simulator
     static double RN1 = 0; // rewiring noise
     static double RN2; // 2nd form of rewiring noise
     static double initWeight = 1.0;
+    static double EWLWeight1;
+    static double EWLWeight2;
+
+
 
 
 
@@ -264,6 +268,7 @@ public class Env extends Thread{ // environment simulator
                     case "RN1" -> setRN1(variations[exp - 1]);
                     case "RN2" -> setRN2(variations[exp - 1]);
                     case "initWeight" -> setInitWeight(variations[exp - 1]);
+                    case "EWLWeight1" -> setEWLWeight1(variations[exp - 1]);
                 }
             }
         }
@@ -517,7 +522,7 @@ public class Env extends Thread{ // environment simulator
             case "PDdouble" -> learning = (p_b - p_a) * 2;
             case "PDtriple" -> learning = (p_b - p_a) * 3;
 
-            // even if p_a > p_b, as long as p_b > 0.5 and p_a > 0.5, learning > 0. thus, learning can be
+            // even if p_a > p_b, as long as p_b > 0.5 and p_a > 0.5, then learning > 0. thus, learning can be
             // positive even though b gives less.
             case "test1" -> {
                 if (p_a > 0.5 && p_b > 0.5) {
@@ -526,8 +531,6 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            // even if p_a > p_b, as long as p_b > 0.5, learning > 0. thus, learning can be positive even though b gives less.
             case "test2" -> {
                 if (p_b > 0.5) {
                     learning = 1;
@@ -535,11 +538,6 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            /*
-            * this doesnt make sense. why would a being generous imply w increases?
-            * even if p_b ~= 0, as long as p_a > 0.5, w increases!
-            * */
             case "test3" -> {
                 if (p_a > 0.5) {
                     learning = 1;
@@ -547,46 +545,26 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            // EWL as a function of the p diff and the distance of p from 0.5.
-            // want to have less of high p guys punishing other high p guys.
-
-            // if p_a > p_b, learning is negative. then, if p_b > 0.5, halve the negative learning.
             case "test4" -> {
                 learning = p_b - p_a;
-                if (p_a > p_b && p_b > 0.5) { // if p_a > p_b and p_b > 0.5, then logically, p_a > 0.5. the condition is essentially "if p_a > p_b > 0.5".
+                if (p_a > p_b && p_b > 0.5) {
                     learning *= 0.5;
                 }
             }
-
-            // GOAL: THE GREATER PB IS THAN 0.5, THE HIGHER LEARNING WILL BE.
             case "test5" -> {
                 learning = p_b - p_a;
                 if (p_a > p_b && p_b > 0.5) {
-                    // at this point, learning < 0.
-                    double x = p_b - 0.5; // higher p_b ==> higher x.
-                    double y = 1 - x; // higher x ==> lower y.
-                    learning *= y; // higher y ==> lower learning (since learning < 0).
-                    // e.g. p_b = 0.9 ==> x = 0.4 ==> y = 0.6 ==> learning *= 0.6.
-                    // e.g. p_b = 0.55 ==> x = 0.05 ==> y = 0.95 ==> learning *= 0.95.
+                    learning *= 0.5 - p_b;
                 }
             }
-
             case "test6" -> {
                 if (p_a > p_b && p_b > 0.5) {
-                    /*
-                    * learning will always be positive.
-                    * perhaps 2 is too small of a denominator.
-                    * if it was 3, learning would be negative if p_a was way bigger than p_b.
-                     */
                     learning = p_b - (p_a / 2);
 
                 } else {
                     learning = p_b - p_a;
                 }
             }
-
-            // same as test6 except denominator = 3, not 2.
             case "test7" -> {
                 if (p_a > p_b && p_b > 0.5) {
                     learning = p_b - (p_a / 3);
@@ -594,8 +572,6 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            // same as test6 except denominator = 4, not 2.
             case "test8" -> {
                 if (p_a > p_b && p_b > 0.5) {
                     learning = p_b - (p_a / 4);
@@ -603,9 +579,6 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            // same as test1 except first half of first clause is p_a > p_b rather than p_a > 0.5.
-            // same as test6 except first consequence is learning = 1 rather than learning = p_b - (p_a / 2).
             case "test9" -> {
                 if (p_a > p_b && p_b > 0.5) {
                     learning = 1;
@@ -613,8 +586,6 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
-            // if a is fairer than b but b gives more than half, do not modify weight.
             case "test10" -> {
                 if (p_a > p_b && p_b > 0.5) {
                     learning = 0;
@@ -622,7 +593,13 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-
+            case "test11" -> {
+                double dist1 = p_b - p_a;
+                double dist2 = p_b - 0.5;
+                double learning1 = dist1 * EWLWeight1;
+                double learning2 = dist2 * EWLWeight2;
+                learning += learning1 + learning2;
+            }
         }
         return learning;
     }
@@ -633,7 +610,7 @@ public class Env extends Thread{ // environment simulator
 
     /**
      * Roulette wheel (RW) selection function.
-     * canditates are child and its neighbours.
+     * Candidates include child and its neighbours.
      * probability of selection depends directly on fitness in
      * comparison to other candidates in the pool.
      * fitter ==> greater probability.
@@ -864,6 +841,7 @@ public class Env extends Thread{ // environment simulator
         setLeeway(CI!=settings.length? settings[CI++]: "");
         setThreshold(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
+        setEWLWeight1(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
 
 
@@ -1404,6 +1382,10 @@ public class Env extends Thread{ // environment simulator
                 settings += EWT.isEmpty()? "": ",EWL";
 
 
+                settings += EWL.isEmpty()? "": ",EWLWeight1";
+                settings += EWL.isEmpty()? "": ",EWLWeight2";
+
+
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
 
@@ -1484,6 +1466,10 @@ public class Env extends Thread{ // environment simulator
 //            settings += EWL.isEmpty()? "": "," + EWL;
 
             settings += EWL.isEmpty()? ",disabled": "," + EWL;
+
+
+            settings += EWL.isEmpty()? "": "," + EWLWeight1;
+            settings += EWL.isEmpty()? "": "," + EWLWeight2;
 
 
             settings += ROC == 0.0? "": "," + ROC;
@@ -1883,11 +1869,11 @@ public class Env extends Thread{ // environment simulator
     public void evo(Agent child, Agent parent) {
         switch (evo) {
             case "copy" -> evoCopy(child, parent);
+            case "FD" -> evoFD(child, parent);
 //            case "approach" -> evoApproach(child, parent);
 //            case "copyFitter" -> evoCopyFitter(child, parent);
 //            case "UD" -> evoUD(child, parent);
 //            case "UDN" -> evoUDN(child, parent);
-//            case "FD" -> evoFD(child, parent);
         }
     }
 
@@ -2431,7 +2417,7 @@ public class Env extends Thread{ // environment simulator
 
     public static void setEWL(String value) {
         switch(value) {
-            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" -> {
+            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11" -> {
                 EWL = value;
                 System.out.println("EWL = "+EWL);
             }
@@ -2441,8 +2427,8 @@ public class Env extends Thread{ // environment simulator
 
     public static void setSel(String value) {
         switch (evo) {
-            case "copy"
-//                    , "copyFitter", "FD", "UD", "UDN"
+            case "copy", "FD"
+//                    , "copyFitter", "UD", "UDN"
                     -> {
                 switch (value) {
                     case "RW", "randomNeigh", "randomPop"
@@ -2556,6 +2542,7 @@ public class Env extends Thread{ // environment simulator
                 case "RN1" -> output += "\n" + RN1;
                 case "RN2" -> output += "\n" + RN2;
                 case "initWeight" -> output += "\n" + initWeight;
+                case "EWLWeight1" -> output += "\n" + EWLWeight1;
             }
 
             // create the file and write the data.
@@ -2599,7 +2586,8 @@ public class Env extends Thread{ // environment simulator
                     "threshold",
                     "RN1",
                     "RN2",
-                    "initWeight"
+                    "initWeight",
+                    "EWLWeight1"
                     -> {
                 VP = value;
                 System.out.println("VP = "+VP);
@@ -2877,14 +2865,10 @@ public class Env extends Thread{ // environment simulator
         switch (EWT) { // value must be valid if EWT = rewire.
             case "rewire" -> {
                 switch (value) {
-
-                    // case where value is valid.
                     case "local", "pop" -> {
                         RT = value;
                         System.out.println("RT = "+RT);
                     }
-
-                    // case where value is invalid.
                     default -> {
                         System.out.println("invalid RT");
                         exit(1);
@@ -2895,30 +2879,8 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setEvo(String value) {
-
-
-//        switch (value) {
-//
-//            // case where value is valid.
-//            case "copy",
-//                    "copyFitter",
-//                    "FD",
-////                    "approach",
-//                    "UD",
-//                    "UDN" -> {
-//                evo = value;
-//                System.out.println("evo = "+evo);
-//            }
-//
-//            // case where value is invalid.
-//            default -> {
-//                System.out.println("invalid evo");
-//                exit(1);
-//            }
-//        }
-
         switch (value) {
-            case "copy"
+            case "copy", "FD"
 //                    , "copyFitter", "FD", "UD", "UDN"
                     -> {
                 evo = value;
@@ -2926,20 +2888,14 @@ public class Env extends Thread{ // environment simulator
             }
             default -> System.out.println("evo is disabled");
         }
-
-
     }
 
     public static void setGenType(String value) {
         switch (value) {
-
-            // case where value is valid.
             case "ER", "MCv1", "MCv2", "oneGuyEvo"-> {
                 genType = value;
                 System.out.println("genType = "+genType);
             }
-
-            // case where value is invalid.
             default -> {
                 System.out.println("invalid genType");
                 exit(1);
@@ -3329,4 +3285,25 @@ public class Env extends Thread{ // environment simulator
             }
         }
     }
+
+    public static void setEWLWeight1(String value) {
+        switch (EWL) {
+            case "test11" -> {
+                try {
+                    EWLWeight1 = Double.parseDouble(value);
+                    EWLWeight2 = 1.0 - EWLWeight1; // we use EWLWeight1 to automatically set EWLWeight2.
+                    System.out.println("EWLWeight1 = " + EWLWeight1 + ", EWLWeight2 = " + EWLWeight2);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid EWLWeight1: must be a double");
+                    exit(1);
+                }
+                if (EWLWeight1 < 0 || EWLWeight1 > 1) {
+                    System.out.println("invalid EWLWeight1: must be within the interval [0, 1].");
+                    exit(1);
+                }
+            }
+        }
+    }
+
+
 }
