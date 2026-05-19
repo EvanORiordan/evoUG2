@@ -522,8 +522,8 @@ public class Env extends Thread{ // environment simulator
             case "PDdouble" -> learning = (p_b - p_a) * 2;
             case "PDtriple" -> learning = (p_b - p_a) * 3;
 
-            // even if p_a > p_b, as long as p_b > 0.5 and p_a > 0.5, then learning > 0. thus, learning can be
-            // positive even though b gives less.
+
+            // testing alternative EWL rules
             case "test1" -> {
                 if (p_a > 0.5 && p_b > 0.5) {
                     learning = 1;
@@ -593,13 +593,9 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-            case "test11" -> {
-                double dist1 = p_b - p_a;
-                double dist2 = p_b - 0.5;
-                double learning1 = dist1 * EWLWeight1;
-                double learning2 = dist2 * EWLWeight2;
-                learning += learning1 + learning2;
-            }
+            case "test11" -> learning = EWLWeight1 * (p_b - p_a) + EWLWeight2 * (p_b - 0.5); // requires 2 extra weights to function (not to be confused with the weights of EWL).
+            case "test12" -> learning = EWLWeight1 * (p_b - p_a); // requires 1 extra param.
+            case "test13" -> learning = EWLWeight1 * (p_b - 0.5); // requires 1 extra param.
         }
         return learning;
     }
@@ -1321,14 +1317,8 @@ public class Env extends Thread{ // environment simulator
         if (writeRate > 0) {
             String settings = "";
             if (exp == 1) {
-
-
-//                settings += "runs";
-
                 settings += "exp";
                 settings += ",runs";
-
-
                 settings += ",M";
                 settings += ",space";
                 settings += ",length";
@@ -1341,37 +1331,22 @@ public class Env extends Thread{ // environment simulator
                 settings += ",gens";
                 settings += rounds != 0? ",rounds": "";
                 settings += EWT.isEmpty()? "": ",EWT";
-
                 settings += EWT.isEmpty()? "": ",initWeight";
-
                 settings += EWT.equals("rewire")? ",RP": "";
                 settings += EWT.equals("rewire")? ",RA": "";
                 settings += EWT.equals("rewire")? ",RT": "";
                 settings += EWT.equals("rewire")? ",RN1": "";
                 settings += EWT.equals("rewire") && (RA.equals("FD") || RA.equals("expo"))? ",RN2": "";
-
                 settings += PP.isEmpty()? "": ",PP";
                 settings += PS.isEmpty()? "": ",PS";
-
-
-//                settings += EF != 0.0? ",EF": "";
-//                settings += cost != 0.0? ",cost": "";
-//                settings += fine != 0.0? ",fine": "";
-
                 settings += EWT.equals("punish")? ",EF": "";
                 settings += EWT.equals("punish")? ",cost": "";
                 settings += EWT.equals("punish")? ",fine": "";
-
-
                 settings += !PP.isEmpty() ? ",NU": "";
                 settings += PP.equals("noisy")? ",PN1": "";
-//                settings += PN2 != 0.0? ",PN2": "";
                 settings += !PP.isEmpty() ? ",PN2": "";
                 settings += V.isEmpty() ? "": ",V";
                 settings += leeway != 0.0? ",leeway": "";
-
-//                settings += !PP.equals("")? ",threshold": ""; // should the check not be if we are using a threshold-based PP?
-
                 settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? ",threshold": "";
 
 
@@ -1382,41 +1357,26 @@ public class Env extends Thread{ // environment simulator
                 settings += EWT.isEmpty()? "": ",EWL";
 
 
-                settings += EWL.isEmpty()? "": ",EWLWeight1";
-                settings += EWL.isEmpty()? "": ",EWLWeight2";
+//                settings += EWL.isEmpty()? "": ",EWLWeight1";
+//                settings += EWL.isEmpty()? "": ",EWLWeight2";
+
+                settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13")? ",EWLWeight1": "";
+                settings += EWL.equals("test11")? ",EWLWeight2": "";
 
 
                 settings += ROC == 0.0? "": ",ROC";
                 settings += ",evo";
-
-
-//                settings += ",sel";
-
                 settings += evo.isEmpty()? "": ",sel";
-
-
                 settings += !RWT.isEmpty()? ",RWT": "";
                 settings += RWT.equals("expo") || evo.equals("FD")? ",EN": "";
-
-
-//                settings += mut.isEmpty()? "": ",mut";
-
                 settings += ",mut";
-
-
                 settings += mut.isEmpty()? "": ",mutRate";
                 settings += mutBound != 0.0? ",mutBound": "";
                 settings += ",UF";
             }
             settings += "\n";
-
-
-//            settings += runs;
-
             settings += exp;
             settings += "," + runs;
-
-
             settings += "," + M;
             settings += "," + space;
             settings += "," + length;
@@ -1429,28 +1389,17 @@ public class Env extends Thread{ // environment simulator
             settings += "," + gens;
             settings += rounds != 0? "," + rounds: "";
             settings += EWT.isEmpty()? "": "," + EWT;
-
             settings += EWT.isEmpty()? "": "," + initWeight;
-
             settings += EWT.equals("rewire")? "," + RP: "";
             settings += EWT.equals("rewire")? "," + RA: "";
             settings += EWT.equals("rewire")? "," + RT: "";
             settings += EWT.equals("rewire")? "," + RN1: "";
             settings += EWT.equals("rewire") && (RA.equals("FD") || RA.equals("expo"))? "," + RN2: "";
-
             settings += PP.isEmpty()? "": "," + PP;
             settings += PS.isEmpty()? "": "," + PS;
-
-
-//            settings += EF != 0.0? "," + EF: "";
-//            settings += cost != 0.0? "," + cost: "";
-//            settings += fine != 0.0? "," + fine: "";
-
             settings += EWT.equals("punish")? "," + EF: "";
             settings += EWT.equals("punish")? "," + cost: "";
             settings += EWT.equals("punish")? "," + fine: "";
-
-
             settings += !PP.isEmpty() ? "," + NU: "";
             settings += PP.equals("noisy")? "," + PN1: "";
 //            settings += PN2 != 0.0? "," + PN2: "";
@@ -1468,29 +1417,19 @@ public class Env extends Thread{ // environment simulator
             settings += EWL.isEmpty()? ",disabled": "," + EWL;
 
 
-            settings += EWL.isEmpty()? "": "," + EWLWeight1;
-            settings += EWL.isEmpty()? "": "," + EWLWeight2;
+//            settings += EWL.isEmpty()? "": "," + EWLWeight1;
+//            settings += EWL.isEmpty()? "": "," + EWLWeight2;
+
+            settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13")? "," + EWLWeight1: "";
+            settings += EWL.equals("test11")? "," + EWLWeight2: "";
 
 
             settings += ROC == 0.0? "": "," + ROC;
-
-
-//            settings += "," + evo;
-//            settings += "," + sel;
-
             settings += evo.isEmpty()? ",disabled": "," + evo;
             settings += evo.isEmpty()? "": "," + sel;
-
-
             settings += !RWT.isEmpty()? "," + RWT: "";
             settings += RWT.equals("expo") || evo.equals("FD")? "," + EN: "";
-
-
-//            settings += mut.isEmpty()? "": "," + mut;
-
             settings += mut.isEmpty()? ",disabled": "," + mut;
-
-
             settings += mut.isEmpty()? "": "," + mutRate;
             settings += mutBound != 0.0? "," + mutBound: "";
             settings += "," + UF;
@@ -2417,7 +2356,29 @@ public class Env extends Thread{ // environment simulator
 
     public static void setEWL(String value) {
         switch(value) {
-            case "PROC", "UROC", "PD", "UD", "PDhalf", "PDR", "PDRv2", "PDdouble", "PDtriple", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11" -> {
+            case "PROC"
+                    , "UROC"
+                    , "PD"
+                    , "UD"
+                    , "PDhalf"
+                    , "PDR"
+                    , "PDRv2"
+                    , "PDdouble"
+                    , "PDtriple"
+                    , "test1"
+                    , "test2"
+                    , "test3"
+                    , "test4"
+                    , "test5"
+                    , "test6"
+                    , "test7"
+                    , "test8"
+                    , "test9"
+                    , "test10"
+                    , "test11"
+                    , "test12"
+                    , "test13"
+                    -> {
                 EWL = value;
                 System.out.println("EWL = "+EWL);
             }
@@ -3293,6 +3254,19 @@ public class Env extends Thread{ // environment simulator
                     EWLWeight1 = Double.parseDouble(value);
                     EWLWeight2 = 1.0 - EWLWeight1; // we use EWLWeight1 to automatically set EWLWeight2.
                     System.out.println("EWLWeight1 = " + EWLWeight1 + ", EWLWeight2 = " + EWLWeight2);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid EWLWeight1: must be a double");
+                    exit(1);
+                }
+                if (EWLWeight1 < 0 || EWLWeight1 > 1) {
+                    System.out.println("invalid EWLWeight1: must be within the interval [0, 1].");
+                    exit(1);
+                }
+            }
+            case "test12", "test13" -> {
+                try {
+                    EWLWeight1 = Double.parseDouble(value);
+                    System.out.println("EWLWeight1 = " + EWLWeight1);
                 } catch (NumberFormatException e) {
                     System.out.println("invalid EWLWeight1: must be a double");
                     exit(1);
