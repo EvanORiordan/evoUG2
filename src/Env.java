@@ -114,8 +114,7 @@ public class Env extends Thread{ // environment simulator
     static double RN1 = 0; // rewiring noise
     static double RN2; // 2nd form of rewiring noise
     static double initWeight = 1.0;
-    static double EWLWeight1;
-    static double EWLWeight2;
+    static double EWLExtraParam1;
 
 
 
@@ -194,14 +193,14 @@ public class Env extends Thread{ // environment simulator
             System.out.println("[INFO] Time elapsed: " + hoursElapsed + " hours, " + minutesElapsed % 60 + " minutes, " + secondsElapsed % 60 + " seconds");
         }
         if (writeRate > 0) {
-            String console_output = "[INFO] IDs:";
+            String console_output = "[INFO] Dataset IDs:";
             for (String timestamp : timestamps) {
                 console_output += "\n" + timestamp;
             }
-            console_output += "\n[INFO] IDs for jupyter:\ncsv_data_address+'/" + timestamps.get(0) + "'";
-            for (int j = 1; j < timestamps.size(); j++) {
-                console_output += "\n,csv_data_address+'/" + timestamps.get(j) + "'";
-            }
+//            console_output += "\n[INFO] IDs for jupyter:\ncsv_data_address+'/" + timestamps.get(0) + "'";
+//            for (int j = 1; j < timestamps.size(); j++) {
+//                console_output += "\n,csv_data_address+'/" + timestamps.get(j) + "'";
+//            }
             System.out.println(console_output);
         }
 
@@ -245,19 +244,10 @@ public class Env extends Thread{ // environment simulator
                     case "UF" -> setUF(variations[exp - 1]);
                     case "PP" -> setPP(variations[exp - 1]);
                     case "EF" -> setEF(variations[exp - 1]);
-
-
-
-//                    case "cost" -> setCost(variations[exp - 1]);
-//                    case "fine" -> setFine(variations[exp - 1]);
-
                     case "cost" -> {
                         setCost(variations[exp - 1]);
                         setFine();
                     }
-
-
-
                     case "NU" -> setNU(variations[exp - 1]);
                     case "PN1" -> setPN1(variations[exp - 1]);
                     case "PN2" -> setPN2(variations[exp - 1]);
@@ -268,7 +258,7 @@ public class Env extends Thread{ // environment simulator
                     case "RN1" -> setRN1(variations[exp - 1]);
                     case "RN2" -> setRN2(variations[exp - 1]);
                     case "initWeight" -> setInitWeight(variations[exp - 1]);
-                    case "EWLWeight1" -> setEWLWeight1(variations[exp - 1]);
+                    case "EWLExtraParam1" -> setEWLExtraParam1(variations[exp - 1]);
                 }
             }
         }
@@ -546,15 +536,17 @@ public class Env extends Thread{ // environment simulator
                 }
             }
             case "test4" -> {
-                learning = p_b - p_a;
                 if (p_a > p_b && p_b > 0.5) {
-                    learning *= 0.5;
+                    learning = (p_b - p_a) * 0.5;
+                } else {
+                    learning = p_b - p_a;
                 }
             }
             case "test5" -> {
-                learning = p_b - p_a;
                 if (p_a > p_b && p_b > 0.5) {
-                    learning *= 0.5 - p_b;
+                    learning = (p_b - p_a) * (0.5 - p_b);
+                } else {
+                    learning = p_b - p_a;
                 }
             }
             case "test6" -> {
@@ -593,9 +585,10 @@ public class Env extends Thread{ // environment simulator
                     learning = p_b - p_a;
                 }
             }
-            case "test11" -> learning = EWLWeight1 * (p_b - p_a) + EWLWeight2 * (p_b - 0.5); // requires 2 extra weights to function (not to be confused with the weights of EWL).
-            case "test12" -> learning = EWLWeight1 * (p_b - p_a); // requires 1 extra param.
-            case "test13" -> learning = EWLWeight1 * (p_b - 0.5); // requires 1 extra param.
+//            case "test11" -> learning = EWLExtraParam1 * (p_b - p_a) + EWLExtraParam2 * (p_b - 0.5);
+            case "test12" -> learning = EWLExtraParam1 * (p_b - p_a);
+            case "test13" -> learning = EWLExtraParam1 * (p_b - 0.5);
+            case "test14" -> learning = EWLExtraParam1 * (p_b - 0.5) + (1 - EWLExtraParam1) * (p_b - p_a);
         }
         return learning;
     }
@@ -830,6 +823,7 @@ public class Env extends Thread{ // environment simulator
         setEF(CI!=settings.length? settings[CI++]: "");
         setCost(CI!=settings.length? settings[CI++]: "");
 //        setFine(CI!=settings.length? settings[CI++]: "");
+        setFine();
         setNU(CI!=settings.length? settings[CI++]: "");
         setPN1(CI!=settings.length? settings[CI++]: "");
         setPN2(CI!=settings.length? settings[CI++]: "");
@@ -837,7 +831,7 @@ public class Env extends Thread{ // environment simulator
         setLeeway(CI!=settings.length? settings[CI++]: "");
         setThreshold(CI!=settings.length? settings[CI++]: "");
         setEWL(CI!=settings.length? settings[CI++]: "");
-        setEWLWeight1(CI!=settings.length? settings[CI++]: "");
+        setEWLExtraParam1(CI!=settings.length? settings[CI++]: "");
         setROC(CI!=settings.length? settings[CI++]: "");
 
 
@@ -1357,11 +1351,9 @@ public class Env extends Thread{ // environment simulator
                 settings += EWT.isEmpty()? "": ",EWL";
 
 
-//                settings += EWL.isEmpty()? "": ",EWLWeight1";
-//                settings += EWL.isEmpty()? "": ",EWLWeight2";
+//                settings += EWL.isEmpty()? "": ",EWLExtraParam1";
 
-                settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13")? ",EWLWeight1": "";
-                settings += EWL.equals("test11")? ",EWLWeight2": "";
+                settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13") || EWL.equals("test14")? ",EWLExtraParam1": "";
 
 
                 settings += ROC == 0.0? "": ",ROC";
@@ -1402,13 +1394,9 @@ public class Env extends Thread{ // environment simulator
             settings += EWT.equals("punish")? "," + fine: "";
             settings += !PP.isEmpty() ? "," + NU: "";
             settings += PP.equals("noisy")? "," + PN1: "";
-//            settings += PN2 != 0.0? "," + PN2: "";
             settings += !PP.isEmpty() ? "," + PN2: "";
             settings += V.isEmpty() ? "": "," + V;
             settings += leeway != 0.0? "," + leeway: "";
-
-//            settings += !PP.equals("")? "," + threshold: "";
-
             settings += PP.equals("thresholds") || PP.equals("thresholdUpper") || PP.equals("thresholdLower")? "," + threshold: "";
 
 
@@ -1417,11 +1405,9 @@ public class Env extends Thread{ // environment simulator
             settings += EWL.isEmpty()? ",disabled": "," + EWL;
 
 
-//            settings += EWL.isEmpty()? "": "," + EWLWeight1;
-//            settings += EWL.isEmpty()? "": "," + EWLWeight2;
+//            settings += EWL.isEmpty()? "": "," + EWLExtraParam1;
 
-            settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13")? "," + EWLWeight1: "";
-            settings += EWL.equals("test11")? "," + EWLWeight2: "";
+            settings += EWL.equals("test11") || EWL.equals("test12") || EWL.equals("test13") || EWL.equals("test14")? "," + EWLExtraParam1: "";
 
 
             settings += ROC == 0.0? "": "," + ROC;
@@ -2156,25 +2142,6 @@ public class Env extends Thread{ // environment simulator
 
 
 
-//    public static void setFine(String value) {
-//        boolean set = false;
-//        switch (PP) {
-//            case "sweetspotCostFine" -> set = true;
-//        }
-//        switch (PS) {
-//            case "normal", "weighted", "utility" -> set = true;
-//        }
-//        if (set) {
-//            try {
-//                fine = Double.parseDouble(value);
-//                System.out.println("fine = " + fine);
-//            } catch (NumberFormatException e) {
-//                System.out.println("invalid fine: must be a double");
-//                exit(1);
-//            }
-//        }
-//    }
-
     public static void setFine(){
         fine = EF * cost;
     }
@@ -2378,6 +2345,7 @@ public class Env extends Thread{ // environment simulator
                     , "test11"
                     , "test12"
                     , "test13"
+                    , "test14"
                     -> {
                 EWL = value;
                 System.out.println("EWL = "+EWL);
@@ -2503,7 +2471,7 @@ public class Env extends Thread{ // environment simulator
                 case "RN1" -> output += "\n" + RN1;
                 case "RN2" -> output += "\n" + RN2;
                 case "initWeight" -> output += "\n" + initWeight;
-                case "EWLWeight1" -> output += "\n" + EWLWeight1;
+                case "EWLExtraParam1" -> output += "\n" + EWLExtraParam1;
             }
 
             // create the file and write the data.
@@ -2548,7 +2516,7 @@ public class Env extends Thread{ // environment simulator
                     "RN1",
                     "RN2",
                     "initWeight",
-                    "EWLWeight1"
+                    "EWLExtraParam1"
                     -> {
                 VP = value;
                 System.out.println("VP = "+VP);
@@ -2697,7 +2665,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writePGenStats = true;
-                System.out.println("writePGenStats = "+writePGenStats);
+//                System.out.println("writePGenStats = "+writePGenStats);
+                System.out.println("p gen stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p gen stats.");
@@ -2708,7 +2677,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeUGenStats = true;
-                System.out.println("writeUGenStats = "+writeUGenStats);
+//                System.out.println("writeUGenStats = "+writeUGenStats);
+                System.out.println("u gen stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u gen stats.");
@@ -2719,7 +2689,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeKGenStats = true;
-                System.out.println("writeKGenStats="+writeKGenStats);
+//                System.out.println("writeKGenStats="+writeKGenStats);
+                System.out.println("k gen stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record k gen stats.");
@@ -2730,7 +2701,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writePRunStats = true;
-                System.out.println("writePRunStats = "+writePRunStats);
+//                System.out.println("writePRunStats = "+writePRunStats);
+                System.out.println("p run stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record p run stats.");
@@ -2741,7 +2713,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeURunStats = true;
-                System.out.println("writeURunStats = "+writeURunStats);
+//                System.out.println("writeURunStats = "+writeURunStats);
+                System.out.println("u run stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record u run stats.");
@@ -2752,7 +2725,8 @@ public class Env extends Thread{ // environment simulator
         try {
             if (value.equals("1")) {
                 writeKRunStats = true;
-                System.out.println("writeKRunStats = "+writeKRunStats);
+//                System.out.println("writeKRunStats = "+writeKRunStats);
+                System.out.println("k run stats enabled");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("[INFO] Will not record k run stats.");
@@ -3247,32 +3221,18 @@ public class Env extends Thread{ // environment simulator
         }
     }
 
-    public static void setEWLWeight1(String value) {
+    public static void setEWLExtraParam1(String value) {
         switch (EWL) {
-            case "test11" -> {
+            case "test11", "test12", "test13", "test14" -> {
                 try {
-                    EWLWeight1 = Double.parseDouble(value);
-                    EWLWeight2 = 1.0 - EWLWeight1; // we use EWLWeight1 to automatically set EWLWeight2.
-                    System.out.println("EWLWeight1 = " + EWLWeight1 + ", EWLWeight2 = " + EWLWeight2);
+                    EWLExtraParam1 = Double.parseDouble(value);
+                    System.out.println("EWLExtraParam1 = " + EWLExtraParam1);
                 } catch (NumberFormatException e) {
-                    System.out.println("invalid EWLWeight1: must be a double");
+                    System.out.println("invalid EWLExtraParam1: must be a double");
                     exit(1);
                 }
-                if (EWLWeight1 < 0 || EWLWeight1 > 1) {
-                    System.out.println("invalid EWLWeight1: must be within the interval [0, 1].");
-                    exit(1);
-                }
-            }
-            case "test12", "test13" -> {
-                try {
-                    EWLWeight1 = Double.parseDouble(value);
-                    System.out.println("EWLWeight1 = " + EWLWeight1);
-                } catch (NumberFormatException e) {
-                    System.out.println("invalid EWLWeight1: must be a double");
-                    exit(1);
-                }
-                if (EWLWeight1 < 0 || EWLWeight1 > 1) {
-                    System.out.println("invalid EWLWeight1: must be within the interval [0, 1].");
+                if (EWLExtraParam1 < 0 || EWLExtraParam1 > 1) {
+                    System.out.println("invalid EWLExtraParam1: must be within the interval [0, 1].");
                     exit(1);
                 }
             }

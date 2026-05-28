@@ -33,7 +33,7 @@ public class Agent {
     private int k; // degree
     private int sel_rank;
     private static boolean NU = true; // by default, allow individuals to have negative utility.
-    private double v; // vindictiveness of the agent i.e. their probability to punish. [0,1].
+    private double v; // inherent vindictiveness of the agent; affects probability of punishing.
     private static String V = "";
     private static String EWT = "";
 
