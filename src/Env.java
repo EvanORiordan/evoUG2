@@ -115,6 +115,7 @@ public class Env extends Thread{ // environment simulator
     static double RN2; // 2nd form of rewiring noise
     static double initWeight = 1.0;
     static double EWLExtraParam1;
+    static boolean evoEnabled = false;
 
 
 
@@ -1439,11 +1440,11 @@ public class Env extends Thread{ // environment simulator
     public static void writeSeriesStats() {
         if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)) {
             String output = "";
-//            String output = "exp num,";
             if (exp == 1) {
                 output += "exp,";
                 if (writePRunStats) {
-                    output += "mean avg p,sigma avg p,";
+//                    output += "mean avg p,sigma avg p,";
+                    output += "mean avg p,sigma avg p,mean sigma p,";
                 }
                 if (writeURunStats) {
                     output += "mean avg u,sigma avg u,";
@@ -1458,11 +1459,13 @@ public class Env extends Thread{ // environment simulator
             }
             double mean_avg_p = 0.0;
             double sigma_avg_p = 0.0;
+            double mean_sigma_p = 0.0;
             double mean_avg_u = 0.0;
             double sigma_avg_u = 0.0;
             double mean_sigma_k = 0.0;
             int mean_num_puns = 0;
             double[] mean_p_values = new double[runs];
+            double[] sigma_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
             int[] num_puns_values = new int[runs];
@@ -1470,7 +1473,7 @@ public class Env extends Thread{ // environment simulator
                 fw = new FileWriter(specific_path + "\\series_stats.csv", true);
                 br = new BufferedReader(new FileReader(exp_path + "\\exp_stats.csv"));
                 br.readLine();
-                for (int i=0;i<runs;i++) {
+                for (int i = 0; i < runs; i++) {
                     String row = br.readLine();
                     String[] row_contents = row.split(",");
                     int j = 0;
@@ -1479,7 +1482,8 @@ public class Env extends Thread{ // environment simulator
                     if (writePRunStats) {
                         j++; // ignore run
                         mean_p_values[i] = Double.parseDouble(row_contents[j++]);
-                        j++; // ignore sigma p
+//                        j++; // ignore sigma p
+                        sigma_p_values[i] = Double.parseDouble(row_contents[j++]);
                         j++; // ignore max p
                         j++; // ignore variance p
                         j++; // ignore pBin1
@@ -1505,6 +1509,7 @@ public class Env extends Thread{ // environment simulator
                 for (int i=0;i<runs;i++) {
                     if (writePRunStats) {
                         mean_avg_p += mean_p_values[i];
+                        mean_sigma_p += sigma_p_values[i];
                     }
                     if (writeURunStats) {
                         mean_avg_u += mean_u_values[i];
@@ -1518,6 +1523,7 @@ public class Env extends Thread{ // environment simulator
                 }
                 if (writePRunStats) {
                     mean_avg_p /= runs;
+                    mean_sigma_p /= runs;
                 }
                 if (writeURunStats) {
                     mean_avg_u /= runs;
@@ -1534,10 +1540,12 @@ public class Env extends Thread{ // environment simulator
                 }
                 sigma_avg_p = Math.pow(sigma_avg_p / runs, 0.5);
                 sigma_avg_u = Math.pow(sigma_avg_u / runs, 0.5);
-//                output += "\n";
                 output += "\n" + exp + ",";
                 if (writePRunStats) {
-                    output += DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
+//                    output += DF4.format(mean_avg_p) + "," + DF4.format(sigma_avg_p) + ",";
+                    output += DF4.format(mean_avg_p) + ","
+                            + DF4.format(sigma_avg_p) + ","
+                            + DF4.format(mean_sigma_p) + ",";
                 }
                 if (writeURunStats) {
                     output += DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
@@ -1932,7 +1940,6 @@ public class Env extends Thread{ // environment simulator
         if (gen == 0) { // apply headings to file before writing data // stop extra headings from printing...
             s += "gen,";
             if (writePRunStats) {
-//                s += "mean p,sigma p,max p,";
                 s += "mean p,sigma p,max p,variance p,pBin1,pBin2,pBin3,pBin4,pBin5,mode p,skewness p,";
             }
             if (writeURunStats) {
@@ -1949,7 +1956,6 @@ public class Env extends Thread{ // environment simulator
         }
         s += gen + ",";
         if (writePRunStats) {
-//            s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ",";
             s += DF4.format(mean_p) + "," + DF4.format(sigma_p) + "," + DF4.format(max_p) + ","
                     + DF4.format(variance_p) + "," + pBins[0] + "," + pBins[1] + "," + pBins[2] + "," + pBins[3] + ","
                     + pBins[4] + "," + DF4.format(mode_p) +  "," + DF4.format(skewness_p) + ",";
@@ -2294,12 +2300,24 @@ public class Env extends Thread{ // environment simulator
     }
 
     public static void setMut(String value) {
-        switch (value) {
-            case "global", "local" -> {
-                mut = value;
-                System.out.println("mut = "+mut);
+//        switch (value) {
+//            case "global", "local" -> {
+//                mut = value;
+//                System.out.println("mut = "+mut);
+//            }
+//            default -> System.out.println("mut is disabled");
+//        }
+
+        switch (evo) {
+            case "copy", "FD" -> {
+                switch (value) {
+                    case "global", "local" -> {
+                        mut = value;
+                        System.out.println("mut = " + mut);
+                    }
+                    default -> System.out.println("mut is disabled");
+                }
             }
-            default -> System.out.println("mut is disabled");
         }
     }
 
@@ -2549,22 +2567,24 @@ public class Env extends Thread{ // environment simulator
             }
             switch (EWT) {
                 case "rewire" -> {
-                    for (int i=0;i<N;i++) {
+                    for (int i = 0; i < N; i++) {
                         rewire(pop[i]);
                     }
                 }
             }
             if (punish) {
-                for (int i=0;i<N;i++) {
+                for (int i = 0; i < N; i++) {
                     punish(pop[i]);
                 }
             }
-            for (int i=0;i<N;i++) {
-                Agent child = pop[i];
-                Agent parent = sel(child);
-                if (!child.equals(parent)) {
-                    evo(child, parent);
-                    mut(child);
+            if (evoEnabled) {
+                for (int i = 0; i < N; i++) {
+                    Agent child = pop[i];
+                    Agent parent = sel(child);
+                    if (!child.equals(parent)) {
+                        evo(child, parent);
+                        mut(child);
+                    }
                 }
             }
             calculateStats(); // calculate stats at end of gen
@@ -2820,6 +2840,7 @@ public class Env extends Thread{ // environment simulator
                     -> {
                 evo = value;
                 System.out.println("evo = "+evo);
+                evoEnabled = true;
             }
             default -> System.out.println("evo is disabled");
         }
