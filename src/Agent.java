@@ -33,8 +33,6 @@ public class Agent {
     private int k; // degree
     private int sel_rank;
     private static boolean NU = true; // by default, allow individuals to have negative utility.
-    private double v; // inherent vindictiveness of the agent; affects probability of punishing.
-    private static String V = "";
     private static String EWT = "";
 
 
@@ -103,10 +101,6 @@ public class Agent {
                     }
                 }
             }
-        }
-
-        switch(V){
-            case "random", "1", "0" -> agent_desc += " v=" + DF4.format(v);
         }
 
         agent_desc += " u=" + DF4.format(u); // utility
@@ -251,8 +245,5 @@ public class Agent {
     public static void setNU(boolean b){
         NU=b;
     }
-    public double getV(){return v;}
-    public void setV(double d){v=d;}
-    public static void setStaticV(String s){V=s;}
     public static void setEWT(String s){EWT=s;}
 }
