@@ -1400,7 +1400,8 @@ public class Env extends Thread{ // environment simulator
                     output += "mean avg p,sigma avg p,mean sigma p,";
                 }
                 if (writeURunStats) {
-                    output += "mean avg u,sigma avg u,";
+//                    output += "mean avg u,sigma avg u,";
+                    output += "mean avg u,sigma avg u,mean sigma u,";
                 }
                 if (writeKRunStats) {
                     output += "mean sigma k,";
@@ -1415,11 +1416,13 @@ public class Env extends Thread{ // environment simulator
             double mean_sigma_p = 0.0;
             double mean_avg_u = 0.0;
             double sigma_avg_u = 0.0;
+            double mean_sigma_u = 0.0;
             double mean_sigma_k = 0.0;
             int mean_num_puns = 0;
             double[] mean_p_values = new double[runs];
             double[] sigma_p_values = new double[runs];
             double[] mean_u_values = new double[runs];
+            double[] sigma_u_values = new double[runs];
             double[] sigma_k_values = new double[runs];
             int[] num_puns_values = new int[runs];
             try {
@@ -1449,7 +1452,8 @@ public class Env extends Thread{ // environment simulator
                     }
                     if (writeURunStats) {
                         mean_u_values[i] = Double.parseDouble(row_contents[j++]);
-                        j++; // ignore sigma u
+//                        j++; // ignore sigma u
+                        sigma_u_values[i] = Double.parseDouble(row_contents[j++]);
                     }
                     if (writeKRunStats) {
                         sigma_k_values[i] = Double.parseDouble(row_contents[j++]);
@@ -1466,6 +1470,7 @@ public class Env extends Thread{ // environment simulator
                     }
                     if (writeURunStats) {
                         mean_avg_u += mean_u_values[i];
+                        mean_sigma_u += sigma_u_values[i];
                     }
                     if (writeKRunStats) {
                         mean_sigma_k += sigma_k_values[i];
@@ -1480,6 +1485,7 @@ public class Env extends Thread{ // environment simulator
                 }
                 if (writeURunStats) {
                     mean_avg_u /= runs;
+                    mean_sigma_u /= runs;
                 }
                 if (writeKRunStats) {
                     mean_sigma_k /= runs;
@@ -1501,7 +1507,10 @@ public class Env extends Thread{ // environment simulator
                             + DF4.format(mean_sigma_p) + ",";
                 }
                 if (writeURunStats) {
-                    output += DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
+//                    output += DF4.format(mean_avg_u) + "," + DF4.format(sigma_avg_u) + ",";
+                    output += DF4.format(mean_avg_u) + ","
+                            + DF4.format(sigma_avg_u) + ","
+                            + DF4.format(mean_sigma_u) + ",";
                 }
                 if (writeKRunStats) {
                     output += DF4.format(mean_sigma_k) + ",";
