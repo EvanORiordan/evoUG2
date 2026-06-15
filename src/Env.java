@@ -2387,37 +2387,41 @@ public class Env extends Thread{ // environment simulator
 
             // includes the column header for the variable parameter.
             if (exp == 1) {
-                output += VP;
+//                output += VP;
+                output += "exp," + VP;
             }
+
+//            output += "\n";
+            output += "\n" + exp + ',';
 
             // includes the current value of the variable parameter.
             switch (VP) {
-                case "ER" -> output += "\n" + ER;
-                case "NIS" -> output += "\n" + NIS;
-                case "ROC" -> output += "\n" + ROC;
-                case "length" -> output += "\n" + length;
-                case "RP" -> output += "\n" + RP;
-                case "gens" -> output += "\n" + gens;
-                case "EWL" -> output += "\n" + EWL;
-                case "EWT" -> output += "\n" + EWT;
-                case "RA" -> output += "\n" + RA;
-                case "RT" -> output += "\n" + RT;
-                case "sel" -> output += "\n" + sel;
-                case "evo" -> output += "\n" + evo;
-                case "EN" -> output += "\n" + EN;
-                case "mutRate" -> output += "\n" + mutRate;
-                case "mutBound" -> output += "\n" + mutBound;
-                case "UF" -> output += "\n" + UF;
-                case "PP" -> output += "\n" + PP;
-                case "alpha" -> output += "\n" + alpha;
-                case "NU" -> output += "\n" + NU;
-                case "EF" -> output += "\n" + EF;
-                case "leeway" -> output += "\n" + leeway;
-                case "threshold" -> output += "\n" + threshold;
-                case "RN1" -> output += "\n" + RN1;
-                case "RN2" -> output += "\n" + RN2;
-                case "initWeight" -> output += "\n" + initWeight;
-                case "gamma" -> output += "\n" + gamma;
+                case "ER" -> output += ER;
+                case "NIS" -> output += NIS;
+                case "ROC" -> output += ROC;
+                case "length" -> output += length;
+                case "RP" -> output += RP;
+                case "gens" -> output += gens;
+                case "EWL" -> output += EWL;
+                case "EWT" -> output += EWT;
+                case "RA" -> output += RA;
+                case "RT" -> output += RT;
+                case "sel" -> output += sel;
+                case "evo" -> output += evo;
+                case "EN" -> output += EN;
+                case "mutRate" -> output += mutRate;
+                case "mutBound" -> output += mutBound;
+                case "UF" -> output += UF;
+                case "PP" -> output += PP;
+                case "alpha" -> output += alpha;
+                case "NU" -> output += NU;
+                case "EF" -> output += EF;
+                case "leeway" -> output += leeway;
+                case "threshold" -> output += threshold;
+                case "RN1" -> output += RN1;
+                case "RN2" -> output += RN2;
+                case "initWeight" -> output += initWeight;
+                case "gamma" -> output += gamma;
             }
 
             // create the file and write the data.
