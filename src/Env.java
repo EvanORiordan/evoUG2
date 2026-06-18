@@ -60,7 +60,7 @@ public class Env extends Thread{ // environment simulator
 //    static DecimalFormat DF2 = Agent.getDF2(); // formats numbers to 2 decimal place
     static DecimalFormat DF4 = Agent.getDF4(); // formats numbers to 4 decimal places
     static String general_path = "C:\\Users\\Evan O'Riordan\\Documents\\csv_data"; // path where all datasets are stored.
-    static String specific_path; // specific path of 1 dataset.
+    static String specific_path; // specific path of 1 series / dataset.
     static String exp_path; // address where stats for current experiment are stored
     static String run_path; // address where stats for current run are stored
     static boolean writePGenStats;
@@ -894,12 +894,23 @@ public class Env extends Thread{ // environment simulator
             if (writeRate > 0) {
                 Files.createDirectories(Paths.get(exp_path));
             }
-            for (int i=1;i<=runs;i++) {
+            for (int run = 1; run <= runs; run++) {
                 if (writePGenStats || writeUGenStats || writeKGenStats || writePRunStats || writeURunStats || writeKRunStats) { // add run stat writing params to this check
-                    Files.createDirectories(Paths.get(exp_path + "\\run" + i));
+                    Files.createDirectories(Paths.get(exp_path + "\\run" + run));
                 }
                 if (writePGenStats || writeUGenStats || writeKGenStats) {
-                    Files.createDirectories(Paths.get(exp_path + "\\run" + i + "\\gen_stats"));
+
+//                    Files.createDirectories(Paths.get(exp_path + "\\run" + run + "\\gen_stats"));
+
+//                    for (int gen = 0; gen < gens + writeRate; gen += writeRate) {
+//                    for (int gen = 0; gen < gens; gen += writeRate) {
+                    for (int gen = 0; gen <= gens; gen += writeRate) {
+//                        if (gen > gens) {
+//                            gen = gens;
+//                        }
+                        Files.createDirectories(Paths.get(exp_path + "\\run" + run + "\\gen" + gen));
+                    }
+
                 }
             }
         } catch (IOException e) {
@@ -1391,7 +1402,16 @@ public class Env extends Thread{ // environment simulator
      * Reads and writes local data.
      */
     public static void writeSeriesStats() {
+
         if (writeRate > 0 && (writePRunStats || writeURunStats || writeKRunStats)) {
+
+            // create directories and files before writing stats.
+//        File f = new File()
+//        if (f.exists()) {
+            // write series stats...
+//        }
+
+
             String output = "";
             if (exp == 1) {
                 output += "exp,";
@@ -1821,7 +1841,7 @@ public class Env extends Thread{ // environment simulator
      * Whether a stat is recorded depends on the writing params.<br>
      */
     public void writeGenAndRunStats() {
-        if (writeRate != 0 && (gen == 0 || gen % writeRate == 0)) {
+        if (writeRate != 0 && (gen == 0 || gen % writeRate == 0)) { // TODO: might have to modify this if stmt because of the changes to createDataFolders().
             if (writePGenStats || writeUGenStats || writeKGenStats) writeGenStats();
             if (writePRunStats || writeURunStats || writeKRunStats) writeRunStats();
         }
@@ -1883,7 +1903,8 @@ public class Env extends Thread{ // environment simulator
             s = removeTrailingComma(s);
         }
         try {
-            fw = new FileWriter(run_path + "\\gen_stats\\gen" + gen + ".csv");
+//            fw = new FileWriter(run_path + "\\gen_stats\\gen" + gen + ".csv");
+            fw = new FileWriter(run_path + "\\gen" + gen + "\\gen_stats.csv");
             fw.append(s);
             fw.close();
         } catch (IOException e) {
