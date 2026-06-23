@@ -297,11 +297,11 @@ public class Env extends Thread{ // environment simulator
             writePosData();
         }
 //        if (!EWL.equals("")) {
-        if (!EWT.equals("")) { // if EWT is set, then we plan to use weights, hence we need to initialise them.
-            for (int i=0;i<N;i++) {
+//        if (!EWT.equals("")) { // if EWT is set, then we plan to use weights, hence we need to initialise them.
+            for (int i=0;i<N;i++) { // perhaps we let this go off no matter what. if weights arent modified by EWL or used by an EWT mechanism, so be it.
                 initialiseEdgeWeights(pop[i]);
             }
-        }
+//        }
 
         // testing Agent.toString().
         String string = pop[0].toString();
